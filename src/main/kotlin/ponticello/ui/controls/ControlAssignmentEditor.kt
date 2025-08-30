@@ -4,7 +4,7 @@ import fxutils.actions.ActionBar
 import fxutils.alwaysHGrow
 import fxutils.button
 import fxutils.infiniteSpace
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.layout.HBox
@@ -52,7 +52,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
         if (options.isEmpty() || options.size == 1) return
-        val listView = SimpleSearchableListView(options, "Select control type")
+        val listView = SimpleSelectorPrompt(options, "Select control type")
         val option = listView.showPopup(anchorNode = optionButton, initialOption = selectedOption) ?: return
         updateControlType(option)
         detailEditor?.requestFocus()

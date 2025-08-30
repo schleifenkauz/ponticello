@@ -8,7 +8,7 @@ import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
 import fxutils.label
 import fxutils.prompt.IntegerPrompt
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import javafx.event.Event
@@ -56,7 +56,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
             listView.refilter()
         }
 
-    private val filterSelector = SimpleSearchableListView(BusTypeFilter.entries, "Select filter")
+    private val filterSelector = SimpleSelectorPrompt(BusTypeFilter.entries, "Select filter")
         .selectorButton(this::filter)
 
     override fun defaultState(): ToolPaneState = BusRegistryPaneState.default()
@@ -88,7 +88,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
     override fun filter(obj: BusObject): Boolean = super.filter(obj) && filter.filter(obj)
 
     override fun createNewObject(name: String, ev: Event?): BusObject? {
-        val type = SimpleSearchableListView(Rate.entries, "Bus type")
+        val type = SimpleSelectorPrompt(Rate.entries, "Bus type")
             .showPopup(ev) ?: return null
 
         val channels = IntegerPrompt("Channels", initialValue = 2, range = 1..16)

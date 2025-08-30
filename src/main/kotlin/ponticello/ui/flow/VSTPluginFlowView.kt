@@ -3,7 +3,7 @@ package ponticello.ui.flow
 import bundles.createBundle
 import fxutils.*
 import fxutils.actions.button
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.SimpleTextPrompt
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
@@ -21,7 +21,7 @@ class VSTPluginFlowView(private val flow: VSTPluginFlow) : VBox() {
 
         val pluginSelectorBtn = button(flow.pluginName, style = "selector-button") { ev ->
             val options = VSTPlugins.availablePlugins(flow.context).toList()
-            val newPluginName = SimpleSearchableListView(options, "Select VST Plugin").showPopup(ev) ?: return@button
+            val newPluginName = SimpleSelectorPrompt(options, "Select VST Plugin").showPopup(ev) ?: return@button
             flow.loadPlugin(newPluginName)
         }
         val saveGlobalPresetBtn = Material2MZ.SAVE.button("Save global preset", "medium-icon-button") { ev ->
@@ -30,7 +30,7 @@ class VSTPluginFlowView(private val flow: VSTPluginFlow) : VBox() {
         }
         val loadGlobalPresetBtn = Codicons.FOLDER_OPENED.button("Load global preset", "medium-icon-button") { ev ->
             val options = VSTPlugins.globalPresetList(flow.context, flow.pluginName.now)
-            val presetName = SimpleSearchableListView(options, "Select preset")
+            val presetName = SimpleSelectorPrompt(options, "Select preset")
                 .showPopup(ev) ?: return@button
             flow.loadGlobalPreset(presetName)
         }

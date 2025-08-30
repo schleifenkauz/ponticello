@@ -1,6 +1,6 @@
 package ponticello.ui.registry
 
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
 import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterDefObject
@@ -14,7 +14,7 @@ class SearchableParameterListView(
     title: String,
     val obj: ParameterizedObject,
     val parameters: List<ParameterDefObject>
-) : SimpleSearchableListView<ParameterDefObject>(parameters, title) {
+) : SimpleSelectorPrompt<ParameterDefObject>(parameters, title) {
     override fun extractText(option: ParameterDefObject): String = option.name.now
 
     override fun displayText(option: ParameterDefObject): String = option.simpleString()

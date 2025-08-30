@@ -196,8 +196,7 @@ abstract class RootScorePane(
             else g.unmark()
         }
         positionTracker.layoutX = getX(t)
-        val player = playHead.player
-        if (player.isPlaying.now != true) {
+        if (playHead.canMoveManually.now) {
             timeCodeView.displayTime(t)
         }
     }

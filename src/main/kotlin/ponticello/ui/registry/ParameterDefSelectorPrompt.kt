@@ -1,8 +1,7 @@
 package ponticello.ui.registry
 
 import fxutils.SubWindow
-import fxutils.prompt.SimpleSearchableListView
-import hextant.context.Context
+import fxutils.prompt.SimpleSelectorPrompt
 import javafx.geometry.Point2D
 import ponticello.model.obj.*
 import ponticello.sc.Identifier
@@ -10,13 +9,12 @@ import ponticello.sc.ParameterType
 import ponticello.ui.controls.ControlSpecPrompt
 import reaktive.value.now
 
-class SearchableParameterDefListView(
+class ParameterDefSelectorPrompt(
     options: List<ParameterDefObject>, title: String,
-    private val context: Context,
     private val parentObject: ParameterizedObject? = null,
     private val instrumentObject: InstrumentObject? = parentObject?.def,
     private val fixedParameterType: ParameterType? = null,
-) : SimpleSearchableListView<ParameterDefObject>(options, title) {
+) : SimpleSelectorPrompt<ParameterDefObject>(options, title) {
     override val windowType: SubWindow.Type
         get() = SubWindow.Type.Prompt
 
@@ -32,9 +30,9 @@ class SearchableParameterDefListView(
             is SynthDefObject -> ParameterType.regularTypes - ParameterType.Expr
             else -> emptyList()
         }
-        val type = fixedParameterType ?: SimpleSearchableListView(availableParameterTypes, "Parameter type")
-            .showPopup(this, initialOption = ParameterType.Numerical) ?: return null
-        val anchor = localToScreen(Point2D.ZERO)
+        val type = fixedParameterType ?: SimpleSelectorPrompt(availableParameterTypes, "Parameter type")
+            .showPopup(content, initialOption = ParameterType.Numerical) ?: return null
+        val anchor = content.localToScreen(Point2D.ZERO)
         val spec = ControlSpecPrompt.createParameter(text, parentObject, type, window, anchor) ?: return null
         return ParameterDefObject(text, spec).withName(text)
     }

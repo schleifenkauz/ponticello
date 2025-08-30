@@ -3,7 +3,7 @@ package ponticello.ui.flow
 import fxutils.*
 import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.TextPrompt
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -165,7 +165,7 @@ class FlowGroupPane(
 
     override fun createNewObject(ev: Event?, list: ObjectList<AudioFlow>): AudioFlow? {
         val options = FlowOption.getOptions(context)
-        val option = SimpleSearchableListView(options, "Add flow").showPopup(ev) ?: return null
+        val option = SimpleSelectorPrompt(options, "Add flow").showPopup(ev) ?: return null
         val defaultName = option.defaultName()
         val takenFlowNames = context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
         val idx = (1..Int.MAX_VALUE).first { idx -> "${defaultName}_$idx" !in takenFlowNames }

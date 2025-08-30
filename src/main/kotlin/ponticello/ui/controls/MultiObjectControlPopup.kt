@@ -1,8 +1,8 @@
 package ponticello.ui.controls
 
 import fxutils.*
-import fxutils.prompt.SearchableListView
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SelectorPrompt
+import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.scene.control.Label
@@ -14,7 +14,7 @@ import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 
 class MultiObjectControlPopup(
     private val selectedObjects: List<ParameterizedObject>,
-) : SearchableListView<MultiObjectControlPopup.Option>("Select control") {
+) : SelectorPrompt<MultiObjectControlPopup.Option>("Select control") {
     override fun options(): List<Option> = selectedObjects
         .map { obj -> obj.controls.controlMap.keys }
         .reduceOrNull(Set<String>::intersect).orEmpty()
@@ -43,8 +43,8 @@ class MultiObjectControlPopup(
                 t.applicableOn(obj, spec)
             }
         }
-        val type = SimpleSearchableListView(availableTypes, "Select control type")
-            .showPopup(anchorNode = this) ?: return null
+        val type = SimpleSelectorPrompt(availableTypes, "Select control type")
+            .showPopup(anchorNode = this.content) ?: return null
         return Option(text, type, null)
     }
 

@@ -3,7 +3,7 @@ package ponticello.ui.controls
 import fxutils.controls.CheckBox
 import fxutils.controls.IntSpinner
 import fxutils.prompt.DetailPane
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import ponticello.model.obj.ParameterizedObject
@@ -20,7 +20,7 @@ class BusControlSpecPrompt(
 
     private val channelsSpinner = IntSpinner(1, 12, initialSpec.channels).minColumns(2) named "Channels"
 
-    private val rateSelector = SimpleSearchableListView(Rate.entries, "Choose rate")
+    private val rateSelector = SimpleSelectorPrompt(Rate.entries, "Choose rate")
         .selectorButton(this::rate, undoManager = parentObject?.context?.get(UndoManager)) named "Rate"
 
     private val inlineDisplayBox = CheckBox(initialSpec.inlineDisplay) named "Inline display"

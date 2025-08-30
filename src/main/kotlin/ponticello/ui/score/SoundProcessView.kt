@@ -26,9 +26,9 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
-import ponticello.ui.registry.SearchableBufferListView
-import ponticello.ui.registry.SearchableBusListView
-import ponticello.ui.registry.SearchableParameterDefListView
+import ponticello.ui.registry.BufferSelectorPrompt
+import ponticello.ui.registry.BusSelectorPrompt
+import ponticello.ui.registry.ParameterDefSelectorPrompt
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.binding.map
@@ -124,8 +124,8 @@ class SoundProcessView(
             .filter { ctrl -> ctrl.spec.now is NumericalControlSpec && ctrl.now !is EnvelopeControl }
             .filter { ctrl -> !obj.def.hasParameter(ctrl.name.now) }
             .map { ctrl -> ParameterDefObject(ctrl.name.now, ctrl.spec.now!!) }
-        val listView = SearchableParameterDefListView(
-            possibleParameters, "New parameter", obj.context, obj, fixedParameterType = ParameterType.Numerical
+        val listView = ParameterDefSelectorPrompt(
+            possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
         )
         val relativeY = if (_inlineControls?.isVisible == true) inlineControls.height else 0.0
         val anchor = localToScreen(Point2D(0.0, relativeY))
@@ -180,7 +180,7 @@ class SoundProcessView(
                 val name = param.name.now
                 val control = when (val spec = param.spec.now) {
                     is BufferControlSpec -> {
-                        val buffer = SearchableBufferListView(context[BufferRegistry], "Select $name", spec.channels)
+                        val buffer = BufferSelectorPrompt(context[BufferRegistry], "Select $name", spec.channels)
                             .showPopup(anchor) ?: return null
                         BufferControl.create(buffer)
                     }
@@ -189,7 +189,7 @@ class SoundProcessView(
                         if (defaultBus != null && defaultBus.matches(spec)) BusControl.create(defaultBus)
                         else {
                             val bus =
-                                SearchableBusListView(context[BusRegistry], "Select $name", spec.rate, spec.channels)
+                                BusSelectorPrompt(context[BusRegistry], "Select $name", spec.rate, spec.channels)
                                     .showPopup(anchor) ?: return null
                             BusControl.create(bus)
                         }

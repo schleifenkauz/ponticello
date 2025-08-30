@@ -10,7 +10,7 @@ import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.UnresolvedScoreObject
-import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import reaktive.value.now
 
 class UnresolvedScoreObjectView(private val inst: ScoreObjectInstance) : ScoreObjectView(inst) {
@@ -20,7 +20,7 @@ class UnresolvedScoreObjectView(private val inst: ScoreObjectInstance) : ScoreOb
     override fun setupDetailPane(pane: DetailPane) {
         val btn = button("Select object reference")
         btn.setOnMouseClicked {
-            val obj = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Resolve object")
+            val obj = SimpleRegistrySelectorPrompt(context[ScoreObjectRegistry], "Resolve object")
                 .showPopup(anchorNode = btn) ?: return@setOnMouseClicked
             val instances = context.rootScore.allInstances().filterTo(mutableSetOf()) { inst ->
                 !inst.ref.isResolved.now && inst.ref.getName() == this.inst.ref.getName()

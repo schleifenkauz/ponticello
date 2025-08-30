@@ -2,7 +2,7 @@ package ponticello.ui.misc
 
 import fxutils.*
 import fxutils.actions.button
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import javafx.application.Platform
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -47,9 +47,9 @@ class LogPane(private val logger: Logger) : ToolPane(), Logger.View {
 
     private val boxes = VBox() styleClass "log-records"
     private val scrollPane = ScrollPane(boxes)
-    private val levelSelector = SimpleSearchableListView(Logger.Level.entries, "Select level")
+    private val levelSelector = SimpleSelectorPrompt(Logger.Level.entries, "Select level")
         .selectorButton(this::level, displayText = { lvl -> "Level: $lvl" })
-    private val categorySelector = SimpleSearchableListView(Logger.Category.values(), "Select category")
+    private val categorySelector = SimpleSelectorPrompt(Logger.Category.values(), "Select category")
         .selectorButton(this::category, displayText = { cat -> "Category: $cat" })
     private val buttonClear = button("Clear log") { logger.clear() }
     private val searchField = CustomTextField().styleClass("sleek-text-field", "search-field")

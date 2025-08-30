@@ -1,7 +1,7 @@
 package ponticello.ui.score
 
 import fxutils.drag.ConfiguredDropHandler
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.solidBorder
 import hextant.serial.EditorRoot
 import javafx.scene.Node
@@ -106,7 +106,7 @@ class ParameterizedObjectDropHandler(
         return when (controlOptions.size) {
             0 -> null
             1 -> controlOptions.single()
-            else -> SimpleSearchableListView(controlOptions.toList(), "Select linked parameter").showPopup(ev)
+            else -> SimpleSelectorPrompt(controlOptions.toList(), "Select linked parameter").showPopup(ev)
         }
     }
 

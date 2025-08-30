@@ -15,7 +15,7 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.sc.editor.ObjectSelector
 import ponticello.ui.impl.getFrom
-import ponticello.ui.registry.SearchableRegistryView
+import ponticello.ui.registry.RegistrySelectorPrompt
 import reaktive.value.now
 
 class ObjectSelectorControl<O : NamedObject>(
@@ -53,7 +53,7 @@ class ObjectSelectorControl<O : NamedObject>(
 
     public override fun showChoicePopup() {
         val registry = selector.getList()
-        val view = object : SearchableRegistryView<O>(registry, "Select ${registry.objectType}") {
+        val view = object : RegistrySelectorPrompt<O>(registry, "Select ${registry.objectType}") {
             override fun createObject(name: String): O? = selector.createNewObject(name)
 
             override fun displayText(option: O): String = selector.toString(option).now

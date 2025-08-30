@@ -12,7 +12,7 @@ import ponticello.model.obj.withName
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
-import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 
 abstract class RegularScorePane(score: Score, context: Context) : ScorePane(score, context) {
     override fun acceptObject(obj: ScoreObject): ScoreObject? = obj.takeIf { it !is MidiNoteObject }
@@ -20,7 +20,7 @@ abstract class RegularScorePane(score: Score, context: Context) : ScorePane(scor
     override fun rightClicked(ev: MouseEvent) {
         when (ev.modifiers) {
             setOf(Alt) -> {
-                val popup = SimpleSearchableRegistryView(context[ScoreObjectRegistry], "Add object instance")
+                val popup = SimpleRegistrySelectorPrompt(context[ScoreObjectRegistry], "Add object instance")
                 val anchor = localToScreen(ev.x, ev.y)
                 val obj = popup.showPopup(anchor, scene.window) ?: return
                 val pos = snapToGrid(ev.x, ev.y)
@@ -29,7 +29,7 @@ abstract class RegularScorePane(score: Score, context: Context) : ScorePane(scor
             }
 
             setOf(Shift) -> {
-                val popup = SimpleSearchableRegistryView(context[BufferRegistry], "Place sample")
+                val popup = SimpleRegistrySelectorPrompt(context[BufferRegistry], "Place sample")
                 val anchor = localToScreen(ev.x, ev.y)
                 val sample = popup.showPopup(anchor, scene.window) ?: return
                 val pos = snapToGrid(ev.x, ev.y)

@@ -2,7 +2,7 @@ package ponticello.ui.misc
 
 import fxutils.centerChildren
 import fxutils.infiniteSpace
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import javafx.application.Platform
 import javafx.scene.Parent
 import javafx.scene.control.Label
@@ -27,7 +27,7 @@ class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
         get() = reactiveValue("Pattern Plot")
 
     private val plot = PatternPlot()
-    private val warpSelector = SimpleSearchableListView(Warp.entries, "Select warp")
+    private val warpSelector = SimpleSelectorPrompt(Warp.entries, "Select warp")
     private val sampleNumber = TextField("20").apply { prefWidth = 50.0 }
     private val errorDisplay = Label().apply {
         style = "-fx-text-fill: red; -fx-font-weight: bold;"

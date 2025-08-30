@@ -31,7 +31,7 @@ import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.registry.InstrumentRegistryPane
-import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import ponticello.ui.score.*
 import reaktive.value.binding.*
 import reaktive.value.now
@@ -109,7 +109,7 @@ object ScoreObjectActions {
         addObjectAction("Replace objects") {
             shortcut("Alt?+H")
             executes { ctx, _ ->
-                val popup = SimpleSearchableRegistryView(ctx.context[ScoreObjectRegistry], "Add object instance")
+                val popup = SimpleRegistrySelectorPrompt(ctx.context[ScoreObjectRegistry], "Add object instance")
                 val anchor = Robot().mousePosition
                 val obj = popup.showPopup(anchor, owner = null) ?: return@executes
                 val instances = ctx.selectedInstances.toSet()
@@ -161,7 +161,6 @@ object ScoreObjectActions {
         }
         addObjectAction("Clone object") {
             shortcut("Alt?+Shift?+C")
-            icon(MaterialDesignC.CONTENT_DUPLICATE)
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 view.context[ScoreObjectSelectionManager].deselectAll()
@@ -243,7 +242,8 @@ object ScoreObjectActions {
                     .map { obj -> (obj as ParameterizedObject).def }
                     .singleOrNull()?.instrumentReference()
                 val newInstrument = InstrumentSelectorPopup(ctx.context)
-                    .showPopup(ev, initialOption = commonInstrument) ?: return@executes
+                    .selectInitialOption(commonInstrument)
+                    .showDialog(ev) ?: return@executes
                 for (obj in ctx.selectedObjects) {
                     when (obj) {
                         is SoundProcess -> obj.instrumentRef.set(newInstrument)

@@ -5,7 +5,7 @@ import fxutils.actions.button
 import fxutils.actions.collectActions
 import fxutils.actions.makeButton
 import fxutils.centerChildren
-import fxutils.prompt.SearchableListView
+import fxutils.prompt.SelectorPrompt
 import fxutils.setFixedWidth
 import fxutils.vspace
 import hextant.context.Context
@@ -13,8 +13,10 @@ import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.control.Label
-import javafx.scene.layout.*
+import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
+import javafx.scene.layout.StackPane
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import kotlinx.serialization.SerialName
@@ -175,14 +177,9 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
 
     private class SearchableFilterOptionPopup(
         private val context: Context,
-    ) : SearchableListView<FilterOption>("Select filter") {
+    ) : SelectorPrompt<FilterOption>("Select filter") {
         override fun options(): List<FilterOption> =
             listOf(FilterOption.All, FilterOption.Active) + context[BusRegistry].map { FilterOption.Bus(it) }
-
-        override fun createCell(option: FilterOption): Region {
-            val text = extractText(option)
-            return HBox(Label(text))
-        }
 
         override fun extractText(option: FilterOption): String = when (option) {
             FilterOption.All -> "All"

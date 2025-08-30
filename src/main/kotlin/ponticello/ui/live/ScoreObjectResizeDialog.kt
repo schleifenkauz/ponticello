@@ -2,7 +2,7 @@ package ponticello.ui.live
 
 import fxutils.button
 import fxutils.prompt.CompoundPrompt
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.setFixedWidth
 import javafx.event.Event
 import javafx.geometry.Side
@@ -57,12 +57,12 @@ class ScoreObjectResizeDialog(
         }
     }
 
-    val meterSelector = SimpleSearchableListView(
+    val meterSelector = SimpleSelectorPrompt(
         obj.context[MeterRegistry].map(MeterObject::reference), "Choose meter"
     ).selectorButton(this::meterRef)
         .setFixedWidth(SELECTOR_WIDTH)
 
-    private val durationUnitSelector = SimpleSearchableListView(TimeUnit.entries, "Choose duration unit")
+    private val durationUnitSelector = SimpleSelectorPrompt(TimeUnit.entries, "Choose duration unit")
         .selectorButton(this::durationUnit)
         .setFixedWidth(SELECTOR_WIDTH)
 

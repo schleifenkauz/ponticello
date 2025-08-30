@@ -1,12 +1,9 @@
 package ponticello.ui.registry
 
-import fxutils.prompt.SearchableListView
+import fxutils.prompt.SelectorPrompt
 import fxutils.prompt.YesNoPrompt
 import fxutils.registerShortcuts
 import fxutils.runFXWithTimeout
-import javafx.scene.control.Label
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Region
 import ponticello.model.obj.RenamableObject
 import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
@@ -14,13 +11,13 @@ import ponticello.sc.Identifier
 import ponticello.ui.controls.RenamePrompt
 import reaktive.value.now
 
-abstract class SearchableRegistryView<O : NamedObject>(
+abstract class RegistrySelectorPrompt<O : NamedObject>(
     val registry: NamedObjectList<O>, title: String
-) : SearchableListView<O>(title) {
+) : SelectorPrompt<O>(title) {
     private var excluded: () -> Collection<O> = { emptyList() }
 
     init {
-        registerShortcuts {
+        content.registerShortcuts {
             val obj = selectedOption
             if (obj is RenamableObject) {
                 on("F2") {
@@ -46,18 +43,12 @@ abstract class SearchableRegistryView<O : NamedObject>(
         }
     }
 
-    fun exclude(excluded: () -> Collection<O>): SearchableRegistryView<O> {
+    fun exclude(excluded: () -> Collection<O>): RegistrySelectorPrompt<O> {
         this.excluded = excluded
         return this
     }
 
     override fun options(): List<O> = registry.all() - excluded()
-
-    override fun createCell(option: O): Region {
-        val label = Label(displayText(option))
-        val box = HBox(label)
-        return box
-    }
 
     override fun makeOption(text: String): O? {
         if (!Identifier.isValid(text) || registry.has(text)) return null

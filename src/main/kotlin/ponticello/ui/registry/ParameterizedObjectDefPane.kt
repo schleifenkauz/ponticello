@@ -20,9 +20,9 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
         override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? {
             val defaultParameters = def.context[GlobalSettings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) && def.supports(param.spec.now.type) }
-            val listView = SearchableParameterDefListView(
+            val listView = ParameterDefSelectorPrompt(
                 defaultParameters, "New parameter",
-                instrumentObject = def, context = def.context
+                instrumentObject = def
             )
             val param = listView.showPopup(ev) ?: return null
             return param.copy().withName(param.name.now)

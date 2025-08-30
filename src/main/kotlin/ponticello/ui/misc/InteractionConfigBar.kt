@@ -8,7 +8,7 @@ import fxutils.actions.registerActions
 import fxutils.controls.CheckBox
 import fxutils.controls.OptionSpinner
 import fxutils.prompt.DetailPane
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
@@ -28,7 +28,7 @@ import reaktive.value.now
 class InteractionConfigBar(private val settings: UIState) : HBox() {
     private val snapToggle = toggleSnap.withContext(settings)
 
-    private val optionsPopup = object : SimpleSearchableListView<TimeUnit>(TimeUnit.entries, "Select snap option") {
+    private val optionsPopup = object : SimpleSelectorPrompt<TimeUnit>(TimeUnit.entries, "Select snap option") {
         override fun createCell(option: TimeUnit): Region = HBox(
             5.0,
             Label(option.name.lowercase()),
@@ -38,7 +38,7 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
     }
     private val optionSelector = OptionSpinner(
         settings.snapOption, TimeUnit.entries,
-        selectorPopup = optionsPopup
+        selectorPrompt = optionsPopup
     )
 
     private fun shortcutFor(option: TimeUnit) = when (option) {
@@ -86,7 +86,7 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
             )
             addItem(
                 "Inline display mode",
-                SimpleSearchableListView(InlineControlsDisplay.entries, "Select controls display mode")
+                SimpleSelectorPrompt(InlineControlsDisplay.entries, "Select controls display mode")
                     .selectorButton(
                         config.controlsDisplay,
                         undoManager = config.context[UndoManager],

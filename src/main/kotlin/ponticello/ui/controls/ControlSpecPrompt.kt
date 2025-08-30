@@ -17,7 +17,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
     private val parameterName: String,
     protected val parentObject: ParameterizedObject?,
     title: String,
-) : ConfirmablePrompt<S, N>(title) {
+) : ConfirmablePrompt<S>(title) {
     private val resetBtn = Button("_Reset") styleClass "sleek-button"
 
     private val confirmAndSyncBtn = Button("_Sync") styleClass "sleek-button"
@@ -78,7 +78,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
             parameterName: String,
             parentObject: ParameterizedObject?,
             initialSpec: ControlSpec,
-        ): Prompt<out ControlSpec?, *>? {
+        ): Prompt<out ControlSpec?>? {
             val title =
                 if (parentObject != null) "Control spec for parameter $parameterName of ${parentObject.name.now}"
                 else "Control spec for new parameter $parameterName"

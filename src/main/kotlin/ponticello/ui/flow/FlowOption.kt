@@ -1,6 +1,6 @@
 package ponticello.ui.flow
 
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
 import javafx.geometry.Point2D
 import ponticello.model.flow.*
@@ -8,7 +8,7 @@ import ponticello.model.obj.*
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.sc.Identifier
-import ponticello.ui.registry.SearchableBusListView
+import ponticello.ui.registry.BusSelectorPrompt
 import ponticello.ui.score.SoundProcessView
 import reaktive.value.now
 
@@ -19,9 +19,9 @@ sealed interface FlowOption {
 
     data object Send : FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
-            val source = SearchableBusListView(context[BusRegistry], "Source bus")
+            val source = BusSelectorPrompt(context[BusRegistry], "Source bus")
                 .showPopup(anchor) ?: return null
-            val selected = SearchableBusListView(context[BusRegistry], "Target bus")
+            val selected = BusSelectorPrompt(context[BusRegistry], "Target bus")
                 .showPopup(anchor) ?: return null
             return SendFlow.create(source, selected)
         }
@@ -31,7 +31,7 @@ sealed interface FlowOption {
 
     data object Utility : FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): UtilityFlow? {
-            val target = SearchableBusListView(context[BusRegistry], "Target bus")
+            val target = BusSelectorPrompt(context[BusRegistry], "Target bus")
                 .showPopup(anchor) ?: return null
             return UtilityFlow.create(target)
         }
@@ -47,7 +47,7 @@ sealed interface FlowOption {
 
     data object Mixer : FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): MixerFlow? {
-            val out = SearchableBusListView(context[BusRegistry], "Output bus")
+            val out = BusSelectorPrompt(context[BusRegistry], "Output bus")
                 .showPopup(anchor) ?: return null
             return MixerFlow.create(out)
         }
@@ -59,11 +59,11 @@ sealed interface FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
             val presets = VSTPlugins.globalPresetList(context, pluginName)
             val preset = if (presets.isNotEmpty()) {
-                SimpleSearchableListView(listOf("<no preset>") + presets, "Select preset")
+                SimpleSelectorPrompt(listOf("<no preset>") + presets, "Select preset")
                     .showPopup(anchor)
                     .takeIf { it != "<no preset>" }
             } else null
-            val bus = SearchableBusListView(context[BusRegistry], "Target bus")
+            val bus = BusSelectorPrompt(context[BusRegistry], "Target bus")
                 .showPopup(anchor) ?: return null
             return VSTPluginFlow.create(pluginName, preset, bus)
         }

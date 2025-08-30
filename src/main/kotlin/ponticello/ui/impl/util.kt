@@ -67,7 +67,7 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     return picker
 }
 
-fun <R> Prompt<R, *>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
+fun <R> Prompt<R>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
 
 val DEFAULT_SCENE_FILL: Color = Color.web("#1d1d20")
 

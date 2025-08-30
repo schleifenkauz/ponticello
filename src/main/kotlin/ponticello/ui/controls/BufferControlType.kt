@@ -29,7 +29,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.editor.BufferSelector
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
-import ponticello.ui.registry.SearchableBufferListView
+import ponticello.ui.registry.BufferSelectorPrompt
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.flatMap
 import reaktive.value.now
@@ -70,7 +70,7 @@ data object BufferControlType : ControlType<BufferControl>() {
         spec as BufferControlSpec
         val display = reactiveVariable(spec.isPlayBufSource)
         val title = "Select '${parameterName}'"
-        val selected = SearchableBufferListView(obj.context[BufferRegistry], title, channels = spec.channels)
+        val selected = BufferSelectorPrompt(obj.context[BufferRegistry], title, channels = spec.channels)
             .showPopup(anchorNode, initialOption = null)
         return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()), display)
     }
@@ -91,7 +91,7 @@ data object BufferControlType : ControlType<BufferControl>() {
             return false
         }
         val initialOption = controls.map { ctrl -> ctrl.sample.now }.distinct().singleOrNull()?.get()
-        val newBuffer = SearchableBufferListView(context[BufferRegistry], "Choose $parameterName", channels)
+        val newBuffer = BufferSelectorPrompt(context[BufferRegistry], "Choose $parameterName", channels)
             .showPopup(null, initialOption) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {

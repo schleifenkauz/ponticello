@@ -34,7 +34,7 @@ import ponticello.ui.dock.ListToolPane
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import ponticello.ui.registry.SearchableParameterDefListView
+import ponticello.ui.registry.ParameterDefSelectorPrompt
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.impl.notNull
 import reaktive.value.now
@@ -82,7 +82,7 @@ class ParameterControlsPane(
         val unassignedParameters = (synthParameters + defaultParameters)
             .filter { param -> param.name.now !in obj.controls.controlMap }
             .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
-        val option = SearchableParameterDefListView(unassignedParameters, "Add parameter", obj.context, obj)
+        val option = ParameterDefSelectorPrompt(unassignedParameters, "Add parameter", obj)
             .showPopup(ev) ?: return null
         val parameter = option.name.now
         val spec = option.spec.now

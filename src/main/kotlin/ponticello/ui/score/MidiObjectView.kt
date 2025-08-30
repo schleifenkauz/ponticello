@@ -112,7 +112,7 @@ class MidiObjectView(
     }
 
     companion object {
-        fun createNewMidiObjectDialog(instr: InstrumentReference, context: Context): Prompt<MidiObject?, *> =
+        fun createNewMidiObjectDialog(instr: InstrumentReference, context: Context): Prompt<MidiObject?> =
             compoundPrompt("Configure MIDI object", labelWidth = 130.0) {
                 val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"

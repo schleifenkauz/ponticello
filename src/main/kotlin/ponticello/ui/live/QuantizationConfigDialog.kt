@@ -4,7 +4,7 @@ import fxutils.*
 import fxutils.controls.CheckBox
 import fxutils.controls.OptionSpinner
 import fxutils.prompt.CompoundPrompt
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.control.Button
@@ -26,15 +26,15 @@ import reaktive.value.now
 
 class QuantizationConfigDialog(
     config: QuantizationConfig, title: String,
-) : CompoundPrompt<ResizeMode>(title, labelWidth = 100.0) {
+) : CompoundPrompt<ResizeMode>(title, labelWidth = 55.0) {
     private val meters = config.context[MeterRegistry].map { obj -> obj.reference() }
     private val clocks = config.context[ClockRegistry].map { obj -> obj.reference() }
 
-    private val meterSelector = SimpleSearchableListView(meters, "Choose meter")
+    private val meterSelector = SimpleSelectorPrompt(meters, "Choose meter")
         .selectorButton(config.meter)
         .setFixedWidth(SELECTOR_WIDTH)
 
-    private val clockSelector = SimpleSearchableListView(clocks, "Choose clock")
+    private val clockSelector = SimpleSelectorPrompt(clocks, "Choose clock")
         .selectorButton(config.clock)
         .setFixedWidth(SELECTOR_WIDTH)
 
@@ -74,22 +74,23 @@ class QuantizationConfigDialog(
         offsetUnitInput.label.minWidth = 50.0
         content.children.addAll(
             HBox(
-                label("Enable:"), enableQuantizationToggle, hspace(5.0),
-                label("Shift grid:"), shiftGridToggle
+                HBox(label("Enable: "), enableQuantizationToggle).alwaysHGrow().centerChildren(),
+                HBox(label("Shift grid: "), shiftGridToggle).alwaysHGrow().centerChildren()
             ) styleClass "detail-item",
             HBox(
-                label("Meter:"), meterSelector, hspace(5.0),
-                label("Clock:"), clockSelector
+                5.0,
+                HBox(label("Meter:  "), meterSelector).alwaysHGrow().centerChildren(),
+                HBox(label("Clock: "), clockSelector).alwaysHGrow().centerChildren(),
             ) styleClass "detail-item",
         )
-        row("Quantization", quantizationValueInput, quantizationUnitInput)
-        row("Offset", offsetValueInput, offsetUnitInput)
+        row("Quant:", quantizationValueInput, quantizationUnitInput)
+        row("Offset:", offsetValueInput, offsetUnitInput)
     }
 
     override fun confirm(): ResizeMode = ResizeMode.Regular
 
     companion object {
-        private const val SELECTOR_WIDTH = 80.0
-        private const val SPINNER_WIDTH = 100.0
+        private const val SELECTOR_WIDTH = 90.0
+        private const val SPINNER_WIDTH = 120.0
     }
 }

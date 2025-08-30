@@ -356,7 +356,7 @@ abstract class ScoreObjectView(
     }
 
     private fun setupColorPicker() {
-        colorPicker.userData = backgroundColor.forEach { color ->
+        colorPicker.userData = obj.associatedColor.forEach { color ->
             colorPicker.value = color
         }
         colorPicker.valueProperty().addListener { _, _, newColor ->

@@ -5,7 +5,7 @@ import fxutils.actions.*
 import fxutils.controls.CheckBox
 import fxutils.controls.SliderBar
 import fxutils.drag.setupDropArea
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.scene.Node
@@ -48,8 +48,8 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
+import ponticello.ui.registry.ParameterDefSelectorPrompt
 import ponticello.ui.registry.ScriptRegistryPane
-import ponticello.ui.registry.SearchableParameterDefListView
 import ponticello.ui.score.FlowGroupManager
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.*
@@ -75,7 +75,7 @@ class LauncherGridPane(
 
     private fun setupHeader(): HBox {
         val availableTargets = LauncherGrid.Target.options(grid.context)
-        val targetSelector = SimpleSearchableListView(availableTargets, "Choose target")
+        val targetSelector = SimpleSelectorPrompt(availableTargets, "Choose target")
             .selectorButton(grid.target, undoManager = grid.context[UndoManager])
         val headerContent = HBox(5.0, Label("Target: "), targetSelector).centerChildren()
         return headerContent
@@ -103,7 +103,7 @@ class LauncherGridPane(
         val buttonText = if (target is ItemTarget.None) "Select Target" else item.target.toString()
         val button = button(buttonText)
         button.setOnAction {
-            val listView = SimpleSearchableListView(ItemTarget.options(grid.context), "Choose item target")
+            val listView = SimpleSelectorPrompt(ItemTarget.options(grid.context), "Choose item target")
             val newTarget = listView.showPopup(button) ?: return@setOnAction
             item.target = newTarget
         }
@@ -244,9 +244,9 @@ class LauncherGridPane(
 //                        }
                         else -> {
                             val oldVelocityParam = target.velocityParameter.now
-                            val newVelocityParam = SearchableParameterDefListView(
+                            val newVelocityParam = ParameterDefSelectorPrompt(
                                 obj.def.allParameters(), "Select velocity parameter",
-                                target.context, fixedParameterType = ParameterType.Numerical
+                                fixedParameterType = ParameterType.Numerical
                             ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
                             if (newVelocityParam != oldVelocityParam.get()) {
                                 val ref = newVelocityParam.reference()

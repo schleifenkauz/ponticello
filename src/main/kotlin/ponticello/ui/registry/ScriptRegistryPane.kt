@@ -2,7 +2,7 @@ package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.setFixedWidth
 import javafx.event.Event
 import javafx.scene.Node
@@ -40,13 +40,13 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
 
     override fun createNewObject(name: String, ev: Event?): ScriptObject? {
         val options = SCRIPT_TYPE_OPTIONS
-        val type = SimpleSearchableListView(options, "Script type")
+        val type = SimpleSelectorPrompt(options, "Script type")
             .showPopup(ev, initialOption = ScriptObject.Type.REGULAR) ?: return null
         return ScriptObject.create(type, name)
     }
 
     override fun getHeaderContent(obj: ScriptObject): List<Node> {
-        val typeSelector = SimpleSearchableListView(SCRIPT_TYPE_OPTIONS, "Script type")
+        val typeSelector = SimpleSelectorPrompt(SCRIPT_TYPE_OPTIONS, "Script type")
             .selectorButton(obj.type).setFixedWidth(90.0)
         if (obj.type.now == ScriptObject.Type.BEFORE_BOOT) typeSelector.isDisable = true
         return listOf(typeSelector)

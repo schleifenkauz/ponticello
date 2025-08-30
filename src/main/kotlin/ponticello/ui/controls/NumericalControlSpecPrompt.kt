@@ -2,7 +2,7 @@ package ponticello.ui.controls
 
 import fxutils.controls.CheckBox
 import fxutils.prompt.DetailPane
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.textField
 import javafx.beans.binding.Bindings
 import javafx.scene.Node
@@ -30,7 +30,7 @@ class NumericalControlSpecPrompt(
     private val step get() = stepTxt.text.parseDecimal()
     private val lag get() = lagTxt.text.parseDecimal()
     private var warp = initialSpec.warp
-    private val warpButton = SimpleSearchableListView(Warp.entries, "Choose warp")
+    private val warpButton = SimpleSelectorPrompt(Warp.entries, "Choose warp")
         .selectorButton(this::warp) named "Warp"
 
     init {

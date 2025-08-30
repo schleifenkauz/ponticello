@@ -24,7 +24,7 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.misc.PlayHead
-import ponticello.ui.registry.SearchableBusListView
+import ponticello.ui.registry.BusSelectorPrompt
 import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
@@ -94,10 +94,10 @@ object PlaybackActions {
         val project = context.project
         val currentSelected =
             project[SERVER_OPTIONS].recordedBus.get() ?: context[BusRegistry].getDefault()
-        val bus = SearchableBusListView(
+        val bus = BusSelectorPrompt(
             context[BusRegistry],
             "Select bus to record to", rate = Rate.Audio
-        ).showPopup(ev, initialOption = currentSelected)
+        ).selectInitialOption(currentSelected).showDialog(ev)
         if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
     }
 

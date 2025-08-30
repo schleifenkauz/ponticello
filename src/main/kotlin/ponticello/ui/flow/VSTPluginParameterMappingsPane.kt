@@ -1,7 +1,7 @@
 package ponticello.ui.flow
 
 import fxutils.*
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import javafx.event.Event
 import javafx.scene.Node
 import org.kordamp.ikonli.javafx.FontIcon
@@ -14,8 +14,8 @@ import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.dock.ListToolPane
+import ponticello.ui.registry.BusSelectorPrompt
 import ponticello.ui.registry.ObjectBox
-import ponticello.ui.registry.SearchableBusListView
 import reaktive.value.ReactiveValue
 import reaktive.value.reactiveValue
 import reaktive.value.toggle
@@ -53,9 +53,9 @@ class VSTPluginParameterMappingsPane(
 
     override fun createNewObject(ev: Event?, list: ObjectList<VSTPluginParameterMapping>): VSTPluginParameterMapping? {
         val options = flow.automatableParameters - flow.parameterMappings.mapTo(mutableSetOf()) { mapping -> mapping.name }
-        val name = SimpleSearchableListView(options, "Select parameter")
+        val name = SimpleSelectorPrompt(options, "Select parameter")
             .showPopup(ev) ?: return null
-        val bus = SearchableBusListView(list.context[BusRegistry], "Select control bus", Rate.Control, 1)
+        val bus = BusSelectorPrompt(list.context[BusRegistry], "Select control bus", Rate.Control, 1)
             .showPopup(ev) ?: return null
         return VSTPluginParameterMapping.create(name, bus)
     }

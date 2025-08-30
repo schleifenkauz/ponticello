@@ -22,10 +22,10 @@ import ponticello.ui.actions.ServerActions
 import ponticello.ui.actions.undoable
 import ponticello.ui.controls.Knob
 import ponticello.ui.impl.getFrom
+import ponticello.ui.registry.BusSelectorPrompt
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
-import ponticello.ui.registry.SearchableBusListView
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.equalTo
 import reaktive.value.fx.asObservableValue
@@ -47,7 +47,7 @@ class MixerComponentListConfig : ListDisplayConfig<MixerFlow.MixerComponent> {
 
     override fun createNewObject(ev: Event?, list: ObjectList<MixerFlow.MixerComponent>): MixerFlow.MixerComponent? {
         val expectedChannels = mixer.targetBus.now.get()?.channels?.now
-        val bus = SearchableBusListView(
+        val bus = BusSelectorPrompt(
             mixer.context[BusRegistry], "Select source bus",
             Rate.Audio, expectedChannels
         ).exclude { mixer.usedBuses() }

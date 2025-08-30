@@ -19,7 +19,7 @@ import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
-import ponticello.ui.registry.SearchableBusListView
+import ponticello.ui.registry.BusSelectorPrompt
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -70,7 +70,7 @@ data object BusControlType : ControlType<BusControl>() {
             return false
         }
         val initialOption = controls.map { ctrl -> ctrl.bus.now }.distinct().singleOrNull()?.get()
-        val newBus = SearchableBusListView(context[BusRegistry], "Choose $parameterName", rate, channels)
+        val newBus = BusSelectorPrompt(context[BusRegistry], "Choose $parameterName", rate, channels)
             .showPopup(context[primaryStage], null, initialOption) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {

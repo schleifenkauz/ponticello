@@ -31,8 +31,8 @@ import ponticello.sc.Rate
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.launcher.PonticelloLauncher
-import ponticello.ui.registry.SearchableBusListView
-import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.registry.BusSelectorPrompt
+import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -61,7 +61,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         if (anchorNode == null) return BusValueControl(reactiveVariable(ObjectReference.none()))
         val initial = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
         val title = "Select '${parameterName}'"
-        val selected = SearchableBusListView(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
+        val selected = BusSelectorPrompt(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
             .showPopup(anchorNode, initialOption = initial.get()) ?: initial.force()
         return BusValueControl(reactiveVariable(selected.reference()))
     }
@@ -78,7 +78,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
             }
         }
         val initialOption = controls.map { ctrl -> ctrl.bus.now }.distinct().singleOrNull()?.get()
-        val newBus = SearchableBusListView(context[BusRegistry], "Choose $parameterName", Rate.Control, 1)
+        val newBus = BusSelectorPrompt(context[BusRegistry], "Choose $parameterName", Rate.Control, 1)
             .showPopup(context[primaryStage], null, initialOption) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
@@ -108,7 +108,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         executes { ctrl, ev ->
             val obj = ctrl.parentObject as ScoreObject
             val context = ctrl.context
-            val instrumentDef = SimpleSearchableRegistryView(context[InstrumentRegistry], "Choose Instrument")
+            val instrumentDef = SimpleRegistrySelectorPrompt(context[InstrumentRegistry], "Choose Instrument")
                 .showPopup(ev, initialOption = null) ?: return@executes
             val parameter = ctrl.name.now
             val name = "${obj.name.now}_$parameter"

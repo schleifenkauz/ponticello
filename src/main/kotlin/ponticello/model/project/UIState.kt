@@ -17,7 +17,7 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.SideBarState
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.launcher.PonticelloMainActivity
-import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -45,7 +45,7 @@ class UIState private constructor(
         selectedInstrument.get()?.get() ?: selectInstrument(event)
 
     fun selectInstrument(event: Event?): InstrumentObject? {
-        val instrument = SimpleSearchableRegistryView(context[InstrumentRegistry], "Select instrument")
+        val instrument = SimpleRegistrySelectorPrompt(context[InstrumentRegistry], "Select instrument")
             .showPopup(event) ?: return null
         selectedInstrument.now = instrument.reference()
         return instrument

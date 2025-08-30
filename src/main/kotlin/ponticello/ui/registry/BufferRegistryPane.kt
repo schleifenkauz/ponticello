@@ -5,7 +5,7 @@ import fxutils.actions.collectActions
 import fxutils.addAfter
 import fxutils.controls.IntSpinner
 import fxutils.drag.hasFile
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.YesNoPrompt
 import fxutils.prompt.compoundPrompt
 import fxutils.registerShortcuts
@@ -61,7 +61,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             listView.refilter()
         }
 
-    private val filterSelector = SimpleSearchableListView(BufferTypeFilter.entries, "Select filter")
+    private val filterSelector = SimpleSelectorPrompt(BufferTypeFilter.entries, "Select filter")
         .selectorButton(this::filter)
 
     override fun defaultState(): ToolPaneState = BufferRegistryPaneState.default()

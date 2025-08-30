@@ -8,10 +8,10 @@ import ponticello.model.registry.BusRegistry
 import ponticello.sc.Rate
 import reaktive.value.now
 
-class SearchableBusListView(
+class BusSelectorPrompt(
     registry: BusRegistry, title: String,
     private val rate: Rate? = null, private val channels: Int? = null
-) : SearchableRegistryView<BusObject>(registry, title) {
+) : RegistrySelectorPrompt<BusObject>(registry, title) {
     override fun options(): List<BusObject> = super.options()
         .filter { bus ->
             (rate == null || bus.rate == rate) && (channels == null || bus.channels.now == channels)

@@ -2,7 +2,7 @@ package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.YesNoPrompt
 import fxutils.setFixedWidth
 import javafx.event.Event
@@ -80,7 +80,7 @@ class InstrumentRegistryPane(
     }
 
     override fun createNewObject(ev: Event?, list: ObjectList<InstrumentObject>): InstrumentObject? {
-        val option = SimpleSearchableListView(InstrumentType.entries, "Instrument type").showPopup(ev) ?: return null
+        val option = SimpleSelectorPrompt(InstrumentType.entries, "Instrument type").showPopup(ev) ?: return null
         val name = NamePrompt(instruments, "$option name", "")
             .showDialog(ev) ?: return null
         return when (option) {
@@ -146,7 +146,7 @@ class InstrumentRegistryPane(
                     val library = p.registry.context[GlobalDefinitionLibrary.instruments]
                     val names = library.getNames()
                     val selected =
-                        SimpleSearchableListView(names, "Select instrument to load").showPopup(ev) ?: return@executes
+                        SimpleSelectorPrompt(names, "Select instrument to load").showPopup(ev) ?: return@executes
                     val def = library.get(selected) ?: return@executes
                     if (p.instruments.has(def.name.now)) {
                         val overwrite = YesNoPrompt(

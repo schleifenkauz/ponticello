@@ -40,7 +40,7 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.ObjectRegistryPane
-import ponticello.ui.registry.SimpleSearchableRegistryView
+import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import ponticello.ui.score.ScoreObjectView
 import ponticello.ui.score.ScoreObjectViewPane
 import ponticello.ui.score.SingleObjectScorePane
@@ -136,7 +136,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
             executes { item, ev ->
                 if (ev.isShiftDown()) {
                     if (item.quantization.meter.now.isResolved.now.not()) {
-                        val meter = SimpleSearchableRegistryView(item.context[MeterRegistry], "Select meter")
+                        val meter = SimpleRegistrySelectorPrompt(item.context[MeterRegistry], "Select meter")
                             .showPopup(ev) ?: return@executes
                         item.quantization.meter.set(meter.reference())
                     }

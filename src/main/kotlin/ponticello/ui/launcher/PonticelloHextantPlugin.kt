@@ -68,6 +68,7 @@ object PonticelloHextantPlugin : PluginInitializer({
     stylesheet("fxutils/controls.css")
     stylesheet("fxutils/icon-buttons.css")
     stylesheet("fxutils/buttons.css")
+    stylesheet("fxutils/general.css")
 
     on(PluginBuilder.Phase.Initialize) { ctx ->
         ctx[Aspects].implement(ControlFactory::class, ScExprExpander::class, ScExprExpanderControlFactory)

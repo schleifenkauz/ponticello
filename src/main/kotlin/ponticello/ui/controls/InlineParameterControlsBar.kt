@@ -1,7 +1,7 @@
 package ponticello.ui.controls
 
 import fxutils.label
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.runFXWithTimeout
 import fxutils.styleClass
 import javafx.beans.InvalidationListener
@@ -108,7 +108,7 @@ class InlineParameterControlsBar(
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
         if (options.isEmpty() || options.size == 1) return
-        val listView = SimpleSearchableListView(options, "Select control type")
+        val listView = SimpleSelectorPrompt(options, "Select control type")
         val option = listView.showPopup(anchorNode, initialOption = selectedType) ?: return
         updateControlType(control, option, spec, anchorNode)
     }

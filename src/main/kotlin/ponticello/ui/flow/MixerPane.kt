@@ -4,7 +4,7 @@ import fxutils.*
 import fxutils.actions.*
 import fxutils.drag.ConfiguredDropHandler
 import fxutils.drag.setupDropArea
-import fxutils.prompt.SearchableListView
+import fxutils.prompt.SelectorPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.geometry.Insets
@@ -283,7 +283,7 @@ class MixerPane(
 
     private fun allMixerFlows() = context.project.flows.allFlows().filterIsInstance<MixerFlow>()
 
-    private inner class MixerListPopup : SearchableListView<ObjectReference<MixerFlow>>("Select mixer") {
+    private inner class MixerListPopup : SelectorPrompt<ObjectReference<MixerFlow>>("Select mixer") {
         override fun options(): List<ObjectReference<MixerFlow>> =
             allMixerFlows().map { f -> f.reference() } + ObjectReference.none()
 

@@ -1,6 +1,6 @@
 package ponticello.ui.registry
 
-import fxutils.prompt.SimpleSearchableListView
+import fxutils.prompt.SimpleSelectorPrompt
 import javafx.event.Event
 import javafx.scene.input.DragEvent
 import ponticello.model.GlobalSettings
@@ -30,7 +30,7 @@ class ParameterDefsPane(
     override fun filter(obj: ParameterDefObject): Boolean = super<SearchableToolPane>.filter(obj)
 
     override fun createNewObject(name: String, ev: Event?): ParameterDefObject? {
-        val type = SimpleSearchableListView(ParameterType.regularTypes, "Parameter type")
+        val type = SimpleSelectorPrompt(ParameterType.regularTypes, "Parameter type")
             .showPopup(listView, initialOption = ParameterType.Numerical) ?: return null
         val spec = type.defaultControlSpec()
         return ParameterDefObject(name, spec)
