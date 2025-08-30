@@ -1,40 +1,28 @@
 package ponticello.ui.score
 
 import fxutils.actions.collectActions
-import fxutils.background
 import fxutils.centerChildren
 import fxutils.hspace
 import fxutils.styleClass
-import hextant.context.extend
 import javafx.scene.layout.HBox
-import javafx.scene.paint.Color
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectGroup
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.toolbarPart
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.PlayHead
-import reaktive.value.binding.map
-import reaktive.value.binding.orElse
-import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
 class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) {
-    private val context = obj.context.extend()
+    private val context = obj.context
     private val liveScoreObject = context[LiveObjectRegistry].getOrCreateLiveScoreObject(obj)
 
     val playHead = liveScoreObject.playHead ?: PlayHead()
-    val scorePane = SingleObjectScorePane(obj, context, playHead)
+    val scorePane = SingleObjectScorePane(obj, context, playHead, paintGrid = true)
 
     init {
         scorePane.initialize()
         setupPlayback()
-        if (obj is ScoreObjectGroup) {
-            scorePane.backgroundProperty().bind(
-                obj.associatedColor.orElse(Color.BLACK).map(::background).asObservableValue()
-            )
-        }
     }
 
     private fun setupPlayback() {

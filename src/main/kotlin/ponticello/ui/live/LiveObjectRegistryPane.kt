@@ -1,6 +1,9 @@
 package ponticello.ui.live
 
 import fxutils.actions.*
+import fxutils.bindPseudoClassState
+import fxutils.pad
+import fxutils.styleClass
 import fxutils.undo.ToggleEdit
 import fxutils.undo.UndoManager
 import hextant.core.editor.defaultState
@@ -8,12 +11,13 @@ import hextant.serial.EditorRoot
 import javafx.event.Event
 import javafx.scene.Parent
 import javafx.scene.control.Button
-import javafx.scene.input.*
+import javafx.scene.input.DataFormat
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
+import javafx.scene.layout.BorderPane
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.materialdesign2.MaterialDesignM
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.model.live.LiveObject
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.live.LiveScoreObject
@@ -39,6 +43,7 @@ import ponticello.ui.registry.ObjectRegistryPane
 import ponticello.ui.registry.SimpleSearchableRegistryView
 import ponticello.ui.score.ScoreObjectView
 import ponticello.ui.score.ScoreObjectViewPane
+import ponticello.ui.score.SingleObjectScorePane
 import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
@@ -59,7 +64,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
 
     override fun getActions(box: ObjectBox<LiveObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
-    override fun getContent(obj: LiveObject, mode: DisplayMode): Parent? = when (obj) {
+    override fun getContent(obj: LiveObject, mode: DisplayMode): Parent = when (obj) {
         is LiveTaskObject -> {
             val actions =
                 if (mode == DisplayMode.SubWindow) actions.withContext(obj)
@@ -67,7 +72,17 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
             CodePane(obj.code, actions, ownWindow = mode == DisplayMode.SubWindow)
         }
 
-        is LiveScoreObject -> null
+        is LiveScoreObject -> {
+            val scorePane = SingleObjectScorePane(
+                obj.scoreObject, obj.context, obj.playHead!!,
+                paintGrid = false, playHeadStyle = "live-object-play-head",
+            )
+            scorePane.isDisable = true
+            scorePane.prefHeight = 30.0
+            scorePane.maxHeight = 30.0
+            scorePane.initialize()
+            BorderPane(scorePane).pad(3.0)
+        }
     }
 
     override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
@@ -96,13 +111,9 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         if (box.header.children.firstOrNull() !is Button) {
             box.header.children.add(0, playPauseAction.withContext(box.obj).makeButton("medium-icon-button"))
         }
-        box.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.clickCount == 2 && box.obj is LiveScoreObject) {
-                val pane = context[AppLayout].get<ScoreObjectViewPane>()
-                pane.showContent(box.obj.scoreObject, box.obj.quantization)
-            }
-        }
         box.registerShortcuts(listOf(playPauseAction.withContext(box.obj)))
+        box.styleClass("live-object-box")
+        box.userData = box.bindPseudoClassState("playing", box.obj.isPlaying)
     }
 
     override fun createNewObject(name: String, ev: Event?): LiveTaskObject =
@@ -165,6 +176,13 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         }
 
         val actions = collectActions<LiveObject> {
+            addAction("Show in object view") {
+                icon(MaterialDesignE.EYE)
+                executesOn<LiveScoreObject> { obj ->
+                    val pane = context[AppLayout].get<ScoreObjectViewPane>()
+                    pane.showContent(obj.scoreObject, obj.quantization)
+                }
+            }
             add(configureQuantizationAction)
             add(toggleLoopingAction) { obj -> obj as? LiveScoreObject }
             addAction("Sync") {

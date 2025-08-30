@@ -26,7 +26,7 @@ import reaktive.value.now
 
 class QuantizationConfigDialog(
     config: QuantizationConfig, title: String,
-) : CompoundPrompt<ResizeMode>(title, labelWidth = 150.0) {
+) : CompoundPrompt<ResizeMode>(title, labelWidth = 100.0) {
     private val meters = config.context[MeterRegistry].map { obj -> obj.reference() }
     private val clocks = config.context[ClockRegistry].map { obj -> obj.reference() }
 
@@ -39,14 +39,12 @@ class QuantizationConfigDialog(
         .setFixedWidth(SELECTOR_WIDTH)
 
     private val quantizationUnitInput = OptionSpinner(config.quantizationUnit, QuantizationUnit.entries)
-        .setFixedWidth(SELECTOR_WIDTH)
 
     private val quantizationValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.quantizationValue.now.value)
         .sync(config.quantizationValue)
         .setFixedWidth(SPINNER_WIDTH)
 
     private val offsetUnitInput = OptionSpinner(config.offsetUnit, TimeUnit.entries)
-        .setFixedWidth(SELECTOR_WIDTH)
 
     private val offsetValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.offsetValue.now.value)
         .sync(config.offsetValue)
@@ -72,20 +70,26 @@ class QuantizationConfigDialog(
         shiftGridToggle.disableProperty().bind(unresolvedGrid)
         quantizationUnitInput.disableProperty().bind(unresolvedGrid)
         offsetUnitInput.disableProperty().bind(unresolvedGrid)
-        quantizationUnitInput.label.minWidth = 60.0
-        offsetUnitInput.label.minWidth = 60.0
-        row("Meter", meterSelector)
-        row("Clock", clockSelector)
-        addItem("Enable quantization", enableQuantizationToggle)
-        row("Quantization", quantizationUnitInput, quantizationValueInput)
-        row("Offset", offsetUnitInput, offsetValueInput)
-        addItem("Shift grid", shiftGridToggle)
+        quantizationUnitInput.label.minWidth = 50.0
+        offsetUnitInput.label.minWidth = 50.0
+        content.children.addAll(
+            HBox(
+                label("Enable:"), enableQuantizationToggle, hspace(5.0),
+                label("Shift grid:"), shiftGridToggle
+            ) styleClass "detail-item",
+            HBox(
+                label("Meter:"), meterSelector, hspace(5.0),
+                label("Clock:"), clockSelector
+            ) styleClass "detail-item",
+        )
+        row("Quantization", quantizationValueInput, quantizationUnitInput)
+        row("Offset", offsetValueInput, offsetUnitInput)
     }
 
     override fun confirm(): ResizeMode = ResizeMode.Regular
 
     companion object {
-        private const val SELECTOR_WIDTH = 120.0
-        private const val SPINNER_WIDTH = 120.0
+        private const val SELECTOR_WIDTH = 80.0
+        private const val SPINNER_WIDTH = 100.0
     }
 }

@@ -1,8 +1,10 @@
 package ponticello.ui.score
 
+import fxutils.background
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.scene.canvas.Canvas
+import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import ponticello.impl.Decimal
 import ponticello.impl.asY
@@ -15,23 +17,29 @@ import ponticello.model.project.uiState
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.ScoreObjectGroup
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.score.TempoGridObjectView.Companion.GRID_HEIGHT
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.binding.`if`
+import reaktive.value.binding.map
+import reaktive.value.binding.orElse
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import java.util.concurrent.Future
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context, playHead: PlayHead,
-) : RootScorePane(Score.makeScore(rootObj), context, playHead) {
+    private val paintGrid: Boolean, playHeadStyle: String? = null
+) : RootScorePane(Score.makeScore(rootObj), context, playHead, playHeadStyle = playHeadStyle) {
     override val displayStart: Decimal
         get() = zero(ObjectPosition.TIME_PRECISION)
     override val displayEnd: Decimal
         get() = rootObj.duration
+
+    private val gridHeight = if (paintGrid) GRID_HEIGHT else 0.0
 
     var positionInMainScore: () -> ObjectPosition? = { null }
         set(value) {
@@ -52,11 +60,18 @@ class SingleObjectScorePane(
 
     override fun initialize() {
         super.initialize()
+        if (rootObj is ScoreObjectGroup) {
+            backgroundProperty().bind(
+                rootObj.associatedColor.orElse(Color.BLACK).map(::background).asObservableValue()
+            )
+        }
         durationObserver = rootObj.duration().observe { _ -> repaint() }
-        setupGrid()
-        val settings = context.project.uiState
-        snapObserver = settings.snapOption.observe { _ -> repaintGrid() }
-            .and(settings.snapEnabled.observe { _ -> repaintGrid() })
+        if (paintGrid) {
+            setupGrid()
+            val settings = context.project.uiState
+            snapObserver = settings.snapOption.observe { _ -> repaintGrid() }
+                .and(settings.snapEnabled.observe { _ -> repaintGrid() })
+        }
         heightProperty().addListener { _ -> repaint() }
         widthProperty().addListener { _ ->
             updatePixelsPerSecond()
@@ -69,9 +84,9 @@ class SingleObjectScorePane(
         gridCanvas.opacityProperty().bind(
             `if`(context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
         )
-        gridCanvas.layoutYProperty().bind(heightProperty().subtract(GRID_HEIGHT))
+        gridCanvas.layoutYProperty().bind(heightProperty().subtract(gridHeight))
         gridCanvas.widthProperty().bind(widthProperty())
-        gridCanvas.height = GRID_HEIGHT
+        gridCanvas.height = gridHeight
         gridCanvas.setOnMouseClicked { ev ->
             val (t, _) = snapToGrid(ev.x, ev.y)
             if (playHead.canMoveManually.now) {
@@ -79,7 +94,7 @@ class SingleObjectScorePane(
             }
             ev.consume()
         }
-        marker.startYProperty().bind(heightProperty().subtract(GRID_HEIGHT))
+        marker.startYProperty().bind(heightProperty().subtract(gridHeight))
         marker.endYProperty().bind(heightProperty())
         marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
         marker.isMouseTransparent = true
@@ -97,6 +112,7 @@ class SingleObjectScorePane(
     }
 
     fun repaintGrid() {
+        if (!paintGrid) return
         val mainScorePosition = positionInMainScore() ?: return
         val (_, meter) = context[PonticelloMainActivity].mainScoreView.getNearestGrid(mainScorePosition) ?: return
         val duration = rootObj.duration.value
@@ -108,9 +124,9 @@ class SingleObjectScorePane(
         children.remove(marker)
     }
 
-    override fun getScoreY(screenY: Double): Decimal = (screenY / (height - GRID_HEIGHT)).asY * rootObj.height
+    override fun getScoreY(screenY: Double): Decimal = (screenY / (height - gridHeight)).asY * rootObj.height
 
-    override fun getScreenY(scoreY: Decimal): Double = ((scoreY / rootObj.height) * (height - GRID_HEIGHT)).value
+    override fun getScreenY(scoreY: Decimal): Double = ((scoreY / rootObj.height) * (height - gridHeight)).value
 
     override fun isRoot(obj: ScoreObject): Boolean = obj == rootObj
 

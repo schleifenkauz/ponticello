@@ -39,6 +39,7 @@ class PlayHead {
 
     fun attachTo(pane: RootScorePane) {
         val playHead = Line() styleClass "play-head"
+        if (pane.playHeadStyle != null) playHead.styleClass(pane.playHeadStyle)
         playHead.viewOrder = -500.0
         playHead.strokeWidth = PLAY_HEAD_WIDTH
         playHead.isMouseTransparent = true

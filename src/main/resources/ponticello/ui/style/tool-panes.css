@@ -80,6 +80,18 @@
     -fx-border-color: green !important;
 }
 
+.object-box:live-object-box {
+    -fx-border-width: 2px;
+}
+
+.object-box.live-object-box:playing,
+.object-box.live-object-box:playing:hover,
+.object-box.live-object-box:playing:selected,
+.object-box.live-object-box:playing:hover:selected
+{
+    -fx-background-color: rgba(0, 60, 60, 0.5) !important;
+}
+
 .command-history-label:focused {
     -fx-background-color: gray;
 }

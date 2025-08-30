@@ -28,7 +28,8 @@ import java.util.concurrent.Future
 abstract class RootScorePane(
     score: Score, context: Context,
     val playHead: PlayHead = PlayHead(),
-    val timeCodeView: TimeCodeView = TimeCodeView()
+    val timeCodeView: TimeCodeView = TimeCodeView(),
+    val playHeadStyle: String? = null,
 ) : RegularScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
@@ -196,7 +197,7 @@ abstract class RootScorePane(
         }
         positionTracker.layoutX = getX(t)
         val player = playHead.player
-        if (player.isPlaying?.now != true) {
+        if (player.isPlaying.now != true) {
             timeCodeView.displayTime(t)
         }
     }
