@@ -1,7 +1,14 @@
 package ponticello.ui.registry
 
+import ponticello.impl.Decimal
+import ponticello.impl.one
+import ponticello.impl.rangeTo
+import ponticello.impl.zero
+import ponticello.model.obj.AllocatedBufferObject
 import ponticello.model.obj.BufferObject
 import ponticello.model.registry.BufferRegistry
+import ponticello.model.score.ObjectPosition
+import ponticello.ui.controls.DecimalPrompt
 import reaktive.value.now
 
 class BufferSelectorPrompt(
@@ -14,5 +21,11 @@ class BufferSelectorPrompt(
 
     override fun options(): List<BufferObject> = super.options().filter { buf -> buf.channels() == channels }
 
-    override fun createObject(name: String): BufferObject? = null //TODO create empty buffer
+    override fun createObject(name: String): BufferObject? {
+        val duration = DecimalPrompt(
+            "Buffer duration", precision = ObjectPosition.TIME_PRECISION,
+            initialValue = one, range = zero..Decimal.INF
+        ).showDialog(ownerWindow, anchor) ?: return null
+        return AllocatedBufferObject.create(name, channels, duration)
+    }
 }

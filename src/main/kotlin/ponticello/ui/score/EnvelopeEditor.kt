@@ -4,6 +4,7 @@ import fxutils.*
 import fxutils.drag.setupDragging
 import hextant.context.compoundEdit
 import javafx.beans.binding.Bindings
+import javafx.event.Event
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
 import javafx.scene.control.Label
@@ -291,7 +292,7 @@ class EnvelopeEditor(
         var dragging = false
         handle.registerShortcuts {
             val idx = handles.indexOf(handle)
-            on("V") { showPromptFor(idx) }
+            on("V") { ev -> showPromptFor(idx, ev) }
             on("DELETE") { removePoint(idx) }
         }
         handle.registerShortcuts(KeyEvent.KEY_PRESSED) {
@@ -347,7 +348,7 @@ class EnvelopeEditor(
             if (ev.button == SECONDARY) {
                 removePoint(idx)
             } else if (ev.clickCount >= 2) {
-                showPromptFor(idx)
+                showPromptFor(idx, ev)
             } else if (!ev.isShiftDown) {
                 handle.requestFocus()
                 bringToFront()
@@ -396,10 +397,10 @@ class EnvelopeEditor(
         envelope.finishEdit()
     }
 
-    private fun showPromptFor(idx: Int) {
+    private fun showPromptFor(idx: Int, ev: Event) {
         val point = envelope.points[idx]
         val value = DecimalPrompt("Value for $parameterName", point.value, spec.range)
-            .showDialog(pane) ?: return //TODO where to show dialog?
+            .showDialog(ev) ?: return
         envelope.editPoint(idx, value.value.snap(valueGrid))
     }
 

@@ -1,6 +1,5 @@
 package ponticello.model.player
 
-import javafx.geometry.Side
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
@@ -75,11 +74,6 @@ class LiveScoreUpdater(
             }
         }
     }
-
-    //TODO fix
-    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) =
-        ScorePlayer.execute {
-        }
 
     override fun movedObject(score: Score, inst: ScoreObjectInstance, dt: Decimal, dy: Decimal) = ScorePlayer.execute {
         if (inst.muted.now) return@execute

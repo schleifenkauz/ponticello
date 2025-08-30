@@ -3,40 +3,60 @@ package ponticello.ui.actions
 import fxutils.actions.Action
 import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
+import fxutils.prompt.IntegerPrompt
+import hextant.context.compoundEdit
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.geometry.Point2D
 import javafx.scene.robot.Robot
-import ponticello.model.obj.project
+import ponticello.impl.times
+import ponticello.impl.zero
 import ponticello.model.obj.withName
-import ponticello.model.project.METERS
-import ponticello.model.project.get
+import ponticello.model.registry.MeterRegistry
 import ponticello.model.registry.ScoreObjectRegistry
+import ponticello.model.registry.reference
 import ponticello.model.score.*
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.ui.actions.ScoreActions.createSoundObject
 import ponticello.ui.actions.ScoreActions.getScorePaneAtCursor
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
+import ponticello.ui.registry.MeterSelectorPrompt
 import ponticello.ui.score.*
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 object ScoreActions : Action.Collector<NavigableScorePane>({
     addAction("Add tempo grid") {
-        shortcut("L")
-        executes { pane ->
+        shortcut("T")
+        executes { rootPane ->
             if (RectangleSelection.get() != null) return@executes
-            val (pane, _) = pane.getScorePaneAtCursor() ?: return@executes
-            listOf(null) + pane.context.project[METERS]
-            //TODO
+            if (!rootPane.isFocusWithin) return@executes
+            val (pane, _) = rootPane.getScorePaneAtCursor() ?: return@executes
+            val anchor = Robot().mousePosition
+            rootPane.context.compoundEdit("Add tempo grid") {
+                //If I set owner=rootPane.scene.window, it crashes the JVM somehow...
+                val meter = MeterSelectorPrompt(pane.context[MeterRegistry], "Select meter")
+                    .showDialog(owner = null, anchor) ?: return@executes
+                val bars = IntegerPrompt("Number of bars", 1, 1..Int.MAX_VALUE)
+                    .showDialog(owner = null, anchor) ?: return@executes
+                val name = pane.context[ScoreObjectRegistry].availableName(meter.name.now)
+                val obj = TempoGridObject(meter.reference())
+                obj.setInitialName(name)
+                val duration = meter.getDuration(TimeUnit.Bars) * bars
+                obj.setInitialSize(duration, height = zero)
+                val point = pane.screenToLocal(anchor)
+                val pos = rootPane.snapToGrid(point.x, point.y)
+                val inst = ScoreObjectInstance(obj, pos)
+                pane.score.addObject(inst, autoSelect = true)
+            }
         }
     }
     addAction("Add task") {
-        shortcut("T")
-        executes { pane ->
+        shortcut("Ctrl+T") //TODO maybe this can be done by dropping a ScriptObject
+        executes { rootPane ->
             if (RectangleSelection.get() != null) return@executes
-            val (pane, pos) = pane.getScorePaneAtCursor() ?: return@executes
+            val (pane, pos) = rootPane.getScorePaneAtCursor() ?: return@executes
             if (pane is RegularScorePane) {
                 val defaultName = pane.context[ScoreObjectRegistry].availableName("task")
                 val name = NamePrompt(pane.context[ScoreObjectRegistry], "Task name", defaultName)
@@ -50,9 +70,9 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
     }
     addAction("Add time") {
         shortcut("Ctrl+INSERT")
-        executes { pane ->
+        executes { rootPane ->
             if (RectangleSelection.get() != null) return@executes
-            val (pane, pos) = pane.getScorePaneAtCursor() ?: return@executes
+            val (pane, pos) = rootPane.getScorePaneAtCursor() ?: return@executes
             val amount = DecimalPrompt(
                 "How much time to add",
                 precision = 2, initialValue = 10.0, 0.0..1000.0

@@ -204,7 +204,7 @@ class LauncherGridPane(
                         is ItemTarget.Object -> {
                             val obj = target.ref.get() ?: return@executes
                             val objectsPane = obj.context[AppLayout].get<ScoreObjectViewPane>()
-                            objectsPane.showContent(obj) //TODO choose quantization
+                            objectsPane.showContent(obj)
                         }
 
                         is ItemTarget.Script -> {

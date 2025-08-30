@@ -47,7 +47,7 @@ object ArrowKeys {
             } else if (!ev.isTargetTextInput) {
                 val selected = selector.selectedViews
                     .associateBy { v -> v.instance }.values //filters out views that display the same instance
-                val resizeMode = when (ev.modifiers) {
+                val resizeMode = when (ev.modifiers) { //TODO think about which modifiers to use
                     noModifiers -> null
                     setOf(Shift) -> ScoreObject.ResizeMode.Stretch
                     setOf(Ctrl, Shift) -> ScoreObject.ResizeMode.Regular

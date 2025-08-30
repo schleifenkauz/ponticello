@@ -50,8 +50,6 @@ class ReachabilityGraphTest {
         assertEquals(false, g.reachable(3, 0))
     }
 
-    //TODO test loop detection
-
     companion object {
         private const val N = 50
     }

@@ -83,5 +83,7 @@ class MeterObject(
             reactiveVariable(bpb),
             reactiveVariable(tpb)
         )
+
+        fun createDefault() = create(60, 4, 4)
     }
 }

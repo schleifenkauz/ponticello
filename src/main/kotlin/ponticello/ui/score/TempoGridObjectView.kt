@@ -63,28 +63,19 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
     }
 
     override fun setupDetailPane(pane: DetailPane) {
-        if (!obj.meter.isResolved.now) {
+        val meter = obj.meter.get()
+        if (meter == null) {
             pane.children.add(Label("Unresolved meter ${obj.meter.getName()}").styleClass("-fx-text-fill: red;"))
             return
         }
-        val bpmSpinner = IntSpinner(obj.beatsPerMinute, 10..500)
-            .setupUndo("BPM", obj.context[UndoManager])
-            .minColumns(3)
-        val bpbSpinner = IntSpinner(obj.beatsPerBar, 1..24)
-            .setupUndo("Beats per bar", obj.context[UndoManager])
-            .minColumns(2)
-        val tpbSpinner = IntSpinner(obj.ticksPerBeat, 1..24)
-            .setupUndo("Ticks per beat", obj.context[UndoManager])
-            .minColumns(2)
+        Companion.setupMeterConfig(meter, pane, obj.context[UndoManager])
+
         val firstBarSpinner = IntSpinner(obj.firstBar, 0..1000)
             .setupUndo("First bar", obj.context[UndoManager])
             .minColumns(3)
         val nameButton = Button()
         nameButton.textProperty().bind(obj.meter.name.asObservableValue())
         pane.addItem("Meter", nameButton)
-        pane.addItem("BPM:", bpmSpinner)
-        pane.addItem("Beats", bpbSpinner)
-        pane.addItem("Ticks", tpbSpinner)
         pane.addItem("First bar:", firstBarSpinner)
     }
 
@@ -201,6 +192,21 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
             stroke = if (snapEnabled) Color.GREEN else Color.GRAY
             lineWidth = 2.0
             strokeLine(0.0, CENTER_Y, width, CENTER_Y)
+        }
+
+        fun setupMeterConfig(meter: MeterObject, pane: DetailPane, undoManager: UndoManager?) {
+            val bpmSpinner = IntSpinner(meter.beatsPerMinute, 10..500)
+                .setupUndo("BPM", undoManager)
+                .minColumns(3)
+            val bpbSpinner = IntSpinner(meter.beatsPerBar, 1..24)
+                .setupUndo("Beats per bar", undoManager)
+                .minColumns(2)
+            val tpbSpinner = IntSpinner(meter.ticksPerBeat, 1..24)
+                .setupUndo("Ticks per beat", undoManager)
+                .minColumns(2)
+            pane.addItem("BPM:", bpmSpinner)
+            pane.addItem("Beats", bpbSpinner)
+            pane.addItem("Ticks", tpbSpinner)
         }
     }
 }

@@ -147,7 +147,7 @@ class MixerFlow(
         replacedBus(old, new)
         if (!isActive.now) return
         val buses = components.map { comp -> comp.sourceBus.now.force().superColliderName }
-        client.run("$superColliderName.setn(\\sources, $buses)") //TODO this is not right yet
+        client.run("$superColliderName.setn(\\sources, $buses)")
     }
 
     private fun replacedBus(old: BusReference, new: BusReference) {

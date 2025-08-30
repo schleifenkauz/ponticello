@@ -48,7 +48,7 @@ abstract class RegistrySelectorPrompt<O : NamedObject>(
         return this
     }
 
-    override fun options(): List<O> = registry.all() - excluded()
+    override fun options(): List<O> = registry.all() - excluded().toSet()
 
     override fun makeOption(text: String): O? {
         if (!Identifier.isValid(text) || registry.has(text)) return null

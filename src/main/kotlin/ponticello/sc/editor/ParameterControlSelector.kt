@@ -15,5 +15,5 @@ class ParameterControlSelector : ObjectSelector<NamedParameterControl>() {
 
     override fun getList(): ParameterControlList = associatedObject.controls
 
-    override fun createNewObject(name: String): NamedParameterControl? = null //TODO
+    override fun createNewObject(name: String): NamedParameterControl? = null
 }
