@@ -13,7 +13,7 @@ import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.PlayHead
 import reaktive.value.now
 
-class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) {
+class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObject.Listener {
     private val context = obj.context
     private val liveScoreObject = context[LiveObjectRegistry].getOrCreateLiveScoreObject(obj)
 
@@ -22,11 +22,16 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) {
 
     init {
         scorePane.initialize()
-        setupPlayback()
+        obj.addListener(this)
+        setupActionHandlers()
     }
 
-    private fun setupPlayback() {
+    private fun setupActionHandlers() {
         context[ScoreObjectDuplicator].registerRootPane(scorePane)
+    }
+
+    override fun resizedObject(obj: ScoreObject) {
+        scorePane.repaint()
     }
 
     fun createToolbar() = HBox(

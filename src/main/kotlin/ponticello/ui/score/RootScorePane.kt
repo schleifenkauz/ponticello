@@ -129,7 +129,7 @@ abstract class RootScorePane(
     private fun layoutObjects(): Future<Boolean> {
         val repaintTrigger = latestRepaintTrigger
         val maxTime = 50L //determines how much time is spent consecutively on the Application Thread
-        val itr = views.iterator()
+        val itr = views.toMap().iterator()
         val future = CompletableFuture<Boolean>()
         layoutExecutor.execute {
             while (itr.hasNext()) {

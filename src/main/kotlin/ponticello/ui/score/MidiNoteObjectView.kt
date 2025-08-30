@@ -23,8 +23,8 @@ class MidiNoteObjectView(override val obj: MidiNoteObject, instance: ScoreObject
             undoManager = context[UndoManager],
             actionDescription = "Select MIDI instrument"
         )
-        val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
-            .withContext(actionContext)
+        val viewInstrumentBtn = ScoreObjectActions.localObjectActions.getAction("View definition")
+            .withContext(obj)
             .makeButton("medium-icon-button")
         pane.addItem("Instrument: ", HBox(5.0, instrumentSelector, viewInstrumentBtn).centerChildren())
         pane.children.add(ParameterControlsPane(obj, this))

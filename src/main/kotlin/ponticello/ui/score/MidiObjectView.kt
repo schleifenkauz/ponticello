@@ -62,8 +62,8 @@ class MidiObjectView(
             onUpdate = ::updatedInstrument
         )
         instrumentSelector.setupDropArea(InstrumentDropHandler(obj.instrument, context))
-        val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
-            .withContext(actionContext)
+        val viewInstrumentBtn = ScoreObjectActions.localObjectActions.getAction("View definition")
+            .withContext(obj)
             .makeButton("medium-icon-button")
         pane.addItem("Instrument: ", HBox(5.0, instrumentSelector, viewInstrumentBtn).centerChildren())
         pane.addItem("Color:", this.colorPicker)

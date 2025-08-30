@@ -2,17 +2,16 @@ package ponticello.ui.actions
 
 import fxutils.actions.*
 import fxutils.prompt.IntegerPrompt
+import fxutils.sourceWindow
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.geometry.Side
 import javafx.scene.robot.Robot
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignE
-import org.kordamp.ikonli.materialdesign2.MaterialDesignL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignV
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
@@ -29,17 +28,19 @@ import ponticello.model.score.*
 import ponticello.ui.controls.MultiObjectControlPopup
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.impl.showDialog
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import ponticello.ui.score.*
-import reaktive.value.binding.*
+import reaktive.value.binding.and
+import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
+import reaktive.value.binding.notEqualTo
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.toggle
 
 object ScoreObjectActions {
-    val multiObjectActions = collectActions {
+    val multiObjectActions: Action.Collector<ObjectActionContext> = collectActions {
         addObjectAction("Remove objects") {
             description("Remove the selected object instances")
             shortcut("Alt?+DELETE")
@@ -136,6 +137,77 @@ object ScoreObjectActions {
                 MultiObjectControlPopup.show(ctx.context, objects)
             }
         }
+        addObjectAction("Choose instrument") {
+            shortcut("Shift+I")
+            applicableIf { ctx -> ctx.selectedObjects.all { obj -> obj is ParameterizedObject } }
+            executes { ctx, ev ->
+                val commonInstrument = ctx.selectedObjects
+                    .map { obj -> (obj as ParameterizedObject).def }
+                    .singleOrNull()?.instrumentReference()
+                val newInstrument = InstrumentSelectorPopup(ctx.context)
+                    .selectInitialOption(commonInstrument)
+                    .showDialog(ev) ?: return@executes
+                for (obj in ctx.selectedObjects) {
+                    when (obj) {
+                        is SoundProcess -> obj.instrumentRef.set(newInstrument)
+                        is MidiObject -> obj.instrument.set(newInstrument)
+                        is MidiNoteObject -> obj.parentObject.instrument.set(newInstrument)
+                        else -> Logger.warn("Cannot set instrument for $obj", Logger.Category.Score)
+                    }
+                }
+            }
+        }
+
+    }
+
+    val localObjectActions: Action.Collector<ScoreObject> = collectActions {
+        addAction("Reverse object") {
+            shortcut("Alt?+Shift?+R")
+            icon(Material2AL.FLIP)
+            executesOn<SoundProcess> { obj, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executesOn
+                obj.reverse(reverseEnvelopes = ev.isShiftDown())
+            }
+        }
+        addAction("View definition") {
+            shortcut("Alt?+I")
+            icon { obj ->
+                if (obj is SoundProcess) reactiveValue(Codicons.CODE)
+                else reactiveValue(MaterialDesignE.EYE)
+            }
+            applicableIf { obj -> obj is SoundProcess || obj is MidiObject || obj is MidiNoteObject }
+            ifNotApplicable(Action.IfNotApplicable.Disable)
+            executes { obj, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) {
+                    return@executes
+                }
+                when (obj) {
+                    is SoundProcess -> showInstrumentDef(obj.def, obj.context)
+                    is MidiObject -> showInstrument(obj.instrument.now, obj.context)
+                    is MidiNoteObject -> showInstrument(obj.parentObject.instrument.now, obj.context)
+                    else -> {}
+                }
+            }
+        }
+        addAction("Rename object") {
+            shortcut("F2")
+            executes { obj, ev -> RenamePrompt(obj, "New name for object").showDialog(ev) }
+        }
+        addAction("Add envelope") {
+            shortcut("Alt?+E")
+            executesOn<SoundProcess> { obj, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executesOn
+                SoundProcessView.showNewEnvelopePopup(obj, ev)
+            }
+        }
+        addAction("Extend object group") {
+            shortcut("Ctrl+Shift?+E")
+            executesOn<AbstractScoreObjectGroup> { obj, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executesOn
+                val context = obj.context
+                extendGroup(obj, context, moreThanOne = true, cloneObjects = ev.isShiftDown(), ev)
+            }
+        }
     }
 
     val singleObjectActions: Action.Collector<ObjectActionContext> = collectActions {
@@ -205,70 +277,10 @@ object ScoreObjectActions {
                 duplicator.enterDuplicateMode(inst.obj, view, clone = ev.isShiftDown())
             }
         }
-        addObjectAction("Reverse object") {
-            shortcut("Alt?+Shift?+R")
-            icon(Material2AL.FLIP)
-            applicableOn { view -> view is SoundProcessView }
-            executeSingle { view, ev ->
-                view as SoundProcessView
-                if (!ev.isTargetTextInput || ev.isAltDown()) {
-                    view.obj.reverse(reverseEnvelopes = ev.isShiftDown())
-                }
-            }
-        }
-        addObjectAction("View definition") {
-            shortcut("Alt?+I")
-            icon { ctx ->
-                ctx.focusedView.map { v -> if (v is SoundProcessView) Codicons.CODE else MaterialDesignE.EYE }
-            }
-            applicableOn { v -> v is SoundProcessView || v is MidiObjectView || v is MidiNoteObjectView }
-            ifNotApplicable(Action.IfNotApplicable.Disable)
-            executeSingle { view, ev ->
-                if (ev.isTargetTextInput && !ev.isAltDown()) {
-                    return@executeSingle
-                }
-                when (view) {
-                    is SoundProcessView -> showInstrumentDef(view.obj.def, view.context)
-                    is MidiObjectView -> showInstrument(view.obj.instrument.now, view.context)
-                    is MidiNoteObjectView -> showInstrument(view.obj.parentObject.instrument.now, view.context)
-                }
-            }
-        }
-        addObjectAction("Choose instrument") {
-            shortcut("Shift+I")
-            applicableIf { ctx -> ctx.selectedObjects.all { obj -> obj is ParameterizedObject } }
-            executes { ctx, ev ->
-                val commonInstrument = ctx.selectedObjects
-                    .map { obj -> (obj as ParameterizedObject).def }
-                    .singleOrNull()?.instrumentReference()
-                val newInstrument = InstrumentSelectorPopup(ctx.context)
-                    .selectInitialOption(commonInstrument)
-                    .showDialog(ev) ?: return@executes
-                for (obj in ctx.selectedObjects) {
-                    when (obj) {
-                        is SoundProcess -> obj.instrumentRef.set(newInstrument)
-                        is MidiObject -> obj.instrument.set(newInstrument)
-                        is MidiNoteObject -> obj.parentObject.instrument.set(newInstrument)
-                        else -> Logger.warn("Cannot set instrument for $obj", Logger.Category.Score)
-                    }
-                }
-            }
-        }
-        addObjectAction("Rename object") {
-            shortcut("F2")
-            executeSingle { view, _ -> RenamePrompt(view.obj, "New name for object").showDialog(view) }
-        }
-        addObjectAction("Add envelope") {
-            shortcut("Alt?+E")
-            applicableOn<SoundProcessView>()
-            executeSingle { view, ev ->
-                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                view as SoundProcessView
-                view.showNewEnvelopePopup()
-            }
-        }
+
         addObjectAction("Play object") {
             shortcut("Ctrl+Shift?+SPACE")
+            icon(MaterialDesignP.PLAY)
             applicableOn { view -> view.obj.affectsPlayback }
             executeSingle { view, ev ->
                 val obj = view.obj
@@ -289,44 +301,6 @@ object ScoreObjectActions {
                 if (liveObject.isScheduled.now) {
                     view.context[AppLayout].get<ScoreObjectViewPane>().showContent(view)
                 }
-            }
-        }
-        addObjectAction("Extend object group") {
-            shortcut("E")
-            applicableOn<ScoreObjectGroupView>()
-            executeSingle { view, ev ->
-                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
-                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
-                val context = view.context
-                extendGroup(obj, context, moreThanOne = false, cloneObjects = false)
-            }
-        }
-
-        addObjectAction("Extend object group (Customized)") {
-            shortcut("Alt+E")
-            applicableOn<ScoreObjectGroupView>()
-            executeSingle { view, _ ->
-                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
-                val context = view.context
-                extendGroup(obj, context, moreThanOne = true, cloneObjects = false)
-            }
-        }
-        addObjectAction("Extend object group (Clone children)") {
-            shortcut("Shift+E")
-            applicableOn<ScoreObjectGroupView>()
-            executeSingle { view, _ ->
-                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
-                val context = view.context
-                extendGroup(obj, context, moreThanOne = false, cloneObjects = true)
-            }
-        }
-        addObjectAction("Extend object group (Customized, clone children)") {
-            shortcut("Alt+Shift+E")
-            applicableOn<ScoreObjectGroupView>()
-            executeSingle { view, _ ->
-                val obj = view.obj as? ScoreObjectGroup ?: return@executeSingle
-                val context = view.context
-                extendGroup(obj, context, moreThanOne = true, cloneObjects = false)
             }
         }
 
@@ -384,22 +358,19 @@ object ScoreObjectActions {
         }
     }
 
-    val all = collectActions {
+    val all = collectActions<ObjectActionContext> {
         addAll(multiObjectActions)
+        addAll(localObjectActions) { ctx -> ctx.focusedView.now?.obj }
         addAll(singleObjectActions)
     }
 
-    private fun canApplyPlaybackActions(ctx: ObjectActionContext): Binding<Boolean> {
-        return ctx.focusedView.flatMap { view ->
-            if (view == null || !view.obj.affectsPlayback) reactiveValue(false)
-            else reactiveValue(true)
-        }
-    }
-
-    private fun extendGroup(obj: ScoreObjectGroup, context: Context, moreThanOne: Boolean, cloneObjects: Boolean) {
-        val times =
-            if (moreThanOne) IntegerPrompt("Loop count", 1, 1..16).showDialog(context) ?: return
-            else 1
+    private fun extendGroup(
+        obj: AbstractScoreObjectGroup, context: Context,
+        moreThanOne: Boolean, cloneObjects: Boolean, ev: Event?,
+    ) {
+        val times = if (moreThanOne) IntegerPrompt("Number of repetitions", 1, 1..16)
+            .showDialog(ev.sourceWindow, Robot().mousePosition) ?: return
+        else 1
         context.compoundEdit("Extend object group") {
             val duration = obj.duration
             obj.resize(

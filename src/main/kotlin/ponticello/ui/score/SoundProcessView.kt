@@ -4,11 +4,14 @@ import fxutils.actions.makeButton
 import fxutils.centerChildren
 import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
+import fxutils.sourceWindow
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
+import javafx.scene.robot.Robot
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.ParameterDefObject
@@ -23,7 +26,6 @@ import ponticello.sc.*
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.registry.BufferSelectorPrompt
@@ -100,8 +102,8 @@ class SoundProcessView(
 
     override fun setupDetailPane(pane: DetailPane) {
         pane.addItem("Color:", this.colorPicker)
-        val viewInstrumentBtn = ScoreObjectActions.singleObjectActions.getAction("View definition")
-            .withContext(actionContext)
+        val viewInstrumentBtn = ScoreObjectActions.localObjectActions.getAction("View definition")
+            .withContext(obj)
             .makeButton("medium-icon-button")
         val selectorBtn = InstrumentSelectorPopup(context).selectorButton(
             obj.instrumentRef, undoManager = context[UndoManager], actionDescription = "Select instrument"
@@ -112,37 +114,6 @@ class SoundProcessView(
         VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)
         context[ContextualMidiReceiver].registerMidiContext(pane) { midiContext }
-    }
-
-    fun showNewEnvelopePopup() {
-        val possibleParameters = obj.def.allParameters()
-            .filter { p -> p.spec.now is NumericalControlSpec }
-            .filter { p ->
-                val control = obj.controls.controlMap[p.name.now]
-                control !is EnvelopeControl || !control.display.now
-            } + obj.controls
-            .filter { ctrl -> ctrl.spec.now is NumericalControlSpec && ctrl.now !is EnvelopeControl }
-            .filter { ctrl -> !obj.def.hasParameter(ctrl.name.now) }
-            .map { ctrl -> ParameterDefObject(ctrl.name.now, ctrl.spec.now!!) }
-        val listView = ParameterDefSelectorPrompt(
-            possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
-        )
-        val relativeY = if (_inlineControls?.isVisible == true) inlineControls.height else 0.0
-        val anchor = localToScreen(Point2D(0.0, relativeY))
-        val param = listView.showPopup(anchor, context[primaryStage]) ?: return
-        val name = param.name.now
-        val spec = param.spec.now as NumericalControlSpec
-        val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
-        val env = Envelope.constant(initialValue, obj.duration)
-        val control = EnvelopeControl(
-            env, reactiveVariable(spec.associatedColor),
-            display = reactiveVariable(true)
-        )
-        val customSpec = spec.takeIf {
-            it != obj.def.getSpec(param.name.now)?.now
-        }
-        if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, customSpec)
-        else obj.controls.reassignControl(name, control)
     }
 
     private fun observeLFOs() = obj.lfosManager.onRemove { param ->
@@ -200,6 +171,35 @@ class SoundProcessView(
                 map[name] = control
             }
             return ParameterControlList.from(map)
+        }
+
+        fun showNewEnvelopePopup(obj: SoundProcess, ev: Event?) {
+            val possibleParameters = obj.def.allParameters()
+                .filter { p -> p.spec.now is NumericalControlSpec }
+                .filter { p ->
+                    val control = obj.controls.controlMap[p.name.now]
+                    control !is EnvelopeControl || !control.display.now
+                } + obj.controls
+                .filter { ctrl -> ctrl.spec.now is NumericalControlSpec && ctrl.now !is EnvelopeControl }
+                .filter { ctrl -> !obj.def.hasParameter(ctrl.name.now) }
+                .map { ctrl -> ParameterDefObject(ctrl.name.now, ctrl.spec.now!!) }
+            val listView = ParameterDefSelectorPrompt(
+                possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
+            )
+            val param = listView.showPopup(Robot().mousePosition, ev.sourceWindow) ?: return
+            val name = param.name.now
+            val spec = param.spec.now as NumericalControlSpec
+            val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()
+            val env = Envelope.constant(initialValue, obj.duration)
+            val control = EnvelopeControl(
+                env, reactiveVariable(spec.associatedColor),
+                display = reactiveVariable(true)
+            )
+            val customSpec = spec.takeIf {
+                it != obj.def.getSpec(param.name.now)?.now
+            }
+            if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, customSpec)
+            else obj.controls.reassignControl(name, control)
         }
     }
 }

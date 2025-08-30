@@ -210,7 +210,6 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
                     val config = box.config as ListDisplayConfig<Any>
                     reactiveValue(config.detailWindowIcon(box.obj))
                 }
-                shortcuts("Ctrl+E")
                 enableWhen { box -> box.parent.mode.equalTo(DisplayMode.SubWindow) }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { box, _ ->

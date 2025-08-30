@@ -4,15 +4,20 @@ import fxutils.SubWindow
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.actions.registerActions
+import fxutils.registerShortcuts
 import fxutils.replace
+import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.live.LiveScoreObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
+import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneMode
@@ -37,8 +42,18 @@ class ScoreObjectViewPane : ToolPane() {
         set(value) {
             field = value
             content = if (value == null) Region() else {
-                value.prefHeightProperty().bind(heightProperty().subtract(header.heightProperty()))
-                value
+                val borderPane = BorderPane(value) styleClass "single-object-score-pane"
+                borderPane.prefHeightProperty().bind(heightProperty().subtract(header.heightProperty()))
+                value.getSingleObjectView()?.setOnMouseClicked {
+                    borderPane.requestFocus()
+                }
+                value.setOnMouseClicked {
+                    borderPane.requestFocus()
+                }
+                borderPane.registerShortcuts {
+                    registerActions(ScoreObjectActions.localObjectActions.withContext(value.rootObj))
+                }
+                borderPane
             }
         }
 
@@ -67,6 +82,7 @@ class ScoreObjectViewPane : ToolPane() {
         displayedObject.now = obj
         val pane = ScoreObjectPlayerPane.getPane(obj)
         scorePane = pane.scorePane
+        content.requestFocus()
         headerContent = pane.createToolbar()
         setShowing(true)
     }

@@ -141,6 +141,11 @@ Label.memo-area {
     -fx-stroke-width: 1px;
 }
 
-.single-object-score-pane-container {
-    -fx-padding: 10px;
+.single-object-score-pane {
+    -fx-border-width: 2px;
+    -fx-border-color: transparent;
+}
+
+.single-object-score-pane:focused {
+    -fx-border-color: orange;
 }

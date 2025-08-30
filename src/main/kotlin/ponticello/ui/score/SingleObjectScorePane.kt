@@ -112,6 +112,7 @@ class SingleObjectScorePane(
     }
 
     override fun repaint(): Future<Boolean> {
+        updatePixelsPerSecond()
         val future = super.repaint()
         repaintGrid()
         return future
