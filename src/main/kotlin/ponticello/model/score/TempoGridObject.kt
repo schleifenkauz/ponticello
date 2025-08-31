@@ -40,7 +40,7 @@ class TempoGridObject(
     override val canResizeHorizontally: Boolean
         get() = true
 
-    val beatsPerMinute: ReactiveVariable<Int> get() = meter.force().beatsPerMinute
+    val beatsPerMinute: ReactiveVariable<Decimal> get() = meter.force().beatsPerMinute
     val beatsPerBar: ReactiveVariable<Int> get() = meter.force().beatsPerBar
     val ticksPerBeat: ReactiveVariable<Int> get() = meter.force().ticksPerBeat
 

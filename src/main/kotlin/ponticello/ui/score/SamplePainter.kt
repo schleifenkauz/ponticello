@@ -1,7 +1,9 @@
 package ponticello.ui.score
 
 import javafx.application.Platform
+import javafx.beans.binding.Bindings
 import javafx.geometry.Rectangle2D
+import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
@@ -17,39 +19,59 @@ import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ValueControl
+import ponticello.ui.score.ScoreObjectView.Companion.MAX_OBJECT_WIDTH
 import reaktive.Observer
+import reaktive.dependencies
 import reaktive.value.forEach
 import reaktive.value.now
 
-class SpectrogramPainter(
-    private val associatedView: SoundProcessView,
-    private val obj: SoundProcess,
+class SamplePainter(
+    private val view: SoundProcessView,
     private val objectPane: Pane,
 ) : ParameterControlList.Listener {
+    private val obj: SoundProcess = view.obj
+
     private var spectrogramImage: Image? = null
     private val spectrogramSegments = mutableListOf<SpectrogramSegment>()
+    private val gridCanvas: Canvas = Canvas()
 
     private var startPosObserver: Observer? = null
     private var rateObserver: Observer? = null
     private var sampleObserver: Observer? = null
     private var sampleDisplayObserver: Observer? = null
     private var sampleContentObserver: Observer? = null
+    private var sampleGridObserver: Observer? = null
 
     fun initialize() {
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
+        gridCanvas.widthProperty().bind(Bindings.min(view.prefWidthProperty(), MAX_OBJECT_WIDTH))
+        gridCanvas.heightProperty().bind(Bindings.min(view.prefHeightProperty(), TempoGridObjectView.GRID_HEIGHT))
+        gridCanvas.layoutYProperty().bind(objectPane.heightProperty().subtract(gridCanvas.heightProperty()))
+        objectPane.children.add(gridCanvas)
         obj.controls.addListener(this)
     }
 
     private fun observeSample(): Observer = obj.sample.forEach { s ->
         sampleContentObserver?.kill()
+        sampleContentObserver = null
+        sampleGridObserver?.kill()
+        sampleGridObserver = null
         if (s != null) {
             val sample = s.get()
             if (sample is SampleObject) {
                 sampleContentObserver = sample.contentsChanged.observe { _ ->
                     updateSpectrogram()
                 }
+                val meter = sample.meter
+                sampleGridObserver = dependencies(
+                    meter.beatsPerMinute, meter.beatsPerBar, meter.ticksPerBeat,
+                    sample.firstBeat
+                ).observe {
+                    redrawGrid()
+                }
             }
+            redrawGrid()
             updateSpectrogram()
         }
     }
@@ -72,11 +94,13 @@ class SpectrogramPainter(
             "startPos" -> {
                 startPosObserver?.kill()
                 displaySpectrogram()
+                redrawGrid()
             }
 
             "rate" -> {
                 rateObserver?.kill()
                 displaySpectrogram()
+                redrawGrid()
             }
         }
     }
@@ -87,6 +111,7 @@ class SpectrogramPainter(
         if (oldControl is BufferControl && parameter.name.now == "buf") {
             sampleObserver?.kill()
             updateSpectrogram()
+            clearGrid()
         }
         if (oldControl is ValueControl) {
             when (parameter.name.now) {
@@ -104,8 +129,15 @@ class SpectrogramPainter(
 
     private fun addedConstantControl(control: NamedParameterControl, ctrl: ValueControl) {
         when (control.name.now) {
-            "startPos" -> startPosObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
-            "rate" -> rateObserver = ctrl.value.forEach { _ -> displaySpectrogram() }
+            "startPos" -> startPosObserver = ctrl.value.forEach { _ ->
+                displaySpectrogram()
+                redrawGrid()
+            }
+
+            "rate" -> rateObserver = ctrl.value.forEach { _ ->
+                displaySpectrogram()
+                redrawGrid()
+            }
         }
     }
 
@@ -150,7 +182,7 @@ class SpectrogramPainter(
                 dur, sampleDuration, rate,
                 startPos = if (t != zero) defaultStartPos else startPos
             )
-            view.layoutX = associatedView.getWidth(t)
+            view.layoutX = this.view.getWidth(t)
             var loopPointIndicator: Line? = null
             if (spectrogramSegments.isNotEmpty()) {
                 loopPointIndicator = Line(view.layoutX, 0.0, view.layoutX, objectPane.height)
@@ -164,11 +196,11 @@ class SpectrogramPainter(
         objectPane.children.addAll(spectrogramSegments.mapNotNull { seg -> seg.loopPointIndicator })
     }
 
-    fun rescaleSpectrogram() {
+    private fun rescaleSpectrogram() {
         for (node in spectrogramSegments) {
-            val x = associatedView.getWidth(node.start)
+            val x = view.getWidth(node.start)
             node.image.layoutX = x
-            node.image.fitWidth = associatedView.getWidth(node.duration)
+            node.image.fitWidth = view.getWidth(node.duration)
             node.image.fitHeight = objectPane.height
             val rate = obj.playBufRate
             if (rate != null && rate.now < zero) {
@@ -196,7 +228,7 @@ class SpectrogramPainter(
         val height = spectrogramImage!!.height
         view.viewport = Rectangle2D(minX, minY, width, height)
         view.fitHeight = objectPane.height
-        view.fitWidth = associatedView.getWidth(duration)
+        view.fitWidth = this.view.getWidth(duration)
         view.viewOrder = 1000.0
         if (rate < zero) view.transforms.addAll(
             Translate(view.fitWidth, 0.0),
@@ -205,6 +237,16 @@ class SpectrogramPainter(
         return view
     }
 
+    fun rescale() {
+        rescaleSpectrogram()
+        redrawGrid()
+    }
+
+    fun relocated(oldLayoutX: Double) {
+        if (view.prefWidth > MAX_OBJECT_WIDTH && (oldLayoutX < 0.0 || view.layoutX < 0.0)) {
+            redrawGrid()
+        }
+    }
 
     private data class SpectrogramSegment(
         val start: Decimal,
@@ -213,5 +255,27 @@ class SpectrogramPainter(
         val loopPointIndicator: Line?,
     ) {
         fun nodes() = if (loopPointIndicator != null) listOf(image, loopPointIndicator) else listOf(image)
+    }
+
+    private fun clearGrid() {
+        gridCanvas.graphicsContext2D.clearRect(0.0, 0.0, gridCanvas.width, gridCanvas.height)
+    }
+
+    private fun redrawGrid() {
+        clearGrid()
+        val sample = obj.sample.get()?.get() as SampleObject? ?: return
+        val meter = sample.meter
+        if (meter.isNone()) return
+        val offsetX = if (view.prefWidth > MAX_OBJECT_WIDTH && view.layoutX < 0.0) -view.layoutX else 0.0
+        gridCanvas.translateX = offsetX
+        val offsetDur = view.getDuration(offsetX)
+        val startPos = obj.playbufStartPos?.now ?: zero
+        val rate = obj.playBufRate?.now ?: one(precision = 3)
+        val offset = offsetDur + (startPos / rate) - sample.firstBeat.now
+        TempoGridObjectView.paintGrid(
+            obj.context, meter, obj.duration.value, gridCanvas,
+            firstBar = 0, offset = offset, scale = rate,
+            style = TempoGridObjectView.GridStyle.SampleOverlay
+        )
     }
 }

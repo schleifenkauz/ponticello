@@ -17,10 +17,7 @@ import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.misc.PlayHead
 import reaktive.Observer
 import reaktive.and
-import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 
 @Serializable
 class LiveScoreObject(
@@ -61,7 +58,7 @@ class LiveScoreObject(
         val score = Score.makeScore(scoreObject)
         playHead = playHead ?: PlayHead()
         player = ScorePlayer.create(score, playHead!!, loopingActivated, quantization)
-        playerObserver = scheduled.bind(player.isScheduled) and playing.bind(player.isPlaying)
+        playerObserver = player.isScheduled.forEach(scheduled::set) and player.isPlaying.forEach(playing::set)
     }
 
     override fun play() {

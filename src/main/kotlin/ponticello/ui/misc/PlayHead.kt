@@ -13,7 +13,7 @@ import ponticello.ui.score.ScorePane
 import ponticello.ui.score.TimeCodeView
 import reaktive.Observer
 import reaktive.value.ReactiveValue
-import reaktive.value.binding.not
+import reaktive.value.forEach
 import reaktive.value.reactiveVariable
 
 class PlayHead {
@@ -32,7 +32,9 @@ class PlayHead {
         set(p) {
             check(_player == null) { "A player is already attached to the play head" }
             _player = p
-            playerObserver = _canMoveManually.bind(p.isScheduled.not())
+            playerObserver = p.isScheduled.forEach { scheduled ->
+                _canMoveManually.set(!scheduled)
+            }
         }
 
     val canMoveManually: ReactiveValue<Boolean> get() = _canMoveManually

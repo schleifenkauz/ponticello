@@ -1,8 +1,6 @@
 package ponticello.model.obj
 
 import fxutils.SubWindow
-import fxutils.undo.PropertyEdit
-import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
@@ -27,7 +25,7 @@ import java.util.concurrent.CompletableFuture
 @SerialName("SoundFile")
 class SampleObject(
     @SerialName("path") private val referencedFile: ReactiveVariable<String>,
-    private var _meter: MeterObject? = null,
+    val meter: MeterObject = MeterObject.none(),
     val firstBeat: ReactiveVariable<Decimal> = reactiveVariable(zero),
 ) : BufferObject() {
     @Transient
@@ -65,8 +63,6 @@ class SampleObject(
     @Transient
     var sampleRate = 0.0
         private set
-
-    val meter: MeterObject? get() = _meter
 
     @Transient
     private var infoUpdateJob: CompletableFuture<Unit>? = null
@@ -129,7 +125,7 @@ class SampleObject(
     override fun initialize(context: Context) {
         super.initialize(context)
         resolveAudioFile()
-        if (_meter == null) {
+        if (meter.isNone()) {
             readTempoMetadata()
         }
     }
@@ -143,25 +139,16 @@ class SampleObject(
 
     private fun readTempoMetadata() {
         try {
-            if (!audioFile.isFile) return
-            val metadata = AudioFileIO.read(audioFile).tag ?: return
+            if (!referencedFile().isFile) return
+            val metadata = AudioFileIO.read(referencedFile()).tag ?: return
             val bpm = metadata.getFirst(FieldKey.BPM).toIntOrNull() ?: return
-            this._meter = MeterObject.createDefault(bpm)
+            meter.beatsPerMinute.now = bpm.toDecimal()
+            meter.beatsPerBar.now = metadata.getFirst("BPB").toIntOrNull() ?: 4
+            meter.ticksPerBeat.now = metadata.getFirst("TPB").toIntOrNull() ?: 4
             firstBeat.now = metadata.getFirst("FIRST-BEAT").parseDecimal() ?: zero
         } catch (ex: Exception) {
             Logger.error("Error while reading audio file metadata for $this", ex)
         }
-    }
-
-    fun setMeter(meter: MeterObject) {
-        check(_meter == null) { "Sample '${name.now}' already has a meter assigned!" }
-        this._meter = meter
-        context[UndoManager].record(
-            PropertyEdit(
-                this::_meter, oldValue = null, newValue = meter,
-                "Add meter to sample"
-            )
-        )
     }
 
     private fun audioFileInSamplesDir(): File = samplesDir.resolve("${name.now}.${referencedFile().extension}")

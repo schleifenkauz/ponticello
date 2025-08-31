@@ -15,13 +15,15 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
-class MeterObject(
-    val beatsPerMinute: ReactiveVariable<Int>,
-    val beatsPerBar: ReactiveVariable<Int>,
-    val ticksPerBeat: ReactiveVariable<Int>,
+class MeterObject private constructor(
+    val beatsPerMinute: ReactiveVariable<Decimal> = reactiveVariable(zero),
+    val beatsPerBar: ReactiveVariable<Int> = reactiveVariable(0),
+    val ticksPerBeat: ReactiveVariable<Int> = reactiveVariable(0),
 ) : AbstractRenamableObject() {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
+
+    fun isNone() = beatsPerMinute.now == zero
 
     private fun getBeatDur() = (60.0.asTime / beatsPerMinute.now)
 
@@ -105,10 +107,10 @@ class MeterObject(
 
     private class UpdateMeterEdit(
         private val meter: MeterObject,
-        private val bpmBefore: Int,
+        private val bpmBefore: Decimal,
         private val bpbBefore: Int,
         private val tpbBefore: Int,
-        private val bpmAfter: Int,
+        private val bpmAfter: Decimal,
         private val bpbAfter: Int,
         private val tpbAfter: Int,
     ) : AbstractEdit() {
@@ -129,14 +131,16 @@ class MeterObject(
     }
 
     companion object {
-        fun create(bpm: Int, bpb: Int, tpb: Int) = MeterObject(
+        fun create(bpm: Decimal, bpb: Int, tpb: Int) = MeterObject(
             reactiveVariable(bpm),
             reactiveVariable(bpb),
             reactiveVariable(tpb)
         )
 
-        fun createDefault(bpm: Int) = create(bpm, 4, 4)
+        fun createDefault(bpm: Decimal) = create(bpm, 4, 4)
 
-        fun createDefault() = create(60, 4, 4)
+        fun createDefault() = create(60.toDecimal(), 4, 4)
+
+        fun none() = MeterObject()
     }
 }

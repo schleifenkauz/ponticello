@@ -137,10 +137,15 @@ class SingleObjectScorePane(
                 val offset = mainScorePosition.time - start
                 Triple(meter, firstBar, offset)
             }
+
             else -> return
         }
         val duration = rootObj.duration.value
-        TempoGridObjectView.paintGrid(context, meter, firstBar, duration, gridCanvas, offset)
+        TempoGridObjectView.paintGrid(
+            context, meter, duration, gridCanvas,
+            firstBar, offset, scale = one,
+            style = TempoGridObjectView.GridStyle.Regular
+        )
     }
 
     override fun mouseExited() {
@@ -170,10 +175,12 @@ class SingleObjectScorePane(
                 val firstBar = 0
                 Triple(meterStart, quant.meter.now.force(), firstBar)
             }
+
             mainScorePosition != null -> {
                 val mainScoreView = context[PonticelloMainActivity].mainScoreView
                 mainScoreView.getNearestGrid(position)
             }
+
             else -> null
         }
     }

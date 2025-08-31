@@ -67,11 +67,6 @@ object PlaybackActions {
         }
     }
 
-    val local = collectActions {
-        add(goToStartAction("Ctrl+DIGIT0"))
-        add(playAction("Ctrl+SPACE"))
-    }
-
     val toggleRecording: Action<ScorePlayer> = action("Toggle Recording") {
         shortcut("Ctrl+Alt+Shift?+R")
         icon { player ->

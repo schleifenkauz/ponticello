@@ -25,5 +25,12 @@ abstract class AbstractNamedObject : AbstractContextualObject(), NamedObject {
         _isAdded.now = false
     }
 
-    override fun toString(): String = "${javaClass.simpleName} #${name.now}"
+    override fun toString(): String {
+        val name = try {
+            "#${name.now}"
+        } catch (e: IllegalStateException) { //no name available
+            "<unnamed>"
+        }
+        return "${javaClass.simpleName} $name"
+    }
 }

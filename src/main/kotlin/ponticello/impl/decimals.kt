@@ -94,6 +94,8 @@ val Decimal.absoluteValue get() = value.absoluteValue
 
 fun Decimal.withPrecision(precision: Int) = Decimal(value, precision)
 
+fun Decimal.withMaxPrecision(precision: Int) = Decimal(value, minOf(this.precision, precision))
+
 fun Decimal.round(precision: Int) = Decimal(value.round(precision), precision)
 
 fun String.parseDecimal(): Decimal? {

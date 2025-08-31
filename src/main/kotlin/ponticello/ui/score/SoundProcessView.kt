@@ -43,7 +43,7 @@ class SoundProcessView(
     override val obj: SoundProcess, instance: ScoreObjectInstance,
 ) : ScoreObjectView(instance) {
     private val objectPane = Pane()
-    private val spectrogramPainter = SpectrogramPainter(this, obj, objectPane)
+    private val samplePainter = SamplePainter(this, objectPane)
     private val envelopeManager = EnvelopeEditorManager(this, objectPane)
     private val attackReleaseOverlay = AttackReleaseOverlay(this)
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
@@ -60,7 +60,7 @@ class SoundProcessView(
         setupDropArea(ParameterizedObjectDropHandler(obj, this))
         lfosObserver = observeLFOs()
         initializeObjectPane()
-        spectrogramPainter.initialize()
+        samplePainter.initialize()
         envelopeManager.initialize()
         attackReleaseOverlay.initialize()
         context[ContextualMidiReceiver].registerMidiContext(this) {
@@ -133,13 +133,19 @@ class SoundProcessView(
     override fun rescale() {
         super.rescale()
         envelopeManager.rescaleEnvelopes()
-        spectrogramPainter.rescaleSpectrogram()
+        samplePainter.rescale()
         attackReleaseOverlay.updateOverlay()
     }
 
     override fun resizedObject(obj: ScoreObject) {
         super.resizedObject(obj)
-        spectrogramPainter.displaySpectrogram()
+        samplePainter.displaySpectrogram()
+    }
+
+    override fun relocate(x: Double, y: Double) {
+        val oldLayoutX = layoutX
+        super.relocate(x, y)
+        samplePainter.relocated(oldLayoutX)
     }
 
     companion object {

@@ -8,9 +8,10 @@ import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.control.Button
-import javafx.scene.control.Spinner
 import javafx.scene.layout.HBox
-import ponticello.impl.sync
+import ponticello.impl.Decimal
+import ponticello.impl.one
+import ponticello.impl.zero
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.live.QuantizationUnit
 import ponticello.model.registry.ClockRegistry
@@ -19,10 +20,10 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject.ResizeMode
 import ponticello.model.score.TimeUnit
+import ponticello.ui.impl.DecimalSpinner
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
-import reaktive.value.now
 
 class QuantizationConfigDialog(
     config: QuantizationConfig, title: String,
@@ -40,15 +41,19 @@ class QuantizationConfigDialog(
 
     private val quantizationUnitInput = OptionSpinner(config.quantizationUnit, QuantizationUnit.entries)
 
-    private val quantizationValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.quantizationValue.now.value)
-        .sync(config.quantizationValue)
-        .setFixedWidth(SPINNER_WIDTH)
+    private val quantizationValueInput = DecimalSpinner(
+        config.quantizationValue,
+        min = zero, max = Decimal.INF,
+        step = one, maxPrecision = 2
+    ).minColumns(6)
 
     private val offsetUnitInput = OptionSpinner(config.offsetUnit, TimeUnit.entries)
 
-    private val offsetValueInput = Spinner<Double>(0.0, Double.MAX_VALUE, config.offsetValue.now.value)
-        .sync(config.offsetValue)
-        .setFixedWidth(SPINNER_WIDTH)
+    private val offsetValueInput = DecimalSpinner(
+        config.offsetValue,
+        min = zero, max = Decimal.INF,
+        step = one, maxPrecision = 2
+    ).minColumns(6)
 
     private val enableQuantizationToggle = CheckBox(config.enableQuantization)
         .setupUndo(config.context[UndoManager], variableDescription = "Enable quantization")
