@@ -65,6 +65,7 @@ class FlowPaneState private constructor(): ListToolPaneState() {
 @Serializable
 class MixerPaneState private constructor(): ToolPaneState() {
     var flowReference: ObjectReference<MixerFlow> = ObjectReference.none()
+    var midiDeviceName: String? = null
 
     companion object {
         fun default() = MixerPaneState().apply {

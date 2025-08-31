@@ -47,6 +47,8 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.getFrom
+import ponticello.ui.midi.AkaiMidiMix
+import ponticello.ui.misc.MidiDeviceSelectorPrompt
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
@@ -58,6 +60,7 @@ import reaktive.value.binding.map
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import javax.sound.midi.MidiSystem
 
 class MixerPane(
     private val listConfig: MixerComponentListConfig,
@@ -87,24 +90,52 @@ class MixerPane(
             } else BorderPane(Label("No mixer selected"))
         }
 
+    private val midiMixer = AkaiMidiMix()
+
     private var selectedMixer: ObjectReference<MixerFlow> = ObjectReference.none()
         set(value) {
             if (field == value) return
             field = value
-            val mixer = value.get()
-            listConfig.setMixer(mixer)
-            channelsList = mixer?.let { m -> ObjectListView(m.components, this, scrollable = true) }
+            val flow = value.get()
+            listConfig.setMixer(flow)
+            channelsList = flow?.let { m -> ObjectListView(m.components, this, scrollable = true) }
+            midiMixer.flow = flow
             relayout()
             runAfterLayout {
                 window?.sizeToScene()
             }
         }
 
+    private var selectedDevice: MidiDeviceSelectorPrompt.Option = MidiDeviceSelectorPrompt.Option.NoDevice
+        set(value) {
+            if (value is MidiDeviceSelectorPrompt.Option.Device) {
+                try {
+                    midiMixer.detach()
+                    midiMixer.attachTo(value.info)
+                } catch (e: Exception) {
+                    Logger.error("Unable to attach to $value")
+                    field = MidiDeviceSelectorPrompt.Option.NoDevice
+                    return
+                }
+            }
+            field = value
+        }
+
     override val headerContent: Node
         get() {
-            val selector = MixerListPopup().selectorButton(this::selectedMixer, actionDescription = "Select mixer")
+            val selector = MixerListPopup().selectorButton(
+                this::selectedMixer,
+                actionDescription = "Select mixer"
+            )
             return if (channelsList == null) selector
-            else HBox(selector, ActionBar(channelsList!!.actions, "medium-icon-button"))
+            else {
+                val deviceSelector = MidiDeviceSelectorPrompt().selectorButton(this::selectedDevice)
+                HBox(
+                    5.0, selector,
+                    Label("MIDI:"), deviceSelector,
+                    ActionBar(channelsList!!.actions, "medium-icon-button")
+                ).centerChildren()
+            }
         }
 
     override val supportedModes: Collection<ObjectListView.DisplayMode>
@@ -120,6 +151,10 @@ class MixerPane(
         if (state is MixerPaneState) {
             state.flowReference.resolve(allMixerFlows())
             selectedMixer = state.flowReference
+            val device = MidiSystem.getMidiDeviceInfo().find { it.name == state.midiDeviceName }
+            if (device != null) {
+                selectedDevice = MidiDeviceSelectorPrompt.Option.Device(device)
+            }
         }
         setupVolumeChangeWithArrowKeys()
         registerShortcuts {
@@ -172,6 +207,8 @@ class MixerPane(
         super.saveState(dest)
         if (dest is MixerPaneState) {
             dest.flowReference = selectedMixer
+            val device = selectedDevice as? MidiDeviceSelectorPrompt.Option.Device
+            dest.midiDeviceName = device?.info?.name
         }
     }
 
@@ -224,7 +261,8 @@ class MixerPane(
         val monoButtonPane = HBox(infiniteSpace(), monoButton, infiniteSpace()).centerChildren()
         monoButtonPane.prefHeight = 41.0
 
-        val masterMuteButton = masterMuteAction.withContext(selectedMixer.get()!!).makeButton("medium-icon-button")
+        val masterMuteButton =
+            masterMuteAction.withContext(selectedMixer.get()!!).makeButton("medium-icon-button")
 
         return Pair(monoButtonPane, masterMuteButton.centered())
     }
@@ -314,7 +352,8 @@ class MixerPane(
         override val shortcut: String
             get() = "F10"
 
-        override fun createToolPane(project: PonticelloProject): ToolPane = MixerPane(MixerComponentListConfig())
+        override fun createToolPane(project: PonticelloProject): ToolPane =
+            MixerPane(MixerComponentListConfig())
 
         private val monoAction = action<MixerFlow>("Mono") {
             enableWhen { mixer -> mixer.targetChannels.equalTo(2) }

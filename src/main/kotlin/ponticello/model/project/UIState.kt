@@ -8,6 +8,7 @@ import javafx.event.Event
 import kotlinx.serialization.Serializable
 import ponticello.impl.DecimalRange
 import ponticello.model.obj.AbstractContextualObject
+import ponticello.model.obj.BusReference
 import ponticello.model.obj.InstrumentObject
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectReference
@@ -27,6 +28,7 @@ class UIState private constructor(
     val snapEnabled: ReactiveVariable<Boolean> = reactiveVariable(false),
     val snapOption: ReactiveVariable<TimeUnit> = reactiveVariable(TimeUnit.Seconds),
     val selectedInstrument: ReactiveVariable<ObjectReference<InstrumentObject>?> = reactiveVariable(null),
+    var selectedAudioBus: ReactiveVariable<BusReference> = reactiveVariable(ObjectReference.none()),
     val askForCloneNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val askForGroupNames: ReactiveVariable<Boolean> = reactiveVariable(false),
     val controlsDisplay: ReactiveVariable<InlineControlsDisplay> = reactiveVariable(InlineControlsDisplay.NONE),

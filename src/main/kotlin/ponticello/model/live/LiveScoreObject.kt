@@ -43,8 +43,10 @@ class LiveScoreObject(
 
     @Transient
     private var scheduled = reactiveVariable(false)
+
     @Transient
     private var playing = reactiveVariable(false)
+
     @Transient
     private lateinit var playerObserver: Observer
 
@@ -58,7 +60,11 @@ class LiveScoreObject(
         val score = Score.makeScore(scoreObject)
         playHead = playHead ?: PlayHead()
         player = ScorePlayer.create(score, playHead!!, loopingActivated, quantization)
-        playerObserver = player.isScheduled.forEach(scheduled::set) and player.isPlaying.forEach(playing::set)
+        playerObserver = player.isScheduled.forEach {
+            scheduled.set(it)
+        } and player.isPlaying.forEach {
+            playing.set(it)
+        }
     }
 
     override fun play() {
