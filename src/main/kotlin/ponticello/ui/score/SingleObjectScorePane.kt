@@ -8,7 +8,6 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import ponticello.impl.*
 import ponticello.model.live.QuantizationConfig
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.UIState
 import ponticello.model.project.uiState
@@ -18,7 +17,6 @@ import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.misc.PlayHead
-import ponticello.ui.score.TempoGridObjectView.Companion.GRID_HEIGHT
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.binding.`if`
@@ -37,7 +35,7 @@ class SingleObjectScorePane(
     override val displayEnd: Decimal
         get() = rootObj.duration
 
-    private val gridHeight = if (paintGrid) GRID_HEIGHT else 0.0
+    private val gridHeight = if (paintGrid) TempoGrid.GRID_HEIGHT else 0.0
 
     var positionInMainScore: () -> ObjectPosition? = { null }
         set(value) {
@@ -86,7 +84,8 @@ class SingleObjectScorePane(
     }
 
     private fun setupGrid() {
-        children.add(gridCanvas)
+        children.addAll(gridCanvas, marker)
+        marker.isVisible = false
         gridCanvas.opacityProperty().bind(
             `if`(context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
         )
@@ -102,7 +101,6 @@ class SingleObjectScorePane(
         }
         marker.startYProperty().bind(heightProperty().subtract(gridHeight))
         marker.endYProperty().bind(heightProperty())
-        marker.visibleProperty().bind(context.project.uiState.snapEnabled.asObservableValue())
         marker.isMouseTransparent = true
     }
 
@@ -120,32 +118,15 @@ class SingleObjectScorePane(
 
     fun repaintGrid() {
         if (!paintGrid) return
-        val mainScorePosition = positionInMainScore()
-        val quant = quantization
-        val (meter, firstBar, offset) = when {
-            quant != null && quant.meter.now.isResolved.now -> {
-                val meter = quant.meter.now.force()
-                val offset =
-                    if (!quant.shiftGrid.now) zero
-                    else quant.computeOffset()
-                Triple(meter, 0, offset)
-            }
-
-            mainScorePosition != null -> {
-                val mainScoreView = context[PonticelloMainActivity].mainScoreView
-                val (start, meter, firstBar) = mainScoreView.getNearestGrid(mainScorePosition) ?: return
-                val offset = mainScorePosition.time - start
-                Triple(meter, firstBar, offset)
-            }
-
-            else -> return
+        gridCanvas.graphicsContext2D.clearRect(0.0, 0.0, gridCanvas.width, gridCanvas.height)
+        if (getSingleObjectView()?.tempoGrid != null) return
+        val grid = getPaneGrid()
+        if (grid == null) {
+            marker.visibleProperty().unbind()
+            marker.isVisible = false
+            return
         }
-        val duration = rootObj.duration.value
-        TempoGridObjectView.paintGrid(
-            context, meter, duration, gridCanvas,
-            firstBar, offset, scale = one,
-            style = TempoGridObjectView.GridStyle.Regular
-        )
+        grid.paintGrid()
     }
 
     override fun mouseExited() {
@@ -153,42 +134,47 @@ class SingleObjectScorePane(
         children.remove(marker)
     }
 
-    override fun getScoreY(screenY: Double): Decimal = (screenY / (height - gridHeight)).asY * rootObj.height
+    override fun getScoreY(screenY: Double): Decimal = (screenY / (height)).asY * rootObj.height
 
-    override fun getScreenY(scoreY: Decimal): Double = ((scoreY / rootObj.height) * (height - gridHeight)).value
+    override fun getScreenY(scoreY: Decimal): Double = ((scoreY / rootObj.height) * (height)).value
 
     override fun isRoot(obj: ScoreObject): Boolean = obj == rootObj
 
-    override fun snapToGrid(position: ObjectPosition): ObjectPosition {
-        val positionInMainScore = positionInMainScore() ?: return super.snapToGrid(position)
-        return super.snapToGrid(position + positionInMainScore) - positionInMainScore
-    }
-
-    override fun getNearestGrid(position: ObjectPosition): Triple<Decimal, MeterObject, Int>? {
-        val fromScore = super.getNearestGrid(position)
-        if (fromScore != null) return fromScore
+    private fun getPaneGrid(): TempoGrid? {
         val mainScorePosition = positionInMainScore()
         val quant = quantization
         return when {
             quant != null && quant.meter.now.isResolved.now -> {
-                val meterStart = -quant.computeOffset()
-                val firstBar = 0
-                Triple(meterStart, quant.meter.now.force(), firstBar)
+                val meter = quant.meter.now.force()
+                val offset =
+                    if (!quant.shiftGrid.now) zero
+                    else quant.computeOffset()
+                TempoGrid(
+                    TempoGrid.GridType.Regular, rootObj,
+                    getPosition = { ObjectPosition.ZERO },
+                    meter, scale = one, offset = offset,
+                    gridCanvas, marker
+                )
             }
 
             mainScorePosition != null -> {
                 val mainScoreView = context[PonticelloMainActivity].mainScoreView
-                mainScoreView.getNearestGrid(position)
+                val grid = mainScoreView.getNearestGrid(mainScorePosition) ?: return null
+                val offset = mainScorePosition.time - grid.gridStart
+                grid.copy(
+                    type = TempoGrid.GridType.Regular, scoreObject = rootObj,
+                    getPosition = { ObjectPosition.ZERO },
+                    offset = offset, canvas = gridCanvas, marker = marker
+                )
             }
 
-            else -> null
+            else -> return null
         }
     }
 
-    override fun markT(t: Decimal) {
-        super.markT(t)
-        if (marker !in children) children.add(marker)
-        marker.startX = getWidth(t)
-        marker.endX = getWidth(t)
+    override fun getNearestGrid(position: ObjectPosition): TempoGrid? {
+        val fromScore = super.getNearestGrid(position)
+        if (fromScore != null) return fromScore
+        return getPaneGrid()
     }
 }

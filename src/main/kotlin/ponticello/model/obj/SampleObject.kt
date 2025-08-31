@@ -145,7 +145,6 @@ class SampleObject(
             meter.beatsPerMinute.now = bpm.toDecimal()
             meter.beatsPerBar.now = metadata.getFirst("BPB").toIntOrNull() ?: 4
             meter.ticksPerBeat.now = metadata.getFirst("TPB").toIntOrNull() ?: 4
-            firstBeat.now = metadata.getFirst("FIRST-BEAT").parseDecimal() ?: zero
         } catch (ex: Exception) {
             Logger.error("Error while reading audio file metadata for $this", ex)
         }

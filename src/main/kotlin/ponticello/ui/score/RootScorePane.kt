@@ -10,14 +10,12 @@ import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import ponticello.impl.*
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.obj.withName
 import ponticello.model.project.uiState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
 import ponticello.ui.impl.Cursors
-import ponticello.ui.impl.verticalDist
 import ponticello.ui.misc.PlayHead
 import reaktive.event.unitEvent
 import reaktive.value.now
@@ -92,8 +90,8 @@ abstract class RootScorePane(
     }
 
     override fun mouseExited() {
-        for (gridView in allViews.filterIsInstance<TempoGridObjectView>()) {
-            gridView.unmark()
+        for (grid in getAllGrids()) {
+            grid.unmark()
         }
         timeCodeView.displayTime(playHead.currentTime)
     }
@@ -158,16 +156,20 @@ abstract class RootScorePane(
         return future
     }
 
-    override fun getNearestGrid(position: ObjectPosition): Triple<Decimal, MeterObject, Int>? {
-        val grids = score.objectInstances.filter { inst ->
-            val obj = inst.obj
-            obj is TempoGridObject && obj.meter.isResolved.now
-        }
+    override fun getNearestGrid(position: ObjectPosition): TempoGrid? {
+        val grids = getAllGrids()
         val relevantGrids = grids.filter { g -> position.time in g.timeRange }
-        val nearestGrid = relevantGrids.minByOrNull { g -> g.verticalDist(position.y) } ?: return null
-        val gridObj = nearestGrid.obj as TempoGridObject
-        return Triple(nearestGrid.start, gridObj.meter.force(), gridObj.firstBar.now)
+        val gridHeight = getScoreY(TempoGrid.GRID_HEIGHT)
+        return relevantGrids.minByOrNull { g ->
+            when {
+                g.yPosition < position.y -> position.y - g.yPosition
+                g.yPosition > position.y + gridHeight -> position.y - (g.yPosition + gridHeight)
+                else -> 0.0.asY
+            }
+        }
     }
+
+    private fun getAllGrids(): List<TempoGrid> = allViews.mapNotNull { view -> view.tempoGrid }
 
     override fun snapToGrid(position: ObjectPosition): ObjectPosition {
         val settings = context.project.uiState
@@ -176,24 +178,24 @@ abstract class RootScorePane(
         when (val option = settings.snapOption.now) {
             TimeUnit.Seconds -> return ObjectPosition(t.round(0), y)
             else -> {
-                val nearestGrid = getNearestGrid(position)
-                val gridStart = nearestGrid?.first
-                val meter = nearestGrid?.second
-                for (grid in allViews.filterIsInstance<TempoGridObjectView>()) {
-                    if (grid.instance.start != gridStart) grid.unmark()
+                val grid = getNearestGrid(position)
+                for (g in getAllGrids()) { //TODO needed?
+                    if (g.marker != grid?.marker) g.unmark()
                 }
-                if (meter == null || gridStart == null) return position
-                val snapped = meter.snapToGrid(t - gridStart, option)
-                return ObjectPosition(snapped + gridStart, y)
+                if (grid == null) return position
+                val snapped = grid.snapToGrid(t, option)
+                return ObjectPosition(snapped, y)
             }
         }
     }
 
     override fun markT(t: Decimal) {
-        val grids = allViews.filterIsInstance<TempoGridObjectView>()
+        val grids = getAllGrids()
         for (g in grids) {
-            if (t in g.instance.timeRange) g.mark(t - g.instance.start)
-            else g.unmark()
+            if (t in g.timeRange) {
+                val x = getWidth(t - g.gridStart)
+                g.mark(x)
+            } else g.unmark()
         }
         positionTracker.layoutX = getX(t)
         if (playHead.canMoveManually.now) {

@@ -12,9 +12,12 @@ import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
 import javafx.scene.robot.Robot
+import ponticello.impl.one
+import ponticello.impl.zero
 import ponticello.model.obj.BusObject
 import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.ParameterDefObject
+import ponticello.model.obj.SampleObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.BufferRegistry
@@ -50,6 +53,21 @@ class SoundProcessView(
     private lateinit var lfosObserver: Observer
     private lateinit var controlsDisplayObserver: Observer
     private val midiContext by lazy { ParameterControlsMidiContext(obj.controls) }
+    override val tempoGrid: TempoGrid?
+        get() {
+            val sample = obj.sample.now?.get() as? SampleObject ?: return null
+            val meter = sample.meter
+            if (meter.isNone()) return null
+            val rate = obj.playBufRate?.now ?: one
+            val startPos = obj.playbufStartPos?.now ?: zero
+            val offset = (startPos / rate) - sample.firstBeat.now
+            return TempoGrid(
+                type = TempoGrid.GridType.SampleOverlay, scoreObject = obj,
+                getPosition = this::absolutePosition,
+                meter = meter, offset = offset, scale = rate,
+                canvas = samplePainter.gridCanvas, marker = samplePainter.marker
+            )
+        }
 
     init {
         styleClass("sound-process")

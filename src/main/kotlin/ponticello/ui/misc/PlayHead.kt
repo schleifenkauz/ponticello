@@ -14,6 +14,7 @@ import ponticello.ui.score.TimeCodeView
 import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.forEach
+import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 class PlayHead {
@@ -63,7 +64,9 @@ class PlayHead {
         for ((pane, timeCodeView, playHead) in attached) {
             if (!pane.children.contains(playHead)) pane.children.add(playHead)
             playHead.layoutX = pane.getX(currentTime)
-            timeCodeView.displayTime(currentTime)
+            if (!canMoveManually.now) {
+                timeCodeView.displayTime(currentTime)
+            }
         }
     }
 

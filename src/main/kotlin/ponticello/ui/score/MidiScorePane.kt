@@ -198,12 +198,12 @@ class MidiScorePane(
                 if (lastMousePress != null && lastMousePress!!.distance(ev.x, ev.y) > 0.1) {
                     getDuration(cursorNode.width)
                 } else {
-                    val meter = parentPane.getNearestGrid(instance.position)?.second
+                    val grid = parentPane.getNearestGrid(instance.position)
                     val settings = context.project.uiState
                     val snapOption =
                         if (settings.snapEnabled.now) settings.snapOption.now
                         else null
-                    snapOption?.let { meter?.getDuration(it) } ?: getDuration(cursorNode.width)
+                    snapOption?.let { grid?.meter?.getDuration(it) } ?: getDuration(cursorNode.width)
                 }
             if (duration <= zero) return
             val midinote = getMidiNote(cursorNode.y)

@@ -1,5 +1,6 @@
 package ponticello.ui.score
 
+import fxutils.styleClass
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.geometry.Rectangle2D
@@ -33,7 +34,8 @@ class SamplePainter(
 
     private var spectrogramImage: Image? = null
     private val spectrogramSegments = mutableListOf<SpectrogramSegment>()
-    private val gridCanvas: Canvas = Canvas()
+    val gridCanvas: Canvas = Canvas()
+    val marker: Line = Line() styleClass "grid-marker-line"
 
     private var startPosObserver: Observer? = null
     private var rateObserver: Observer? = null
@@ -46,9 +48,11 @@ class SamplePainter(
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
         gridCanvas.widthProperty().bind(Bindings.min(view.prefWidthProperty(), MAX_OBJECT_WIDTH))
-        gridCanvas.heightProperty().bind(Bindings.min(view.prefHeightProperty(), TempoGridObjectView.GRID_HEIGHT))
+        gridCanvas.heightProperty().bind(Bindings.min(view.prefHeightProperty(), TempoGrid.GRID_HEIGHT))
         gridCanvas.layoutYProperty().bind(objectPane.heightProperty().subtract(gridCanvas.heightProperty()))
-        objectPane.children.add(gridCanvas)
+        marker.startYProperty().bind(objectPane.heightProperty().subtract(gridCanvas.heightProperty()))
+        marker.endYProperty().bind(objectPane.heightProperty())
+        objectPane.children.addAll(gridCanvas, marker)
         obj.controls.addListener(this)
     }
 
@@ -263,19 +267,15 @@ class SamplePainter(
 
     private fun redrawGrid() {
         clearGrid()
-        val sample = obj.sample.get()?.get() as SampleObject? ?: return
-        val meter = sample.meter
-        if (meter.isNone()) return
+        val grid = view.tempoGrid
+        if (grid == null) {
+            marker.visibleProperty().unbind()
+            marker.isVisible = false
+            return
+        }
         val offsetX = if (view.prefWidth > MAX_OBJECT_WIDTH && view.layoutX < 0.0) -view.layoutX else 0.0
         gridCanvas.translateX = offsetX
         val offsetDur = view.getDuration(offsetX)
-        val startPos = obj.playbufStartPos?.now ?: zero
-        val rate = obj.playBufRate?.now ?: one(precision = 3)
-        val offset = offsetDur + (startPos / rate) - sample.firstBeat.now
-        TempoGridObjectView.paintGrid(
-            obj.context, meter, obj.duration.value, gridCanvas,
-            firstBar = 0, offset = offset, scale = rate,
-            style = TempoGridObjectView.GridStyle.SampleOverlay
-        )
+        grid.paintGrid(offsetDur)
     }
 }

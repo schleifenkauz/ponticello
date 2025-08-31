@@ -20,7 +20,7 @@ data class ActiveScoreObject(
     private var stillActive = true
 
     val isStillActive: Boolean
-        get() = stillActive && absolutePosition.time + obj.duration - cutoff > player.currentTime
+        get() = stillActive && absolutePosition.time + obj.duration > player.currentTime
 
     fun stopped() {
         stillActive = false

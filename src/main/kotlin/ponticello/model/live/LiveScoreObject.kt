@@ -80,12 +80,13 @@ class LiveScoreObject(
 
     fun inferQuantizationFrom(absolutePosition: ObjectPosition, context: Context): Boolean {
         val mainScoreView = context[PonticelloMainActivity].mainScoreView
-        val (gridStart, meter) = mainScoreView.getNearestGrid(absolutePosition) ?: return false
-        quantization.meter.set(meter.reference())
-        var delta = absolutePosition.time - gridStart
+        val grid = mainScoreView.getNearestGrid(absolutePosition) ?: return false
+        if (!grid.meter.initialized) return false //track meter
+        quantization.meter.set(grid.meter.reference())
+        var delta = absolutePosition.time - grid.gridStart
         while (delta < zero) delta += scoreObject.duration
         while (delta >= scoreObject.duration) delta -= scoreObject.duration
-        val (offsetUnit, offsetValue) = meter.represent(delta)
+        val (offsetUnit, offsetValue) = grid.meter.represent(delta)
         quantization.offsetUnit.set(offsetUnit)
         quantization.offsetValue.set(offsetValue)
         quantization.enableQuantization.set(true)

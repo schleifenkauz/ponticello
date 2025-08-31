@@ -15,8 +15,6 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import javafx.stage.Window
-import ponticello.impl.Decimal
-import ponticello.impl.asY
 import ponticello.model.obj.project
 import ponticello.model.project.*
 import ponticello.model.registry.NamedObject
@@ -24,7 +22,6 @@ import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectInstance
 import ponticello.ui.actions.registerGlobalShortcuts
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
@@ -38,12 +35,6 @@ fun <T : NamedObject> Dragboard.getFrom(registry: NamedObjectList<T>, format: Da
     val ref = getContent(format) as? ObjectReference<T> ?: return null
     ref.resolve(registry)
     return ref.get()
-}
-
-fun ScoreObjectInstance.verticalDist(y: Decimal) = when {
-    y < this.y -> this.y - y
-    y > y + height -> y - (this.y + this.height)
-    else -> 0.0.asY
 }
 
 val KeyEvent.resizeMode: ScoreObject.ResizeMode?

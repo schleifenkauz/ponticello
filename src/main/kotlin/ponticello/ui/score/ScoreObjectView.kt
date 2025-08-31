@@ -87,6 +87,8 @@ abstract class ScoreObjectView(
 
     val actionContext = ObjectActionContext.SingleObjectContext(this)
 
+    open val tempoGrid: TempoGrid? get() = null
+
     init {
         styleClass("score-object")
         isFocusTraversable = true
@@ -616,7 +618,7 @@ abstract class ScoreObjectView(
     fun getDeltaT(direction: HorizontalDirection = RIGHT): Decimal {
         val parentPane = parentPane
         val factor = if (direction == LEFT) -1.0 else 1.0
-        val meter = parentPane.getNearestGrid(instance.position)?.second
+        val meter = parentPane.getNearestGrid(instance.position)?.meter
         val settings = context.project.uiState
         val snapOption = if (settings.snapEnabled.now) settings.snapOption.now else null
         val deltaT =

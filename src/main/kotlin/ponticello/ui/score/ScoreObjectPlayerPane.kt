@@ -1,13 +1,17 @@
 package ponticello.ui.score
 
 import fxutils.actions.collectActions
+import fxutils.actions.registerActions
 import fxutils.centerChildren
 import fxutils.hspace
+import fxutils.registerShortcuts
 import fxutils.styleClass
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.PlaybackActions
+import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.actions.toolbarPart
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.PlayHead
@@ -19,6 +23,7 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
 
     val playHead = liveScoreObject.playHead ?: PlayHead()
     val scorePane = SingleObjectScorePane(obj, context, playHead, paintGrid = true)
+    val borderPane = BorderPane(scorePane) styleClass "single-object-score-pane"
 
     init {
         scorePane.initialize()
@@ -27,6 +32,19 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
     }
 
     private fun setupActionHandlers() {
+        scorePane.getSingleObjectView()?.setOnMouseClicked { ev ->
+            borderPane.requestFocus()
+            val (time, _) = scorePane.snapToGrid(ev.x, ev.y)
+            playHead.movePlayHead(time)
+        }
+        scorePane.setOnMouseClicked {
+            borderPane.requestFocus()
+        }
+        borderPane.registerShortcuts {
+            registerActions(ScoreObjectActions.localObjectActions.withContext(obj))
+            registerActions(actions.withContext(this@ScoreObjectPlayerPane))
+        }
+        borderPane
         context[ScoreObjectDuplicator].registerRootPane(scorePane)
     }
 
@@ -43,7 +61,7 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
     ).centerChildren()
 
     companion object {
-        private val actions = collectActions<ScoreObjectPlayerPane> {
+        val actions = collectActions<ScoreObjectPlayerPane> {
             add(PlaybackActions.goToStartAction("Ctrl+DIGIT0")) { p -> p.playHead }
             add(LiveObjectRegistryPane.playPauseAction.map { p -> p.liveScoreObject }) {
                 executesFirst { pane, _ -> setupLiveScoreObject(pane) }
