@@ -2,6 +2,7 @@ package ponticello.ui.flow
 
 import fxutils.*
 import fxutils.actions.*
+import fxutils.controls.PropertySelectorButton
 import fxutils.drag.ConfiguredDropHandler
 import fxutils.drag.setupDropArea
 import fxutils.prompt.SelectorPrompt
@@ -121,6 +122,12 @@ class MixerPane(
             field = value
         }
 
+    private val deviceSelector = PropertySelectorButton(
+        this::selectedDevice,
+        prompt = MidiDeviceSelectorPrompt(),
+        defaultValue = MidiDeviceSelectorPrompt.Option.NoDevice
+    )
+
     override val headerContent: Node
         get() {
             val selector = MixerListPopup().selectorButton(
@@ -129,7 +136,6 @@ class MixerPane(
             )
             return if (channelsList == null) selector
             else {
-                val deviceSelector = MidiDeviceSelectorPrompt().selectorButton(this::selectedDevice)
                 HBox(
                     5.0, selector,
                     Label("MIDI:"), deviceSelector,
@@ -151,9 +157,12 @@ class MixerPane(
         if (state is MixerPaneState) {
             state.flowReference.resolve(allMixerFlows())
             selectedMixer = state.flowReference
-            val device = MidiSystem.getMidiDeviceInfo().find { it.name == state.midiDeviceName }
+            val device = MidiSystem.getMidiDeviceInfo().first { d ->
+                d.name == state.midiDeviceName && d.javaClass.simpleName.startsWith("MidiIn")
+            }
             if (device != null) {
                 selectedDevice = MidiDeviceSelectorPrompt.Option.Device(device)
+                deviceSelector.update(selectedDevice)
             }
         }
         setupVolumeChangeWithArrowKeys()

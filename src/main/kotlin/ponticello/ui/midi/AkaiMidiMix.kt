@@ -3,6 +3,7 @@ package ponticello.ui.midi
 import javafx.application.Platform
 import ponticello.impl.Decimal
 import ponticello.impl.withPrecision
+import ponticello.impl.zero
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.MixerComponentMode.*
 import ponticello.model.obj.project
@@ -14,6 +15,9 @@ import javax.sound.midi.*
 class AkaiMidiMix : Receiver {
     private var device: MidiDevice? = null
     var flow: MixerFlow? = null
+
+    private val faderVolumes = Array(8) { zero }
+    private val knobVolumes = Array(8) { zero }
 
     fun detach() {
         device?.transmitter?.receiver = null
@@ -38,22 +42,29 @@ class AkaiMidiMix : Receiver {
                 val component = flow.components.getOrNull(channel)
                 when {
                     message.data1 == 62 -> {
-                        Platform.runLater { flow.masterVolume.now = getVolume(message.data2) }
+                        Platform.runLater { flow.masterVolume.now = getFaderVolume(message.data2) }
                     }
+                    remainder == 0 -> {}
 
-                    remainder == 0 -> {} //TODO some filter
-                    remainder == 1 -> {} //TODO some filter
-                    remainder == 2 -> {
+                    remainder == 1 -> {
                         val panVar = component?.pan ?: return
                         Platform.runLater { panVar.now = getPan(message.data2) }
                     }
 
+                    remainder == 2 -> {
+                        val volumeVar = component?.volume ?: return
+                        knobVolumes[channel] = getKnobVolume(message.data2)
+                        Platform.runLater { volumeVar.now = knobVolumes[channel] + faderVolumes[channel] }
+                    }
+
+
                     remainder == 3 -> {
                         val volumeVar = component?.volume ?: return
-                        Platform.runLater { volumeVar.now = getVolume(message.data2) }
+                        val volume = getFaderVolume(message.data2)
+                        faderVolumes[channel] = volume
+                        Platform.runLater { volumeVar.now = volume + knobVolumes[channel] }
                     }
                 }
-
             }
 
             ShortMessage.NOTE_ON -> {
@@ -69,9 +80,14 @@ class AkaiMidiMix : Receiver {
         }
     }
 
-    private fun getVolume(byte: Int): Decimal {
+    private fun getFaderVolume(byte: Int): Decimal {
         val scaled = byte / 127.0 * 60.0
         return (scaled - 60.0).withPrecision(1)
+    }
+
+    private fun getKnobVolume(byte: Int): Decimal {
+        val scaled = byte / 127.0 * 48.0
+        return (scaled - 24.0).withPrecision(1)
     }
 
     private fun getPan(byte: Int): Decimal {
