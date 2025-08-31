@@ -21,6 +21,7 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
 import ponticello.impl.Decimal
@@ -139,6 +140,7 @@ class MixerPane(
                 HBox(
                     5.0, selector,
                     Label("MIDI:"), deviceSelector,
+                    toggleFiltersAction.withContext(selectedMixer.force()).makeButton("medium-icon-button"),
                     ActionBar(channelsList!!.actions, "medium-icon-button")
                 ).centerChildren()
             }
@@ -157,12 +159,13 @@ class MixerPane(
         if (state is MixerPaneState) {
             state.flowReference.resolve(allMixerFlows())
             selectedMixer = state.flowReference
-            val device = MidiSystem.getMidiDeviceInfo().first { d ->
+            val device = MidiSystem.getMidiDeviceInfo().find { d ->
                 d.name == state.midiDeviceName && d.javaClass.simpleName.startsWith("MidiIn")
             }
             if (device != null) {
-                selectedDevice = MidiDeviceSelectorPrompt.Option.Device(device)
-                deviceSelector.update(selectedDevice)
+                deviceSelector.update(MidiDeviceSelectorPrompt.Option.Device(device))
+            } else {
+                Logger.warn("Unable to find midi device ${state.midiDeviceName}", Logger.Category.AudioFlow)
             }
         }
         setupVolumeChangeWithArrowKeys()
@@ -376,6 +379,12 @@ class MixerPane(
                 whenTrue = MaterialDesignV.VOLUME_MUTE,
                 whenFalse = MaterialDesignV.VOLUME_HIGH
             )
+            undoable()
+        }
+
+        private val toggleFiltersAction = action("Toggle filters") {
+            icon(MaterialDesignC.CAR_CRUISE_CONTROL)
+            toggles(MixerFlow::activateFilters)
             undoable()
         }
     }

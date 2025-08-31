@@ -33,6 +33,7 @@ class MixerFlow(
     val masterVolume: ReactiveVariable<Decimal> = reactiveVariable(zero),
     val masterMute: ReactiveVariable<Boolean> = reactiveVariable(false),
     val monoMix: ReactiveVariable<Boolean> = reactiveVariable(false),
+    val activateFilters: ReactiveVariable<Boolean> = reactiveVariable(false)
 ) : AudioFlow(), ObjectList.Listener<MixerFlow.MixerComponent> {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -92,7 +93,7 @@ class MixerFlow(
         sinkObserver = targetBus.observe { _, old, new ->
             replacedBus(old, new)
             sync()
-        }
+        } and activateFilters.observe { _ -> sync() }
         observeMasterControls()
     }
 
@@ -173,11 +174,15 @@ class MixerFlow(
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
         appendBlock("$superColliderName = ", endLine = false) {
-            +"var sources, volumes, pans, snd, mono_mix"
+            +"var sources, volumes, pans, filters, snd, mono_mix"
             val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
             val volumes = components.map { comp -> getActualVolume(comp) }
             +"sources = NamedControl.kr(\\sources, $sources, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
             +"volumes = NamedControl.kr(\\volumes, $volumes, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+            if (activateFilters.now) {
+                val filters = List(components.size) { "0.0" }
+                +"filters = NamedControl.kr(\\filters, $filters, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+            }
             +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
             if (sink.channels.now == 2) {
                 val pans = components.map { comp -> (comp.pan.now / 100).withPrecision(2) }
@@ -190,6 +195,19 @@ class MixerFlow(
                             +"sources[$i] = Balance2.ar(sources[$i][0], sources[$i][1], pans[$i])"
                         }
                     }
+                }
+            }
+            if (activateFilters.now) {
+                for (i in sources.indices) {
+                    appendBlock(endLine = false) {
+                        +"var dry, cutoff, lpf, hpf, filtered"
+                        +"dry = sources[$i]"
+                        +"lpf = BLowPass4.ar(dry, filters[$i].abs.linexp(0, 1, 12000, 60), 0.3)"
+                        +"hpf = BHiPass4.ar(dry, filters[$i].abs.linexp(0, 1, 20, 12000), 0.3)"
+                        +"filtered = SelectX.ar(filters[$i].linlin(-1, 1, 0, 1) ! 2, [lpf, hpf])"
+                        +"sources[$i] = XFade2.ar(dry, filtered, filters[$i].abs)"
+                    }
+                    appendLine(".value;")
                 }
             }
             +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
