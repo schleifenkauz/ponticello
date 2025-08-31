@@ -35,7 +35,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     private var prevDragTarget: Node? = null
 
-    private val currentMode get() = parent.mode.now
+    val currentMode get() = parent.mode.now
 
     val config get() = parent.config
 
@@ -103,7 +103,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     fun content(): Parent? {
         content?.let { return it }
-        content = (config.getContent(obj, currentMode) ?: return null)
+        content = (config.getContent(obj, this) ?: return null)
         return content!!
     }
 
@@ -129,7 +129,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             }
         }
         if (currentMode is DisplayMode.Inline) {
-            content = config.getContent(obj, currentMode)
+            content = config.getContent(obj, this)
         }
         relayout()
         if (config.dataFormat != null) {
@@ -153,7 +153,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
     }
 
     private fun createSubWindow(): SubWindow? {
-        content = config.getContent(obj, DisplayMode.SubWindow) ?: return null
+        content = config.getContent(obj, this) ?: return null
         val objectType = parent.source.objectType
         val name = if (obj is NamedObject) obj.name.now else ""
         val title = "$objectType $name"

@@ -53,14 +53,13 @@ class InstrumentRegistryPane(
         if (obj is CustomizableSynthDefObject || obj is ProcessDefObject) Material2AL.CODE
         else MaterialDesignE.EYE
 
-    override fun getContent(obj: InstrumentObject, mode: DisplayMode): Parent? = when (obj) {
+    override fun getContent(obj: InstrumentObject, box: ObjectBox<InstrumentObject>): Parent? = when (obj) {
         is CustomizableSynthDefObject -> {
-            mode == DisplayMode.SubWindow
             SynthDefObjectPane(obj)
         }
 
         is ProcessDefObject -> {
-            val enableActions = mode == DisplayMode.SubWindow
+            val enableActions = box.currentMode == DisplayMode.SubWindow
             ProcessDefObjectPane(obj, enableActions)
         }
 

@@ -46,14 +46,18 @@ class GlobalPatternRegistryPane(
 
     override fun createNewObject(name: String, ev: Event?): GlobalPatternObject = GlobalPatternObject.create(name)
 
-    override fun getContent(obj: GlobalPatternObject, mode: DisplayMode): Parent = when (mode) {
-        DisplayMode.SubWindow -> {
-            val actions = actions.withContext(listView.getBox(obj))
-            CodePane(obj.patternCode, extraActions = actions, ownWindow = true, actionBarAlignment = Pos.BOTTOM_RIGHT)
-        }
+    override fun getContent(obj: GlobalPatternObject, box: ObjectBox<GlobalPatternObject>): Parent =
+        when (box.currentMode) {
+            DisplayMode.SubWindow -> {
+                val actions = actions.withContext(listView.getBox(obj))
+                CodePane(
+                    obj.patternCode, extraActions = actions,
+                    ownWindow = true, actionBarAlignment = Pos.BOTTOM_RIGHT
+                )
+            }
 
-        else -> ScrollPane(obj.patternCode.control)
-    }
+            else -> ScrollPane(obj.patternCode.control)
+        }
 
     override fun configureSubWindow(window: SubWindow, obj: GlobalPatternObject) {
         window.width = 600.0

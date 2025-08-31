@@ -63,7 +63,7 @@ interface ListDisplayConfig<O : Any> {
 
     fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = emptyList()
 
-    fun getContent(obj: O, mode: ObjectListView.DisplayMode): Parent? = null
+    fun getContent(obj: O, box: ObjectBox<O>): Parent? = null
 
     fun configureBox(box: ObjectBox<O>, currentMode: ObjectListView.DisplayMode) {}
 

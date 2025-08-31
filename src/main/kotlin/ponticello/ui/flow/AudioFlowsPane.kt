@@ -114,7 +114,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
     override fun getActions(box: ObjectBox<AudioFlowGroup>): List<ContextualizedAction> =
         groupActions.withContext(box)
 
-    override fun getContent(obj: AudioFlowGroup, mode: DisplayMode): Parent =
+    override fun getContent(obj: AudioFlowGroup, box: ObjectBox<AudioFlowGroup>): Parent =
         FlowGroupPane(obj, parent = this)
 
     fun filter(flow: AudioFlow) = when (val filter = selectedFilter) {

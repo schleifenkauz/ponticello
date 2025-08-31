@@ -126,7 +126,7 @@ class FlowGroupPane(
         }
     }
 
-    override fun getContent(obj: AudioFlow, mode: DisplayMode): Parent = when (obj) {
+    override fun getContent(obj: AudioFlow, box: ObjectBox<AudioFlow>): Parent = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
         is InstrumentFlow -> ParameterControlsPane(obj).pad(5.0)

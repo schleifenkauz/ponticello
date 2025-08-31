@@ -17,13 +17,16 @@ import hextant.context.Context
 import hextant.fx.HextantTextField
 import javafx.event.Event
 import javafx.scene.Node
+import javafx.scene.Parent
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.control.Tooltip
+import javafx.scene.image.ImageView
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
+import javafx.scene.layout.BorderPane
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
@@ -60,6 +63,9 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         get() = BufferRegistryPane
     override val headerActions: List<ContextualizedAction>
         get() = registryActions.withContext(buffers) + super.headerActions
+
+    override val supportedModes: Collection<ObjectListView.DisplayMode>
+        get() = setOf(ObjectListView.DisplayMode.Collapsable)
 
     private var filter = BufferTypeFilter.All
         set(value) {
@@ -168,6 +174,19 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         }
     }
 
+    override fun getContent(obj: BufferObject, box: ObjectBox<BufferObject>): Parent? = when (obj) {
+        is AllocatedBufferObject -> null
+        is SampleObject -> {
+            val image = obj.spectrogramImage
+            val view = ImageView(image)
+            view.fitHeight = SPECTROGRAM_HEIGHT
+            view.fitWidthProperty().bind(box.widthProperty().subtract(10.0))
+            view.isPreserveRatio = false
+            val pane = BorderPane(view)
+            pane
+        }
+    }
+
     override fun configureBox(box: ObjectBox<BufferObject>, currentMode: ObjectListView.DisplayMode) {
         val obj = box.obj
         if (obj is SampleObject) {
@@ -238,6 +257,8 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
 
         override fun createToolPane(project: PonticelloProject): ToolPane = BufferRegistryPane(project.buffers)
 
+        private const val SPECTROGRAM_HEIGHT = 30.0
+
         private val allocatedBufferActions = collectActions<ObjectBox<BufferObject>> {
             addAction("View buffer contents") {
                 icon(Evaicons.ACTIVITY)
@@ -272,10 +293,6 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
                     MeterConfigPrompt(obj, obj.context, "Edit meter")
                         .showDialog(ev)
                 }
-            }
-            addAction("View sample") {
-                icon(Evaicons.ACTIVITY)
-                executesOn { obj: SampleObject -> obj.showSpectrogram() }
             }
             addAction("Replace sample contents") {
                 icon(MaterialDesignF.FILE_MUSIC_OUTLINE)

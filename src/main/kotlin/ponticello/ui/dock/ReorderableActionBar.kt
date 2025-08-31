@@ -54,7 +54,7 @@ abstract class ReorderableActionBar<O : Any>(
 
     protected abstract fun getAction(obj: O): ContextualizedAction
 
-    override fun getContent(obj: O, mode: ObjectListView.DisplayMode): Parent? {
+    override fun getContent(obj: O, box: ObjectBox<O>): Parent? {
         val action = getAction(obj)
         return action.makeButton(style)
     }

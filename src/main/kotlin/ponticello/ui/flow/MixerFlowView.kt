@@ -16,6 +16,7 @@ import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl
 import ponticello.ui.registry.ListDisplayConfig
+import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
@@ -76,7 +77,7 @@ class MixerFlowView private constructor(
         return listOf(selectorControl, volumeSlider, panKnob)
     }
 
-    override fun getContent(obj: MixerFlow.MixerComponent, mode: ObjectListView.DisplayMode): Parent = Region()
+    override fun getContent(obj: MixerFlow.MixerComponent, box: ObjectBox<MixerFlow.MixerComponent>): Parent = Region()
 
     companion object {
         fun create(flow: MixerFlow): MixerFlowView {

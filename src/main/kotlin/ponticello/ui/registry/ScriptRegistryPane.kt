@@ -59,7 +59,7 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
 
     override fun getActions(box: ObjectBox<ScriptObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
-    override fun getContent(obj: ScriptObject, mode: DisplayMode): Parent =
+    override fun getContent(obj: ScriptObject, box: ObjectBox<ScriptObject>): Parent =
         CodePane(obj.root, ownWindow = true)
 
     companion object : Type(11, "Scripts") {

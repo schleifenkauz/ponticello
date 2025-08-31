@@ -324,7 +324,7 @@ class MixerPane(
         return fader
     }
 
-    override fun getContent(obj: MixerFlow.MixerComponent, mode: ObjectListView.DisplayMode): Parent = Region()
+    override fun getContent(obj: MixerFlow.MixerComponent, box: ObjectBox<MixerFlow.MixerComponent>): Parent = Region()
 
     override fun getDragTarget(box: ObjectBox<MixerFlow.MixerComponent>): Node = box
 

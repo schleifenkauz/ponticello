@@ -161,7 +161,7 @@ class ParameterControlsPane(
         return listOf(editor)
     }
 
-    override fun getContent(obj: NamedParameterControl, mode: DisplayMode): Parent? = when (val ctrl = obj.now) {
+    override fun getContent(obj: NamedParameterControl, box: ObjectBox<NamedParameterControl>): Parent? = when (val ctrl = obj.now) {
         is ExprControl -> ctrl.expr.control
         is UGenControl -> ctrl.expr.control
         else -> null

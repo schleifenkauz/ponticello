@@ -67,12 +67,12 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
     override val headerActions: List<ContextualizedAction>
         get() = LiveObjectRegistryPane.headerActions.withContext(this)
 
-    override fun getContent(obj: LiveObject, mode: DisplayMode): Parent = when (obj) {
+    override fun getContent(obj: LiveObject, box: ObjectBox<LiveObject>): Parent = when (obj) {
         is LiveTaskObject -> {
             val actions =
-                if (mode == DisplayMode.SubWindow) actions.withContext(obj)
+                if (box.currentMode == DisplayMode.SubWindow) actions.withContext(obj)
                 else emptyList()
-            CodePane(obj.code, actions, ownWindow = mode == DisplayMode.SubWindow)
+            CodePane(obj.code, actions, ownWindow = box.currentMode == DisplayMode.SubWindow)
         }
 
         is LiveScoreObject -> {
