@@ -193,7 +193,7 @@ class SamplePainter(
                 loopPointIndicator.stroke = Color.WHITE
                 loopPointIndicator.viewOrder = 500.0
             }
-            spectrogramSegments.add(SpectrogramSegment(t, dur, view, loopPointIndicator))
+            spectrogramSegments.add(SpectrogramSegment(t, dur, view, view.viewport, loopPointIndicator))
             t += dur
         }
         objectPane.children.addAll(spectrogramSegments.map { eg -> eg.image })
@@ -201,21 +201,35 @@ class SamplePainter(
     }
 
     private fun rescaleSpectrogram() {
-        for (node in spectrogramSegments) {
-            val x = view.getWidth(node.start)
-            node.image.layoutX = x
-            node.image.fitWidth = view.getWidth(node.duration)
-            node.image.fitHeight = objectPane.height
+        for (segment in spectrogramSegments) {
+            val x = view.getWidth(segment.start)
+            segment.image.layoutX = x
+            val width = view.getWidth(segment.duration)
+            segment.image.fitWidth = width.coerceAtMost(MAX_OBJECT_WIDTH)
+            val layoutX = x + view.layoutX
+            if (width > MAX_OBJECT_WIDTH && layoutX < 0.0) {
+                val offset = -layoutX
+                segment.image.translateX = offset
+                val viewportWidth = segment.viewport.width * (MAX_OBJECT_WIDTH / width)
+                segment.image.viewport = Rectangle2D(
+                    segment.viewport.minX + offset, segment.viewport.minY,
+                    viewportWidth, segment.viewport.height
+                )
+            } else {
+                segment.image.translateX = 0.0
+                segment.image.viewport = segment.viewport
+            }
+            segment.image.fitHeight = objectPane.height
             val rate = obj.playBufRate
             if (rate != null && rate.now < zero) {
-                node.image.transforms.setAll(
-                    Translate(node.image.fitWidth, 0.0),
+                segment.image.transforms.setAll(
+                    Translate(segment.image.fitWidth, 0.0),
                     Scale(-1.0, 1.0)
                 )
             }
-            node.loopPointIndicator?.startX = x
-            node.loopPointIndicator?.endX = x
-            node.loopPointIndicator?.endY = objectPane.height
+            segment.loopPointIndicator?.startX = x
+            segment.loopPointIndicator?.endX = x
+            segment.loopPointIndicator?.endY = objectPane.height
         }
     }
 
@@ -256,6 +270,7 @@ class SamplePainter(
         val start: Decimal,
         val duration: Decimal,
         val image: ImageView,
+        val viewport: Rectangle2D,
         val loopPointIndicator: Line?,
     ) {
         fun nodes() = if (loopPointIndicator != null) listOf(image, loopPointIndicator) else listOf(image)

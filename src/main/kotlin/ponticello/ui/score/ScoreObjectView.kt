@@ -674,7 +674,7 @@ abstract class ScoreObjectView(
         private const val BORDER_WIDTH = 3.0
         const val BORDER_RADIUS = 2.0
 
-        const val MAX_OBJECT_WIDTH = 8192
+        const val MAX_OBJECT_WIDTH = 4096.0
         private const val MIN_RESIZE_HANDLE_SIZE = 5.0
     }
 }
