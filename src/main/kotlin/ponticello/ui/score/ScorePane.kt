@@ -10,8 +10,13 @@ import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import ponticello.impl.*
+import ponticello.model.obj.SampleObject
+import ponticello.model.obj.project
+import ponticello.model.project.UI_STATE
+import ponticello.model.project.get
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
+import ponticello.ui.misc.TempoSyncPrompt
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
@@ -196,6 +201,20 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 }
                 val time = t.coerceIn(zero, score.maxTime - obj.duration)
                 val scoreY = coerceAndTransformScoreY(y, obj)
+                if (context.project[UI_STATE].snapEnabled.now && obj is SoundProcess) {
+                    val sample = obj.sample.now?.get() as? SampleObject
+                    val grid = getNearestGrid(ObjectPosition(t, y))
+                    val rateControl = obj.playBufRate
+                    if (grid != null && rateControl != null && sample != null && !sample.meter.isNone()) {
+                        val gridBpm = grid.meter.beatsPerMinute.now
+                        val trackBpm = sample.meter.beatsPerMinute.now
+                        val rate = TempoSyncPrompt.create(gridBpm, trackBpm)
+                            .showDialog(ev)
+                        if (rate != null) {
+                            rateControl.set(rate)
+                        }
+                    }
+                }
                 score.addObject(obj, time, scoreY, autoSelect = false)
                 ev.consume()
             }
