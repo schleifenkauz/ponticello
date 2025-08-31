@@ -16,8 +16,7 @@ import reaktive.value.binding.and
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import kotlin.math.ceil
-import kotlin.math.round
+import kotlin.math.*
 
 data class TempoGrid(
     val type: GridType,
@@ -89,16 +88,20 @@ data class TempoGrid(
         val beatWidth = beatDur * pixelsPerSecond
         val tickWidth = tickDur * pixelsPerSecond
 
-        if (barWidth < MIN_BAR_WIDTH) return@with
-
         val snapOption = context[UIState].snapOption.now
         val snapEnabled = context[UIState].snapEnabled.now
+
+        if (barWidth <= 0.01 || barWidth.isNaN()) return@with
+
+        val barDistance = 2.0.pow(round(log2(25 / barWidth).coerceAtLeast(0.0))).roundToInt()
+        val barNumberDistance = 2.0.pow(round(log2(60 / barWidth).coerceAtLeast(0.0))).roundToInt()
 
         for (tick in offsetTicks..ticks + offsetTicks) {
             val x = (tick - offsetTicks) * pixelsPerTick - offsetX
             if (x > width) break
             when {
                 tick % ticksPerBar == 0 -> {
+                    if ((tick / ticksPerBar) % barDistance != 0) continue
                     lineWidth = 3.0
                     stroke = if (snapOption <= TimeUnit.Bars && snapEnabled) Color.GREEN else Color.GRAY
                     when (type) {
@@ -106,7 +109,7 @@ data class TempoGrid(
                         GridType.SampleOverlay -> strokeLine(x, 10.0, x, canvas.height)
                     }
 
-                    if (barWidth >= MIN_BAR_NUMBER_DIST) {
+                    if ((tick / ticksPerBar) % barNumberDistance == 0) {
                         val bar = tick / ticksPerBar
                         val text = bar.toString()
                         val textX = (x - 5).coerceAtLeast(0.0)
