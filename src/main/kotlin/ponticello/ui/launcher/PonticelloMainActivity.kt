@@ -21,7 +21,6 @@ import ponticello.ui.actions.*
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
-import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.misc.InteractionConfigBar
 import ponticello.ui.score.FlowGroupManager
 import ponticello.ui.score.NavigableScorePane
@@ -51,7 +50,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
         setupMainScoreView()
         setupPlayback()
-        context[ContextualMidiReceiver].attachGrid(project[LAUNCHER_GRID])
     }
 
     private val appLayout by lazy { AppLayout(this, project, mainScoreView, interactionConfig) }

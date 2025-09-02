@@ -6,18 +6,41 @@ import javafx.scene.Node
 import ponticello.impl.Logger
 import ponticello.impl.MidiPitch
 import ponticello.model.live.LauncherGrid
+import ponticello.model.obj.AbstractContextualObject
+import ponticello.model.obj.project
+import ponticello.model.player.ClockObject
+import ponticello.model.project.CLOCKS
+import ponticello.model.project.LAUNCHER_GRID
+import ponticello.model.project.get
+import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.now
 import java.util.*
 import javax.sound.midi.*
 
-class ContextualMidiReceiver : Receiver {
+class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
     private var device: MidiDevice? = null
     private val midiContextMap = WeakHashMap<Node, () -> MidiContext?>()
+    private val launcherGrid: LauncherGrid?
+        get() {
+            if (!initialized) return null
+            if (!context.hasProperty(currentProject)) return null
+            return context.project[LAUNCHER_GRID]
+        }
 
-    private var launcherGrid: LauncherGrid? = null
-
-    fun attachGrid(grid: LauncherGrid) {
-        launcherGrid = grid
+    fun attachTo(deviceName: String) {
+        val devices = MidiSystem.getMidiDeviceInfo()
+        Logger.info("Available MIDI devices: ${devices.joinToString { d -> d.name }}", Logger.Category.VSTPlugins)
+        for (info in devices.filter { d -> d.name.startsWith(deviceName) }) {
+            device = MidiSystem.getMidiDevice(info)
+            try {
+                device!!.open()
+                device!!.transmitter.receiver = this
+                break
+            } catch (e: Exception) {
+                System.err.println("Exception while attempting to open midi device ${info.name}: ${e.message}")
+                continue
+            }
+        }
     }
 
     private fun getActiveMidiContext(): MidiContext? {
@@ -32,7 +55,6 @@ class ContextualMidiReceiver : Receiver {
 
     fun clearMidiContext() {
         midiContextMap.clear()
-        launcherGrid = null
     }
 
     override fun send(message: MidiMessage?, timeStamp: Long) {
@@ -47,12 +69,12 @@ class ContextualMidiReceiver : Receiver {
             }
 
             ShortMessage.NOTE_OFF -> noteOff(index, message.channel, ctx)
-            ShortMessage.CONTROL_CHANGE -> ctx?.cc(message.channel, index - CC_INDEX_OFFSET, velocity)
+            ShortMessage.CONTROL_CHANGE -> cc(ctx, message, index, velocity)
         }
     }
 
     private fun noteOn(index: Int, velocity: Int, channel: Int, ctx: MidiContext?) {
-        val grid = launcherGrid
+        val grid = launcherGrid?.takeIf { it.isActive.now }
         val note = xjamGridIndex(index)
         if (grid != null && grid.isActive.now && note in grid.items().indices) {
             val item = grid.items()[note]
@@ -61,26 +83,22 @@ class ContextualMidiReceiver : Receiver {
     }
 
     private fun noteOff(index: Int, channel: Int, ctx: MidiContext?) {
-        val grid = launcherGrid
+        val grid = launcherGrid?.takeIf { it.isActive.now }
         val note = xjamGridIndex(index)
-        if (grid != null && grid.isActive.now && note in grid.items().indices) {
+        if (grid != null && note in grid.items().indices) {
             grid.noteOff(grid.items()[note])
         } else ctx?.noteOff(channel, MidiPitch(index))
     }
 
-    fun initialize(deviceName: String) {
-        val devices = MidiSystem.getMidiDeviceInfo()
-        Logger.info("Available MIDI devices: ${devices.joinToString { d -> d.name }}", Logger.Category.VSTPlugins)
-        for (info in devices.filter { d -> d.name.startsWith(deviceName) }) {
-            device = MidiSystem.getMidiDevice(info)
-            try {
-                device!!.open()
-                device!!.transmitter.receiver = this
-                break
-            } catch (e: Exception) {
-                System.err.println("Exception while attempting to open midi device ${info.name}: ${e.message}")
-                continue
-            }
+    private fun cc(
+        ctx: MidiContext?, message: ShortMessage,
+        index: Int, midiDelta: Int
+    ) {
+        if (index - CC_INDEX_OFFSET == 5 && context.hasProperty(currentProject)) {
+            val clock = context.project[CLOCKS].getDefault()
+            clock.timeWarp.adjustByMidiDelta(midiDelta, ClockObject.TIME_WARP_SPEC, context)
+        } else {
+            ctx?.cc(message.channel, index - CC_INDEX_OFFSET, midiDelta)
         }
     }
 

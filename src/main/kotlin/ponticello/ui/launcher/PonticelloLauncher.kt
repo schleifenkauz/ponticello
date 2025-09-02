@@ -325,7 +325,8 @@ class PonticelloLauncher {
             PonticelloHextantPlugin.apply(this, PluginBuilder.Phase.Initialize, null)
             SubWindow.globalStylesheets.addAll(get(Stylesheets).all())
             val midiReceiver = ContextualMidiReceiver()
-            midiReceiver.initialize("Xjam")
+            midiReceiver.initialize(this)
+            midiReceiver.attachTo("Xjam")
             set(ContextualMidiReceiver, midiReceiver)
         }
     }

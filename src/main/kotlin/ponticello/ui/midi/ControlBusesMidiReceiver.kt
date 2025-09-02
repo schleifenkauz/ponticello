@@ -12,7 +12,7 @@ class ControlBusesMidiReceiver(private val buses: BusRegistry) : AbstractMidiCon
         if (index !in controlBuses.indices) return
         val bus = controlBuses[index]
         val spec = bus.spec.now!!
-        val newValue = adjustValue(spec.defaultValue.get(), spec, value)
+        val newValue = spec.defaultValue.get().adjustByMidiDelta(value, spec, context)
         bus.setDefaultValue(newValue)
     }
 }

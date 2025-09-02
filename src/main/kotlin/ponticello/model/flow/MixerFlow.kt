@@ -20,6 +20,7 @@ import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.midi.AbstractMidiContext
 import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.adjustByMidiDelta
 import reaktive.Observer
 import reaktive.and
 import reaktive.value.*
@@ -272,12 +273,12 @@ class MixerFlow(
     private inner class MixerMidiContext : AbstractMidiContext(context) {
         override fun cc(channel: Int, index: Int, value: Int) {
             if (index == 0) {
-                masterVolume.now = adjustValue(masterVolume.now, VOLUME_SPEC, value)
+                masterVolume.adjustByMidiDelta(value, VOLUME_SPEC, context)
                 return
             }
             if (channel + 1 !in components.indices) return
             val comp = components[channel + 1]
-            comp.volume.now = adjustValue(comp.volume.now, VOLUME_SPEC, value)
+            comp.volume.adjustByMidiDelta(value, VOLUME_SPEC, context)
         }
     }
 

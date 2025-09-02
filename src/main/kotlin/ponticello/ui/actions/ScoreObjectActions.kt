@@ -55,7 +55,7 @@ object ScoreObjectActions {
                             .mapTo(mutableSetOf()) { it.instance }
                     pane.score.removeObjects(containedInstances, Score.RegistryOption.ASK_IF_NEEDED)
                 } else {
-                    for (view in ctx.selectedViews) {
+                    for (view in ctx.selectedViews.toList()) {
                         val instance = view.instance
                         val score = instance.score ?: continue
                         score.removeObject(instance, option = Score.RegistryOption.ASK_IF_NEEDED)

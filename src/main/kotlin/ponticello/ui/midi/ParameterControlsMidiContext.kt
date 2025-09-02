@@ -12,6 +12,6 @@ class ParameterControlsMidiContext(private val controls: ParameterControlList) :
         val control = numericalControls[index]
         val spec = control.spec.now as? NumericalControlSpec ?: return
         val variable = (control.now as ValueControl).value
-        variable.now = adjustValue(variable.now, spec, value)
+        variable.adjustByMidiDelta(value, spec, context)
     }
 }
