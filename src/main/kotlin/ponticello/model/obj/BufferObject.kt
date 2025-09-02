@@ -4,15 +4,20 @@ import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.asY
+import ponticello.model.project.PLAYBACK_SETTINGS
+import ponticello.model.project.get
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.ParameterControlList
 import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BufferControl
+import ponticello.model.score.controls.BusControl
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.ReactiveValue
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 sealed class BufferObject : AbstractSuperColliderObject() {
@@ -27,12 +32,15 @@ sealed class BufferObject : AbstractSuperColliderObject() {
     fun createSynthObject(synthDef: InstrumentObject): SoundProcess? {
         waitForInfos()
         val controls = synthDef.getDefaultControls(null)
-        val buf = controls.getOrNull("buf") ?: return null
-        val control = buf.now as BufferControl
-        control.sample.now = reference()
+        val buf = controls["buf"] as? BufferControl ?: return null
+        buf.sample.now = reference()
         val name = context[ScoreObjectRegistry].availableName(name.now)
         val instrument = InstrumentReference.UserDefined(synthDef.reference())
-        val obj = SoundProcess.create(name, instrument, controls)
+        val djMode = context.project[PLAYBACK_SETTINGS].djMode
+        if (synthDef.hasParameter("out") && djMode.activated.now && djMode.selectedBus != null) {
+            controls["out"] = BusControl(reactiveVariable(djMode.selectedBus!!))
+        }
+        val obj = SoundProcess.create(name, instrument, ParameterControlList.from(controls))
         obj.setInitialSize(duration().now, 0.02.asY)
         return obj
     }

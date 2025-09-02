@@ -1,5 +1,6 @@
 package ponticello.ui.misc
 
+import fxutils.centerChildren
 import fxutils.controls.CheckBox
 import fxutils.infiniteSpace
 import fxutils.prompt.ConfirmablePrompt
@@ -25,18 +26,23 @@ class PlaybackSettingsPrompt(
     private val scLangLatency = settings.scLangLatency.copy()
     private val serverLatency = settings.serverLatency.copy()
     private val extraLatency = settings.extraLatency.copy()
+    private val logScCode = settings.logScCode.copy()
+    private val djMode = settings.djMode.activated.copy()
 
     override val content: Parent = VBox(
         BorderPane(Label("Latency").styleClass("sub-heading")),
         latencyKnobsPane(scLangLatency, serverLatency, extraLatency),
         vspace(10.0),
-        HBox(infiniteSpace(), CheckBox(settings.logScCode, "Log SuperCollider code: "), infiniteSpace()),
+        HBox(infiniteSpace(), CheckBox(logScCode, "Log SuperCollider code: "), infiniteSpace()).centerChildren(),
+        HBox(infiniteSpace(), CheckBox(djMode, "DJ mode: "), infiniteSpace()).centerChildren(),
     )
 
     override fun confirm() {
         settings.scLangLatency.set(scLangLatency.now)
         settings.serverLatency.set(serverLatency.now)
         settings.extraLatency.set(extraLatency.now)
+        settings.logScCode.set(logScCode.now)
+        settings.djMode.activated.set(djMode.now)
     }
 
     companion object {

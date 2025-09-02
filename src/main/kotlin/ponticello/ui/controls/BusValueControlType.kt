@@ -113,12 +113,12 @@ data object BusValueControlType : ControlType<BusValueControl>() {
             val parameter = ctrl.name.now
             val name = "${obj.name.now}_$parameter"
             val controls = instrumentDef.getDefaultControls(null)
-            val outBus = controls.getOrNull("out")?.now
+            val outBus = controls["out"]
             if (outBus is BusControl) {
                 outBus.bus.now = (ctrl.now as BusValueControl).bus.now
             }
             val instrument = InstrumentReference.UserDefined(instrumentDef.reference())
-            val synthObj = SoundProcess.create(name, instrument, controls)
+            val synthObj = SoundProcess.create(name, instrument, ParameterControlList.from(controls))
             synthObj.setInitialSize(obj.duration, height = 0.05.asY)
             context.compoundEdit("Add automation synth") {
                 for (inst in context[PonticelloLauncher.currentProject].mainScore.instancesOf(obj).toList()) {

@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.copy
+import ponticello.model.live.DjMode
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.sc.client.SuperColliderClient
 import reaktive.Observer
@@ -18,6 +19,7 @@ class PlaybackSettings(
     val serverLatency: ReactiveVariable<Decimal>,
     val extraLatency: ReactiveVariable<Decimal>,
     val logScCode: ReactiveVariable<Boolean>,
+    val djMode: DjMode = DjMode()
 ) : AbstractContextualObject() {
     val lookAhead get() = scLangLatency.now + serverLatency.now
 
@@ -30,6 +32,7 @@ class PlaybackSettings(
         serverLatencyUpdater = serverLatency.forEach { latency ->
             client.run("s.latency = $latency")
         }
+        djMode.initialize(context)
     }
 
     companion object {

@@ -5,7 +5,7 @@ import ponticello.impl.*
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.MixerComponentMode.*
 import ponticello.model.obj.project
-import ponticello.model.project.UI_STATE
+import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
@@ -89,7 +89,7 @@ class AkaiMidiMix : Receiver {
                     when (action) {
                         0 -> component.state.now = if (component.state.now == Mute) Regular else Mute
                         1 -> component.state.now = if (component.state.now == Solo) Regular else Solo
-                        2 -> flow.context.project[UI_STATE].selectedAudioBus = component.sourceBus
+                        2 -> flow.context.project[PLAYBACK_SETTINGS].djMode.selectedBus = component.sourceBus.now
                     }
                 }
             }

@@ -159,13 +159,15 @@ class MixerPane(
         if (state is MixerPaneState) {
             state.flowReference.resolve(allMixerFlows())
             selectedMixer = state.flowReference
-            val device = MidiSystem.getMidiDeviceInfo().find { d ->
-                d.name == state.midiDeviceName && d.javaClass.simpleName.startsWith("MidiIn")
-            }
-            if (device != null) {
-                deviceSelector.update(MidiDeviceSelectorPrompt.Option.Device(device))
-            } else {
-                Logger.warn("Unable to find midi device ${state.midiDeviceName}", Logger.Category.AudioFlow)
+            if (state.midiDeviceName != null) {
+                val device = MidiSystem.getMidiDeviceInfo().find { d ->
+                    d.name == state.midiDeviceName && d.javaClass.simpleName.startsWith("MidiIn")
+                }
+                if (device != null) {
+                    deviceSelector.update(MidiDeviceSelectorPrompt.Option.Device(device))
+                } else {
+                    Logger.warn("Unable to find midi device ${state.midiDeviceName}", Logger.Category.AudioFlow)
+                }
             }
         }
         setupVolumeChangeWithArrowKeys()

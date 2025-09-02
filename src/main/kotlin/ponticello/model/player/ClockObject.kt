@@ -255,8 +255,7 @@ class ClockObject(
         val TIME_WARP_SPEC = NumericalControlSpec(
             default = 1.0,
             min = 0.5, max = 2.0,
-            step = 0.05.toDecimal(),
-            lag = 0.01,
+            step = 0.01.toDecimal(),
             warp = Warp.Exponential
         )
     }

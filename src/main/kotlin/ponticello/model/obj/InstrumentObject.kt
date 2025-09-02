@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
-import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControl
@@ -47,10 +46,9 @@ sealed interface InstrumentObject : SuperColliderObject {
         p.name.now to ctrl
     }
 
-    fun getDefaultControls(associatedObject: ScoreObjectGroup?): ParameterControlList {
+    fun getDefaultControls(associatedObject: ScoreObjectGroup?): MutableMap<String, ParameterControl> {
         val defaultBus = associatedObject?.defaultBusRef?.now ?: context[BusRegistry].getDefault().reference()
-        val controls = defaultControls(context, defaultBus)
-        return ParameterControlList.from(controls)
+        return defaultControls(context, defaultBus)
     }
 
     fun onUpdated() {}
