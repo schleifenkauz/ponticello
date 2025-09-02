@@ -209,7 +209,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                         val trackBpm = sample.meter.beatsPerMinute.now
                         if (trackBpm != grid.bpm) {
                             val rate = TempoSyncPrompt.create(grid.bpm, trackBpm)
-                                .showDialog(ev)
+                                .showDialog(ev, preferMouseCoords = true)
                             if (rate != null) {
                                 rateControl.set(rate)
                             }

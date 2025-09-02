@@ -35,9 +35,6 @@ class ScoreObjectDuplicator {
     }
 
     fun enterDuplicateMode(obj: ScoreObject, view: ScoreObjectView, clone: Boolean) {
-        if (clipboardObject != null) {
-            exitDuplicateMode()
-        }
         val parameters = SnapshotParameters()
         view.snapshot(parameters, null)
         val image = view.snapshot(parameters, null)
@@ -45,6 +42,9 @@ class ScoreObjectDuplicator {
     }
 
     private fun enterDuplicateMode(obj: ScoreObject, image: Image, view: ScoreObjectView?, clone: Boolean) {
+        if (clipboardObject != null) {
+            exitDuplicateMode()
+        }
         clipboardObject = obj
         isCloneMode = clone
         for (pane in panes) {
