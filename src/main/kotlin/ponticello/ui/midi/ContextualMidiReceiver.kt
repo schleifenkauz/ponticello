@@ -2,6 +2,7 @@ package ponticello.ui.midi
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import hextant.context.Context
 import javafx.scene.Node
 import ponticello.impl.Logger
 import ponticello.impl.MidiPitch
@@ -14,6 +15,7 @@ import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
+import ponticello.ui.misc.TimeWarpPopup
 import reaktive.value.now
 import java.util.*
 import javax.sound.midi.*
@@ -27,6 +29,13 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
             if (!context.hasProperty(currentProject)) return null
             return context.project[LAUNCHER_GRID]
         }
+
+    private lateinit var timeWarpPopup: TimeWarpPopup
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        timeWarpPopup = TimeWarpPopup(context)
+    }
 
     fun attachTo(deviceName: String) {
         val devices = MidiSystem.getMidiDeviceInfo()
@@ -106,6 +115,7 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
         if (index - CC_INDEX_OFFSET == 5 && djMode.activated.now) {
             val clock = context.project[CLOCKS].getDefault()
             clock.timeWarp.adjustByMidiDelta(midiDelta, ClockObject.TIME_WARP_SPEC, context)
+            timeWarpPopup.update(clock.timeWarp.now)
         } else {
             ctx?.cc(message.channel, index - CC_INDEX_OFFSET, midiDelta)
         }

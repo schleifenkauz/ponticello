@@ -59,7 +59,8 @@ class PonticelloLauncher {
         rootContext[PonticelloLauncher] = this
     }
 
-    private lateinit var currentActivity: Activity
+    lateinit var currentActivity: Activity
+        private set
 
     private fun <A : Activity> launchActivity(description: String, createActivity: () -> A): A? {
         currentActivity.hide()

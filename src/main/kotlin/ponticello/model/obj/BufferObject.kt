@@ -3,7 +3,7 @@ package ponticello.model.obj
 import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
-import ponticello.impl.asY
+import ponticello.impl.toDecimal
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.model.registry.ScoreObjectRegistry
@@ -41,7 +41,8 @@ sealed class BufferObject : AbstractSuperColliderObject() {
             controls["out"] = BusControl(reactiveVariable(djMode.selectedBus!!))
         }
         val obj = SoundProcess.create(name, instrument, ParameterControlList.from(controls))
-        obj.setInitialSize(duration().now, 0.02.asY)
+        val initialHeight = if (djMode.activated.now) 0.1 else 0.02
+        obj.setInitialSize(duration().now, initialHeight.toDecimal())
         return obj
     }
 

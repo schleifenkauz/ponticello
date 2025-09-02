@@ -37,3 +37,8 @@
     -fx-border-color: black;
     -fx-padding: 0px 8px;
 }
+
+.time-warp-label {
+    -fx-font-size: 12px;
+    -fx-padding: 5px;
+}
