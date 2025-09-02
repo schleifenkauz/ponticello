@@ -239,11 +239,11 @@ abstract class ScoreObjectView(
 
                     MouseEvent.MOUSE_DRAGGED -> {
                         val start = dragStart
-                        if (start != null) {
+                        if (start != null && oldBounds != null) {
                             val deltaX = ev.screenX - start.x
                             val deltaY = ev.screenY - start.y
-                            val x = oldBounds!!.minX + deltaX
-                            val y = oldBounds!!.minY + deltaY
+                            val x = oldBounds.minX + deltaX
+                            val y = oldBounds.minY + deltaY
                             dragTo(x, y, ev)
                             ev.consume()
                         }
@@ -477,7 +477,14 @@ abstract class ScoreObjectView(
         val maxDeltaT = movedObjects.minOf { inst -> parentPane.score.maxTime - inst.end }
         val minDeltaY = -movedObjects.minOf { inst -> inst.y - parentPane.score.minY }
         val maxDeltaY = movedObjects.minOf { inst -> parentPane.score.maxY - (inst.y + inst.height) }
-        val (t, y) = parentPane.snapToGrid(toX, toY)
+        val snapOption = context.project.uiState.snapOption.now
+        val grid = tempoGrid
+        val offsetX =
+            if (grid != null && snapOption != TimeUnit.Seconds) {
+                val barDur = grid.meter.getDuration(snapOption)
+                (grid.offset mod barDur) - barDur
+            } else zero
+        val (t, y) = parentPane.snapToGrid(toX - getWidth(offsetX), toY).plusTime(offsetX)
         var deltaT = (t - instance.start).coerceIn(minDeltaT..maxDeltaT)
         var deltaY = (y - instance.y).coerceIn(minDeltaY..maxDeltaY)
         if (ev.isShiftDown) deltaT = zero
@@ -486,7 +493,7 @@ abstract class ScoreObjectView(
             val transformedY = parentPane.coerceAndTransformScoreY(inst.y + deltaY, obj)
             inst.moveTo(inst.start + deltaT, transformedY, simpleMove = false)
         }
-        parentPane.markT(instance.start + deltaT)
+        parentPane.markT(instance.start - offsetX + deltaT)
     }
 
     private fun finishLoop() {

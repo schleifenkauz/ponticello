@@ -60,6 +60,11 @@ operator fun Decimal.times(other: Int) = Decimal(value * other, precision)
 
 operator fun Decimal.div(other: Int) = Decimal(value / other, precision)
 
+infix fun Decimal.mod(other: Decimal): Decimal {
+    val rem = this.rem(other)
+    return if (rem < zero) rem + other else rem
+}
+
 infix fun Decimal.exp(exponent: Int) = Decimal(value.pow(exponent), precision)
 
 operator fun Double.plus(other: Decimal) = Decimal(this + other.value, other.precision)
