@@ -112,7 +112,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         val offset = if (prefWidth > MAX_OBJECT_WIDTH && layoutX < 0.0) -layoutX else 0.0
         canvas.translateX = offset
         val offsetDur = getDuration(offset)
-        grid.paintGrid(offsetDur)
+        grid.paintGrid(parentPane.pixelsPerSecond, offsetDur)
     }
 
     override fun relocate(x: Double, y: Double) {

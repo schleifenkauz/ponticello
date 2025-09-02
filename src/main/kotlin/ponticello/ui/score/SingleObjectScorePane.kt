@@ -126,7 +126,7 @@ class SingleObjectScorePane(
             marker.isVisible = false
             return
         }
-        grid.paintGrid()
+        grid.paintGrid(pixelsPerSecond)
     }
 
     override fun mouseExited() {

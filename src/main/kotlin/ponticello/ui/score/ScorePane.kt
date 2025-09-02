@@ -206,12 +206,13 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                     val grid = getNearestGrid(ObjectPosition(t, y))
                     val rateControl = obj.playBufRate
                     if (grid != null && rateControl != null && sample != null && !sample.meter.isNone()) {
-                        val gridBpm = grid.meter.beatsPerMinute.now
                         val trackBpm = sample.meter.beatsPerMinute.now
-                        val rate = TempoSyncPrompt.create(gridBpm, trackBpm)
-                            .showDialog(ev)
-                        if (rate != null) {
-                            rateControl.set(rate)
+                        if (trackBpm != grid.bpm) {
+                            val rate = TempoSyncPrompt.create(grid.bpm, trackBpm)
+                                .showDialog(ev)
+                            if (rate != null) {
+                                rateControl.set(rate)
+                            }
                         }
                     }
                 }

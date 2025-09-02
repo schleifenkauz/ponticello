@@ -35,6 +35,8 @@ data class TempoGrid(
 
     val timeRange: DecimalRange get() = gridStart..gridEnd
 
+    val bpm get() = meter.beatsPerMinute.now * scale
+
     val context get() = scoreObject.context
 
     private val marked = reactiveVariable(false)
@@ -62,9 +64,8 @@ data class TempoGrid(
         return snapped + gridStart - offset
     }
 
-    fun paintGrid(extraOffset: Decimal = zero) = with(canvas.graphicsContext2D) {
-        val width = canvas.width
-        clearRect(0.0, 0.0, width, canvas.height)
+    fun paintGrid(pixelsPerSecond: Double, extraOffset: Decimal = zero) = with(canvas.graphicsContext2D) {
+        clearRect(0.0, 0.0, canvas.width, canvas.height)
 
         val bpm = meter.beatsPerMinute.now.value
         val bpb = meter.beatsPerBar.now
@@ -81,7 +82,7 @@ data class TempoGrid(
         val offsetX = (offset.value / tickDur) - offsetTicks
         val ticks = ceil(totalDuration / tickDur).toInt()
         val ticksPerBar = tpb * bpb
-        val pixelsPerSecond = width / totalDuration
+
         val pixelsPerBeat = pixelsPerSecond * beatDur
         val pixelsPerTick = pixelsPerBeat / tpb
         val barWidth = barDur * pixelsPerSecond
@@ -98,7 +99,7 @@ data class TempoGrid(
 
         for (tick in offsetTicks..ticks + offsetTicks) {
             val x = (tick - offsetTicks) * pixelsPerTick - offsetX
-            if (x > width) break
+            if (x > canvas.width) break
             when {
                 tick % ticksPerBar == 0 -> {
                     if ((tick / ticksPerBar) % barDistance != 0) continue
@@ -146,7 +147,7 @@ data class TempoGrid(
         if (type == GridType.Regular) {
             stroke = if (snapEnabled) Color.GREEN else Color.GRAY
             lineWidth = 2.0
-            strokeLine(0.0, CENTER_Y, width, CENTER_Y)
+            strokeLine(0.0, CENTER_Y, canvas.width, CENTER_Y)
         }
     }
 

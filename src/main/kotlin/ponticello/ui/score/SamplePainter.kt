@@ -291,6 +291,6 @@ class SamplePainter(
         val offsetX = if (view.prefWidth > MAX_OBJECT_WIDTH && view.layoutX < 0.0) -view.layoutX else 0.0
         gridCanvas.translateX = offsetX
         val offsetDur = view.getDuration(offsetX)
-        grid.paintGrid(offsetDur)
+        grid.paintGrid(view.parentPane.pixelsPerSecond, offsetDur)
     }
 }
