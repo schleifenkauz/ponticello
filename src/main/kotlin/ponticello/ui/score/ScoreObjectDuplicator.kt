@@ -89,9 +89,10 @@ class ScoreObjectDuplicator {
     }
 
     fun movedCursor(pane: ScorePane, t: Decimal, y: Decimal) {
+        val obj = clipboardObject ?: return
         val imageView = imageViews[pane] ?: return
-        val layoutX = pane.getX(t).coerceAtMost(pane.width - imageView.fitWidth)
-        val layoutY = pane.getScreenY(y).coerceAtMost(pane.height - imageView.fitHeight)
+        val layoutX = pane.getX(t.coerceAtMost(pane.score.maxTime - obj.duration))
+        val layoutY = pane.getScreenY(y.coerceAtMost(pane.score.maxY - obj.height))
         imageView.relocate(layoutX, layoutY)
     }
 
@@ -102,6 +103,7 @@ class ScoreObjectDuplicator {
             pane.children.remove(imageView)
         }
     }
+
     fun isInDuplicateMode() = clipboardObject != null
 
     companion object : PublicProperty<ScoreObjectDuplicator> by publicProperty("ScoreObjectDuplicator")
