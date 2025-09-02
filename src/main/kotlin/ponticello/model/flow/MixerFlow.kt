@@ -203,8 +203,8 @@ class MixerFlow(
                     appendBlock(endLine = false) {
                         +"var dry, cutoff, lpf, hpf, filtered"
                         +"dry = sources[$i]"
-                        +"lpf = BLowPass4.ar(dry, filters[$i].abs.linexp(0, 1, 12000, 60), 0.3)"
-                        +"hpf = BHiPass4.ar(dry, filters[$i].abs.linexp(0, 1, 20, 12000), 0.3)"
+                        +"lpf = BLowPass4.ar(dry, filters[$i].abs.linexp(0, 1, 20000, 60), 0.5)"
+                        +"hpf = BHiPass4.ar(dry, filters[$i].abs.linexp(0, 1, 20, 12000), 0.5)"
                         +"filtered = SelectX.ar(filters[$i].linlin(-1, 1, 0, 1) ! 2, [lpf, hpf])"
                         +"sources[$i] = XFade2.ar(dry, filtered, filters[$i].abs)"
                     }

@@ -47,7 +47,8 @@ class SamplePainter(
     fun initialize() {
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
-        gridCanvas.widthProperty().bind(Bindings.min(view.prefWidthProperty(), MAX_OBJECT_WIDTH))
+        val cutoff = Bindings.max(view.layoutXProperty().negate(), 0.0)
+        gridCanvas.widthProperty().bind(Bindings.min(view.prefWidthProperty().subtract(cutoff), MAX_OBJECT_WIDTH))
         gridCanvas.heightProperty().bind(Bindings.min(view.prefHeightProperty(), TempoGrid.GRID_HEIGHT))
         gridCanvas.layoutYProperty().bind(objectPane.heightProperty().subtract(gridCanvas.heightProperty()))
         marker.startYProperty().bind(objectPane.heightProperty().subtract(gridCanvas.heightProperty()))

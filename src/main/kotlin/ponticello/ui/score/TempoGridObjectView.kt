@@ -55,7 +55,8 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         styleClass("tempo-grid")
         children.addAll(canvas, marker)
         canvas.height = GRID_HEIGHT
-        canvas.widthProperty().bind(Bindings.min(MAX_OBJECT_WIDTH, prefWidthProperty()))
+        val cutoff = Bindings.max(layoutXProperty().negate(), 0.0)
+        canvas.widthProperty().bind(Bindings.min(MAX_OBJECT_WIDTH, prefWidthProperty().subtract(cutoff)))
         marker.endYProperty().bind(heightProperty())
     }
 
