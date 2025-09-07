@@ -62,6 +62,7 @@ import reaktive.value.binding.map
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import javax.sound.midi.MidiDevice
 import javax.sound.midi.MidiSystem
 
 class MixerPane(
@@ -129,16 +130,26 @@ class MixerPane(
         defaultValue = MidiDeviceSelectorPrompt.Option.NoDevice
     )
 
+    private val mixerSelector = PropertySelectorButton(
+        this::selectedMixer,
+        prompt = MixerListPopup(),
+        defaultValue = ObjectReference.none()
+    )
+
+    fun selectMixer(mixer: MixerFlow) {
+        mixerSelector.update(mixer.reference())
+    }
+
+    fun selectDevice(info: MidiDevice.Info) {
+        deviceSelector.update(MidiDeviceSelectorPrompt.Option.Device(info))
+    }
+
     override val headerContent: Node
         get() {
-            val selector = MixerListPopup().selectorButton(
-                this::selectedMixer,
-                actionDescription = "Select mixer"
-            )
-            return if (channelsList == null) selector
+            return if (channelsList == null) mixerSelector
             else {
                 HBox(
-                    5.0, selector,
+                    5.0, mixerSelector,
                     Label("MIDI:"), deviceSelector,
                     toggleFiltersAction.withContext(selectedMixer.force()).makeButton("medium-icon-button"),
                     ActionBar(channelsList!!.actions, "medium-icon-button")

@@ -23,7 +23,9 @@ import reaktive.and
 import reaktive.value.now
 import reaktive.value.observe
 
-abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : ParameterControlList.Listener {
+abstract class AbstractLiveUpdater(
+    protected val obj: ParameterizedObject
+) : ParameterControlList.Listener, ScoreObject.Listener {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
     private var nameObserver: Observer? = null
 
@@ -31,6 +33,9 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         obj.controls.addListener(this, initialize = false)
         for ((param, control) in obj.controls.controlMap) {
             observeControl(param, control)
+        }
+        if (obj is ScoreObject) {
+            obj.addListener(this)
         }
         nameObserver = syncNameWithSuperCollider()
     }
@@ -64,7 +69,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
         nameObserver = null
     }
 
-    private fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
+    protected fun runOnActiveObjects(action: ScWriter.(String, Decimal) -> Unit) {
         val client = obj.context[SuperColliderClient]
         val activeInstances = obj.activeObjects()
         if (activeInstances.isEmpty()) return
@@ -224,6 +229,7 @@ abstract class AbstractLiveUpdater(protected val obj: ParameterizedObject) : Par
                     updateUGenControl(this, name, parameter, expr, replace = true, remap = false, objectTime)
                 }
             }
+
             is ExprControl -> control.update.stream.observe { _ ->
                 runOnActiveObjects { name, _ ->
                     val expr = control.expr.editor.result.now

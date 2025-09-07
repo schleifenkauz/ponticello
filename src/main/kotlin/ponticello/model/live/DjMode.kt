@@ -15,6 +15,8 @@ import ponticello.model.obj.BusReference
 import ponticello.model.obj.withName
 import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.reference
+import ponticello.ui.dock.AppLayout
+import ponticello.ui.flow.MixerPane
 import ponticello.ui.launcher.PonticelloMainActivity
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
@@ -49,7 +51,6 @@ data class DjMode(
         val nTracks = DjModeSetupPrompt().showDialog(primaryStage) ?: return
 
         context.compoundEdit("Setup DJ mixer") {
-
             val trackBuses = mutableListOf<BusObject>()
             val buses = context[BusRegistry]
             for (i in 1..nTracks) {
@@ -76,6 +77,9 @@ data class DjMode(
                 activateFilters = reactiveVariable(true)
             ).withName("dj_mix")
             masterFlowGroup.flows.add(djMix)
+            val mixerPane = context[AppLayout].get<MixerPane>()
+            mixerPane.selectMixer(djMix)
+            mixerPane.setShowing(true)
         }
     }
 }

@@ -480,7 +480,7 @@ abstract class ScoreObjectView(
         val snapOption = context.project.uiState.snapOption.now
         val grid = tempoGrid
         val offsetX =
-            if (grid != null && snapOption != TimeUnit.Seconds) {
+            if (grid != null && snapOption != TimeUnit.Seconds && grid.offset != zero) {
                 val barDur = grid.meter.getDuration(snapOption)
                 (grid.offset mod barDur) - barDur
             } else zero

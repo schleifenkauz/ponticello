@@ -47,8 +47,7 @@ class SamplePainter(
     fun initialize() {
         sampleObserver = observeSample()
         sampleDisplayObserver = obj.displaySample?.forEach { updateSpectrogram() }
-        val cutoff = Bindings.max(view.layoutXProperty().negate(), 0.0)
-        gridCanvas.widthProperty().bind(Bindings.min(view.prefWidthProperty().subtract(cutoff), MAX_OBJECT_WIDTH))
+        gridCanvas.widthProperty().bind(Bindings.min(view.prefWidthProperty(), MAX_OBJECT_WIDTH))
         gridCanvas.heightProperty().bind(Bindings.min(view.prefHeightProperty(), TempoGrid.GRID_HEIGHT))
         gridCanvas.layoutYProperty().bind(objectPane.heightProperty().subtract(gridCanvas.heightProperty()))
         marker.startYProperty().bind(objectPane.heightProperty().subtract(gridCanvas.heightProperty()))
@@ -206,17 +205,20 @@ class SamplePainter(
             val x = view.getWidth(segment.start)
             segment.image.layoutX = x
             val width = view.getWidth(segment.duration)
-            segment.image.fitWidth = width.coerceAtMost(MAX_OBJECT_WIDTH)
             val layoutX = x + view.layoutX
             if (width > MAX_OBJECT_WIDTH && layoutX < 0.0) {
-                val offset = -layoutX
-                segment.image.translateX = offset
+                segment.image.fitWidth = MAX_OBJECT_WIDTH
+                val offsetX = -layoutX
+                segment.image.translateX = offsetX
                 val viewportWidth = segment.viewport.width * (MAX_OBJECT_WIDTH / width)
+                val imageWidth = segment.image.image.width
+                val viewportOffset = offsetX * (imageWidth / width)
                 segment.image.viewport = Rectangle2D(
-                    segment.viewport.minX + offset, segment.viewport.minY,
+                    segment.viewport.minX + viewportOffset, segment.viewport.minY,
                     viewportWidth, segment.viewport.height
                 )
             } else {
+                segment.image.fitWidth = width
                 segment.image.translateX = 0.0
                 segment.image.viewport = segment.viewport
             }
@@ -261,9 +263,10 @@ class SamplePainter(
         redrawGrid()
     }
 
-    fun relocated(oldLayoutX: Double) {
-        if (view.prefWidth > MAX_OBJECT_WIDTH && (oldLayoutX < 0.0 || view.layoutX < 0.0)) {
+    fun relocated() {
+        if (view.prefWidth > MAX_OBJECT_WIDTH) {
             redrawGrid()
+            rescaleSpectrogram()
         }
     }
 

@@ -1,9 +1,11 @@
 package ponticello.model.player
 
+import javafx.geometry.Side
 import ponticello.impl.Decimal
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.ParameterizedObject
+import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ScExpr
@@ -106,5 +108,11 @@ class LiveSynthUpdater(obj: ParameterizedObject) : AbstractLiveUpdater(obj) {
             cutoff = objectTime, paused = false
         )
         if (remap) writer.remap(uniqueName, parameter)
+    }
+
+    override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {
+        runOnActiveObjects { name, _ ->
+            +"~synth_$name.set(\\duration, ${obj.duration})"
+        }
     }
 }

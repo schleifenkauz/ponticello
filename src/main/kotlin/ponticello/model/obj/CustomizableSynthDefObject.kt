@@ -87,7 +87,7 @@ class CustomizableSynthDefObject(
         val attackReleaseParameters = parameters.associate { p -> p.name.now to p.spec.now }.filter { (_, spec) ->
             spec is NumericalControlSpec && spec.attackRelease
         }
-        extraStatements.add("duration = \\duration.ir")
+        extraStatements.add("duration = \\duration.kr")
         if (attackReleaseParameters.isNotEmpty()) {
             extraVariables.addAll(listOf("attack", "release", "sustain_", "env_"))
             extraStatements.add("attack = \\attack.kr(${AttackReleaseControl.DEFAULT})")

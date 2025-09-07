@@ -55,7 +55,7 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
         children.addAll(
             snapToggle.makeButton("large-icon-button"),
             optionSelector,
-            showExtraSettings.withContext(settings).makeButton("medium-icon-button")
+            showExtraSettings.withContext(settings).makeButton("large-icon-button")
         )
     }
 

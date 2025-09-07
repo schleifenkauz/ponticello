@@ -99,7 +99,7 @@ data class TempoGrid(
 
         for (tick in offsetTicks..ticks + offsetTicks) {
             val x = (tick - offsetTicks) * pixelsPerTick - offsetX
-            if (x > canvas.width) break
+            if (tick * tickDur > scoreObject.duration.value) break
             when {
                 tick % ticksPerBar == 0 -> {
                     if ((tick / ticksPerBar) % barDistance != 0) continue

@@ -161,9 +161,9 @@ class SoundProcessView(
     }
 
     override fun relocate(x: Double, y: Double) {
-        val oldLayoutX = layoutX
+        layoutX
         super.relocate(x, y)
-        samplePainter.relocated(oldLayoutX)
+        samplePainter.relocated()
     }
 
     companion object {
