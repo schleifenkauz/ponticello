@@ -78,16 +78,14 @@ data class TempoGrid(
         val beatDur = 60.0 / bpm / scale.value
         val barDur = beatDur * bpb
         val tickDur = beatDur / tpb
-        val offsetTicks = round(offset.value / tickDur).toInt()
-        val offsetX = (offset.value / tickDur) - offsetTicks
+        val offsetTicks = ceil(offset.value / tickDur).toInt()
         val ticks = ceil(totalDuration / tickDur).toInt()
         val ticksPerBar = tpb * bpb
 
-        val pixelsPerBeat = pixelsPerSecond * beatDur
-        val pixelsPerTick = pixelsPerBeat / tpb
         val barWidth = barDur * pixelsPerSecond
         val beatWidth = beatDur * pixelsPerSecond
         val tickWidth = tickDur * pixelsPerSecond
+        val offsetX = offset.value * pixelsPerSecond
 
         val snapOption = context[UIState].snapOption.now
         val snapEnabled = context[UIState].snapEnabled.now
@@ -98,7 +96,7 @@ data class TempoGrid(
         val barNumberDistance = 2.0.pow(round(log2(60 / barWidth).coerceAtLeast(0.0))).roundToInt()
 
         for (tick in offsetTicks..ticks + offsetTicks) {
-            val x = (tick - offsetTicks) * pixelsPerTick - offsetX
+            val x = tick * tickWidth - offsetX
             if (tick * tickDur > scoreObject.duration.value) break
             when {
                 tick % ticksPerBar == 0 -> {
