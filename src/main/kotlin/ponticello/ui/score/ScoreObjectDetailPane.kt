@@ -51,7 +51,7 @@ class ScoreObjectDetailPane : ToolPane() {
         val selector = context[ScoreObjectSelectionManager]
         focusedViewObserver = selector.focusedView.observe { _, _, focused ->
             if (window !is Popup) {
-                updateContent(focused)
+                viewDetails(focused)
             }
         }
     }
@@ -63,7 +63,7 @@ class ScoreObjectDetailPane : ToolPane() {
 
     private fun noSelectedObject() = BorderPane(label("No object focused"))
 
-    fun updateContent(focusedView: ScoreObjectView?) {
+    fun viewDetails(focusedView: ScoreObjectView?) {
         displayedObject.now = focusedView
         if (focusedView == null) {
             content = noSelectedObject()
@@ -138,7 +138,7 @@ class ScoreObjectDetailPane : ToolPane() {
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { pane ->
                     val view = pane.displayedObject.now ?: return@executes
-                    pane.updateContent(null)
+                    pane.viewDetails(null)
                     pane.detach(view)
                 }
             }

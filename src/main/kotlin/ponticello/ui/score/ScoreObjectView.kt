@@ -104,10 +104,6 @@ abstract class ScoreObjectView(
 
     override fun getX(time: Decimal): Double = getWidth(time)
 
-    fun getScoreY(screenY: Double): Decimal = parentPane.getScoreY(screenY)
-
-    fun getScreenY(scoreY: Decimal): Double = parentPane.getScreenY(scoreY)
-
     fun getDetailPane(): DetailPane {
         val detailPane = DetailPane(labelWidth = 120.0)
         if (obj is UnresolvedScoreObject) {
@@ -376,7 +372,7 @@ abstract class ScoreObjectView(
                 ev.button == MouseButton.SECONDARY && ev.modifiers.isEmpty() -> {
                     selectView(addToSelection = false)
                     val toolPane = context[AppLayout].get<ScoreObjectDetailPane>()
-                    toolPane.updateContent(this)
+                    toolPane.viewDetails(this)
                     toolPane.setShowing(true)
                 }
 
@@ -408,7 +404,7 @@ abstract class ScoreObjectView(
     fun cutObject(orientation: Orientation) {
         val p = screenToLocal(Robot().mousePosition)
         if (obj is ScoreObjectGroup && orientation == Orientation.VERTICAL) {
-            val position = getScoreY(p.y)
+            val position = parentPane.getScoreY(p.y)
             val (top, bottom) = (obj as ScoreObjectGroup).cutVertically(position)
             replaceWithCutHalves(top, bottom, relativePosition = ObjectPosition(zero, position))
         } else if (orientation == Orientation.HORIZONTAL) {
@@ -509,7 +505,11 @@ abstract class ScoreObjectView(
 
     open fun getDisplayWidth(): Double = getWidth(obj.duration)
 
-    open fun getDisplayHeight() = getScreenY(obj.height)
+    open fun getDisplayHeight(): Double {
+        val parent = parentPane
+        return if (parent is MidiScorePane) parent.pixelsPerPitch
+        else parent.getScreenY(obj.height)
+    }
 
     open fun rescale() {
         updateInlineControlsVisibility()

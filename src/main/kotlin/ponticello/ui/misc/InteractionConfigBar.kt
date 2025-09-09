@@ -51,7 +51,7 @@ class InteractionConfigBar(private val settings: UIState) : HBox() {
     init {
         styleClass("toolbar-part")
         optionSelector.disableProperty().bind(settings.snapEnabled.not().asObservableValue())
-        optionSelector.label.minWidth = 50.0
+        optionSelector.label.minWidth = 55.0
         children.addAll(
             snapToggle.makeButton("large-icon-button"),
             optionSelector,

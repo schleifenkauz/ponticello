@@ -23,6 +23,7 @@ import ponticello.impl.json
 import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.obj.withName
+import ponticello.model.registry.reference
 import ponticello.sc.ParameterType
 import ponticello.sc.editor.BufferControlSpecEditor
 import ponticello.sc.editor.BufferPositionControlSpecEditor
@@ -72,7 +73,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
         val jsonString = json.encodeToString(ParameterDefObject.serializer(), obj)
         dragboard.setContent(
             mapOf(
-                ParameterDefObject.DATA_FORMAT to obj.name.now,
+                ParameterDefObject.DATA_FORMAT to obj.reference(),
                 SERIALIZED_DATA_FORMAT to jsonString
             )
         )

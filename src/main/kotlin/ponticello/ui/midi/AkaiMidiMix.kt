@@ -70,7 +70,6 @@ class AkaiMidiMix : Receiver {
                             }
                         }
 
-
                         remainder == 3 -> {
                             val volumeVar = component?.volume ?: return
                             val volume = getFaderVolume(message.data2)

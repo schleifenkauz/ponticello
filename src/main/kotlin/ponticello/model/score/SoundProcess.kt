@@ -253,11 +253,11 @@ class SoundProcess(
                     ?: controls.getOrNull("velocity")?.now
                     ?: midiObject?.controls?.getControl("velocity")
 
-                val velocity = velocityCtrl.controlToExprString()
+                val velocity = velocityCtrl.controlToExprString() ?: "64"
                 val midinoteCtrl = extraArguments.entries.find { (k, _) -> k.name.now == "midinote" }?.value
                     ?: controls.getOrNull("midinote")?.now
                     ?: midiObject?.controls?.getControl("midinote")
-                val midinote = midinoteCtrl?.controlToExprString() ?: instance?.y?.toString() ?: "64"
+                val midinote = midinoteCtrl?.controlToExprString() ?: instance?.y?.toString() ?: "60"
                 +"TempoClock.sched($latency) { $controllerVar.midi.noteOn(0, $midinote, $velocity) }"
                 +"TempoClock.sched(${duration + latency}) { $controllerVar.midi.noteOff(0, $midinote) }"
             }

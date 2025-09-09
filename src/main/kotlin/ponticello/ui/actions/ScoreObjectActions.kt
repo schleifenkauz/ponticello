@@ -217,7 +217,7 @@ object ScoreObjectActions {
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 val pane = view.context[AppLayout].get<ScoreObjectDetailPane>()
-                pane.updateContent(view)
+                pane.viewDetails(view)
                 pane.setShowing(true)
             }
         }

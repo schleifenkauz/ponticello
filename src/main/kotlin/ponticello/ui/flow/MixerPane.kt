@@ -363,7 +363,7 @@ class MixerPane(
                 Logger.warn("Dropped flow is not a MixerFlow", Logger.Category.AudioFlow)
                 return@handleTypedFormat false
             }
-            selectedMixer = flow.reference()
+            mixerSelector.update(flow.reference())
             true
         }
     })

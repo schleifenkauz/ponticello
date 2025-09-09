@@ -19,6 +19,7 @@ import ponticello.model.GlobalSettings
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
+import ponticello.model.registry.reference
 import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ExprControl
@@ -135,7 +136,7 @@ class ParameterControlsPane(
         val jsonString = json.encodeToString(NamedParameterControl.serializer(), obj)
         dragboard.setContent(
             mapOf(
-                NamedParameterControl.DATA_FORMAT to obj.name.now,
+                NamedParameterControl.DATA_FORMAT to obj.reference(),
                 SERIALIZED_CONTROL_FORMAT to jsonString
             )
         )

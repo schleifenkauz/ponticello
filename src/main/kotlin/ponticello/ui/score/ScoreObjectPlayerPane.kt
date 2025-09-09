@@ -13,6 +13,7 @@ import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.actions.toolbarPart
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.PlayHead
 import reaktive.value.now
@@ -32,8 +33,10 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
     }
 
     private fun setupActionHandlers() {
-        scorePane.getSingleObjectView()?.setOnMouseClicked { ev ->
+        val objectView = scorePane.getSingleObjectView()
+        objectView?.setOnMouseClicked { ev ->
             borderPane.requestFocus()
+            context[AppLayout].get<ScoreObjectDetailPane>().viewDetails(objectView)
             val (time, _) = scorePane.snapToGrid(ev.x, ev.y)
             playHead.movePlayHead(time)
         }
@@ -44,7 +47,6 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
             registerActions(ScoreObjectActions.localObjectActions.withContext(obj))
             registerActions(actions.withContext(this@ScoreObjectPlayerPane))
         }
-        borderPane
         context[ScoreObjectDuplicator].registerRootPane(scorePane)
     }
 

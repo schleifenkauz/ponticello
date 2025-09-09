@@ -4,13 +4,12 @@ import fxutils.actions.makeButton
 import fxutils.button
 import fxutils.centerChildren
 import fxutils.controls.IntSpinner
+import fxutils.controls.OptionSpinner
 import fxutils.drag.setupDropArea
 import fxutils.hspace
 import fxutils.prompt.*
 import fxutils.undo.UndoManager
 import hextant.context.Context
-import javafx.collections.FXCollections.observableList
-import javafx.scene.control.ComboBox
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
@@ -116,15 +115,17 @@ class MidiObjectView(
             compoundPrompt("Configure MIDI object", labelWidth = 130.0) {
                 val defaultName = context[ScoreObjectRegistry].availableName("midi")
                 val nameField = TextField(defaultName) named "Object name"
-                val rootPitchSelector =
-                    ComboBox(observableList(MidiPitch.allPitchClasses())) named "Root pitch class"
-                rootPitchSelector.value = MidiPitch(0)
+                val rootPitch = reactiveVariable(MidiPitch(0))
+                val rootPitchSelector = OptionSpinner(
+                    rootPitch, MidiPitch.allPitchClasses(),
+                    selectorPrompt = SimpleSelectorPrompt(MidiPitch.allPitchClasses(), "Select root pitch class")
+                ) named "Root pitch class"
                 val registerSpinner = IntSpinner(0, 10, 4).minColumns(2) named "Base register"
                 val octaves = IntSpinner(1, 12, 2).minColumns(2) named "Octaves"
                 onConfirm {
                     val name = nameField.text
                     if (!Identifier.isValid(name) || context[ScoreObjectRegistry].has(name)) return@onConfirm null
-                    val lowestPitch = rootPitchSelector.value.step + 12 * registerSpinner.value()
+                    val lowestPitch = rootPitch.now.step + 12 * registerSpinner.value()
                     val highestPitch = lowestPitch + 12 * octaves.value()
                     val score = Score()
                     val controls = ParameterControlList()

@@ -34,7 +34,7 @@ class UnresolvedScoreObjectView(private val inst: ScoreObjectInstance) : ScoreOb
         pane.addItem("Object #${inst.ref.getName()} unresolved", btn)
     }
 
-    override fun getDisplayHeight(): Double = getScreenY(0.02.asY)
+    override fun getDisplayHeight(): Double = parentPane.getScreenY(0.02.asY)
 
     override fun getDisplayWidth(): Double = getWidth(0.5.asTime)
 }
