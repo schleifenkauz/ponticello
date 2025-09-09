@@ -5,6 +5,7 @@ import fxutils.prompt.SelectorPrompt
 import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.event.Event
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -54,7 +55,7 @@ class MultiObjectControlPopup(
     data class Option(val controlName: String, val controlType: ControlType<*>, val controls: List<ParameterControl>?)
 
     companion object {
-        fun show(context: Context, selectedObjects: List<ParameterizedObject>) {
+        fun show(context: Context, selectedObjects: List<ParameterizedObject>, ev: Event?) {
             val popup = MultiObjectControlPopup(selectedObjects)
             val option = popup.showPopup(context[primaryStage], null) ?: return
 
@@ -68,7 +69,7 @@ class MultiObjectControlPopup(
                 context.compoundEdit("Update $name") {
                     val controls = selectedObjects.map { obj ->
                         val spec = obj.getSpec(name) ?: return@show
-                        type.createInitialControl(obj, spec, null, name, anchorNode = null)
+                        type.createInitialControl(obj, spec, null, name, ev)
                     }
                     if (type.showDialogInput(name, specs, controls, context)) {
                         for ((obj, ctrl) in selectedObjects zip controls) {

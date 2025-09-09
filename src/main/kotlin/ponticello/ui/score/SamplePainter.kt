@@ -159,6 +159,7 @@ class SamplePainter(
     }
 
     fun displaySpectrogram() = Platform.runLater {
+        if (spectrogramImage == null) return@runLater
         objectPane.children.removeAll(spectrogramSegments.flatMap { seg -> seg.nodes() })
         spectrogramSegments.clear()
         if (obj.displaySample?.now != true) return@runLater

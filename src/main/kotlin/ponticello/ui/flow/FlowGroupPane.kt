@@ -214,9 +214,9 @@ class FlowGroupPane(
                 icon(MaterialDesignE.EYE)
                 executesOn<VSTPluginFlow> { flow -> flow.showEditor() }
             }
-            addAction("View SynthDef") {
+            addAction("View Instrument") {
                 icon(Material2AL.CODE)
-                shortcut("Ctrl+L")
+                shortcut("Alt+I")
                 enableWhen { flow ->
                     if (flow !is InstrumentFlow) reactiveValue(false)
                     else flow.instrumentSelector.isResolved

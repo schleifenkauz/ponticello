@@ -89,10 +89,9 @@ class ParameterControlsPane(
         val spec = option.spec.now
         val customSpec = spec.takeIf { !obj.def.hasParameter(parameter) }
         val type = spec.defaultControlType()
-        val control = option.defaultControl()
-        if (type.supportsDialogInput()) {
-            type.createInitialControl(obj, spec, oldControl = null, parameter, anchorNode = listView)
-        }
+        val control =
+            if (!type.supportsDialogInput()) option.defaultControl()
+            else type.createInitialControl(obj, spec, oldControl = null, parameter, ev)
         return NamedParameterControl(control, customSpec).withName(parameter)
     }
 
@@ -162,11 +161,12 @@ class ParameterControlsPane(
         return listOf(editor)
     }
 
-    override fun getContent(obj: NamedParameterControl, box: ObjectBox<NamedParameterControl>): Parent? = when (val ctrl = obj.now) {
-        is ExprControl -> ctrl.expr.control
-        is UGenControl -> ctrl.expr.control
-        else -> null
-    }
+    override fun getContent(obj: NamedParameterControl, box: ObjectBox<NamedParameterControl>): Parent? =
+        when (val ctrl = obj.now) {
+            is ExprControl -> ctrl.expr.control
+            is UGenControl -> ctrl.expr.control
+            else -> null
+        }
 
     override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> =
         actions.withContext(box)
@@ -187,10 +187,10 @@ class ParameterControlsPane(
             }
             addAction("Select control type") {
                 shortcut("Ctrl+T")
-                executes { box ->
+                executes { box, ev ->
                     val pane = box.config as? ParameterControlsPane ?: return@executes
                     val editor = pane.editors[box.obj] ?: return@executes
-                    editor.showOptionPopup()
+                    editor.showOptionPopup(ev)
                 }
             }
             addAction("Increase value") {

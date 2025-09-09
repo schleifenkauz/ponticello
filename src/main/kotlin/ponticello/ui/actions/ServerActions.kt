@@ -4,10 +4,7 @@ import fxutils.actions.Action
 import fxutils.actions.action
 import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.evaicons.Evaicons
-import org.kordamp.ikonli.materialdesign2.MaterialDesignF
-import org.kordamp.ikonli.materialdesign2.MaterialDesignG
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import org.kordamp.ikonli.materialdesign2.MaterialDesignW
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
 import ponticello.model.obj.BusReference
 import ponticello.model.project.PonticelloProject
@@ -46,7 +43,7 @@ object ServerActions : Action.Collector<PonticelloProject>({
         icon(MaterialDesignW.WAVEFORM)
         executes { project -> project.client.run("AppClock.sched(0) { s.scope }") }
     }
-    addAction("Show ServerMeter") {
+    addAction("Show server gui") {
         shortcut("Ctrl+Shift+M")
         icon(MaterialDesignG.GAUGE)
         executes { project ->
@@ -54,6 +51,13 @@ object ServerActions : Action.Collector<PonticelloProject>({
 //            val numOuts = project[SERVER_OPTIONS].numOutputChannels
 //            project.client.run("AppClock.sched(0) {ServerMeter.new(s, $numIns, $numOuts)}")
             project.client.run("AppClock.sched(0) { s.makeGui }")
+        }
+    }
+    addAction("Show LevelMeter") {
+        shortcut("Ctrl+Shift+L")
+        icon(MaterialDesignT.THERMOMETER)
+        executes { project ->
+            project.client.run("AppClock.sched(0) { s.meter }")
         }
     }
 }) {

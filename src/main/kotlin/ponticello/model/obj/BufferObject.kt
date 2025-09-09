@@ -48,7 +48,7 @@ sealed class BufferObject : AbstractSuperColliderObject() {
 
     fun plotBuffer() {
         val client = context[SuperColliderClient]
-        client.run("${superColliderName}.plot('${name.now}')")
+        client.run("AppClock.sched(0) {${superColliderName}.plot('${name.now}')}")
     }
 
     fun matches(spec: ControlSpec?) = spec is BufferControlSpec && channels() == spec.channels

@@ -11,11 +11,11 @@ import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.event.Event
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
-import javafx.scene.layout.Region
 import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 import ponticello.impl.Logger
@@ -139,7 +139,7 @@ data object ValueControlType : ControlType<ValueControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        anchorNode: Region?,
+        ev: Event?,
     ): ValueControl {
         spec as NumericalControlSpec
         val value = oldControl?.getNumericalValue() ?: spec.defaultValue.get()

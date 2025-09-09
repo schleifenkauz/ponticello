@@ -132,10 +132,12 @@ OSCdef(\save_plugin_state, { |msg|
 }, \save_plugin_state);
 OSCdef(\set_time_warp, { |msg|
     var tempo = msg[2].asFloat;
-    TempoClock.tempo = tempo;
-    ~time_warp_bus.set(tempo);
-    ~time_warp = tempo;
-    "ok"
+    if (tempo > 0) {
+        TempoClock.tempo = tempo;
+        ~time_warp_bus.set(tempo);
+        ~time_warp = tempo;
+        "ok"
+    } { "non-positive tempo" }
 }, '/set_time_warp');
 
 ~setupHandler.(\startCircularBuffer, { |duration|

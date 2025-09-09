@@ -42,7 +42,6 @@ import ponticello.model.obj.*
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.buffers
 import ponticello.model.registry.BufferRegistry
-import ponticello.model.registry.ObjectList
 import ponticello.sc.Identifier
 import ponticello.ui.actions.undoable
 import ponticello.ui.dock.BufferRegistryPaneState
@@ -56,7 +55,6 @@ import reaktive.value.binding.binding
 import reaktive.value.binding.notEqualTo
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
-import java.io.File
 
 class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPane<BufferObject>(buffers) {
     override val type: Type
@@ -119,18 +117,8 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         else -> super.getDroppedObject(ev, targetView)
     }
 
-    override fun createNewObject(ev: Event?, list: ObjectList<BufferObject>): BufferObject? =
-        loadNewSample { file -> Identifier.truncate(file.nameWithoutExtension) }
-
-    private fun loadNewSample(name: (File) -> String): SampleObject? {
-        val file = buffers.context[PonticelloFiles].showOpenDialog("*.wav") ?: return null
-        if (buffers.getSample(file) != null) return null
-        val sample = SampleObject.create(name(file), file)
-        return sample
-    }
-
     override fun createNewObject(name: String, ev: Event?): BufferObject? {
-        return compoundPrompt("Configure buffer $name") {
+        return compoundPrompt("Configure buffer $name", labelWidth = 100.0) {
             val channelsSpinner = IntSpinner(1, 12, 2).minColumns(2) named "Channels"
             val durationField = TextField() named "Duration (s)"
             onConfirm {
@@ -138,7 +126,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
                 val duration = durationField.text.parseDecimal() ?: return@onConfirm null
                 AllocatedBufferObject.create(name, channels, duration)
             }
-        }.showDialog(this)
+        }.showDialog(ev)
     }
 
     override fun getHeaderContent(obj: BufferObject): List<Node> = when (obj) {
@@ -174,16 +162,18 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         }
     }
 
-    override fun getContent(obj: BufferObject, box: ObjectBox<BufferObject>): Parent? = when (obj) {
-        is AllocatedBufferObject -> null
-        is SampleObject -> {
-            val image = obj.spectrogramImage
-            val view = ImageView(image)
-            view.fitHeight = SPECTROGRAM_HEIGHT
-            view.fitWidthProperty().bind(box.widthProperty().subtract(10.0))
-            view.isPreserveRatio = false
-            val pane = BorderPane(view)
-            pane
+    override fun getContent(obj: BufferObject, box: ObjectBox<BufferObject>): Parent? {
+        return when (obj) {
+            is AllocatedBufferObject -> null
+            is SampleObject -> {
+                val image = obj.spectrogramImage ?: return Label("Spectrogram file not found...")
+                val view = ImageView(image)
+                view.fitHeight = SPECTROGRAM_HEIGHT
+                view.fitWidthProperty().bind(box.widthProperty().subtract(10.0))
+                view.isPreserveRatio = false
+                val pane = BorderPane(view)
+                pane
+            }
         }
     }
 

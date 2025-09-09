@@ -3,9 +3,9 @@ package ponticello.ui.controls
 import fxutils.centerChildren
 import fxutils.controls.SliderBar
 import fxutils.undo.UndoManager
+import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import ponticello.impl.one
 import ponticello.impl.toDecimal
@@ -79,7 +79,7 @@ data object AttackReleaseControlType : ControlType<AttackReleaseControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        anchorNode: Region?,
+        ev: Event?,
     ): AttackReleaseControl = AttackReleaseControl.createDefault()
 
     override fun toString(): String = "ASR"

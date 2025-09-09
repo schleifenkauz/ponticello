@@ -8,6 +8,7 @@ import fxutils.opacity
 import fxutils.prompt.InfoPrompt
 import fxutils.undo.UndoManager
 import hextant.serial.EditorRoot
+import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
@@ -43,7 +44,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        anchorNode: Region?,
+        ev: Event?,
     ): UGenControl {
         val editor = ScExprExpander()
         val root = EditorRoot(editor)

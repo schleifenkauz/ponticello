@@ -5,8 +5,8 @@ import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.event.Event
 import javafx.scene.Node
-import javafx.scene.layout.Region
 import ponticello.impl.Logger
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.registry.BusRegistry
@@ -42,7 +42,7 @@ data object BusControlType : ControlType<BusControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        anchorNode: Region?,
+        ev: Event?,
     ): BusControl {
         spec as BusControlSpec
         val bus = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()

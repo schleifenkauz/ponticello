@@ -134,7 +134,7 @@ object ScoreObjectActions {
                     Logger.warn("Some selected objects are not sound processes", Logger.Category.Score)
                     return@executes
                 }
-                MultiObjectControlPopup.show(ctx.context, objects)
+                MultiObjectControlPopup.show(ctx.context, objects, ev)
             }
         }
         addObjectAction("Choose instrument") {

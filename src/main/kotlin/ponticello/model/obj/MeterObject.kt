@@ -39,9 +39,8 @@ class MeterObject private constructor(
     private val tpbProperty get() = "$superColliderName[\\tpb]"
 
     override fun ScWriter.createObject() {
-        +"$bpmProperty = Bus.control(s, 1)"
-        +"$bpbProperty = Bus.control(s, 1)"
-        +"$tpbProperty = Bus.control(s, 1)"
+        +"$superColliderName = ()"
+        sync()
     }
 
     override fun ScWriter.sync() {

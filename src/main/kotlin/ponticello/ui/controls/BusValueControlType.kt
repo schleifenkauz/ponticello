@@ -6,8 +6,8 @@ import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.event.Event
 import javafx.scene.Node
-import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.impl.asY
@@ -56,13 +56,13 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        anchorNode: Region?,
+        ev: Event?,
     ): BusValueControl {
-        if (anchorNode == null) return BusValueControl(reactiveVariable(ObjectReference.none()))
+        if (ev == null) return BusValueControl(reactiveVariable(ObjectReference.none()))
         val initial = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
         val title = "Select '${parameterName}'"
         val selected = BusSelectorPrompt(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
-            .showPopup(anchorNode, initialOption = initial.get()) ?: initial.force()
+            .showPopup(ev, initialOption = initial.get()) ?: initial.force()
         return BusValueControl(reactiveVariable(selected.reference()))
     }
 

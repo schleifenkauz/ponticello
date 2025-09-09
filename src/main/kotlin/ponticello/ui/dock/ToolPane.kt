@@ -368,7 +368,7 @@ abstract class ToolPane : VBox() {
 
         val actions = collectActions<ToolPane> {
             addAction("Resize window to fit contents") {
-                shortcut("Ctrl+L")
+                shortcut("Ctrl+Alt+F")
                 enableWhen { p -> isSceneRoot(p) }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 icon(MaterialDesignR.RESIZE)

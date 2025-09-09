@@ -164,3 +164,7 @@ fun Decimal.isMultipleOf(factor: Decimal): Boolean {
 }
 
 val Decimal.isInteger get() = '.' !in toCanonicalString()
+
+fun Long.toSeconds() = (this / 1000.0).asTime
+
+fun Decimal.tanh() = tanh(value).toDecimal()

@@ -6,6 +6,7 @@ import fxutils.button
 import fxutils.infiniteSpace
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.styleClass
+import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.HBox
 import ponticello.model.score.ParameterControlList.NamedParameterControl
@@ -22,7 +23,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
 
     init {
         optionButton.isFocusTraversable = false
-        optionButton.setOnMouseClicked { showOptionPopup() }
+        optionButton.setOnMouseClicked { ev -> showOptionPopup(ev) }
         optionButton.prefWidth = 45.0
         styleClass("parameter-control-item")
         alwaysHGrow()
@@ -48,21 +49,21 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
 //        return db.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) || db.hasContent(BufferObject.DATA_FORMAT)
 //    }
 
-    fun showOptionPopup() {
+    fun showOptionPopup(ev: Event?) {
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
         if (options.isEmpty() || options.size == 1) return
         val listView = SimpleSelectorPrompt(options, "Select control type")
-        val option = listView.showPopup(anchorNode = optionButton, initialOption = selectedOption) ?: return
-        updateControlType(option)
+        val option = listView.showPopup(ev, initialOption = selectedOption) ?: return
+        updateControlType(option, ev)
         detailEditor?.requestFocus()
     }
 
-    private fun <T : ParameterControl> updateControlType(t: ControlType<T>) {
+    private fun <T : ParameterControl> updateControlType(t: ControlType<T>, ev: Event?) {
         selectedOption = t
         val oldControl = control.now
         val newControl = t.createInitialControl(
-            control.parentObject, control.spec.now, oldControl, control.name.now, anchorNode = optionButton
+            control.parentObject, control.spec.now, oldControl, control.name.now, ev
         )
         control.reassign(newControl)
         t.onSelected(control, newControl, view)

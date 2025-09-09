@@ -55,7 +55,7 @@ class ClockObject(
     override val canDelete: Boolean
         get() = name.now != "default"
 
-    val activeMeter: MeterObject? get() = activeMeters.firstOrNull()?.meter
+    val activeMeter: ActiveMeter? get() = activeMeters.firstOrNull()
 
     override fun canRenameTo(newName: String): Boolean = name.now != "default" && super.canRenameTo(newName)
 
@@ -238,7 +238,7 @@ class ClockObject(
         val scheduledTime: Decimal
     )
 
-    private data class ActiveMeter(
+    data class ActiveMeter(
         val meter: MeterObject,
         val player: ScorePlayer,
         val startTime: Decimal,
@@ -247,8 +247,6 @@ class ClockObject(
     companion object {
         private const val PERIOD_MS = 20L
         private val PERIOD_S = PERIOD_MS.toSeconds()
-
-        private fun Long.toSeconds() = (this / 1000.0).asTime
 
         fun withName(name: String) = ClockObject().withName(name)
 
@@ -260,3 +258,4 @@ class ClockObject(
         )
     }
 }
+

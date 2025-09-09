@@ -10,8 +10,8 @@ import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.event.Event
 import javafx.scene.Node
-import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import ponticello.impl.Logger
 import ponticello.model.obj.AllocatedBufferObject
@@ -64,14 +64,14 @@ data object BufferControlType : ControlType<BufferControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        anchorNode: Region?,
+        ev: Event?,
     ): BufferControl {
-        if (anchorNode == null) return BufferControl(reactiveVariable(ObjectReference.none()))
+        if (ev == null) return BufferControl(reactiveVariable(ObjectReference.none()))
         spec as BufferControlSpec
         val display = reactiveVariable(spec.isPlayBufSource)
         val title = "Select '${parameterName}'"
         val selected = BufferSelectorPrompt(obj.context[BufferRegistry], title, channels = spec.channels)
-            .showPopup(anchorNode, initialOption = null)
+            .showPopup(ev, initialOption = null)
         return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()), display)
     }
 

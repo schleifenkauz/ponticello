@@ -196,6 +196,6 @@ class OSCSuperColliderClient(
             return OSCSuperColliderClient(sclang, sender, receiver, context)
         }
 
-        private val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
+        val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
     }
 }

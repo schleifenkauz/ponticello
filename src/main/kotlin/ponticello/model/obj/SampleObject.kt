@@ -19,6 +19,7 @@ import ponticello.ui.launcher.PonticelloFiles
 import reaktive.event.unitEvent
 import reaktive.value.*
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.CompletableFuture
 
 @Serializable
@@ -49,7 +50,14 @@ class SampleObject(
 
     val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")
 
-    val spectrogramImage by lazy { Image(spectrogramFile.inputStream()) }
+    val spectrogramImage by lazy {
+        try {
+            Image(spectrogramFile.inputStream())
+        } catch (e: IOException) {
+            Logger.error("Error while loading spectrogram for sample '${name.now}' [$audioFile]", e)
+            null
+        }
+    }
 
     @Transient
     private var _duration: ReactiveVariable<Decimal> = reactiveVariable(-one(ObjectPosition.TIME_PRECISION))
@@ -227,6 +235,11 @@ class SampleObject(
     }
 
     fun showSpectrogram() {
+        if (spectrogramImage == null) {
+            Logger.warn("No spectrogram file available for buffer '${name.now}'", Logger.Category.Buffers)
+            return
+
+        }
         val image = ImageView(spectrogramImage)
         val scrollPane = ScrollPane(image)
         val window = SubWindow(scrollPane, "Spectrogram of sample '${name.now}'")

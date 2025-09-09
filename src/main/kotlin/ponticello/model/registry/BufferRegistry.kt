@@ -112,7 +112,7 @@ class BufferRegistry(
                 val buf = when {
                     content is JsonPrimitive -> //for compatibility with older projects
                         SampleObject(reactiveVariable(content.string))
-                    else -> json.decodeFromJsonElement(content)
+                    else -> json.decodeFromJsonElement<BufferObject>(content)
                 }
                 objects.add(buf.withName(name))
             }

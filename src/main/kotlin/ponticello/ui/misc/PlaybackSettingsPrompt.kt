@@ -1,11 +1,8 @@
 package ponticello.ui.misc
 
-import fxutils.centerChildren
+import fxutils.*
 import fxutils.controls.CheckBox
-import fxutils.infiniteSpace
 import fxutils.prompt.ConfirmablePrompt
-import fxutils.styleClass
-import fxutils.vspace
 import javafx.scene.Parent
 import javafx.scene.control.Label
 import javafx.scene.layout.BorderPane
@@ -15,8 +12,10 @@ import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.impl.toDecimal
 import ponticello.model.PlaybackSettings
+import ponticello.model.player.ScorePlayer
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.controls.Knob
+import ponticello.ui.live.ConductorView
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 
@@ -35,6 +34,11 @@ class PlaybackSettingsPrompt(
         vspace(10.0),
         HBox(infiniteSpace(), CheckBox(logScCode, "Log SuperCollider code: "), infiniteSpace()).centerChildren(),
         HBox(infiniteSpace(), CheckBox(djMode, "DJ mode: "), infiniteSpace()).centerChildren(),
+        HBox(infiniteSpace(), button("Show conductor window") {
+            hide()
+            val player = settings.context[ScorePlayer.MAIN]
+            ConductorView.showWindow(player)
+        }, infiniteSpace()).centerChildren()
     )
 
     override fun confirm() {
