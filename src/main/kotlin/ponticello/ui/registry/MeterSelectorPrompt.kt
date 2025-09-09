@@ -30,7 +30,7 @@ class MeterSelectorPrompt(
         return meter.withName(name)
     }
 
-    private class MeterConfigDialog(
+    class MeterConfigDialog(
         private val meter: MeterObject,
         initialName: String,
     ) : CompoundPrompt<MeterObject>("Configure meter") {

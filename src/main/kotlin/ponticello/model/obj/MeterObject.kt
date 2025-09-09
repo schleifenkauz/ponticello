@@ -2,11 +2,14 @@ package ponticello.model.obj
 
 import fxutils.undo.AbstractEdit
 import fxutils.undo.UndoManager
+import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.live.QuantizationUnit
 import ponticello.model.score.TimeUnit
+import ponticello.sc.client.ScWriter
 import reaktive.Observer
 import reaktive.Reactive
 import reaktive.and
@@ -19,11 +22,48 @@ class MeterObject private constructor(
     val beatsPerMinute: ReactiveVariable<Decimal> = reactiveVariable(zero),
     val beatsPerBar: ReactiveVariable<Int> = reactiveVariable(0),
     val ticksPerBeat: ReactiveVariable<Int> = reactiveVariable(0),
-) : AbstractRenamableObject() {
+) : AbstractSuperColliderObject() {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
     fun isNone() = beatsPerMinute.now == zero
+
+    @Transient
+    private lateinit var syncObserver: Observer
+
+    override val superColliderName: String
+        get() = "~meter_${name.now}"
+
+    private val bpmProperty get() = "$superColliderName[\\bpm]"
+    private val bpbProperty get() = "$superColliderName[\\bpb]"
+    private val tpbProperty get() = "$superColliderName[\\tpb]"
+
+    override fun ScWriter.createObject() {
+        +"$bpmProperty = Bus.control(s, 1)"
+        +"$bpbProperty = Bus.control(s, 1)"
+        +"$tpbProperty = Bus.control(s, 1)"
+    }
+
+    override fun ScWriter.sync() {
+        +"$bpmProperty = ${beatsPerMinute.now}"
+        +"$bpbProperty = ${beatsPerBar.now}"
+        +"$tpbProperty = ${ticksPerBeat.now}"
+    }
+
+    override fun ScWriter.freeObject() {
+        +"if ($superColliderName != nil) { $superColliderName = nil }"
+    }
+
+    override fun initialize(context: Context) {
+        super.initialize(context)
+        syncObserver = beatsPerMinute.observe { _, _, new ->
+            client.run("$bpmProperty = $new")
+        } and beatsPerBar.observe { _, _, new ->
+            client.run("$bpbProperty = $new")
+        } and ticksPerBeat.observe { _, _, new ->
+            client.run("$tpbProperty = $new")
+        }
+    }
 
     private fun getBeatDur() = (60.0.asTime / beatsPerMinute.now)
 
