@@ -1,13 +1,11 @@
 package ponticello.ui.live
 
+import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
-import fxutils.background
-import fxutils.centerChildren
-import fxutils.centered
 import fxutils.controls.IntSpinner
-import fxutils.pad
+import hextant.context.Context
 import javafx.animation.AnimationTimer
 import javafx.animation.PauseTransition
 import javafx.application.Platform
@@ -18,83 +16,90 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
+import javafx.scene.shape.Line
 import javafx.util.Duration
 import org.kordamp.ikonli.material2.Material2MZ
+import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.model.player.Conductor
-import ponticello.model.player.ScorePlayer
 import ponticello.ui.impl.makeSubWindow
-import reaktive.Observer
+import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.score.ScorePane
 import reaktive.value.binding.`if`
 import reaktive.value.now
 
-class ConductorView(private val conductor: Conductor) : VBox(5.0) {
-    private val portSpinner = IntSpinner(conductor.port, 1024..65535).minColumns(5)
-    private val countdownTimeSpinner = IntSpinner(conductor.countdownTime, 1, 20).minColumns(5)
-    private val toggleButton = startStopAction.withContext(conductor).makeButton("large-icon-button")
-    private val countdownIndicator = ProgressBar()
+class ConductorView(
+    private val conductor: Conductor,
+    private val scorePane: ScorePane
+) : VBox(5.0), Conductor.View {
+    private val portSpinner = IntSpinner(conductor.options.port, 1024..65535).minColumns(5)
+    private val countdownTimeSpinner = IntSpinner(conductor.options.countdownTime, 1, 20).minColumns(5)
+    private val extraOptionsField = textField(conductor.options.extraArguments.now) {
+        setOnAction {
+            conductor.options.extraArguments.set(text)
+        }
+    } styleClass "sleek-text-field"
+    private val toggleButton = startStopAction.withContext(this).makeButton("large-icon-button")
+    private val countdownIndicator = ProgressBar() styleClass "conductor-countdown"
     private val centerPane = StackPane(toggleButton)
-    private val scheduleObserver: Observer
-    private val activeObserver: Observer
-    private val beatObserver: Observer
+    private val barPositionLabel = Label("- / 0")
+    private val conductorTimeIndicator = Line().styleClass("play-head", "conductor-time")
 
     init {
-        val barPosition = Label("- / 0")
+        conductor.addView(this)
+        conductorTimeIndicator.endYProperty().bind(scorePane.heightProperty())
         StackPane.setAlignment(toggleButton, Pos.CENTER)
         StackPane.setAlignment(countdownIndicator, Pos.CENTER)
         countdownIndicator.prefHeight = 30.0
         countdownIndicator.pad(5.0)
         countdownIndicator.maxWidth = Double.POSITIVE_INFINITY
+        extraOptionsField.prefWidth = 200.0
         children.addAll(
             HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
             HBox(5.0, Label("Countdown:"), countdownTimeSpinner).centerChildren(),
+            Label("Options:  "),
+            extraOptionsField,
             centerPane,
-            barPosition.centered()
+            barPositionLabel.centered()
         )
         pad(5.0)
-        prefHeight = 120.0
+        prefHeight = 140.0
 
-        scheduleObserver = conductor.isScheduled.observe { _, _, scheduled ->
-            Platform.runLater {
-                if (scheduled) {
-                    centerPane.children.setAll(countdownIndicator)
-                    countdownTimeSpinner.isDisable = true
-                    portSpinner.isDisable = true
-                    startCountdown()
-                } else {
-                    centerPane.children.setAll(toggleButton)
-                    countdownTimeSpinner.isDisable = false
-                    portSpinner.isDisable = false
-                }
-            }
-        }
-
-        activeObserver = conductor.isActive.observe { _, _, active ->
-            Platform.runLater {
-                if (active) {
-                    centerPane.children.setAll(toggleButton)
-                } else {
-                    barPosition.text = "- / ${conductor.beatsPerBar}"
-                }
-            }
-        }
-
-        beatObserver = conductor.onBeat.observe { _, pos ->
-            Platform.runLater {
-                background = background(Color.RED)
-                val pause = PauseTransition(Duration.millis(100.0))
-                pause.setOnFinished { background = null }
-                pause.play()
-                barPosition.text = "$pos / ${conductor.beatsPerBar}"
-            }
-        }
-
-        registerShortcuts(listOf(startStopAction.withContext(conductor)))
+        registerShortcuts(listOf(startStopAction.withContext(this)))
     }
 
-    private fun startCountdown() {
+    override fun onScheduled() = Platform.runLater {
+        if (conductorTimeIndicator !in scorePane.children) {
+            scorePane.children.add(conductorTimeIndicator)
+            conductorTimeIndicator.startX = 0.0
+            conductorTimeIndicator.endX = 0.0
+        }
+        centerPane.children.setAll(countdownIndicator)
+        countdownTimeSpinner.isDisable = true
+        portSpinner.isDisable = true
         val totalMs = countdownTimeSpinner.value.get() * 1000.0
         CountdownTimer(countdownIndicator, totalMs).start()
+    }
+
+    override fun onStarted() = Platform.runLater {
+        centerPane.children.setAll(toggleButton)
+    }
+
+    override fun onBeat(barPosition: Int, conductorTime: Decimal) = Platform.runLater {
+        background = background(Color.RED)
+        val pause = PauseTransition(Duration.millis(100.0))
+        pause.setOnFinished { background = null }
+        pause.play()
+        barPositionLabel.text = "$barPosition / ${conductor.beatsPerBar}"
+        conductorTimeIndicator.startX = scorePane.getWidth(conductorTime)
+        conductorTimeIndicator.endX = conductorTimeIndicator.startX
+    }
+
+    override fun onStopped() = Platform.runLater {
+        barPositionLabel.text = "- / ${conductor.beatsPerBar}"
+        countdownTimeSpinner.isDisable = false
+        portSpinner.isDisable = false
+        scorePane.children.remove(conductorTimeIndicator)
     }
 
     private class CountdownTimer(
@@ -119,24 +124,26 @@ class ConductorView(private val conductor: Conductor) : VBox(5.0) {
     }
 
     companion object {
-        private val startStopAction = action<Conductor>("Start/stop") {
-            description { c -> `if`(c.isActive, then = { "Stop" }, otherwise = { "Start" }) }
-            icon { c -> `if`(c.isActive, then = { Material2MZ.STOP }, otherwise = { Material2MZ.PLAY_ARROW }) }
+        private val startStopAction = action<ConductorView>("Start/stop") {
+            description { v -> `if`(v.conductor.isActive, then = { "Stop" }, otherwise = { "Start" }) }
+            icon { v -> `if`(v.conductor.isActive, then = { Material2MZ.STOP }, otherwise = { Material2MZ.PLAY_ARROW }) }
             shortcut("Ctrl+SPACE")
-            executes { c ->
-                if (c.isActive.now) c.stop()
+            executes { v ->
+                if (v.conductor.isActive.now) v.conductor.stop()
                 else {
-                    if (!c.start()) {
+                    v.conductor.options.extraArguments.set(v.extraOptionsField.text)
+                    if (!v.conductor.start()) {
                         Logger.error("Failed to start live beat detection", Logger.Category.Playback)
                     }
                 }
             }
         }
 
-        fun showWindow(player: ScorePlayer) {
-            val conductor = Conductor.forPlayer(player)
-            val view = ConductorView(conductor)
-            val window = makeSubWindow(view, "Conductor", player.context)
+        fun showWindow(context: Context) {
+            val conductor = Conductor.get(context)
+            val scorePane = context[PonticelloMainActivity].mainScoreView
+            val view = ConductorView(conductor, scorePane)
+            val window = makeSubWindow(view, "Conductor", context)
             window.show()
             window.setOnHidden { conductor.stop() }
         }

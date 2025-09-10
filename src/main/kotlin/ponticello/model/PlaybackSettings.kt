@@ -7,6 +7,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.live.DjMode
 import ponticello.model.obj.AbstractContextualObject
+import ponticello.model.player.ConductorOptions
 import ponticello.sc.client.SuperColliderClient
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
@@ -19,7 +20,8 @@ class PlaybackSettings(
     val serverLatency: ReactiveVariable<Decimal>,
     val extraLatency: ReactiveVariable<Decimal>,
     val logScCode: ReactiveVariable<Boolean>,
-    val djMode: DjMode = DjMode()
+    val djMode: DjMode = DjMode(),
+    val conductorOptions: ConductorOptions = ConductorOptions.createDefault(),
 ) : AbstractContextualObject() {
     val lookAhead get() = scLangLatency.now + serverLatency.now
 
@@ -40,7 +42,7 @@ class PlaybackSettings(
             globalSettings.scLangLatency.copy(),
             globalSettings.serverLatency.copy(),
             globalSettings.extraLatency.copy(),
-            globalSettings.logScCode.copy()
+            globalSettings.logScCode.copy(),
         )
     }
 }

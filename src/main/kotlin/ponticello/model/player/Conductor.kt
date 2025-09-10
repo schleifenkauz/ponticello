@@ -3,75 +3,58 @@ package ponticello.model.player
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.transport.OSCPortIn
-import fxutils.styleClass
+import hextant.context.Context
+import hextant.core.editor.ListenerManager
 import javafx.application.Platform
-import javafx.scene.shape.Line
 import ponticello.impl.*
 import ponticello.model.obj.MeterObject
+import ponticello.model.obj.project
+import ponticello.model.project.PLAYBACK_SETTINGS
+import ponticello.model.project.get
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
 import ponticello.sc.client.OSCSuperColliderClient
 import ponticello.sc.client.getArgument
-import ponticello.ui.launcher.PonticelloMainActivity
-import ponticello.ui.score.ScorePane
-import reaktive.event.event
 import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import java.io.File
 import java.util.*
 import java.util.concurrent.Executors
-import kotlin.math.pow
 import kotlin.math.tanh
-import kotlin.random.Random
 
 class Conductor private constructor(
-    private val player: ScorePlayer,
-    private val scorePane: ScorePane,
-    val port: ReactiveVariable<Int>,
+    val options: ConductorOptions,
+    private val player: ScorePlayer
 ) : OSCMessageListener {
-    val countdownTime = reactiveVariable(5)
+    private val views = ListenerManager.createWeakListenerManager<View>()
 
     private var conductorTime = 0.0.asTime
-        set(value) {
-            field = value
-            Platform.runLater {
-                conductorTimeIndicator.startX = scorePane.getWidth(value)
-                conductorTimeIndicator.endX = conductorTimeIndicator.startX
-            }
-        }
 
     private val beatTimes: Deque<Decimal> = LinkedList()
     private var nBeats = 0
-    val barPosition get() = if (beatsPerBar != 0) nBeats % beatsPerBar else 0
     private val active = reactiveVariable(false)
     private val scheduled = reactiveVariable(false)
     private var startingMeter: MeterObject? = null
-    val beatsPerBar: Int
-        get() = startingMeter?.beatsPerBar?.now ?: 0
     private var analysisProcess: Process? = null
     private var receiver: OSCPortIn? = null
 
     private val clock get() = player.getClock()
     private val activeMeter get() = clock.activeMeter?.meter ?: startingMeter
+    val beatsPerBar: Int
+        get() = startingMeter?.beatsPerBar?.now ?: 0
     val isActive: ReactiveBoolean get() = active
     val isScheduled: ReactiveBoolean get() = scheduled
-
-    private val beat = event<Int>()
-    val onBeat get() = beat.stream
-
-    private val conductorTimeIndicator = Line().styleClass("play-head", "conductor-time")
-
-    init {
-        conductorTimeIndicator.endYProperty().bind(scorePane.heightProperty())
-    }
 
     private val playerStopObserver = player.isPlaying.observe { _, before, now ->
         if (before && !now) {
             stop()
         }
+    }
+
+    fun addView(view: View) {
+        views.addListener(view)
     }
 
     fun start(): Boolean {
@@ -82,24 +65,25 @@ class Conductor private constructor(
 
         scheduled.set(true)
 
-        if (conductorTimeIndicator !in scorePane.children) {
-            scorePane.children.add(conductorTimeIndicator)
-        }
+        views.notifyListeners { onScheduled() }
 
-        val receiver = OSCPortIn(port.now)
+        val port = options.port.now
+        val receiver = OSCPortIn(port)
         receiver.startListening()
         receiver.dispatcher.addListener(OSCSuperColliderClient.ALL_MESSAGES, this)
 
         val rubatoDir = File(System.getProperty("user.home"), "dev/rubato")
         val pythonExe = rubatoDir.resolve(".venv/bin/python").absolutePath
         val scriptPath = rubatoDir.resolve("live.py").absolutePath
-        val startAt = System.currentTimeMillis() / 1000.0 + countdownTime.now
+        val startAt = System.currentTimeMillis() / 1000.0 + options.countdownTime.now
+        val extraArguments = options.extraArguments.now.split(" ").toTypedArray()
         analysisProcess = ProcessBuilder()
             .command(
                 pythonExe, scriptPath,
-                "--udp-port", port.now.toString(),
+                "--udp-port", port.toString(),
                 "--start-at", startAt.toString(),
-                "--show-video"
+                "--show-video",
+                *extraArguments
             )
             .directory(rubatoDir)
             .inheritIO()
@@ -125,14 +109,14 @@ class Conductor private constructor(
         receiver?.stopListening()
         receiver = null
         player.pause()
-        Platform.runLater {
-            scorePane.children.remove(conductorTimeIndicator)
-        }
+        player.playHead.movePlayHeadToStart()
+        views.notifyListeners { onStopped() }
     }
 
     override fun acceptMessage(event: OSCMessageEvent) {
         if (event.message.address == "/started") {
             active.set(true)
+            views.notifyListeners { onStarted() }
             return
         }
         if (!active.now) return
@@ -158,13 +142,13 @@ class Conductor private constructor(
         if (nBeats > beatsPerBar + 1) {
             conductorTime += meter.getDuration(TimeUnit.Beats)
         }
-        beat.fire(barPosition)
+        val barPosition = if (beatsPerBar != 0) ((nBeats - 1) % beatsPerBar) + 1 else 0
+        views.notifyListeners { onBeat(barPosition, conductorTime) }
 
         beatTimes.addLast(timestamp)
         while (beatTimes.size > beatsPerBar) beatTimes.removeFirst()
         val deltas = beatTimes.zipWithNext { a, b -> b - a }
         val conductorTempo = deltas.size / deltas.fold(zero, Decimal::plus) * 60
-        val warp = (conductorTempo / meter.beatsPerMinute.now).pow(0.5)
 
         if (nBeats == beatsPerBar) {
             val beatDur = 60 / conductorTempo
@@ -172,22 +156,30 @@ class Conductor private constructor(
             val delay = ((beatDur - player.lookAhead) * 1000).toLong()
             println("Scheduling the player with a delay of $delay ms.")
             scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
-            val totalWarp = warp.coerceIn(0.5.toDecimal(), 2.0.toDecimal())
-            println("Time warp: $totalWarp")
-            clock.timeWarp.set(totalWarp)
+            val warp = (conductorTempo / meter.beatsPerMinute.now).coerceIn(0.5.toDecimal(), 2.0.toDecimal())
+            println("Time warp: $warp")
+            clock.timeWarp.set(warp)
         } else if (nBeats > beatsPerBar) {
             println("Conductor tempo: $conductorTempo")
             val scoreTime = player.playHead.currentTime
             val dist = (conductorTime - scoreTime).value / 2
             println("Distance: $dist")
-            val nudge = TEMPO_NUDGE.pow(tanh(dist))
+            val nudge = tanh(dist) / 2
             println("Nudge: $nudge")
             Platform.runLater {
-                val totalWarp = (warp * nudge).coerceIn(0.5.toDecimal(), 2.0.toDecimal())
-                println("New time warp: $warp * $nudge = $totalWarp")
+                val warp = clock.timeWarp.now
+                val totalWarp = (warp + nudge).coerceIn(0.5.toDecimal(), 2.0.toDecimal())
+                println("New time warp: $warp + $nudge = $totalWarp")
                 clock.timeWarp.set(totalWarp)
             }
         }
+    }
+
+    interface View {
+        fun onBeat(barPosition: Int, conductorTime: Decimal)
+        fun onScheduled()
+        fun onStopped()
+        fun onStarted()
     }
 
     companion object {
@@ -197,10 +189,12 @@ class Conductor private constructor(
 
         private val byPlayer = WeakHashMap<ScorePlayer, Conductor>()
 
-        fun forPlayer(player: ScorePlayer): Conductor = byPlayer.getOrPut(player) {
-            val port = 57140 + Random.nextInt(10)
-            val scorePane = player.context[PonticelloMainActivity].mainScoreView
-            Conductor(player, scorePane, reactiveVariable(port))
+        fun get(context: Context): Conductor {
+            val player = context[ScorePlayer.MAIN]
+            return byPlayer.getOrPut(player) {
+                val options = context.project[PLAYBACK_SETTINGS].conductorOptions
+                Conductor(options, player)
+            }
         }
     }
 }

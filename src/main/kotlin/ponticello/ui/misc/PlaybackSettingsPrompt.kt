@@ -12,7 +12,6 @@ import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.impl.toDecimal
 import ponticello.model.PlaybackSettings
-import ponticello.model.player.ScorePlayer
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.controls.Knob
 import ponticello.ui.live.ConductorView
@@ -36,8 +35,7 @@ class PlaybackSettingsPrompt(
         HBox(infiniteSpace(), CheckBox(djMode, "DJ mode: "), infiniteSpace()).centerChildren(),
         HBox(infiniteSpace(), button("Show conductor window") {
             hide()
-            val player = settings.context[ScorePlayer.MAIN]
-            ConductorView.showWindow(player)
+            ConductorView.showWindow(settings.context)
         }, infiniteSpace()).centerChildren()
     )
 
