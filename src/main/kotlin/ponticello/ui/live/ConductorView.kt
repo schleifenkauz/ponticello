@@ -1,10 +1,13 @@
 package ponticello.ui.live
 
-import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
+import fxutils.background
+import fxutils.centerChildren
+import fxutils.centered
 import fxutils.controls.IntSpinner
+import fxutils.pad
 import javafx.animation.AnimationTimer
 import javafx.animation.PauseTransition
 import javafx.application.Platform
@@ -23,7 +26,6 @@ import ponticello.model.player.ScorePlayer
 import ponticello.ui.impl.makeSubWindow
 import reaktive.Observer
 import reaktive.value.binding.`if`
-import reaktive.value.binding.map
 import reaktive.value.now
 
 class ConductorView(private val conductor: Conductor) : VBox(5.0) {
@@ -37,14 +39,11 @@ class ConductorView(private val conductor: Conductor) : VBox(5.0) {
     private val beatObserver: Observer
 
     init {
-        val barPosition = label(
-            conductor.beats.map { beats -> "$beats / ${conductor.beatsPerBar}" }
-        )
+        val barPosition = Label("- / 0")
         StackPane.setAlignment(toggleButton, Pos.CENTER)
         StackPane.setAlignment(countdownIndicator, Pos.CENTER)
-        barPosition.isManaged = false
-        countdownIndicator.prefHeight = 25.0
-        countdownIndicator.pad(10.0)
+        countdownIndicator.prefHeight = 30.0
+        countdownIndicator.pad(5.0)
         countdownIndicator.maxWidth = Double.POSITIVE_INFINITY
         children.addAll(
             HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
@@ -71,19 +70,22 @@ class ConductorView(private val conductor: Conductor) : VBox(5.0) {
         }
 
         activeObserver = conductor.isActive.observe { _, _, active ->
-            if (active) {
-                Platform.runLater {
+            Platform.runLater {
+                if (active) {
                     centerPane.children.setAll(toggleButton)
+                } else {
+                    barPosition.text = "- / ${conductor.beatsPerBar}"
                 }
             }
         }
 
-        beatObserver = conductor.onBeat.observe { _ ->
+        beatObserver = conductor.onBeat.observe { _, pos ->
             Platform.runLater {
                 background = background(Color.RED)
                 val pause = PauseTransition(Duration.millis(100.0))
                 pause.setOnFinished { background = null }
                 pause.play()
+                barPosition.text = "$pos / ${conductor.beatsPerBar}"
             }
         }
 
