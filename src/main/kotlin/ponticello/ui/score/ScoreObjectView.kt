@@ -381,9 +381,11 @@ abstract class ScoreObjectView(
 
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> {
                     selectView(addToSelection = false)
-                    val toolPane = context[AppLayout].get<ScoreObjectViewPane>()
-                    toolPane.showContent(this)
-                    toolPane.setShowing(true)
+                    if (obj is SoundProcess || obj is AbstractScoreObjectGroup) {
+                        val toolPane = context[AppLayout].get<ScoreObjectViewPane>()
+                        toolPane.showContent(this)
+                        toolPane.setShowing(true)
+                    }
                 }
 
                 ev.button == MouseButton.PRIMARY -> {

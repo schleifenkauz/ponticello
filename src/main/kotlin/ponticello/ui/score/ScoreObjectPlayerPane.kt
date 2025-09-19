@@ -8,6 +8,7 @@ import fxutils.registerShortcuts
 import fxutils.styleClass
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ScoreObject
@@ -16,6 +17,7 @@ import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.actions.toolbarPart
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.live.LiveObjectRegistryPane
+import ponticello.ui.live.ScoreObjectResizeDialog
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.misc.PlayHead
@@ -83,6 +85,13 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
             add(LiveObjectRegistryPane.toggleLoopingAction.map { p -> p.liveScoreObject }) {
                 applicableIf { pane -> pane.obj.affectsPlayback }
                 executesFirst { pane, _ -> setupLiveScoreObject(pane) }
+            }
+            addAction("Resize object") {
+                icon(MaterialDesignR.RESIZE)
+                executes { p, ev ->
+                    val meter = p.liveScoreObject.quantization.meter.now
+                    ScoreObjectResizeDialog(p.obj, meter).showDialog(ev)
+                }
             }
         }
 
