@@ -9,12 +9,15 @@ import fxutils.styleClass
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import ponticello.model.live.LiveObjectRegistry
+import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.actions.toolbarPart
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.live.LiveObjectRegistryPane
+import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.misc.PlayHead
 import reaktive.value.now
 
@@ -30,6 +33,11 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
         scorePane.initialize()
         obj.addListener(this)
         setupActionHandlers()
+        if (obj is ParameterizedObject) {
+            context[ContextualMidiReceiver].registerMidiContext(borderPane) {
+                ParameterControlsMidiContext(obj.controls)
+            }
+        }
     }
 
     private fun setupActionHandlers() {
