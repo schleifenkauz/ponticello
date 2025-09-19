@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import bundles.getOrNull
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.command.Command
@@ -235,10 +236,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "obj".expand { ScoreObjectSelector().defaultState() }
             "pattern".expand { GlobalPatternSelector().defaultState() }
             "control".expand(
-                condition = { exp ->
-                    exp.context.hasProperty(PonticelloContext) &&
-                            exp.context[PonticelloContext].associatedObject != null
-                },
+                condition = { exp -> exp.context.getOrNull(PonticelloContext) is PonticelloContext.Control },
                 create = { ParameterReferenceEditor().defaultState() }
             )
             "adhoc-synth".expand { AdhocSynthEditor().defaultState() }

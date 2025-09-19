@@ -15,6 +15,7 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
+import ponticello.model.ctx.PonticelloContext
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.sc.*
@@ -135,7 +136,7 @@ class CustomizableSynthDefObject(
     override fun initialize(context: Context) {
         if (initialized) return
         val myContext = context.extend {
-            set(editedSynthDef, this@CustomizableSynthDefObject)
+            set(PonticelloContext, PonticelloContext.SynthDef(this@CustomizableSynthDefObject))
             set(SelectionDistributor, SelectionDistributor.newInstance())
         }
         super.initialize(myContext)

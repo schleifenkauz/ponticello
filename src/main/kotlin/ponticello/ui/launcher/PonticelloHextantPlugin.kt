@@ -1,7 +1,7 @@
 package ponticello.ui.launcher
 
+import bundles.getOrNull
 import bundles.set
-import fxutils.prompt.PredicateTextPrompt
 import fxutils.shortcut
 import hextant.command.Command
 import hextant.context.ControlFactory
@@ -16,12 +16,12 @@ import hextant.serial.PropertyAccessor
 import ponticello.impl.Logger
 import ponticello.impl.one
 import ponticello.impl.randomColor
-import ponticello.model.obj.CustomizableSynthDefObject
+import ponticello.model.ctx.PonticelloContext
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.score.controls.AttackReleaseControl
+import ponticello.model.score.controls.ValueControl
 import ponticello.sc.DecimalLiteral
-import ponticello.sc.Identifier
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.sc.editor.*
@@ -29,7 +29,8 @@ import ponticello.sc.view.*
 import ponticello.sc.view.ScFunctionEditorControl.Companion.SINGLE_LINE_FUNCTION
 import ponticello.ui.actions.addAllNamedArguments
 import ponticello.ui.actions.showParameterInfo
-import ponticello.ui.impl.showDialog
+import ponticello.ui.controls.NamePrompt
+import ponticello.ui.controls.NumericalControlSpecPrompt
 import ponticello.ui.launcher.PonticelloHextantPlugin.multilineCommand
 import ponticello.ui.launcher.PonticelloHextantPlugin.singleLineCommand
 import reaktive.value.now
@@ -232,26 +233,53 @@ object PonticelloHextantPlugin : PluginInitializer({
         shortName = "extract-param"
         name = "Extract parameter"
         applicableIf { ed ->
-            ed.result.now is DecimalLiteral && ed.context.hasProperty(CustomizableSynthDefObject.editedSynthDef)
+            if (ed.result.now !is DecimalLiteral) false
+            else {
+                val ctx = ed.context.getOrNull(PonticelloContext)
+                ctx is PonticelloContext.InstrumentDef || ctx is PonticelloContext.Control
+            }
         }
         executing { editor ->
-            val name = PredicateTextPrompt("Parameter name", "") { name -> Identifier.isValid(name) }
-                .showDialog(editor.context) ?: return@executing
-            val def = editor.context[CustomizableSynthDefObject.editedSynthDef]
-            val parameters = def.parameters
+            val control = editor.context[EditorControlGroup].getViewOf(editor)
             val defaultValue = editor.result.now
             if (defaultValue !is DecimalLiteral) {
                 Logger.error("Could not extract parameter default value.")
                 return@executing
             }
-            val spec = NumericalControlSpec(
+            val initialSpec = NumericalControlSpec(
                 defaultValue, defaultValue, defaultValue,
                 Warp.Linear, DecimalLiteral(one), DecimalLiteral(AttackReleaseControl.DEFAULT), randomColor()
             )
-            val param = ParameterDefObject(name, spec)
-            editor.context.compoundEdit("Extract parameter") {
-                parameters.add(param)
-                editor.setText(name)
+            when (val ctx = editor.context[PonticelloContext]) {
+                is PonticelloContext.Control -> {
+                    val controls = ctx.control.parentObject.controls
+                    val name = NamePrompt(controls, "Control name", "")
+                        .showDialog(control) ?: return@executing
+                    val spec = NumericalControlSpecPrompt(
+                        name, ctx.control.parentObject, initialSpec, "Configure parameter"
+                    ).showDialog(control) ?: return@executing
+                    val ctrl = ValueControl.create(defaultValue.get())
+                    val idx = controls.indexOf(ctx.control)
+                    editor.context.compoundEdit("Extract parameter") {
+                        controls.addControl(name, ctrl, customSpec = spec, idx)
+                        val selector = ParameterControlSelector()
+                        selector.selectInitial(controls.get(name))
+                        editor.expand(selector)
+                    }
+                }
+
+                is PonticelloContext.InstrumentDef -> {
+                    val parameters = ctx.def.parameters
+                    val name = NamePrompt(parameters, "Parameter name", "")
+                        .showDialog(control) ?: return@executing
+                    val spec = NumericalControlSpecPrompt(name, null, initialSpec, "Configure parameter")
+                        .showDialog(control) ?: return@executing
+                    val param = ParameterDefObject(name, spec)
+                    editor.context.compoundEdit("Extract parameter") {
+                        parameters.add(param)
+                        editor.setText(name)
+                    }
+                }
             }
         }
     }
