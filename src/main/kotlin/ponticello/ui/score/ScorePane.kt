@@ -34,6 +34,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected abstract val displayStart: Decimal
     protected abstract val displayEnd: Decimal
+
+    override val timeRange: DecimalRange
+        get() = displayStart..displayEnd
+
+    abstract val yRange: DecimalRange
+
     abstract val associatedObject: ScoreObject?
 
     abstract val pixelsPerSecond: Double
@@ -254,7 +260,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         ev.consume()
         val selectedArea = RectangleSelection.get(this)
         if (selectedArea != null) {
-            val pos = snapToGrid(ev.x, ev.y)
+            var pos = snapToGrid(ev.x, ev.y)
+            pos = ObjectPosition(pos.time.coerceIn(timeRange), pos.y.coerceIn(yRange))
             selectedArea.setOppositeCorner(pos)
             markT(pos.time)
         }

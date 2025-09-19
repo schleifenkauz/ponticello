@@ -21,6 +21,7 @@ import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import kotlin.collections.set
+import kotlin.concurrent.thread
 
 class OSCSuperColliderClient(
     process: Process,
@@ -32,7 +33,7 @@ class OSCSuperColliderClient(
     private val waitingForReply = mutableMapOf<Int, PendingRequest>()
     private val eventExecutor = Executors.newSingleThreadExecutor()
 
-    override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process)
+    override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process.inputStream)
 
     private val eventObservers = mutableListOf<Observer>()
     private val ready = unitEvent()

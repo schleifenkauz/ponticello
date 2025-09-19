@@ -14,7 +14,8 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
 
     val displayedDuration get() = displayEnd - displayStart
 
-    val displayRange get() = DecimalRange(displayStart, displayEnd)
+    override val yRange: DecimalRange
+        get() = zero..one
 
     init {
         styleClass.add("score-view")

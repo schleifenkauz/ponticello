@@ -85,6 +85,9 @@ abstract class ScoreObjectView(
     override val absolutePosition
         get() = instance.position + parentPane.absolutePosition
 
+    override val timeRange: DecimalRange
+        get() = zero..obj.duration
+
     val actionContext = ObjectActionContext.SingleObjectContext(this)
 
     open val tempoGrid: TempoGrid? get() = null

@@ -35,6 +35,9 @@ class SingleObjectScorePane(
     override val displayEnd: Decimal
         get() = rootObj.duration
 
+    override val yRange: DecimalRange
+        get() = zero..rootObj.height
+
     private val gridHeight = if (paintGrid) TempoGrid.GRID_HEIGHT else 0.0
 
     var positionInMainScore: () -> ObjectPosition? = { null }
