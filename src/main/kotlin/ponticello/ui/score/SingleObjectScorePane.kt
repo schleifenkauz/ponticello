@@ -19,6 +19,7 @@ import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.misc.PlayHead
 import reaktive.Observer
 import reaktive.and
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
@@ -28,7 +29,7 @@ import java.util.concurrent.Future
 
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context, playHead: PlayHead,
-    private val paintGrid: Boolean, playHeadStyle: String? = null,
+    private val paintGrid: ReactiveValue<Boolean>, playHeadStyle: String? = null,
 ) : RootScorePane(Score.makeScore(rootObj), context, playHead, playHeadStyle = playHeadStyle) {
     override val displayStart: Decimal
         get() = zero(ObjectPosition.TIME_PRECISION)
@@ -37,8 +38,6 @@ class SingleObjectScorePane(
 
     override val yRange: DecimalRange
         get() = zero..rootObj.height
-
-    private val gridHeight = if (paintGrid) TempoGrid.GRID_HEIGHT else 0.0
 
     var positionInMainScore: () -> ObjectPosition? = { null }
         set(value) {
@@ -61,6 +60,7 @@ class SingleObjectScorePane(
         )
     private lateinit var durationObserver: Observer
     private lateinit var snapObserver: Observer
+    private lateinit var paintGridObserver: Observer
 
     private val gridCanvas = Canvas()
     private val marker = Line() styleClass "grid-marker-line"
@@ -73,12 +73,15 @@ class SingleObjectScorePane(
             )
         }
         durationObserver = rootObj.duration().observe { _ -> repaint() }
-        if (paintGrid) {
-            setupGrid()
-            val settings = context.project.uiState
-            snapObserver = settings.snapOption.observe { _ -> repaintGrid() }
-                .and(settings.snapEnabled.observe { _ -> repaintGrid() })
+        setupGrid()
+        val settings = context.project.uiState
+        snapObserver = settings.snapOption.observe { _ -> repaintGrid() }
+            .and(settings.snapEnabled.observe { _ -> repaintGrid() })
+        paintGridObserver = paintGrid.observe { _, _, paint ->
+            if (paint) repaintGrid()
         }
+        gridCanvas.visibleProperty().bind(paintGrid.asObservableValue())
+        marker.visibleProperty().bind(paintGrid.asObservableValue())
         heightProperty().addListener { _ -> repaint() }
         widthProperty().addListener { _ ->
             updatePixelsPerSecond()
@@ -92,9 +95,9 @@ class SingleObjectScorePane(
         gridCanvas.opacityProperty().bind(
             `if`(context[UIState].snapEnabled, then = { 1.0 }, otherwise = { 0.5 }).asObservableValue()
         )
-        gridCanvas.layoutYProperty().bind(heightProperty().subtract(gridHeight))
+        gridCanvas.layoutYProperty().bind(heightProperty().subtract(TempoGrid.GRID_HEIGHT))
         gridCanvas.widthProperty().bind(widthProperty())
-        gridCanvas.height = gridHeight
+        gridCanvas.height = TempoGrid.GRID_HEIGHT
         gridCanvas.setOnMouseClicked { ev ->
             val (t, _) = snapToGrid(ev.x, ev.y)
             if (playHead.canMoveManually.now) {
@@ -102,7 +105,7 @@ class SingleObjectScorePane(
             }
             ev.consume()
         }
-        marker.startYProperty().bind(heightProperty().subtract(gridHeight))
+        marker.startYProperty().bind(heightProperty().subtract(TempoGrid.GRID_HEIGHT))
         marker.endYProperty().bind(heightProperty())
         marker.isMouseTransparent = true
     }
@@ -120,7 +123,7 @@ class SingleObjectScorePane(
     }
 
     fun repaintGrid() {
-        if (!paintGrid) return
+        if (!paintGrid.now) return
         gridCanvas.graphicsContext2D.clearRect(0.0, 0.0, gridCanvas.width, gridCanvas.height)
         if (getSingleObjectView()?.tempoGrid != null) return
         val grid = getPaneGrid()

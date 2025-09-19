@@ -48,6 +48,7 @@ import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import reaktive.value.toggle
 
 class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<LiveObject>(registry) {
@@ -78,7 +79,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         is LiveScoreObject -> {
             val scorePane = SingleObjectScorePane(
                 obj.scoreObject, obj.context, obj.playHead!!,
-                paintGrid = false, playHeadStyle = "live-object-play-head",
+                paintGrid = reactiveValue(false), playHeadStyle = "live-object-play-head",
             )
             scorePane.isDisable = true
             scorePane.prefHeight = 30.0
