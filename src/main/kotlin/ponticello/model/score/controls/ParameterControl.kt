@@ -25,9 +25,9 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     open fun customSynthArguments(cutoff: Decimal, totalDuration: Decimal): String? = null
 
-    open fun allocatesBus(obj: ParameterizedObject): Boolean = false
+    open fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = false
 
-    open fun usesAuxilSynth(obj: ParameterizedObject): Boolean = false
+    open fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = false
 
     open fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,

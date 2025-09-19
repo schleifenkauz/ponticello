@@ -2,10 +2,7 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.actions.detailsAction
-import fxutils.controls.CheckBox
 import fxutils.label
-import fxutils.opacity
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
@@ -28,7 +25,6 @@ import ponticello.sc.BufferControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.editor.BufferSelector
 import ponticello.sc.view.ObjectSelectorControl
-import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.registry.BufferSelectorPrompt
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.flatMap
@@ -60,19 +56,14 @@ data object BufferControlType : ControlType<BufferControl>() {
 
 
     override fun createInitialControl(
-        obj: ParameterizedObject,
-        spec: ControlSpec?,
-        oldControl: ParameterControl?,
-        parameterName: String,
-        ev: Event?,
+        obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl?, parameterName: String, ev: Event?,
     ): BufferControl {
         if (ev == null) return BufferControl(reactiveVariable(ObjectReference.none()))
         spec as BufferControlSpec
-        val display = reactiveVariable(spec.isPlayBufSource)
         val title = "Select '${parameterName}'"
         val selected = BufferSelectorPrompt(obj.context[BufferRegistry], title, channels = spec.channels)
             .showPopup(ev, initialOption = null)
-        return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()), display)
+        return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()))
     }
 
     override fun supportsDialogInput(): Boolean = true
@@ -124,10 +115,5 @@ data object BufferControlType : ControlType<BufferControl>() {
                 }
             }
         }
-        add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { ctrl ->
-            CheckBox(ctrl.display)
-                .setupUndo(ctrl.context[UndoManager], variableDescription = "Display")
-                .named("Display")
-        })
     }
 }

@@ -44,9 +44,9 @@ data class AttackReleaseControl(
         return "attack: ${attack}, release: ${release}, "
     }
 
-    override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
 
-    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
 
     override fun generateArgumentExpr(
         obj: ParameterizedObject,

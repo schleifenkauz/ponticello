@@ -104,6 +104,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                         is NumericalControlSpecEditor -> {
                             detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
                             detailsPane.addItem("Attack-release", editor.context.createControl(editor.attackRelease))
+                            detailsPane.addItem("Allocate bus", editor.context.createControl(editor.allocateBus))
                         }
 
                         is BusControlSpecEditor -> {
@@ -111,6 +112,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                         }
 
                         is BufferControlSpecEditor -> {
+                            detailsPane.addItem("Spectrogram", editor.context.createControl(editor.displaySpectrogram))
                             detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
                         }
 

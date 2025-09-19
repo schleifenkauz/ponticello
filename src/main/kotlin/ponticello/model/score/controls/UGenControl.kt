@@ -50,9 +50,9 @@ data class UGenControl(
 
     override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean = false
 
-    override fun allocatesBus(obj: ParameterizedObject): Boolean = true
+    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = true
 
-    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = true
+    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = true
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,

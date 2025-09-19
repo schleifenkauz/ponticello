@@ -14,9 +14,13 @@ class BufferControlSpecPrompt(
     override val content: DetailPane = DetailPane(labelWidth = 120.0)
 
     private val channelsSpinner = IntSpinner(1, 12, initialSpec.channels).minColumns(2) named "Channels"
-    private val inlineDisplayBox = CheckBox(initialSpec.inlineDisplay) named "Inline display"
+    private val inlineDisplayOption = CheckBox(initialSpec.inlineDisplay) named "Inline display"
+    private val displaySpectrogramOption = CheckBox(initialSpec.displaySpectrogram) named "Spectrogram"
 
-    override fun makeSpec(): BufferControlSpec = BufferControlSpec(channelsSpinner.value(), inlineDisplayBox.isSelected)
+    override fun makeSpec(): BufferControlSpec = BufferControlSpec(
+        channelsSpinner.value(),
+        inlineDisplayOption.isSelected, displaySpectrogramOption.isSelected
+    )
 
     override fun onReceiveFocus() {
         channelsSpinner.requestFocus()

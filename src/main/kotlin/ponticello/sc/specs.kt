@@ -91,6 +91,7 @@ data class NumericalControlSpec(
     val associatedColor: Color = Color.WHITE,
     @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
     @Component(SimpleBooleanEditor::class) val attackRelease: Boolean = false,
+    @Component(SimpleBooleanEditor::class) val allocateBus: Boolean = false
 ) : ControlSpec {
     val precision get() = step.get().precision
 
@@ -107,8 +108,9 @@ data class NumericalControlSpec(
     )
 
     constructor(
-        default: Decimal, min: Decimal, max: Decimal, step: Decimal, lag: Decimal,
-        warp: Warp, associatedColor: Color = Color.WHITE, inlineDisplay: Boolean = false,
+        default: Decimal, min: Decimal, max: Decimal, step: Decimal, lag: Decimal, warp: Warp,
+        associatedColor: Color = Color.WHITE,
+        inlineDisplay: Boolean = false, attackRelease: Boolean = false, allocateBus: Boolean = false
     ) : this(
         DecimalLiteral(default), DecimalLiteral(min), DecimalLiteral(max), warp,
         DecimalLiteral(step), DecimalLiteral(lag), associatedColor, inlineDisplay
@@ -189,9 +191,8 @@ data class BusControlSpec(
 data class BufferControlSpec(
     @Component(editor = SimpleIntegerEditor::class) val channels: Int,
     @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
+    @Component(SimpleBooleanEditor::class) val displaySpectrogram: Boolean = true
 ) : ControlSpec {
-    var isPlayBufSource: Boolean = true
-
     override val type: ParameterType
         get() = ParameterType.Buffer
 
