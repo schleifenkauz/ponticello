@@ -1,6 +1,7 @@
 package ponticello.sc.editor
 
 import bundles.getOrNull
+import fxutils.runAfterLayout
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.command.Command
@@ -104,6 +105,10 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         }
     }
 
+    @ProvideCommand(
+        "Toggle comment", shortName = "toggle-comment",
+        defaultShortcut = "Alt+D", type = Command.Type.MultipleReceivers
+    )
     fun toggleDisabled() {
         if (isDisabled.now) {
             enable()
@@ -157,37 +162,85 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     @ProvideCommand(
         shortName = "assign", name = "Wrap in assignment",
-        type = Command.Type.SingleReceiver
+        type = Command.Type.SingleReceiver, defaultShortcut = "Alt+V"
     )
     fun wrapInVariableAssignment() {
         val value = snapshot()
         val variable = AssignableExprExpander("")
         val assignment = AssignmentEditor(variable, value)
         expand(assignment, editDescription = "Wrap in assignment")
-        variable.notifyViews { focus() }
+        variable.notifyViews { select() }
     }
 
     @ProvideCommand(
         shortName = "name", name = "Wrap in named value",
-        type = Command.Type.SingleReceiver
+        type = Command.Type.SingleReceiver, defaultShortcut = "Alt+N"
     )
     fun wrapInNamedValue() {
         val value = snapshot()
-        val variable = IdentifierEditor()
+        val variable = IdentifierEditor().defaultState()
         val named = NamedExprEditor(variable, value)
         expand(named, editDescription = "Wrap in named value")
-        variable.notifyViews { focus() }
+        variable.notifyViews { select() }
     }
 
     @ProvideCommand(
         shortName = "send", name = "Wrap in method call",
-        type = Command.Type.SingleReceiver
+        type = Command.Type.SingleReceiver, defaultShortcut = "Alt+PERIOD"
     )
     fun wrapInMethodCall() {
         val receiver = snapshot()
-        val send = MessageSendEditor(receiver, IdentifierEditor(""), ScExprListEditor().defaultState())
+        val send = MessageSendEditor(
+            receiver = receiver,
+            method = IdentifierEditor().defaultState(),
+            arguments = ScExprListEditor().defaultState()
+        )
         expand(send, editDescription = "Wrap in method call")
-        send.method.notifyViews { focus() }
+        send.method.notifyViews { select() }
+    }
+
+    @ProvideCommand(
+        "Wrap in function", shortName = "wrap-func",
+        type = Command.Type.SingleReceiver, defaultShortcut = "BRACELEFT"
+    )
+    fun wrapInFunction() {
+        val newEditor = ScFunctionEditor(
+            body = CodeBlockEditor(
+                statements = ScExprListEditor(this.snapshot())
+            )
+        )
+        expand(newEditor, editDescription = "Wrap in function")
+        runAfterLayout {
+            newEditor.parameters.notifyViews { select() }
+        }
+    }
+
+    @ProvideCommand(
+        "Wrap in array", shortName = "wrap-array",
+        type = Command.Type.SingleReceiver, defaultShortcut = "OPEN_BRACKET"
+    )
+    fun wrapInArray() {
+        val newEditor = ArrayExprEditor(elements = ScExprListEditor(this.snapshot()))
+        expand(newEditor, editDescription = "Wrap in array")
+        runAfterLayout {
+            newEditor.notifyViews { select() }
+        }
+    }
+
+    @ProvideCommand(
+        "Wrap in operator expression", shortName = "wrap-binop",
+        type = Command.Type.SingleReceiver, defaultShortcut = "Alt+B"
+    )
+    fun wrapInBinaryOperatorExpr() {
+        val newEditor = OperatorExprEditor(
+            left = this.snapshot(),
+            operator = OperatorEditor().defaultState(),
+            right = ScExprExpander().defaultState()
+        )
+        expand(newEditor, editDescription = "Wrap in operator expression")
+        runAfterLayout {
+            newEditor.operator.notifyViews { select() }
+        }
     }
 
     companion object {

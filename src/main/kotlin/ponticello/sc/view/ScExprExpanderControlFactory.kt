@@ -44,10 +44,6 @@ object ScExprExpanderControlFactory : ControlFactory<ponticello.sc.editor.ScExpr
             control.textField.pseudoClassStateChanged(getPseudoClass(initialStyle), true)
         }
         control.registerShortcuts {
-            on("Ctrl+Alt+V") { editor.wrapInVariableAssignment() }
-            on("Alt+PERIOD") { editor.wrapInMethodCall() }
-            on("Alt+F") { editor.toggleDisabled() }
-            on("Alt+N") { editor.wrapInNamedValue() }
             on("Ctrl+D") {
                 val browser = editor.context[AppLayout].get<HelpBrowser>()
                 browser.showClassDocumentation(editor, control)

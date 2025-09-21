@@ -2,8 +2,8 @@ package ponticello.ui.launcher
 
 import bundles.getOrNull
 import bundles.set
+import fxutils.runAfterLayout
 import fxutils.shortcut
-import hextant.command.Command
 import hextant.context.ControlFactory
 import hextant.context.EditorControlGroup
 import hextant.context.SelectionDistributor
@@ -142,6 +142,8 @@ object PonticelloHextantPlugin : PluginInitializer({
         }
     }
 
+    commandDelegation<ScExprEditor<*>> { editor -> editor.expander }
+
     registerCommand<ScExprEditor<*>, Unit> {
         shortName = "unwrap"
         name = "Unwrap and replace parent"
@@ -152,19 +154,9 @@ object PonticelloHextantPlugin : PluginInitializer({
             val newEditor = editor.snapshot()
             parent.replaceWith(newEditor, editDescription = "Unwrap expression")
             val view = editor.context[EditorControlGroup].getViewOf(newEditor)
-            view.select()
-        }
-    }
-
-    registerCommand<ScExprEditor<*>, Unit> {
-        shortName = "toggle comment"
-        defaultShortcut = "Alt+D".shortcut
-        type = Command.Type.MultipleReceivers
-        name = "Toggle comment"
-        applicableIf { ed -> ed.expander is ScExprExpander }
-        executing { editor ->
-            val exp = editor.expander as? ScExprExpander ?: return@executing
-            exp.toggleDisabled()
+            runAfterLayout {
+                view.select()
+            }
         }
     }
 
