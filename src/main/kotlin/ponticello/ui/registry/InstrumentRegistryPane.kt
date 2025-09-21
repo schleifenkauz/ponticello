@@ -18,6 +18,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.obj.*
+import ponticello.model.project.INSTRUMENTS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.instruments
 import ponticello.model.registry.GlobalDefinitionLibrary
@@ -37,7 +38,7 @@ import reaktive.value.now
 
 class InstrumentRegistryPane(
     private val instruments: InstrumentRegistry,
-) : ObjectRegistryPane<InstrumentObject>(instruments) {
+) : ObjectRegistryPane<InstrumentObject>(instruments, INSTRUMENTS.serializer) {
     override val type: Type
         get() = InstrumentRegistryPane
 

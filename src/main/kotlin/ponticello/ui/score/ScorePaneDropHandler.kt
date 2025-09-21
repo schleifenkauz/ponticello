@@ -2,8 +2,10 @@ package ponticello.ui.score
 
 import fxutils.drag.ConfiguredDropHandler
 import hextant.context.compoundEdit
+import hextant.serial.readJson
 import javafx.event.Event
 import javafx.scene.input.TransferMode
+import ponticello.impl.Logger
 import ponticello.model.obj.BufferObject
 import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
@@ -31,6 +33,23 @@ class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHan
         }
         handleTypedFormat(ScoreObject.DATA_FORMAT, TransferMode.COPY) { ev, ref ->
             val obj = ref.resolve(scorePane.context[ScoreObjectRegistry]) ?: return@handleTypedFormat false
+            val pos = scorePane.snapToGrid(ev.x, ev.y)
+            val inst = ScoreObjectInstance(obj, pos)
+            scorePane.score.addObject(inst, autoSelect = true)
+            true
+        }
+        handleSingleFile("obj.json") { ev, file ->
+            val name = file.nameWithoutExtension
+            if (scorePane.context[ScoreObjectRegistry].has(name = name)) {
+                Logger.error("ScoreObject with name $name already exists")
+                return@handleSingleFile false
+            }
+            val obj = try {
+                file.readJson<ScoreObject>()
+            } catch (e: Exception) {
+                Logger.error("Error reading $file", e)
+                return@handleSingleFile false
+            }
             val pos = scorePane.snapToGrid(ev.x, ev.y)
             val inst = ScoreObjectInstance(obj, pos)
             scorePane.score.addObject(inst, autoSelect = true)

@@ -100,16 +100,16 @@ class ParameterControlsPane(
         else if (dragboard.hasContent(dataFormat)) arrayOf(TransferMode.MOVE)
         else emptyArray()
 
-    override fun getDroppedObject(
+    override fun getDroppedObjects(
         ev: DragEvent,
         targetView: ObjectListView<NamedParameterControl>,
-    ): NamedParameterControl? = when {
+    ): List<NamedParameterControl> = when {
         ev.gestureSource !in targetView.getBoxes() && ev.dragboard.hasContent(SERIALIZED_CONTROL_FORMAT) -> {
             val jsonString = ev.dragboard.getContent(SERIALIZED_CONTROL_FORMAT) as String
-            json.decodeFromString<NamedParameterControl>(jsonString)
+            listOf(json.decodeFromString<NamedParameterControl>(jsonString))
         }
 
-        else -> super.getDroppedObject(ev, targetView)
+        else -> super.getDroppedObjects(ev, targetView)
     }
 
     override fun dropObject(

@@ -25,6 +25,7 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.impl.toDecimal
 import ponticello.model.obj.BusObject
+import ponticello.model.project.BUSSES
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.busses
 import ponticello.model.registry.BusRegistry
@@ -44,7 +45,7 @@ import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busses) {
+class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busses, BUSSES.serializer) {
     override val type: Type
         get() = BusRegistryPane
 

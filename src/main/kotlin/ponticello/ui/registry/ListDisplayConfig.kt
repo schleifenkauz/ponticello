@@ -80,7 +80,7 @@ interface ListDisplayConfig<O : Any> {
         }
         else emptyArray()
 
-    fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<O>): O? = null
+    fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<O>): List<O> = emptyList()
 
     fun canDelete(obj: O): Boolean = !(obj is NamedObject && !obj.canDelete)
 

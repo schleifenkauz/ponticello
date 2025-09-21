@@ -62,9 +62,12 @@ class MixerComponentListConfig : ListDisplayConfig<MixerFlow.MixerComponent> {
         else emptyArray()
     }
 
-    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<MixerFlow.MixerComponent>): MixerFlow.MixerComponent? {
-        val bus = ev.dragboard.getFrom(mixer.context[BusRegistry], BusObject.DATA_FORMAT) ?: return null
-        return MixerFlow.MixerComponent.create(bus)
+    override fun getDroppedObjects(
+        ev: DragEvent,
+        targetView: ObjectListView<MixerFlow.MixerComponent>
+    ): List<MixerFlow.MixerComponent> {
+        val bus = ev.dragboard.getFrom(mixer.context[BusRegistry], BusObject.DATA_FORMAT) ?: return emptyList()
+        return listOf(MixerFlow.MixerComponent.create(bus))
     }
 
     fun createPanKnob(variable: ReactiveVariable<Decimal>, radius: Double): Knob {

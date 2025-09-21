@@ -5,6 +5,7 @@ import fxutils.actions.collectActions
 import fxutils.addAfter
 import fxutils.controls.IntSpinner
 import fxutils.drag.hasFile
+import fxutils.drag.hasFiles
 import fxutils.label
 import fxutils.prompt.CompoundPrompt
 import fxutils.prompt.SimpleSelectorPrompt
@@ -107,14 +108,16 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         else -> arrayOf()
     }
 
-    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<BufferObject>): BufferObject? = when {
-        ev.dragboard.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) -> {
-            val file = ev.dragboard.files[0]
-            val name = Identifier.truncate(file.nameWithoutExtension)
-            SampleObject.create(name, file)
+    override fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<BufferObject>): List<BufferObject> = when {
+        ev.dragboard.hasFiles(*SampleObject.SUPPORTED_AUDIO_FORMATS) -> {
+            val files = ev.dragboard.files
+            files.map { file ->
+                val name = Identifier.truncate(file.nameWithoutExtension)
+                SampleObject.create(name, file)
+            }
         }
 
-        else -> super.getDroppedObject(ev, targetView)
+        else -> super.getDroppedObjects(ev, targetView)
     }
 
     override fun createNewObject(name: String, ev: Event?): BufferObject? {

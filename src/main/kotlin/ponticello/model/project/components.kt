@@ -26,11 +26,15 @@ val BUSSES = Component<BusRegistry>(
 val BUFFERS = Component<BufferRegistry>("buffers", BufferRegistry::createDefault)
 val PATTERNS = Component(
     "patterns", GlobalPatternRegistry::createDefault,
-    MultiFileComponentSerializer(::GlobalPatternRegistry, listSerializer = GlobalPatternRegistry.Serializer)
+    MultiFileComponentSerializer(
+        ::GlobalPatternRegistry,
+        listSerializer = GlobalPatternRegistry.Serializer,
+        extension = "pattern.json"
+    )
 )
 val INSTRUMENTS = Component(
     "instruments", InstrumentRegistry::createDefault,
-    MultiFileComponentSerializer(::InstrumentRegistry)
+    MultiFileComponentSerializer(::InstrumentRegistry, extension = "instr.json")
 )
 val FLOWS = Component(
     "flows", AudioFlows::createDefault, AudioFlowsSerializer
@@ -39,17 +43,21 @@ val FLOWS = Component(
 val SERVER_OPTIONS = Component<ServerOptions>("server_options", ServerOptions::default)
 val OBJECTS = Component(
     "objects", ScoreObjectRegistry::createDefault,
-    MultiFileComponentSerializer(::ScoreObjectRegistry)
+    MultiFileComponentSerializer(::ScoreObjectRegistry, extension = "obj.json")
 )
 
-val LIVE_TASKS = Component(
-    "live_tasks", LiveObjectRegistry::createDefault,
-    MultiFileComponentSerializer(::LiveObjectRegistry, listSerializer = LiveObjectRegistry.Serializer)
+val LIVE_OBJECTS = Component(
+    "live_objects", LiveObjectRegistry::createDefault,
+    MultiFileComponentSerializer(
+        ::LiveObjectRegistry,
+        listSerializer = LiveObjectRegistry.Serializer,
+        extension = "live.json"
+    )
 )
 
 val SCRIPTS = Component(
     "scripts", ScriptRegistry::createDefault,
-    MultiFileComponentSerializer(::ScriptRegistry)
+    MultiFileComponentSerializer(::ScriptRegistry, extension = "script.json")
 )
 
 val SCORE = Component<Score>("score", ::Score)
@@ -67,7 +75,7 @@ val allComponents = listOf<Component<out ContextualObject>>(
     BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS,
     UI_STATE, FLOWS, SERVER_OPTIONS, PLAYBACK_SETTINGS,
-    OBJECTS, LIVE_TASKS, SCORE, SCRIPTS, LAUNCHER_GRID
+    OBJECTS, LIVE_OBJECTS, SCORE, SCRIPTS, LAUNCHER_GRID
 )
 
 inline operator fun <reified T : ContextualObject> PonticelloProject.get(component: Component<out T>) =

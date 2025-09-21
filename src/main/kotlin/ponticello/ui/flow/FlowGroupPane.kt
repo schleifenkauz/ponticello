@@ -93,36 +93,36 @@ class FlowGroupPane(
         else -> super.acceptedTransferModes(dragboard)
     }
 
-    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<AudioFlow>): AudioFlow? {
+    override fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<AudioFlow>): List<AudioFlow> {
         return when {
             ev.dragboard.hasContent(AudioFlow.DATA_FORMAT) -> {
                 @Suppress("UNCHECKED_CAST")
                 val reference = ev.dragboard.getContent(AudioFlow.DATA_FORMAT) as FlowReference
                 reference.resolve(context)
-                val flow = reference.get() ?: return null
-                if (TransferMode.COPY != ev.acceptedTransferMode) flow
+                val flow = reference.get() ?: return emptyList()
+                if (TransferMode.COPY != ev.acceptedTransferMode) listOf(flow)
                 else {
                     val takenFlowNames = context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
                     val defaultName = flow.name.now + "_copy"
                     val name = FlowNamePrompt(takenFlowNames, "Name for duplicate", defaultName)
-                        .showDialog(ev) ?: return null
+                        .showDialog(ev) ?: return emptyList()
                     val copy = flow.copy().withName(name)
                     copy.setActive(flow.isActive.now)
-                    copy
+                    listOf(copy)
                 }
             }
 
             ev.dragboard.hasContent(InstrumentObject.DATA_FORMAT) -> {
                 val registry = context[InstrumentRegistry]
-                val def = ev.dragboard.getFrom(registry, InstrumentObject.DATA_FORMAT) ?: return null
+                val def = ev.dragboard.getFrom(registry, InstrumentObject.DATA_FORMAT) ?: return emptyList()
                 val anchor = Point2D(ev.screenX, ev.screenY)
                 val controls = SoundProcessView.getInitialControls(
                     def, context, defaultBus = null, anchor
-                ) ?: return null
-                return InstrumentFlow.create(def, controls)
+                ) ?: return emptyList()
+                return listOf(InstrumentFlow.create(def, controls))
             }
 
-            else -> null
+            else -> emptyList()
         }
     }
 

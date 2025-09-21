@@ -13,7 +13,7 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 
-abstract class ObjectSelector<O : NamedObject> :
+abstract class ObjectSelector<O : NamedObject>() :
     SimpleChoiceEditor<ObjectReference<O>>(), ScExprEditor<ObjectReference<O>> {
     lateinit var isResolved: ReactiveBoolean
         private set
