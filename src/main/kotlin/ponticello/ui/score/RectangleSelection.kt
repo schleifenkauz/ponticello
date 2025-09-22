@@ -3,6 +3,7 @@ package ponticello.ui.score
 import fxutils.drag.setupDraggingAndResizing
 import fxutils.runAfterLayout
 import fxutils.styleClass
+import javafx.geometry.Bounds
 import javafx.scene.layout.Region
 import ponticello.impl.abs
 import ponticello.model.score.ObjectPosition
@@ -20,8 +21,7 @@ class RectangleSelection(val pane: ScorePane, initialPosition: ObjectPosition) {
     val height get() = (corner1.y - corner2.y).abs()
     val duration get() = (corner1.time - corner2.time).abs()
 
-    val bounds get() = rect.boundsInParent
-
+    val bounds: Bounds get() = rect.boundsInParent
 
     init {
         rect.viewOrder = -1000.0
@@ -64,6 +64,16 @@ class RectangleSelection(val pane: ScorePane, initialPosition: ObjectPosition) {
     fun rescale() {
         setOppositeCorner(corner2)
     }
+
+    fun containedViews(mustBeContainedEntirely: Boolean): List<ScoreObjectView> {
+        val pane = currentPane ?: return emptyList()
+        return pane.children.filterIsInstance<ScoreObjectView>()
+            .filter { v ->
+                if (mustBeContainedEntirely) bounds.contains(v.boundsInParent)
+                else bounds.intersects(v.boundsInParent)
+            }
+    }
+
 
     companion object {
         private const val THRESHOLD = 5.0

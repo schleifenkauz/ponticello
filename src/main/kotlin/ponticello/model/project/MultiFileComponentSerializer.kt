@@ -47,13 +47,13 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
             }
         }
         for (file in subDir.listFiles() ?: emptyArray()) {
-            if (file.name == "registry.json" || (file.extension != extension && file.extension != "json")) continue
-            val objName = file.nameWithoutExtension
-            if (!value.has(objName)) {
+            val name = file.name
+            if (name == "registry.json" || file.extension != "json") continue
+            if (!name.endsWith(extension) || !value.has(name.removeSuffix(".$extension"))) {
                 try {
                     file.delete()
                 } catch (e: Exception) {
-                    Logger.error("Error while deleting item $objName of component '${component.name}' from $file!", e)
+                    Logger.error("Error while deleting item $name of component '${component.name}' from $file!", e)
                 }
             }
         }
@@ -75,14 +75,15 @@ class MultiFileComponentSerializer<T : NamedObject, L : NamedObjectList<T>>(
                 return listConstructor(mutableListOf())
             }
         } else {
-            subDir.listFiles { f -> f.extension == extension }?.map { f -> f.nameWithoutExtension } ?: emptyList()
+            subDir.listFiles { f -> f.extension == extension || f.extension == "json" }
+                ?.map { f -> f.nameWithoutExtension } ?: emptyList()
         }
         val list = mutableListOf<T>()
         for (name in names) {
             val file = subDir.resolve("$name.$extension").takeIf(File::isFile)
             val jsonExtFile = subDir.resolve("$name.json").takeIf(File::isFile)
             if (file == null && jsonExtFile == null) {
-                Logger.error("File $file is missing!")
+                Logger.error("File $name.$extension is missing!")
                 continue
             }
             try {

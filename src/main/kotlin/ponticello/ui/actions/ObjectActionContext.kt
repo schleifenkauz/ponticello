@@ -3,6 +3,7 @@ package ponticello.ui.actions
 import hextant.context.Context
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
+import ponticello.ui.score.RectangleSelection
 import ponticello.ui.score.ScoreObjectSelectionManager
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.ReactiveBoolean
@@ -56,7 +57,9 @@ interface ObjectActionContext {
             get() = selector.context
 
         override val selectedViews: Collection<ScoreObjectView>
-            get() = selector.selectedViews
+            get() = RectangleSelection.get()
+                ?.containedViews(mustBeContainedEntirely = false)
+                ?: selector.selectedViews
 
         override fun isApplicable(action: String): ReactiveBoolean = reactiveValue(true)
     }

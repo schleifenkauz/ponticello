@@ -41,7 +41,7 @@ abstract class RegularScorePane(score: Score, context: Context) : ScorePane(scor
     }
 
     fun addNewGroup(ev: Event?, selection: RectangleSelection) {
-        val containedViews = viewsInside(selection.bounds, mustBeContainedEntirely = true)
+        val containedViews = selection.containedViews(mustBeContainedEntirely = true)
         val name = context[ScoreObjectRegistry].nameForGroup(ev) ?: return
         context.compoundEdit("Add object group") {
             val subScore = Score(mutableListOf())
