@@ -107,10 +107,10 @@ abstract class ScoreObjectView(
 
     override fun getX(time: Decimal): Double = getWidth(time)
 
-    fun getDetailPane(): DetailPane {
+    val detailPane: DetailPane by lazy {
         val detailPane = DetailPane(labelWidth = 120.0)
         if (obj is UnresolvedScoreObject) {
-            return detailPane
+            return@lazy detailPane
         } else {
             val instanceCountLabel = label(obj.numberOfInstances.map { instances ->
                 when (instances) {
@@ -137,7 +137,7 @@ abstract class ScoreObjectView(
                 detailPane.addItem("Duration", durationLabel)
             }
             setupDetailPane(detailPane)
-            return detailPane
+            detailPane
         }
     }
 
