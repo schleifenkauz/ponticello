@@ -29,17 +29,30 @@ class RectangleSelection(val pane: ScorePane, initialPosition: ObjectPosition) {
         rect.setOnMouseClicked { _ -> rect.requestFocus() }
         rect.setupDraggingAndResizing(
             canUserChangeWidth = true, canUserChangeHeight = true,
-            threshold = 5.0,
+            threshold = 12.0,
             drag = { x, y ->
                 val dx = x - rect.layoutX
                 val dy = y - rect.layoutY
                 val deltaPos = ObjectPosition(pane.getDuration(dx), pane.getScoreY(dy))
-                corner1 += deltaPos
-                corner2 += deltaPos
-                reposition()
+                val newCorner1 = pane.snapToGrid(corner1 + deltaPos)
+                corner2 += (newCorner1 - corner1)
+                corner1 = newCorner1
+                pane.markT(newCorner1.time)
+                rescale()
             },
-            resize = { old, dx, dy, cursor, ev ->
-                //TODO
+            resize = { _, _, rect ->
+                var pos1 = pane.snapToGrid(rect.minX, rect.minY)
+                var pos2 = pane.snapToGrid(rect.maxX, rect.maxY)
+                if (corner1 < corner2 != pos1 < pos2) {
+                    val tmp = pos1
+                    pos1 = pos2
+                    pos2 = tmp
+                }
+                if (pos1.time != corner1.time) pane.markT(pos1.time)
+                else if (pos2.time != corner2.time) pane.markT(pos2.time)
+                corner1 = pos1
+                corner2 = pos2
+                rescale()
             }
         )
     }
