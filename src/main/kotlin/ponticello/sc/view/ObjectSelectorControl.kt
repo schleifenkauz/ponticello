@@ -30,7 +30,7 @@ class ObjectSelectorControl<O : NamedObject>(
     private fun dragDetected(ev: MouseEvent) {
         if (!selector.result.now.isResolved.now) return
         val format = selector.dataFormat() ?: return
-        val db = startDragAndDrop(TransferMode.MOVE)
+        val db = startDragAndDrop(TransferMode.MOVE, TransferMode.LINK)
         db.setContent(mapOf(format to selector.result.now))
     }
 

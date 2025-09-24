@@ -62,7 +62,9 @@ class UIState private constructor(
     }
 
     fun saveWindowStates() {
-        mainScoreDisplayRange = context[PonticelloMainActivity].mainScoreView.displayRange
+        if (context.hasProperty(PonticelloMainActivity)) {
+            mainScoreDisplayRange = context[PonticelloMainActivity].mainScoreView.displayRange
+        }
         for (state in windowStates) {
             state.saveFromTarget()
         }

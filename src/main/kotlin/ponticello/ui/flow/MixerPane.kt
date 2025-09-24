@@ -169,7 +169,7 @@ class MixerPane(
         val state = initialState
         if (state is MixerPaneState) {
             state.flowReference.resolve(allMixerFlows())
-            selectedMixer = state.flowReference
+            mixerSelector.update(state.flowReference)
             if (state.midiDeviceName != null) {
                 val device = MidiSystem.getMidiDeviceInfo().find { d ->
                     d.name == state.midiDeviceName && d.javaClass.simpleName.startsWith("MidiIn")

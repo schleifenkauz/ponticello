@@ -3,6 +3,7 @@ package ponticello.ui.actions
 import fxutils.actions.Action
 import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
+import fxutils.actions.isTargetTextInput
 import fxutils.prompt.IntegerPrompt
 import hextant.context.compoundEdit
 import hextant.core.editor.defaultState
@@ -28,8 +29,9 @@ import reaktive.value.reactiveVariable
 
 object ScoreActions : Action.Collector<NavigableScorePane>({
     addAction("Add tempo grid") {
-        shortcut("T")
-        executes { rootPane ->
+        shortcut("Alt?+T")
+        executes { rootPane, ev ->
+            if (ev.isTargetTextInput && !ev.isShiftDown()) return@executes
             if (RectangleSelection.get() != null) return@executes
             if (!rootPane.isFocusWithin) return@executes
             val (pane, _) = rootPane.getScorePaneAtCursor() ?: return@executes

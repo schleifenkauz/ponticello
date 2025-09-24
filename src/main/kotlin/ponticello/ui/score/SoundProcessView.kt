@@ -8,6 +8,7 @@ import fxutils.sourceWindow
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import javafx.beans.binding.Bindings
 import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
@@ -140,7 +141,8 @@ class SoundProcessView(
     } and obj.lfosManager.onDisplay { param, spec, lfo ->
         val canvas = lfoCanvases.getOrPut(param) {
             val c = LFOCanvas(obj)
-            c.widthProperty().bind(objectPane.widthProperty())
+            c.viewOrder = 500.0
+            c.widthProperty().bind(Bindings.min(MAX_OBJECT_WIDTH, objectPane.prefWidthProperty()))
             c.heightProperty().bind(objectPane.heightProperty())
             objectPane.children.add(c)
             c

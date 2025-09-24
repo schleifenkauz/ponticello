@@ -35,16 +35,6 @@ class ParameterizedObjectDropHandler(
     private val context get() = obj.context
     private var borderBefore: javafx.scene.layout.Border? = null
 
-    override fun acceptedTransferModes(event: DragEvent): Array<out TransferMode> {
-        val db = event.dragboard
-        return when {
-            db.hasContent(NamedParameterControl.DATA_FORMAT) -> arrayOf(TransferMode.COPY)
-            db.hasContent(BusObject.DATA_FORMAT) -> arrayOf(TransferMode.LINK)
-            db.hasContent(BufferObject.DATA_FORMAT) -> arrayOf(TransferMode.COPY)
-            else -> emptyArray()
-        }
-    }
-
     init {
         handleFormat(SERIALIZED_CONTROL_FORMAT) { _, db ->
             val jsonString = db.getContent(SERIALIZED_CONTROL_FORMAT) as String
@@ -56,17 +46,17 @@ class ParameterizedObjectDropHandler(
             obj.controls.duplicateControl(namedControl)
             true
         }
-        handleTypedFormat(BusObject.DATA_FORMAT) { event, ref ->
+        handleTypedFormat(BusObject.DATA_FORMAT, TransferMode.LINK) { event, ref ->
             val bus = ref.resolve(context[BusRegistry]) ?: return@handleTypedFormat false
             droppedBus(bus, event)
             true
         }
-        handleTypedFormat(BufferObject.DATA_FORMAT) { event, ref ->
+        handleTypedFormat(BufferObject.DATA_FORMAT, TransferMode.LINK) { event, ref ->
             val buffer = ref.resolve(context[BufferRegistry]) ?: return@handleTypedFormat false
             droppedBuffer(buffer, event)
             true
         }
-        handleTypedFormat(GlobalPatternObject.DATA_FORMAT) { event, ref ->
+        handleTypedFormat(GlobalPatternObject.DATA_FORMAT, TransferMode.LINK) { event, ref ->
             val pattern = ref.resolve(context[GlobalPatternRegistry]) ?: return@handleTypedFormat false
             val expr = ScExprExpander(
                 MessageSendEditor(

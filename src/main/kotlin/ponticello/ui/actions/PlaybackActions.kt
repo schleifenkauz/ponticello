@@ -116,6 +116,7 @@ object PlaybackActions {
                 p.context[ActiveObjectsManager].clear()
                 p.context[NodeTree].clear()
                 p.context[SuperColliderClient].run("s.freeAll")
+                p.pause()
             }
         }
         add(toggleRecording)

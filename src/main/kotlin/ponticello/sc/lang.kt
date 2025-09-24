@@ -407,6 +407,17 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
                 }
             }
 
+            "unipolar", "bipolar" ->  {
+                if (receiverLFO == null) return null
+                if (arguments.size != 1) return null
+                val mult = arguments[0].getLfo() ?: return null
+                when (method.text) {
+                    "unipolar" -> LinRange(receiverLFO, ConstantLFO(0.0), mult)
+                    "bipolar" -> LinRange(receiverLFO, mult, MulLFO(mult, ConstantLFO(-1.0)))
+                    else -> null
+                }
+            }
+
             else -> null
         }
     }

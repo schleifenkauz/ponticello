@@ -109,7 +109,8 @@ object ScoreObjectActions {
         }
         addObjectAction("Replace objects") {
             shortcut("Alt?+H")
-            executes { ctx, _ ->
+            executes { ctx, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
                 val popup = SimpleRegistrySelectorPrompt(ctx.context[ScoreObjectRegistry], "Add object instance")
                 val anchor = Robot().mousePosition
                 val obj = popup.showPopup(anchor, owner = null) ?: return@executes
@@ -191,7 +192,7 @@ object ScoreObjectActions {
         }
         addAction("Rename object") {
             shortcut("F2")
-            executes { obj, ev -> RenamePrompt(obj, "New name for object").showDialog(ev) }
+            executes { obj, ev -> RenamePrompt(obj, "Rename object").showDialog(ev) }
         }
         addAction("Add envelope") {
             shortcut("Alt?+E")

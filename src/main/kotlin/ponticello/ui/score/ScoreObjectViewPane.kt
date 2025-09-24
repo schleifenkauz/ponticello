@@ -95,6 +95,7 @@ class ScoreObjectViewPane : ToolPane() {
         val title = windowTitle(obj)
         lateinit var newWindow: SubWindow
         val detachedToolPane = ScoreObjectViewPane()
+        detachedToolPane.setup()
         detachedToolPane.showContent(obj)
         newWindow = makeSubWindow(detachedToolPane, title, context)
         newWindow.show()
