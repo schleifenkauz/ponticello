@@ -85,6 +85,9 @@ abstract class ScoreObjectView(
     override val absolutePosition
         get() = instance.position + parentPane.absolutePosition
 
+    override val timeRange: DecimalRange
+        get() = zero..obj.duration
+
     val actionContext = ObjectActionContext.SingleObjectContext(this)
 
     open val tempoGrid: TempoGrid? get() = null
@@ -104,10 +107,10 @@ abstract class ScoreObjectView(
 
     override fun getX(time: Decimal): Double = getWidth(time)
 
-    fun getDetailPane(): DetailPane {
+    val detailPane: DetailPane by lazy {
         val detailPane = DetailPane(labelWidth = 120.0)
         if (obj is UnresolvedScoreObject) {
-            return detailPane
+            return@lazy detailPane
         } else {
             val instanceCountLabel = label(obj.numberOfInstances.map { instances ->
                 when (instances) {
@@ -134,7 +137,7 @@ abstract class ScoreObjectView(
                 detailPane.addItem("Duration", durationLabel)
             }
             setupDetailPane(detailPane)
-            return detailPane
+            detailPane
         }
     }
 
@@ -378,9 +381,11 @@ abstract class ScoreObjectView(
 
                 ev.button == MouseButton.PRIMARY && ev.clickCount == 2 -> {
                     selectView(addToSelection = false)
-                    val toolPane = context[AppLayout].get<ScoreObjectViewPane>()
-                    toolPane.showContent(this)
-                    toolPane.setShowing(true)
+                    if (obj is SoundProcess || obj is AbstractScoreObjectGroup) {
+                        val toolPane = context[AppLayout].get<ScoreObjectViewPane>()
+                        toolPane.showContent(this)
+                        toolPane.setShowing(true)
+                    }
                 }
 
                 ev.button == MouseButton.PRIMARY -> {

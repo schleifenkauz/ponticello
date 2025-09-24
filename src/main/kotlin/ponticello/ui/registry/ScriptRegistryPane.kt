@@ -15,6 +15,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.obj.ScriptObject
 import ponticello.model.obj.ScriptRegistry
 import ponticello.model.project.PonticelloProject
+import ponticello.model.project.SCRIPTS
 import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.ListToolPaneState
@@ -26,7 +27,7 @@ import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.map
 import reaktive.value.now
 
-class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptObject>(registry) {
+class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptObject>(registry, SCRIPTS.serializer) {
     override val type: Type
         get() = ScriptRegistryPane
 

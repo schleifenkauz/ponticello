@@ -15,6 +15,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
 import ponticello.model.obj.GlobalPatternObject
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.project.PATTERNS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.patterns
 import ponticello.model.registry.ObjectRegistry
@@ -30,7 +31,7 @@ import reaktive.value.binding.map
 
 class GlobalPatternRegistryPane(
     registry: ObjectRegistry<GlobalPatternObject>,
-) : ObjectRegistryPane<GlobalPatternObject>(registry) {
+) : ObjectRegistryPane<GlobalPatternObject>(registry, PATTERNS.serializer) {
     override val type: Type
         get() = GlobalPatternRegistryPane
 

@@ -195,12 +195,12 @@ class MixerPane(
         else -> emptyArray()
     }
 
-    override fun getDroppedObject(
+    override fun getDroppedObjects(
         ev: DragEvent,
         targetView: ObjectListView<MixerFlow.MixerComponent>,
-    ): MixerFlow.MixerComponent? {
-        val bus = ev.dragboard.getFrom(context[BusRegistry], BusObject.DATA_FORMAT) ?: return null
-        return MixerFlow.MixerComponent.create(bus)
+    ): List<MixerFlow.MixerComponent> {
+        val bus = ev.dragboard.getFrom(context[BusRegistry], BusObject.DATA_FORMAT) ?: return emptyList()
+        return listOf(MixerFlow.MixerComponent.create(bus))
     }
 
     private fun setupVolumeChangeWithArrowKeys() {

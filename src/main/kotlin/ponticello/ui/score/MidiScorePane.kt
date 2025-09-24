@@ -42,6 +42,9 @@ class MidiScorePane(
     override val displayEnd: Decimal
         get() = obj.duration
 
+    override val yRange: DecimalRange
+        get() = zero..obj.highestPitch.toDecimal()
+
     override val pixelsPerSecond: Double
         get() = parentPane.pixelsPerSecond
 

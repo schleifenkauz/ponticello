@@ -8,6 +8,7 @@ import fxutils.drag.DropHandler
 import fxutils.drag.setupDropArea
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.UndoManager
+import hextant.context.compoundEdit
 import hextant.context.withoutUndo
 import javafx.application.Platform
 import javafx.event.Event
@@ -32,7 +33,6 @@ import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.ui.dock.ToolPane
-import ponticello.ui.impl.getFrom
 import reaktive.value.*
 import reaktive.value.binding.map
 import reaktive.value.binding.notEqualTo
@@ -132,18 +132,19 @@ class ObjectListView<O : Any>(
 
                 DragEvent.DRAG_DROPPED -> {
                     ev.consume()
-                    val obj = config.getDroppedObject(ev, this) ?: getObjectFromSource(ev)
-                    if (obj != null) {
-                        val idx = getBoxIndexFromY(ev.screenX, ev.screenY, boxes.filter { b -> b.obj != obj })
-                        if (obj in source) {
-                            source.move(obj, idx)
+                    val objects = config.getDroppedObjects(ev, this)
+                    if (objects.isNotEmpty()) {
+                        val idx = getBoxIndexFromY(ev.screenX, ev.screenY, boxes.filter { b -> b.obj != objects })
+                        val single = objects.singleOrNull()
+                        if (single != null && single in source) {
+                            source.move(single, idx)
                             if (config.hideWhileDragging) {
-                                val box = getBox(obj)
+                                val box = getBox(single)
                                 box.isVisible = true
                                 box.isManaged = true
                             }
                         } else {
-                            dropObject(ev, obj, idx)
+                            dropObjects(ev, objects, idx)
                         }
                     }
                     ev.isDropCompleted = true
@@ -152,32 +153,28 @@ class ObjectListView<O : Any>(
         }
     }
 
-    private fun dropObject(ev: DragEvent, obj: O, targetIdx: Int) {
-        val gestureSource = ev.gestureSource
-        if (ev.transferMode == TransferMode.MOVE && gestureSource is ObjectBox<*>) {
-            @Suppress("UNCHECKED_CAST")
-            val moveSource = gestureSource.parent.source as ObjectList<O>
-            assert(moveSource != source)
-            val sourceIdx = moveSource.indexOf(gestureSource.obj)
-            source.context.withoutUndo {
-                config.dropObject(obj, targetIdx, source, from = moveSource)
+    private fun dropObjects(ev: DragEvent, objects: List<O>, targetIdx: Int) =
+        source.context.compoundEdit("Move ${plural(source.objectType)}") {
+            val gestureSource = ev.gestureSource
+            if (ev.transferMode == TransferMode.MOVE && gestureSource is ObjectBox<*>) {
+                @Suppress("UNCHECKED_CAST")
+                val moveSource = gestureSource.parent.source as ObjectList<O>
+                assert(moveSource != source)
+                for ((i, obj) in objects.withIndex()) {
+                    val sourceIdx = moveSource.indexOf(gestureSource.obj)
+                    source.context.withoutUndo {
+                        config.dropObject(obj, targetIdx + i, source, from = moveSource)
+                    }
+                    source.context[UndoManager].record(
+                        ListEdit.DropObject(source, moveSource, sourceIdx, targetIdx + i, config, obj)
+                    )
+                }
+            } else {
+                for ((i, obj) in objects.withIndex()) {
+                    config.dropObject(obj, targetIdx + i, source, from = null)
+                }
             }
-            source.context[UndoManager].record(
-                ListEdit.DropObject(source, moveSource, sourceIdx, targetIdx, config, obj)
-            )
-        } else {
-            config.dropObject(obj, targetIdx, source, from = null)
         }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun getObjectFromSource(ev: DragEvent): O? {
-        if (ev.gestureSource !in boxes) return null
-        val dragboard = ev.dragboard
-        if (!dragboard.hasContent(config.dataFormat)) return null
-        if (source !is NamedObjectList) return null
-        return dragboard.getFrom(source as NamedObjectList<NamedObject>, config.dataFormat!!) as O
-    }
 
     private fun getBoxIndexFromY(screenX: Double, screenY: Double, boxes: List<ObjectBox<O>>): Int {
         val idx = when (orientation) {
@@ -476,9 +473,9 @@ class ObjectListView<O : Any>(
             config.acceptedTransferModes(event.dragboard)
 
         override fun drop(event: DragEvent): Boolean {
-            val obj = config.getDroppedObject(event, this@ObjectListView)
-            return if (obj != null) {
-                dropObject(event, obj, 0)
+            val objects = config.getDroppedObjects(event, this@ObjectListView)
+            return if (objects.isNotEmpty()) {
+                dropObjects(event, objects, 0)
                 true
             } else false
         }

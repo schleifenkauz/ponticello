@@ -24,15 +24,14 @@ import reaktive.value.reactiveVariable
 @Serializable
 @SerialName("Buffer")
 data class BufferControl(
-    val sample: ReactiveVariable<BufferReference>,
-    val display: ReactiveVariable<Boolean> = reactiveVariable(true),
+    val sample: ReactiveVariable<BufferReference>
 ) : ParameterControl() {
     override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
         super.initialize(context, namedControl)
         sample.now.resolve(context[BufferRegistry])
     }
 
-    override fun copy(): ParameterControl = BufferControl(sample.copy(), display.copy())
+    override fun copy(): ParameterControl = BufferControl(sample.copy())
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
         if (spec !is BufferControlSpec) {

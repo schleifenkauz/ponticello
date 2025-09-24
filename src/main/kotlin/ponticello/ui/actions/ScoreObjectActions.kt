@@ -45,22 +45,10 @@ object ScoreObjectActions {
             description("Remove the selected object instances")
             shortcut("Alt?+DELETE")
             icon(Material2AL.DELETE)
-            executes { ctx, ev ->
-                val selection = RectangleSelection.get()
-                if (selection != null) {
-                    RectangleSelection.clear()
-                    val pane = selection.pane
-                    val containedInstances =
-                        pane.viewsInside(selection.bounds, mustBeContainedEntirely = ev.isAltDown())
-                            .mapTo(mutableSetOf()) { it.instance }
-                    pane.score.removeObjects(containedInstances, Score.RegistryOption.ASK_IF_NEEDED)
-                } else {
-                    for (view in ctx.selectedViews.toList()) {
-                        val instance = view.instance
-                        val score = instance.score ?: continue
-                        score.removeObject(instance, option = Score.RegistryOption.ASK_IF_NEEDED)
-                    }
-                }
+            executeMultiAction { instance, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeMultiAction
+                val score = instance.score ?: return@executeMultiAction
+                score.removeObject(instance, option = Score.RegistryOption.ASK_IF_NEEDED)
             }
         }
         addObjectAction("Toggle mute") {
@@ -75,9 +63,9 @@ object ScoreObjectActions {
                         else MaterialDesignV.VOLUME_HIGH
                     }
             }
-            executeMultiAction { view, ev ->
+            executeMultiAction { instance, ev ->
                 if (!ev.isTargetTextInput || ev.isAltDown()) {
-                    view.instance.toggleMuted()
+                    instance.toggleMuted()
                 }
             }
         }
@@ -96,8 +84,9 @@ object ScoreObjectActions {
                     .and(ctx.context[UIState].controlsDisplay.notEqualTo(InlineControlsDisplay.CONTROLS_BAR))
             }
             ifNotApplicable(Action.IfNotApplicable.Hide)
-            executeMultiAction { view, _ ->
-                view.instance.hideInlineControls.toggle()
+            executeMultiAction { instance, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executeMultiAction
+                instance.hideInlineControls.toggle()
             }
         }
         addObjectAction("Copy selected objects to clipboard") {

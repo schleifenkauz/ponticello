@@ -54,19 +54,22 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
         else if (dragboard.hasContent(dataFormat)) arrayOf(TransferMode.MOVE)
         else emptyArray()
 
-    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<ParameterDefObject>): ParameterDefObject? =
+    override fun getDroppedObjects(
+        ev: DragEvent,
+        targetView: ObjectListView<ParameterDefObject>
+    ): List<ParameterDefObject> =
         when {
             ev.gestureSource !in targetView.getBoxes() || ev.acceptedTransferMode == TransferMode.COPY -> {
                 val jsonString = ev.dragboard.getContent(SERIALIZED_DATA_FORMAT) as? String
-                var obj = jsonString?.let { json.decodeFromString<ParameterDefObject>(it) }
-                if (obj != null && ev.transferMode == TransferMode.COPY && ev.gestureSource in targetView.getBoxes()) {
+                var obj = jsonString?.let { json.decodeFromString<ParameterDefObject>(it) } ?: return emptyList()
+                if (ev.transferMode == TransferMode.COPY && ev.gestureSource in targetView.getBoxes()) {
                     val name = (targetView.source as ParameterDefList).availableName(obj.name.now)
                     obj = obj.copy().withName(name)
                 }
-                obj
+                listOf(obj)
             }
 
-            else -> super.getDroppedObject(ev, targetView)
+            else -> super.getDroppedObjects(ev, targetView)
         }
 
     override fun configureDragboard(obj: ParameterDefObject, dragboard: Dragboard) {
@@ -104,6 +107,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                         is NumericalControlSpecEditor -> {
                             detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
                             detailsPane.addItem("Attack-release", editor.context.createControl(editor.attackRelease))
+                            detailsPane.addItem("Allocate bus", editor.context.createControl(editor.allocateBus))
                         }
 
                         is BusControlSpecEditor -> {
@@ -111,6 +115,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                         }
 
                         is BufferControlSpecEditor -> {
+                            detailsPane.addItem("Spectrogram", editor.context.createControl(editor.displaySpectrogram))
                             detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
                         }
 

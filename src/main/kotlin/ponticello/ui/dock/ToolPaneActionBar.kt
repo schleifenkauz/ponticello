@@ -24,9 +24,10 @@ class ToolPaneActionBar(
         dragboard.setContent(mapOf(dataFormat to obj.uid))
     }
 
-    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<ToolPane.Type>): ToolPane.Type? {
+    override fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<ToolPane.Type>): List<ToolPane.Type> {
         val uid = ev.dragboard.getContent(dataFormat) as Int
-        return AppLayout.toolPaneType(uid)
+        val type = AppLayout.toolPaneType(uid) ?: return emptyList()
+        return listOf(type)
     }
 
     override fun getAction(obj: ToolPane.Type): ContextualizedAction {

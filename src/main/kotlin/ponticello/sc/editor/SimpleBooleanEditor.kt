@@ -6,10 +6,12 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonPrimitive
 
-class SimpleBooleanEditor() : SimpleEditor<Boolean>() {
-    constructor(value: Boolean): this() {
+class SimpleBooleanEditor(value: Boolean) : SimpleEditor<Boolean>() {
+    init {
         setInitialResult(value)
     }
+
+    constructor() : this(false)
 
     override fun toJson(value: Boolean): JsonElement = JsonPrimitive(value)
 

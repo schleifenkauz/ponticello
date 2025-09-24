@@ -13,7 +13,9 @@ import javafx.scene.Scene
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
+import ponticello.model.score.ScoreObjectInstance
 import ponticello.ui.launcher.PonticelloLauncher
+import ponticello.ui.score.RectangleSelection
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
 import reaktive.value.now
@@ -28,19 +30,19 @@ inline fun Action.Collector<ObjectActionContext>.addObjectAction(
     }
 }
 
-fun Action.Builder<ObjectActionContext>.executeMultiAction(action: (ScoreObjectView, Event?) -> Unit) {
+fun Action.Builder<ObjectActionContext>.executeMultiAction(action: (ScoreObjectInstance, Event?) -> Unit) {
     executes { ctx, ev ->
-        val selected = ctx.selectedViews
+        val selected = ctx.selectedInstances.toSet()
         when {
             selected.isEmpty() -> return@executes
             selected.size == 1 -> action(selected.single(), ev)
             else -> ctx.context.compoundEdit(name) {
-                val selectedViews = ctx.selectedViews.toList() //copy to avoid concurrent modification
-                for (view in selectedViews) {
+                for (view in selected) {
                     action(view, ev)
                 }
             }
         }
+        RectangleSelection.clear()
     }
 }
 

@@ -4,7 +4,6 @@ import fxutils.*
 import fxutils.drag.setupDropArea
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.geometry.Bounds
 import javafx.geometry.Point2D
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -34,6 +33,12 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     protected abstract val displayStart: Decimal
     protected abstract val displayEnd: Decimal
+
+    override val timeRange: DecimalRange
+        get() = displayStart..displayEnd
+
+    abstract val yRange: DecimalRange
+
     abstract val associatedObject: ScoreObject?
 
     abstract val pixelsPerSecond: Double
@@ -254,7 +259,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         ev.consume()
         val selectedArea = RectangleSelection.get(this)
         if (selectedArea != null) {
-            val pos = snapToGrid(ev.x, ev.y)
+            var pos = snapToGrid(ev.x, ev.y)
+            pos = ObjectPosition(pos.time.coerceIn(timeRange), pos.y.coerceIn(yRange))
             selectedArea.setOppositeCorner(pos)
             markT(pos.time)
         }
@@ -263,11 +269,11 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
     protected open fun mouseReleased(ev: MouseEvent) {
         val selection = RectangleSelection.get(this)
         if (selection == null || selection.isEmpty()) return
-        if (ev.isControlDown || ev.isShiftDown || ev.isAltDown) {
-            RectangleSelection.clear()
-            val containedViews = viewsInside(selection.bounds, mustBeContainedEntirely = ev.isAltDown)
+        if (ev.isControlDown) {
+            val containedViews = selection.containedViews(mustBeContainedEntirely = ev.isAltDown)
             selector.selectAll(containedViews, addToSelection = ev.isShiftDown)
             requestFocus()
+            RectangleSelection.clear()
         }
     }
 
@@ -288,14 +294,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             selector.selectAll(views, addToSelection = false)
         }
     }
-
-    fun viewsInside(bounds: Bounds, mustBeContainedEntirely: Boolean) = children
-        .filterIsInstance<ScoreObjectView>()
-        .filter { v ->
-            v in children &&
-                    if (mustBeContainedEntirely) bounds.contains(v.boundsInParent)
-                    else bounds.intersects(v.boundsInParent)
-        }
 
     companion object {
         fun createObjectView(obj: ScoreObject, instance: ScoreObjectInstance): ScoreObjectView = when (obj) {

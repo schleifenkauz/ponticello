@@ -1,10 +1,13 @@
 package ponticello.ui.score
 
 import ponticello.impl.Decimal
+import ponticello.impl.DecimalRange
 import ponticello.model.score.ObjectPosition
 
 interface TimeBlock {
     val absolutePosition: ObjectPosition
+
+    val timeRange: DecimalRange
 
     fun getDuration(width: Double): Decimal
 

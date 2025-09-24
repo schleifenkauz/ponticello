@@ -89,9 +89,9 @@ class EnvelopeControl(
         obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal,
     ): Boolean = true
 
-    override fun allocatesBus(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
 
-    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = obj.def is SynthDefObject
+    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,

@@ -37,6 +37,7 @@ import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.sc.client.ConsoleMonitor
+import ponticello.sc.client.DummySuperColliderClient
 import ponticello.sc.client.OSCSuperColliderClient
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
@@ -243,7 +244,8 @@ class PonticelloLauncher {
         progressBar.displayProgress(0.0, "Starting SuperCollider...")
         try {
             val port = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT + Random.nextInt(1, 10)
-            val client = OSCSuperColliderClient.create(context, port)
+//            val client = OSCSuperColliderClient.create(context, port)
+            val client = DummySuperColliderClient(context, sampleRate = 44100.0)
             client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
             client.onClientReady {
                 Platform.runLater {

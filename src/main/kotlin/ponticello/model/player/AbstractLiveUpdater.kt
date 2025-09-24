@@ -13,13 +13,13 @@ import ponticello.model.score.ParameterControlList
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.*
+import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import reaktive.Observer
-import reaktive.and
 import reaktive.value.now
 import reaktive.value.observe
 
@@ -31,8 +31,8 @@ abstract class AbstractLiveUpdater(
 
     fun startListening() {
         obj.controls.addListener(this, initialize = false)
-        for ((param, control) in obj.controls.controlMap) {
-            observeControl(param, control)
+        for (control in obj.controls) {
+            observeControl(control.name.now, control.now, control.spec.now)
         }
         if (obj is ScoreObject) {
             obj.addListener(this)
@@ -90,7 +90,7 @@ abstract class AbstractLiveUpdater(
     override fun added(obj: NamedParameterControl, idx: Int) {
         val parameter = obj.name.now
         val ctrl = obj.now
-        addedControl(parameter, ctrl, replaceAuxilSynth = false, remap = true)
+        addedControl(parameter, ctrl, obj.spec.now, replaceAuxilSynth = false, remap = true)
     }
 
     override fun removed(obj: NamedParameterControl) {
@@ -120,8 +120,8 @@ abstract class AbstractLiveUpdater(
     }
 
     private fun freeServerObjectsAssociatedWith(parameter: String, control: NamedParameterControl) {
-        if (control.now.allocatesBus(obj)) freeParameterBuses(parameter)
-        if (control.now.usesAuxilSynth(obj)) freeAuxilSynths(parameter)
+        if (control.now.allocatesBus(obj, control.spec.now)) freeParameterBuses(parameter)
+        if (control.now.usesAuxilSynth(obj, control.spec.now)) freeAuxilSynths(parameter)
     }
 
     private fun freeAuxilSynths(parameter: String) {
@@ -147,8 +147,11 @@ abstract class AbstractLiveUpdater(
         }
     }
 
-    private fun addedControl(parameter: String, ctrl: ParameterControl, replaceAuxilSynth: Boolean, remap: Boolean) {
-        observeControl(parameter, ctrl)
+    private fun addedControl(
+        parameter: String, ctrl: ParameterControl, spec: ControlSpec?,
+        replaceAuxilSynth: Boolean, remap: Boolean
+    ) {
+        observeControl(parameter, ctrl, spec)
         when (ctrl) {
             is BusControl -> runOnActiveObjects { name, _ ->
                 updateBus(name, parameter, ctrl.bus.now)
@@ -159,7 +162,7 @@ abstract class AbstractLiveUpdater(
             }
 
             is ValueControl -> runOnActiveObjects { name, _ ->
-                val onBus = obj.def is SynthDefObject && ctrl.allocateBus.now
+                val onBus = obj.def is SynthDefObject && spec is NumericalControlSpec && spec.allocateBus
                 updateValue(name, parameter, ctrl.value.now, onBus, remap)
             }
 
@@ -185,7 +188,7 @@ abstract class AbstractLiveUpdater(
         }
     }
 
-    private fun observeControl(parameter: String, control: ParameterControl) {
+    private fun observeControl(parameter: String, control: ParameterControl, spec: ControlSpec?) {
         controlObservers[control] = when (control) {
             is BusControl -> control.bus.observe { _, bus ->
                 runOnActiveObjects { name, _ ->
@@ -201,12 +204,8 @@ abstract class AbstractLiveUpdater(
 
             is ValueControl -> control.value.observe { _, value ->
                 runOnActiveObjects { name, _ ->
-                    val onBus = obj.def is SynthDefObject && control.allocateBus.now
+                    val onBus = obj.def is SynthDefObject && spec is NumericalControlSpec && spec.allocateBus
                     updateValue(name, parameter, value, onBus, remap = false)
-                }
-            } and control.allocateBus.observe { _, allocateBus ->
-                runOnActiveObjects { name, _ ->
-                    updateValueControlMode(name, parameter, allocateBus, control.value.now)
                 }
             }
 
@@ -219,7 +218,10 @@ abstract class AbstractLiveUpdater(
             is AttackReleaseControl -> return //TODO
             is EnvelopeControl -> control.update.stream.observe { _ ->
                 runOnActiveObjects { name, objectTime ->
-                    updateEnvelope(writer, objectTime, name, parameter, control, remap = false, replaceAuxilSynth = true)
+                    updateEnvelope(
+                        writer, objectTime, name, parameter, control,
+                        remap = false, replaceAuxilSynth = true
+                    )
                 }
             }
 
@@ -245,18 +247,28 @@ abstract class AbstractLiveUpdater(
         newControl: ParameterControl,
     ) {
         controlObservers.remove(oldControl)?.kill()
-        if (oldControl.allocatesBus(obj) && !newControl.allocatesBus(obj)) {
+        val spec = parameter.spec.now
+        if (oldControl.allocatesBus(obj, spec) && !newControl.allocatesBus(obj, spec)) {
             freeParameterBuses(parameter.name.now)
         }
-        if (!oldControl.allocatesBus(obj) && newControl.allocatesBus(obj)) {
+        if (!oldControl.allocatesBus(obj, spec) && newControl.allocatesBus(obj, spec)) {
             allocateParameterBuses(parameter)
         }
-        if (oldControl.usesAuxilSynth(obj) && !newControl.usesAuxilSynth(obj)) {
+        if (oldControl.usesAuxilSynth(obj, spec) && !newControl.usesAuxilSynth(obj, spec)) {
             freeAuxilSynths(parameter.name.now)
         }
-        val replaceAuxilSynth = oldControl.usesAuxilSynth(obj)
-        val remap = !oldControl.allocatesBus(obj) && newControl.allocatesBus(obj)
-        addedControl(parameter.name.now, newControl, replaceAuxilSynth, remap)
+        val replaceAuxilSynth = oldControl.usesAuxilSynth(obj, spec)
+        val remap = !oldControl.allocatesBus(obj, spec) && newControl.allocatesBus(obj, spec)
+        addedControl(parameter.name.now, newControl, spec, replaceAuxilSynth, remap)
+    }
+
+    override fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
+        val ctrl = parameter.now
+        if (ctrl is ValueControl && oldSpec is NumericalControlSpec && newSpec is NumericalControlSpec) {
+            runOnActiveObjects { name, _ ->
+                updateValueControlMode(name, parameter.name.now, newSpec.allocateBus, ctrl.value.now)
+            }
+        }
     }
 
     protected abstract fun ScWriter.updateValue(

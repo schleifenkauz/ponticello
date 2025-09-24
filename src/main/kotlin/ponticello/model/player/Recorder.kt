@@ -2,7 +2,6 @@ package ponticello.model.player
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import javafx.application.Platform
 import ponticello.impl.superColliderPath
@@ -15,9 +14,10 @@ import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
 import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.BusRegistry
+import ponticello.sc.Identifier
 import ponticello.sc.client.SuperColliderClient
-import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.showDialog
+import ponticello.ui.misc.SaveRecordingDialog
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -81,21 +81,30 @@ class Recorder(private val context: Context) {
         recording.set(false)
         client.run("s.stopRecording")
         Platform.runLater {
-            if (pathOfLastRecording != null) {
-                if (YesNoPrompt("Add recorded audio as sample").showDialog(context) == true) {
-                    addRecordedAudioAsSample()
+            val tmpFile = pathOfLastRecording
+            if (tmpFile != null) {
+                val defaultFileName = tmpFile.nameWithoutExtension
+                val saveOptions = SaveRecordingDialog(defaultFileName).showDialog(context)
+                if (saveOptions == null) {
+                    tmpFile.delete()
+                } else {
+                    val recordingFile = tmpFile.resolveSibling(saveOptions.fileName)
+                    tmpFile.renameTo(recordingFile)
+                    if (saveOptions.addAsBuffer) {
+                        addRecordedAudioAsSample(recordingFile)
+                    }
                 }
                 pathOfLastRecording = null
             }
         }
     }
 
-    private fun addRecordedAudioAsSample() {
-        val name = NamePrompt(context[BufferRegistry], "Name for sample", "").showDialog(context) ?: return
+    private fun addRecordedAudioAsSample(file: File) {
+        val name = Identifier.truncate(file.nameWithoutExtension)
         val samplePath = context.project.projectDirectory
             .resolve("samples").also(File::mkdir)
             .resolve("$name.wav")
-        pathOfLastRecording!!.copyTo(samplePath)
+        file.copyTo(samplePath)
         val obj = SampleObject.create(name, samplePath)
         context[BufferRegistry].add(obj)
     }

@@ -1,12 +1,7 @@
 package ponticello.ui.controls
 
-import fxutils.actions.ContextualizedAction
-import fxutils.actions.collectActions
-import fxutils.actions.detailsAction
-import fxutils.controls.CheckBox
 import fxutils.controls.SliderBar
 import fxutils.label
-import fxutils.opacity
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
@@ -28,7 +23,6 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Transformation
 import ponticello.sc.mapOnto
-import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
@@ -146,22 +140,5 @@ data object ValueControlType : ControlType<ValueControl>() {
         return ValueControl.create(value)
     }
 
-    override fun actions(
-        namedControl: NamedParameterControl, control: ValueControl, view: ScoreObjectView?,
-    ): List<ContextualizedAction> = actions.withContext(control)
-
     override fun toString(): String = "Num"
-
-    private val actions = collectActions<ValueControl> {
-        add(
-            detailsAction(
-                sceneFill = DEFAULT_SCENE_FILL.opacity(0.5),
-                labelWidth = 100.0
-            ) { control ->
-                CheckBox(control.allocateBus)
-                    .setupUndo(control.context[UndoManager], variableDescription = "Allocate bus")
-                    .named("Allocate bus")
-            }
-        )
-    }
 }

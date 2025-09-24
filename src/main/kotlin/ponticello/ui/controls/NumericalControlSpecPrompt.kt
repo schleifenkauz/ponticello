@@ -22,7 +22,9 @@ class NumericalControlSpecPrompt(
     private val stepTxt = textField(initialSpec.step.text) named "Step"
     private val lagTxt = textField(initialSpec.lag.text) named "Lag"
     private val associatedColor = ColorPicker(initialSpec.associatedColor) named "Color"
-    private val inlineDisplayBox = CheckBox(initialSpec.inlineDisplay) named "Inline display"
+    private val inlineDisplayOption = CheckBox(initialSpec.inlineDisplay) named "Inline display"
+    private val attackReleaseOption = CheckBox(initialSpec.attackRelease) named "Attack-release"
+    private val allocateBusOption = CheckBox(initialSpec.allocateBus) named "Allocate bus"
 
     private val min get() = minTxt.text.parseDecimal()
     private val max get() = maxTxt.text.parseDecimal()
@@ -56,7 +58,7 @@ class NumericalControlSpecPrompt(
     private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }
 
     override fun makeSpec() = NumericalControlSpec(
-        default!!, min!!, max!!, step!!, lag!!, warp,
-        associatedColor.value, inlineDisplayBox.isSelected
+        default!!, min!!, max!!, step!!, lag!!, warp, associatedColor.value,
+        inlineDisplayOption.isSelected, attackReleaseOption.isSelected, allocateBusOption.isSelected
     )
 }

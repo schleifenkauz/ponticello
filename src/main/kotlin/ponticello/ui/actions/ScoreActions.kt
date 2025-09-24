@@ -83,15 +83,14 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         }
     }
     addAction("Select objects in region") {
-        shortcut("Shift?+Alt?+Enter")
+        shortcut("Shift?+Alt?+S")
         executes { _, ev ->
             val selection = RectangleSelection.get() ?: return@executes
-            RectangleSelection.clear()
-            val containedViews = selection
-                .pane.viewsInside(selection.bounds, mustBeContainedEntirely = ev.isAltDown())
+            val containedViews = selection.containedViews(mustBeContainedEntirely = ev.isAltDown())
             val selector = selection.pane.context[ScoreObjectSelectionManager]
             selector.selectAll(containedViews, addToSelection = ev.isShiftDown())
             selection.pane.requestFocus()
+            RectangleSelection.clear()
         }
     }
     addAction("Delete time range") {
@@ -103,7 +102,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         }
     }
     addAction("Create sound object") {
-        shortcut("S")
+        shortcut("Enter")
         executes { _ ->
             val selection = RectangleSelection.get() ?: return@executes
             val pane = selection.pane as? RegularScorePane ?: return@executes

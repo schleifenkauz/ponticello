@@ -196,7 +196,7 @@ class SampleObject(
     }
 
     override fun ScWriter.createObject() {
-        infoUpdateJob?.join()
+//        infoUpdateJob?.join()
         infoUpdateJob = CompletableFuture<Unit>()
         appendBlock("$superColliderName = Buffer.read(s, ${audioFile.superColliderPath}, action: ", endLine = false) {
             +"arg b"

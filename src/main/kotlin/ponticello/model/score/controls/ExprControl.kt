@@ -12,7 +12,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.ctx.Scope
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
@@ -39,7 +38,7 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
         super.initialize(context, namedControl)
         val myContext = context.extend {
             set(UndoManager, context[UndoManager]/*.createSubManager()*/)
-            set(PonticelloContext, PonticelloContext(namedControl.parentObject, Scope.createEmpty()))
+            set(PonticelloContext, PonticelloContext.Control(namedControl))
         }
         expr.initialize(myContext)
     }

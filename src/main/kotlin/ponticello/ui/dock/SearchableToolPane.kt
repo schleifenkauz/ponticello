@@ -51,17 +51,17 @@ abstract class SearchableToolPane<O : NamedObject>(
         }
     }
 
-    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<O>): O? {
+    override fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<O>): List<O> {
         val format = dataFormat
         if (format != null && ev.dragboard.hasContent(format)) {
-            val obj = ev.dragboard.getFrom(list, format) ?: return null
+            val obj = ev.dragboard.getFrom(list, format) ?: return emptyList()
             return if (ev.acceptedTransferMode == TransferMode.COPY) {
                 val newName = NamePrompt(list, "Name for copy", obj.name.now + "_copy")
-                    .showDialog(ev) ?: return null
-                duplicate(obj, newName)
-            } else obj
+                    .showDialog(ev) ?: return emptyList()
+                listOf(duplicate(obj, newName))
+            } else listOf(obj)
         }
-        return null
+        return emptyList()
     }
 
     companion object {

@@ -3,9 +3,12 @@ package ponticello.ui.score
 import hextant.context.Context
 import javafx.geometry.Side
 import ponticello.impl.Decimal
+import ponticello.impl.DecimalRange
 import ponticello.impl.asTime
 import ponticello.impl.div
+import ponticello.impl.rangeTo
 import ponticello.impl.times
+import ponticello.impl.zero
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
@@ -23,6 +26,9 @@ class SubScorePane(
         get() = 0.0.asTime
     override val displayEnd: Decimal
         get() = obj.duration
+
+    override val yRange: DecimalRange
+        get() = zero..obj.height
 
     override val pixelsPerSecond: Double
         get() = parentPane.pixelsPerSecond

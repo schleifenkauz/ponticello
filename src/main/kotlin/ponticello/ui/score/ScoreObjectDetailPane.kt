@@ -1,12 +1,9 @@
 package ponticello.ui.score
 
-import fxutils.SubWindow
+import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.label
-import fxutils.opacity
-import fxutils.replace
 import javafx.scene.Parent
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Priority
@@ -64,6 +61,10 @@ class ScoreObjectDetailPane : ToolPane() {
     private fun noSelectedObject() = BorderPane(label("No object focused"))
 
     fun viewDetails(focusedView: ScoreObjectView?) {
+        if (focusedView != null && focusedView.obj in detached) {
+            detached.getValue(focusedView.obj).showAndBringToFront()
+            return
+        }
         displayedObject.now = focusedView
         if (focusedView == null) {
             content = noSelectedObject()
@@ -72,7 +73,8 @@ class ScoreObjectDetailPane : ToolPane() {
             }
             return
         }
-        showDetailPaneFor(focusedView)
+        val pane = StackPane(focusedView.detailPane)
+        content = pane
     }
 
     fun hidePopup() {
@@ -111,36 +113,30 @@ class ScoreObjectDetailPane : ToolPane() {
         return true
     }
 
-    private fun showDetailPaneFor(view: ScoreObjectView) {
-        val detailPane = view.getDetailPane()
-        val pane = StackPane(detailPane)
-        content = pane
-    }
-
-    private fun detach(view: ScoreObjectView) {
+    private fun detach() {
+        val view = displayedObject.now ?: return
+        viewDetails(null)
         val title = windowTitle(view)
         lateinit var newWindow: SubWindow
-        val detailPane = view.getDetailPane()
-        val pane = StackPane(detailPane)
+        val pane = StackPane(view.detailPane)
         newWindow = makeSubWindow(pane, title, context)
         newWindow.show()
         detached[view.obj] = newWindow
+        newWindow.setOnHidden {
+            detached.remove(view.obj)
+        }
     }
 
     private fun windowTitle(view: ScoreObjectView) = view.obj.name.map { name -> "Object $name" }
 
-    companion object: Type(uid = 5, "Score Object Details") {
+    companion object : Type(uid = 5, "Score Object Details") {
         private val actions = collectActions<ScoreObjectDetailPane> {
             addAction("Detach") {
                 icon(MaterialDesignP.PIN_OUTLINE)
                 shortcuts("Ctrl+D")
                 enableWhen { pane -> pane.displayedObject.notNull() }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
-                executes { pane ->
-                    val view = pane.displayedObject.now ?: return@executes
-                    pane.viewDetails(null)
-                    pane.detach(view)
-                }
+                executes { pane -> pane.detach() }
             }
         }
 

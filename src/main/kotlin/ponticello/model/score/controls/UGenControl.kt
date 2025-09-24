@@ -11,7 +11,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.ctx.Scope
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.ProcessDefObject
 import ponticello.model.obj.SynthDefObject
@@ -42,7 +41,7 @@ data class UGenControl(
         super.initialize(context, namedControl)
         val myContext = context.extend {
             set(UndoManager, context[UndoManager]/*.createSubManager()*/)
-            set(PonticelloContext, PonticelloContext(namedControl.parentObject, Scope.createEmpty()))
+            set(PonticelloContext, PonticelloContext.Control(namedControl))
         }
         expr.initialize(myContext)
     }
@@ -51,9 +50,9 @@ data class UGenControl(
 
     override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean = false
 
-    override fun allocatesBus(obj: ParameterizedObject): Boolean = true
+    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = true
 
-    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = true
+    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = true
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,

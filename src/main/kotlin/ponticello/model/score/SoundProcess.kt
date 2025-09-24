@@ -20,15 +20,13 @@ import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.LiveSynthUpdater
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.controls.*
-import ponticello.sc.BufferPositionControlSpec
-import ponticello.sc.ControlSpec
-import ponticello.sc.NumericalControlSpec
+import ponticello.sc.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
-import ponticello.sc.code
 import ponticello.ui.misc.LFOsManager
 import reaktive.value.*
 import reaktive.value.binding.flatMap
+import reaktive.value.binding.map
 import reaktive.value.binding.orElse
 import kotlin.math.pow
 
@@ -78,7 +76,10 @@ class SoundProcess(
 
     val sample: ReactiveValue<BufferReference?> get() = bufferControl?.sample ?: reactiveVariable(null)
 
-    val displaySample: ReactiveValue<Boolean>? get() = bufferControl?.display
+    val displaySample: ReactiveValue<Boolean>?
+        get() = controls.getOrNull("buf")?.spec?.map { spec ->
+            (spec as? BufferControlSpec)?.displaySpectrogram ?: false
+        }
 
     val playbufStartPos: ReactiveVariable<Decimal>?
         get() = (controls.controlMap["startPos"] as? ValueControl)?.value?.takeIf { bufferControl != null }

@@ -1,6 +1,8 @@
 package ponticello.sc.client
 
-class ConsoleMonitor(private val process: Process) : Thread() {
+import java.io.InputStream
+
+class ConsoleMonitor(private val stream: InputStream) : Thread() {
     private var consoleMonitors = mutableListOf<Listener>()
     private val consoleUntilNow = StringBuilder()
 
@@ -19,7 +21,7 @@ class ConsoleMonitor(private val process: Process) : Thread() {
     }
 
     override fun run() {
-        val stream = process.inputStream.reader()
+        val stream = stream.reader()
         stream.useLines { lines ->
             for (line in lines) {
                 if (interrupted()) break

@@ -24,7 +24,7 @@ import ponticello.model.live.LiveScoreObject
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
-import ponticello.model.project.LIVE_TASKS
+import ponticello.model.project.LIVE_OBJECTS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
 import ponticello.model.registry.MeterRegistry
@@ -48,9 +48,12 @@ import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import reaktive.value.toggle
 
-class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<LiveObject>(registry) {
+class LiveObjectRegistryPane(
+    registry: LiveObjectRegistry
+) : ObjectRegistryPane<LiveObject>(registry, LIVE_OBJECTS.serializer) {
     override val type: Type
         get() = LiveObjectRegistryPane
 
@@ -78,7 +81,7 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         is LiveScoreObject -> {
             val scorePane = SingleObjectScorePane(
                 obj.scoreObject, obj.context, obj.playHead!!,
-                paintGrid = false, playHeadStyle = "live-object-play-head",
+                paintGrid = reactiveValue(false), playHeadStyle = "live-object-play-head",
             )
             scorePane.isDisable = true
             scorePane.prefHeight = 30.0
@@ -93,20 +96,21 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         else -> super.acceptedTransferModes(dragboard)
     }
 
-    override fun getDroppedObject(ev: DragEvent, targetView: ObjectListView<LiveObject>): LiveObject? {
+    override fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<LiveObject>): List<LiveObject> {
         return when {
             ev.dragboard.hasContent(ScoreObject.DATA_FORMAT) -> {
-                val obj = ev.dragboard.getFrom(context[ScoreObjectRegistry], ScoreObject.DATA_FORMAT) ?: return null
+                val obj = ev.dragboard.getFrom(context[ScoreObjectRegistry], ScoreObject.DATA_FORMAT)
+                    ?: return emptyList()
                 val view = ev.gestureSource as? ScoreObjectView
                 val liveObject = LiveScoreObject(obj.reference())
                 if (view != null) {
                     liveObject.absoluteScoreY.now = view.absolutePosition.y
                     liveObject.inferQuantizationFrom(view.absolutePosition, view.context)
                 }
-                liveObject
+                listOf(liveObject)
             }
 
-            else -> super.getDroppedObject(ev, targetView)
+            else -> super.getDroppedObjects(ev, targetView)
         }
     }
 
@@ -129,7 +133,8 @@ class LiveObjectRegistryPane(registry: LiveObjectRegistry) : ObjectRegistryPane<
         override val defaultSide: Side
             get() = Side.LEFT
 
-        override fun createToolPane(project: PonticelloProject): ToolPane = LiveObjectRegistryPane(project[LIVE_TASKS])
+        override fun createToolPane(project: PonticelloProject): ToolPane =
+            LiveObjectRegistryPane(project[LIVE_OBJECTS])
 
         val configureQuantizationAction = action<LiveObject>("Configure quantization") {
             enableWhen { item -> item.isScheduled.not() }

@@ -30,17 +30,18 @@ data class ValueControl(
         return true
     }
 
-    override fun allocatesBus(obj: ParameterizedObject): Boolean = allocateBus.now && obj.def is SynthDefObject
+    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean =
+        obj.def is SynthDefObject && spec is NumericalControlSpec && spec.allocateBus
 
     override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean =
         when {
-            allocateBus.now -> false
+            spec is NumericalControlSpec && spec.allocateBus -> false
             spec !is NumericalControlSpec -> false
             spec.defaultValue.get() == adjustValueIfIsBufferPosition(obj, spec, cutoff) -> false
             else -> true
         }
 
-    override fun usesAuxilSynth(obj: ParameterizedObject): Boolean = false
+    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = false
 
     override fun ScWriter.generatePreparationCode(
         obj: ParameterizedObject, uniqueName: String,
@@ -54,7 +55,7 @@ data class ValueControl(
                 +"$argVar = $adjustedValue"
             }
 
-            allocateBus.now -> {
+            spec is NumericalControlSpec && spec.allocateBus -> {
                 val busName = auxilBusName(uniqueName, parameter)
                 +"$busName = Bus.control(s, 1)"
                 +"$busName.set(${adjustedValue})"
@@ -66,7 +67,7 @@ data class ValueControl(
         obj: ParameterizedObject, uniqueName: String,
         synthVar: String, parameter: String, spec: ControlSpec,
     ) {
-        if (allocateBus.now) {
+        if (spec is NumericalControlSpec && spec.allocateBus) {
             val busName = auxilBusName(uniqueName, parameter)
             +"$synthVar.map('$parameter', $busName)"
         }
@@ -83,7 +84,12 @@ data class ValueControl(
             }
 
             CodegenContext.SubArg ->
-                if (allocateBus.now) Identifier(auxilBusName(uniqueName, parameter)).send("kr")
+                if (spec is NumericalControlSpec && spec.allocateBus) Identifier(
+                    auxilBusName(
+                        uniqueName,
+                        parameter
+                    )
+                ).send("kr")
                 else DecimalLiteral(adjustedValue)
 
             CodegenContext.Synth -> DecimalLiteral(adjustedValue)
@@ -91,7 +97,7 @@ data class ValueControl(
     }
 
     private fun adjustValueIfIsBufferPosition(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal) =
-         if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) {
+        if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) {
             val rateCtrl = obj.controls.getOrNull("rate")?.now as? ValueControl
             val rate = rateCtrl?.value?.now ?: one
             value.now + cutoff * rate

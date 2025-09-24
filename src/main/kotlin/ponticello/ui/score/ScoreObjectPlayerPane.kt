@@ -8,28 +8,41 @@ import fxutils.registerShortcuts
 import fxutils.styleClass
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
+import org.kordamp.ikonli.materialdesign2.MaterialDesignG
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.live.LiveObjectRegistry
+import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.actions.toolbarPart
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.live.LiveObjectRegistryPane
+import ponticello.ui.live.ScoreObjectResizeDialog
+import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.misc.PlayHead
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObject.Listener {
     private val context = obj.context
     private val liveScoreObject = context[LiveObjectRegistry].getOrCreateLiveScoreObject(obj)
+    private val paintGrid = reactiveVariable(true)
 
     val playHead = liveScoreObject.playHead ?: PlayHead()
-    val scorePane = SingleObjectScorePane(obj, context, playHead, paintGrid = true)
+    val scorePane = SingleObjectScorePane(obj, context, playHead, paintGrid)
     val borderPane = BorderPane(scorePane) styleClass "single-object-score-pane"
 
     init {
         scorePane.initialize()
         obj.addListener(this)
         setupActionHandlers()
+        if (obj is ParameterizedObject) {
+            context[ContextualMidiReceiver].registerMidiContext(borderPane) {
+                ParameterControlsMidiContext(obj.controls)
+            }
+        }
     }
 
     private fun setupActionHandlers() {
@@ -75,6 +88,17 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
             add(LiveObjectRegistryPane.toggleLoopingAction.map { p -> p.liveScoreObject }) {
                 applicableIf { pane -> pane.obj.affectsPlayback }
                 executesFirst { pane, _ -> setupLiveScoreObject(pane) }
+            }
+            addAction("Toggle grid") {
+                icon(MaterialDesignG.GRID)
+                toggles(ScoreObjectPlayerPane::paintGrid)
+            }
+            addAction("Resize object") {
+                icon(MaterialDesignR.RESIZE)
+                executes { p, ev ->
+                    val meter = p.liveScoreObject.quantization.meter.now
+                    ScoreObjectResizeDialog(p.obj, meter).showDialog(ev)
+                }
             }
         }
 
