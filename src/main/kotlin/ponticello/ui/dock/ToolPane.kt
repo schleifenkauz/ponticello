@@ -223,7 +223,7 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    fun restoreShowing() {
+    open fun restoreShowing() {
         if (initialState?.isShowing == true) {
             setShowing(true)
         }

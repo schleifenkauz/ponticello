@@ -88,6 +88,9 @@ class ScoreObjectViewPane : ToolPane() {
         showContent(focused)
     }
 
+    override fun restoreShowing() {
+    }
+
     private fun detach(obj: ScoreObject) {
         setShowing(false)
         displayedObject.now = null
