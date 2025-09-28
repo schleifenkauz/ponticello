@@ -3,7 +3,7 @@ package ponticello.ui.record
 import ponticello.impl.*
 
 class WaveformPeaks(
-    val buffer: LiveAudioFileBuffer,
+    val buffer: AudioBuffer,
     private val minZoom: Int, private val maxZoom: Int
 ) {
     private val caches = Array(maxZoom - minZoom + 1) { i ->

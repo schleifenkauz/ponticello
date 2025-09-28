@@ -3,7 +3,7 @@ package ponticello.ui.record
 import javax.sound.sampled.*
 
 class LiveAudioCapture(
-    private val buffer: LiveAudioFileBuffer,
+    private val buffer: AudioBuffer,
     private val format: AudioFormat,
     private val mixer: Mixer,
     private val bufferSize: Int

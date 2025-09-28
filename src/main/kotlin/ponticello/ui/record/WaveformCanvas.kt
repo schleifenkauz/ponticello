@@ -3,12 +3,13 @@ package ponticello.ui.record
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
+import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 
 class WaveformCanvas(
     private val peaks: WaveformPeaks,
     initialDisplayRange: DecimalRange
-) : Canvas(), LiveAudioFileBuffer.Listener {
+) : Canvas(), AudioBuffer.Listener {
     var displayRange: DecimalRange = initialDisplayRange
         set(value) {
             field = value
@@ -37,7 +38,7 @@ class WaveformCanvas(
         }
     }
 
-    override fun accept(samples: DoubleArray) {
+    override fun accept(currentTime: Decimal, samples: DoubleArray) {
         repaint()
     }
 }

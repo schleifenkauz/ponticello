@@ -1,13 +1,14 @@
 package ponticello.ui.record
 
+import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 import ponticello.impl.div
 import ponticello.impl.times
 
 class WaveformPeakCache(
-    private val buffer: LiveAudioFileBuffer,
+    private val buffer: AudioBuffer,
     val regionSize: Int
-) : LiveAudioFileBuffer.Listener {
+) : AudioBuffer.Listener {
     private val max = ArrayList<Double>(MAX_INITIAL_CAPACITY / regionSize)
     private val min = ArrayList<Double>(MAX_INITIAL_CAPACITY / regionSize)
     private var acceptedSamples = 0
@@ -19,7 +20,7 @@ class WaveformPeakCache(
     }
 
     @Synchronized
-    override fun accept(samples: DoubleArray) {
+    override fun accept(currentTime: Decimal, samples: DoubleArray) {
         if (samples.size >= regionSize) {
             for (i in samples.indices step regionSize) {
                 currentMin = 1.0

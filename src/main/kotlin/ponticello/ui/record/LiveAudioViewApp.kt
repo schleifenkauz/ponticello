@@ -6,10 +6,10 @@ import javafx.scene.Scene
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
+import ponticello.impl.one
 import ponticello.impl.rangeTo
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import java.io.File
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
@@ -19,10 +19,11 @@ class LiveAudioViewApp : Application() {
     private lateinit var capture: LiveAudioCapture
 
     override fun start(primaryStage: Stage) {
-        val tmpFile = File("tmp.bin")
         val sampleRate = 44100.toDouble()
         val bufferSize = 1024
-        val buffer = LiveAudioFileBuffer(tmpFile, sampleRate, bufferSize)
+//        val tmpFile = File("tmp.bin")
+//        val buffer = AudioFileBuffer(tmpFile, sampleRate, bufferSize)
+        val buffer = HeapAudioBuffer(sampleRate, bufferSize, initialCapacity = (sampleRate * 20).toInt())
         val format = AudioFormat(
             sampleRate.toFloat(), /*sampleSizeInBits*/16, /*channels*/1,
             /*signed*/ true, /*bigEndian*/false
@@ -42,8 +43,11 @@ class LiveAudioViewApp : Application() {
         }
         val mixer = AudioSystem.getMixer(info)
 
-        val peaks = WaveformPeaks(buffer, minZoom = 4, maxZoom = 12)
-        val canvas = WaveformCanvas(peaks, initialDisplayRange = zero..10.toDecimal())
+        val initialDisplayRange = zero..10.toDecimal()
+//        val peaks = WaveformPeaks(buffer, minZoom = 4, maxZoom = 12)
+//        val canvas = WaveformCanvas(peaks, initialDisplayRange)
+        val canvas = SpectrogramCanvas(buffer, regionDuration = one, initialDisplayRange)
+        canvas.start()
         canvas.width = 1000.0
         canvas.height = 200.0
         canvas.repaint()
