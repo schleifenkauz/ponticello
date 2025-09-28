@@ -13,10 +13,9 @@ class PonticelloApp : Application() {
     private lateinit var launcher: PonticelloLauncher
 
     override fun start(stage: Stage) {
-        val projectPath = parameters.unnamed.getOrNull(0)
         setupLogging()
         launcher = PonticelloLauncher()
-        launcher.launchPonticello(stage, projectPath)
+        launcher.launchPonticello(stage, parameters)
         periodicGC()
     }
 

@@ -15,6 +15,7 @@ import hextant.fx.Stylesheets
 import hextant.plugins.PluginBuilder
 import hextant.serial.readJson
 import hextant.serial.writeJson
+import javafx.application.Application
 import javafx.application.Platform
 import javafx.stage.Stage
 import kotlinx.serialization.serializer
@@ -55,6 +56,8 @@ import kotlin.system.exitProcess
 class PonticelloLauncher {
     val recentProjects = RecentProjects()
     val rootContext get() = PonticelloLauncher.rootContext
+
+    private lateinit var applicationParameters: Application.Parameters
 
     init {
         rootContext[PonticelloLauncher] = this
@@ -200,7 +203,8 @@ class PonticelloLauncher {
 
     fun saveProject(): Boolean {
         val project = rootContext.project
-        val file = recentProjects.activeProject() ?: rootContext[PonticelloFiles].showOpenDialog("*.pont") ?: return false
+        val file =
+            recentProjects.activeProject() ?: rootContext[PonticelloFiles].showOpenDialog("*.pont") ?: return false
         val ok = save(project, file)
         if (ok) {
             Logger.confirm("Saved project ${project.projectDirectory.name}", Logger.Category.Project)
@@ -216,7 +220,9 @@ class PonticelloLauncher {
         return ok
     }
 
-    fun launchPonticello(primaryStage: Stage, projectPath: String?) {
+    fun launchPonticello(primaryStage: Stage, parameters: Application.Parameters) {
+        applicationParameters = parameters
+        val projectPath = parameters.unnamed.firstOrNull { arg -> !arg.startsWith("-") }
         primaryStage.setOnCloseRequest { closeRequest() }
         currentActivity = LoadingScreen(rootContext)
         currentActivity.show(primaryStage)
@@ -244,8 +250,12 @@ class PonticelloLauncher {
         progressBar.displayProgress(0.0, "Starting SuperCollider...")
         try {
             val port = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT + Random.nextInt(1, 10)
-//            val client = OSCSuperColliderClient.create(context, port)
-            val client = DummySuperColliderClient(context, sampleRate = 44100.0)
+            val client = when {
+                applicationParameters.unnamed.contains("--dummy-client") ->
+                    DummySuperColliderClient(context, sampleRate = 44100.0)
+
+                else -> OSCSuperColliderClient.create(context, port)
+            }
             client.consoleMonitor.addListener(ConsoleMonitor.PipeToSystemOut)
             client.onClientReady {
                 Platform.runLater {
