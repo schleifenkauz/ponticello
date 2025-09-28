@@ -7,13 +7,13 @@ data class Peaks(
     val indices = minima.indices
 
     fun getMin(idx: Int): Double = when (idx) {
-        in minima.indices -> minima[idx]
+        in indices -> minima[idx]
         in 0 until size -> 0.0
         else -> throw IndexOutOfBoundsException("Invalid index $idx. Size = $size")
     }
 
     fun getMax(idx: Int) = when (idx) {
-        in minima.indices -> minima[idx]
+        in indices -> maxima[idx]
         in 0 until size -> 0.0
         else -> throw IndexOutOfBoundsException("Invalid index $idx. Index = $idx")
     }

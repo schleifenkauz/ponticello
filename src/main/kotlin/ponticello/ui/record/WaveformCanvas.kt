@@ -29,8 +29,8 @@ class WaveformCanvas(
                 for (i in peaks.indices) {
                     val x = width * i / peaks.size
                     val h = height / 2
-                    val yMin = h - peaks.getMin(i) * h * 20
-                    val yMax = h - peaks.getMax(i) * h * 20
+                    val yMin = h - (peaks.getMin(i) * h * 5)
+                    val yMax = h - (peaks.getMax(i) * h * 5)
                     strokeLine(x, yMin, x, yMax)
                 }
             }

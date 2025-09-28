@@ -1,6 +1,7 @@
 package ponticello.ui.record
 
 import javafx.application.Application
+import javafx.application.Application.launch
 import javafx.scene.Scene
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
@@ -22,7 +23,10 @@ class LiveAudioViewApp : Application() {
         val sampleRate = 44100.toDouble()
         val bufferSize = 1024
         val buffer = LiveAudioFileBuffer(tmpFile, sampleRate, bufferSize)
-        val format = AudioFormat(sampleRate.toFloat(), 16, 1, true, false)
+        val format = AudioFormat(
+            sampleRate.toFloat(), /*sampleSizeInBits*/16, /*channels*/1,
+            /*signed*/ true, /*bigEndian*/false
+        )
         val mixerInfos = AudioSystem.getMixerInfo().filter { info ->
             val mixer = AudioSystem.getMixer(info)
             mixer != null && mixer.isLineSupported(DataLine.Info(TargetDataLine::class.java, format))
@@ -56,11 +60,8 @@ class LiveAudioViewApp : Application() {
     override fun stop() {
         capture.stop()
     }
+}
 
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            launch(LiveAudioViewApp::class.java, *args)
-        }
-    }
+fun main(args: Array<String>) {
+    launch(LiveAudioViewApp::class.java, *args)
 }

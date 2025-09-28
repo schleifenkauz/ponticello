@@ -16,7 +16,7 @@ class LiveAudioFileBuffer(file: File, val sampleRate: Double, val bufferSize: In
     private var nSamples = 0
 
     fun read(range: DecimalRange): DoubleArray {
-        val samples = (range.dur * sampleRate).toInt()
+        val samples = (range.dur * sampleRate * 2).toInt()
         val sampleOffset = (range.start * sampleRate).toLong()
         raf.seek(sampleOffset)
         val bytes = ByteArray(samples) //TODO reuse

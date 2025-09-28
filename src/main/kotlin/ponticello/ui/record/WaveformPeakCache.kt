@@ -21,9 +21,9 @@ class WaveformPeakCache(
     @Synchronized
     override fun accept(samples: DoubleArray) {
         if (samples.size >= regionSize) {
-            for (i in 0 until samples.size step regionSize) {
+            for (i in samples.indices step regionSize) {
                 currentMin = 1.0
-                currentMax - 1.0
+                currentMax = -1.0
                 for (j in i until i + regionSize) {
                     val v = samples[j]
                     if (v > currentMax) currentMax = v
