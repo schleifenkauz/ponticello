@@ -282,7 +282,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         if (this is UnresolvedScoreObject) return
         instances.now -= 1
         if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
-        if (!context.project.hasInstancesOf(this) && registry.has(this)) {
+        if (!context.project.hasReferencesTo(this) && registry.has(this)) {
             val remove = this is MemoObject || option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
                 "Score has no instances of $this anymore. Remove it from the registry?",
                 cancellable = false,

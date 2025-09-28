@@ -3,10 +3,13 @@ package ponticello.model.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
+import hextant.context.compoundEdit
 import javafx.event.Event
 import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
+import ponticello.model.obj.project
 import ponticello.model.project.UIState
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.UnresolvedScoreObject
@@ -53,6 +56,19 @@ class ScoreObjectRegistry(
             NamePrompt(context[ScoreObjectRegistry], "Name for group", defaultName)
                 .showDialog(ev, preferMouseCoords = true)
         } else defaultName
+    }
+
+    fun removeUnusedObjects() {
+        val unusedObjects = filter { obj -> !context.project.hasReferencesTo(obj) }
+        if (unusedObjects.isEmpty()) return
+        val remove = YesNoPrompt("${unusedObjects.size} unused score objects. Remove them?").showDialog() ?: return
+        if (remove) {
+            context.compoundEdit("Remove unused objects") {
+                for (obj in unusedObjects) {
+                    remove(obj)
+                }
+            }
+        }
     }
 
     companion object : PublicProperty<ScoreObjectRegistry> by publicProperty("ScoreObjectRegistry") {

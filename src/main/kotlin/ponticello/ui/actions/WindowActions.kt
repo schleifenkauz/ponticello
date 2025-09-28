@@ -15,7 +15,7 @@ object WindowActions {
         shortcut("Ctrl+Shift?+Q")
         icon(Material2AL.CLOSE)
         executes { launcher, ev ->
-            launcher.closeRequest(automaticallySave = ev.isShiftDown())
+            launcher.quitPonticello(autoSave = ev.isShiftDown())
         }
     }
 

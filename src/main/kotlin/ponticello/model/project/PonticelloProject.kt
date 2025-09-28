@@ -89,11 +89,17 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         }
     }
 
-
     fun save(obj: ContextualObject) {
         val component = components.entries.find { (_, value) -> value == obj }
             ?: error("$obj is not a component of the project")
         save(component.key)
+    }
+
+    fun onCloseRequest() {
+        for ((component, value) in components) {
+            component as Component<ContextualObject>
+            component.beforeClosing(value)
+        }
     }
 
     fun syncWithSuperCollider() = client.run {
@@ -111,8 +117,12 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         client.run("s.reboot")
     }
 
-    fun hasInstancesOf(obj: ScoreObject): Boolean = mainScore.hasInstancesOf(obj) ||
-            get(LAUNCHER_GRID).items().any { item -> item.target.targetObject == obj }
+    fun hasReferencesTo(obj: ScoreObject): Boolean = when {
+        mainScore.hasInstancesOf(obj) -> true
+        get(LAUNCHER_GRID).hasReferencesTo(obj) -> true
+        get(LIVE_OBJECTS).any { item -> item.hasReferencesTo(obj) } -> true
+        else -> false
+    }
 
     fun openInExplorer() {
         val os = System.getProperty("os.name").lowercase()

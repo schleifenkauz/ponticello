@@ -41,10 +41,11 @@ val FLOWS = Component(
 ).onSave { flows -> flows.writeVSTPluginStates() }
 
 val SERVER_OPTIONS = Component<ServerOptions>("server_options", ServerOptions::default)
+
 val OBJECTS = Component(
     "objects", ScoreObjectRegistry::createDefault,
     MultiFileComponentSerializer(::ScoreObjectRegistry, extension = "obj.json")
-)
+).beforeClosing { objects -> objects.removeUnusedObjects() }
 
 val LIVE_OBJECTS = Component(
     "live_objects", LiveObjectRegistry::createDefault,

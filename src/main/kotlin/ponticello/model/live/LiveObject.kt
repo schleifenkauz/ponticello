@@ -4,6 +4,7 @@ import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.LiveObjectReference
 import ponticello.model.registry.NamedObject
+import ponticello.model.score.ScoreObject
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.now
@@ -28,6 +29,8 @@ sealed interface LiveObject : NamedObject {
     }
 
     fun reset()
+
+    fun hasReferencesTo(obj: ScoreObject): Boolean = false
 
     companion object {
         val DATA_FORMAT = TypedDataFormat<LiveObjectReference>("ponticello/live-task")

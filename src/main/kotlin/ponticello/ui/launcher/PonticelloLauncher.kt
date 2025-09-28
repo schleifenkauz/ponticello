@@ -69,7 +69,7 @@ class PonticelloLauncher {
     private fun <A : Activity> launchActivity(description: String, createActivity: () -> A): A? {
         currentActivity.hide()
         val stage = Stage()
-        stage.setOnCloseRequest { closeRequest() }
+        stage.setOnCloseRequest { quitPonticello() }
         rootContext[primaryStage] = stage
         val activity = try {
             createActivity()
@@ -85,29 +85,28 @@ class PonticelloLauncher {
     }
 
     fun openProject() {
-        if (saveChanges() == null) return
+        if (!confirmCloseRequest()) return
         val file = rootContext[PonticelloFiles].showOpenDialog("*.pont") ?: return
         openProject(file.parentFile)
     }
 
-    private fun saveChanges(autoSave: Boolean = false): Boolean? {
-        val project = getActiveProject() ?: return false
+    private fun confirmCloseRequest(autoSave: Boolean = false): Boolean {
+        val project = getActiveProject() ?: return true
+        project.onCloseRequest()
         project.context[AppLayout].saveLayoutState()
         project[UI_STATE].saveWindowStates()
         project.save(UI_STATE)
         if (autoSave) {
             val ok = saveProject()
-            if (!ok) return null
-            return true
+            return ok
         }
-        if (!project.context[UndoManager].hasUnsavedChanges.now) return false
-        val save = askIfUserWantsToSave() ?: return null
+        if (!project.context[UndoManager].hasUnsavedChanges.now) return true
+        val save = askIfUserWantsToSave() ?: return false
         if (save) {
             val ok = saveProject()
-            if (!ok) return null
-            return false
+            return ok
         }
-        return false
+        return true
     }
 
     fun openProject(folder: File) {
@@ -169,13 +168,13 @@ class PonticelloLauncher {
     }
 
     fun closeProject(autoSave: Boolean = false) {
-        saveChanges(autoSave) ?: return
+        if (!confirmCloseRequest(autoSave)) return
         recentProjects.clearActiveProject()
         showLauncher()
     }
 
     fun createNewProject() {
-        saveChanges() ?: return
+        if (!confirmCloseRequest()) return
         val name = PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }
             .showDialog(rootContext) ?: return
         val location = PonticelloFiles.projectsDir.resolve(name)
@@ -223,7 +222,7 @@ class PonticelloLauncher {
     fun launchPonticello(primaryStage: Stage, parameters: Application.Parameters) {
         applicationParameters = parameters
         val projectPath = parameters.unnamed.firstOrNull { arg -> !arg.startsWith("-") }
-        primaryStage.setOnCloseRequest { closeRequest() }
+        primaryStage.setOnCloseRequest { quitPonticello() }
         currentActivity = LoadingScreen(rootContext)
         currentActivity.show(primaryStage)
         val projectFromCLArgs = when {
@@ -301,11 +300,8 @@ class PonticelloLauncher {
         launchActivity("Show Ponticello Launcher") { LauncherActivity(this) }
     }
 
-    fun closeRequest(automaticallySave: Boolean = false) {
-        val project = getActiveProject()
-        if (project != null) {
-            saveChanges(automaticallySave) ?: return
-        }
+    fun quitPonticello(autoSave: Boolean = false) {
+        if (!confirmCloseRequest(autoSave)) return
         currentActivity.hide()
         quitApplication()
     }

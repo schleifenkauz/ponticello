@@ -9,10 +9,7 @@ import ponticello.model.obj.ScoreObjectReference
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
-import ponticello.model.score.ObjectPosition
-import ponticello.model.score.Score
-import ponticello.model.score.ScoreObject
-import ponticello.model.score.UnresolvedScoreObject
+import ponticello.model.score.*
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.misc.PlayHead
 import reaktive.Observer
@@ -97,6 +94,12 @@ class LiveScoreObject(
         quantization.offsetValue.set(offsetValue)
         quantization.enableQuantization.set(true)
         return true
+    }
+
+    override fun hasReferencesTo(obj: ScoreObject): Boolean = when (val target = scoreObject) {
+        obj -> true
+        is AbstractScoreObjectGroup -> target.score.hasInstancesOf(obj)
+        else -> false
     }
 
     companion object {

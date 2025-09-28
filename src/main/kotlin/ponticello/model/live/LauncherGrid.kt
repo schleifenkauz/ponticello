@@ -23,6 +23,7 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.SoundProcess
 import reaktive.value.ReactiveValue
@@ -117,6 +118,8 @@ class LauncherGrid private constructor(
             score.addObject(obj, time, y * score.maxY, autoSelect = false)
         }
     }
+
+    fun hasReferencesTo(obj: ScoreObject) = items().any { item -> item.target.targetObject == obj }
 
     private fun getScore() = when (val t = target.now) {
         is Target.SubScore -> t.ref.get()?.score

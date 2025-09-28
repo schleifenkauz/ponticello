@@ -7,12 +7,20 @@ data class Component<T>(val name: String, val default: () -> T, val serializer: 
     var onSave: (T) -> Unit = {}
         private set
 
+    var beforeClosing: (T) -> Unit = {}
+        private set
+
     init {
         serializer.initialize(this)
     }
 
     fun onSave(handler: (T) -> Unit): Component<T> {
         onSave = handler
+        return this
+    }
+
+    fun beforeClosing(handler: (T) -> Unit): Component<T> {
+        beforeClosing = handler
         return this
     }
 
