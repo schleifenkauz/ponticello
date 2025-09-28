@@ -64,6 +64,14 @@ sealed class ScoreObject : AbstractRenamableObject() {
             _height.now = value
         }
 
+    @SerialName("text")
+    var memoText: String = ""
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyListeners { this.updatedMemoText(value) }
+        }
+
     @Transient
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
 
@@ -212,6 +220,7 @@ sealed class ScoreObject : AbstractRenamableObject() {
         obj.duration = duration
         obj.height = height
         obj._associatedColor.now = associatedColor.now
+        obj.memoText = memoText
         obj.setInitialName(newName)
         return obj
     }
@@ -295,6 +304,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
         fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {}
 
         fun updateIsSomeInstanceSelected(yesOrNo: Boolean) {}
+
+        fun updatedMemoText(text: String) {}
     }
 
     private class ResizeEdit(

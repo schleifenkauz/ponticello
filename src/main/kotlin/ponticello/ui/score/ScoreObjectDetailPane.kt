@@ -5,6 +5,7 @@ import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import javafx.scene.Parent
+import javafx.scene.control.ScrollPane
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Priority
 import javafx.scene.layout.StackPane
@@ -73,7 +74,8 @@ class ScoreObjectDetailPane : ToolPane() {
             }
             return
         }
-        val pane = StackPane(focusedView.detailPane)
+        val pane = ScrollPane(focusedView.detailPane)
+        pane.isFitToWidth = true
         content = pane
     }
 

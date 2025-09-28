@@ -20,6 +20,7 @@ import kotlin.math.pow
 
 @Serializable
 @SerialName("MidiNote")
+@Deprecated("Use SoundProcess instead")
 class MidiNoteObject(
     override val controls: ParameterControlList,
 ) : ScoreObject(), ParameterizedObject {

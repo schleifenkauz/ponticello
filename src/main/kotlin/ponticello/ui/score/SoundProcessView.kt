@@ -130,7 +130,7 @@ class SoundProcessView(
         selectorBtn.setupDropArea(InstrumentDropHandler(obj.instrumentRef, context))
         pane.addItem("Instrument: ", HBox(5.0, selectorBtn, viewInstrumentBtn).centerChildren())
         val controlsPane = ParameterControlsPane(obj, this)
-        VBox.setVgrow(controlsPane, Priority.ALWAYS)
+//        VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)
         context[ContextualMidiReceiver].registerMidiContext(pane) { midiContext }
     }

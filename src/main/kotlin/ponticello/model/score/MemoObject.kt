@@ -7,14 +7,11 @@ import ponticello.impl.Decimal
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
-import ponticello.ui.score.MemoObjectView
 import reaktive.value.ReactiveVariable
 
 @Serializable
 @SerialName("Memo")
-class MemoObject(
-    @SerialName("text") private var _text: String,
-) : ScoreObject() {
+class MemoObject : ScoreObject() {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
@@ -33,17 +30,9 @@ class MemoObject(
     override val affectsPlayback: Boolean
         get() = false
 
-    var text: String
-        get() = _text
-        set(value) {
-            if (value == _text) return
-            _text = value
-            notifyListeners<MemoObjectView> { textChanged(value) }
-        }
-
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject? = null
 
-    override fun doClone(): ScoreObject = MemoObject(text)
+    override fun doClone(): ScoreObject = MemoObject()
 
     override fun writeCode(
         instance: ScoreObjectInstance?,

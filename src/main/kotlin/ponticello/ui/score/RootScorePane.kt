@@ -206,7 +206,7 @@ abstract class RootScorePane(
     override fun doubleClicked(ev: MouseEvent) {
         ev.consume()
         val defaultName = context[ScoreObjectRegistry].availableName("memo")
-        val obj = MemoObject("").withName(defaultName)
+        val obj = MemoObject().withName(defaultName)
         val (t, y) = snapToGrid(ev.x, ev.y)
         val inst = ScoreObjectInstance(obj, t, y)
         score.addObject(inst, autoSelect = true)

@@ -1,7 +1,6 @@
 package ponticello.ui.score
 
 import fxutils.centerChildren
-import fxutils.prompt.DetailPane
 import fxutils.styleClass
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.value.ObservableValue
@@ -20,20 +19,16 @@ import ponticello.model.score.ScoreObjectInstance
 import reaktive.value.ReactiveVariable
 
 class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
-    private val edit = TextArea(obj.text) styleClass "memo-area"
-    private val display = Label(obj.text) styleClass "memo-area"
-    private val detailPaneTextArea = TextArea(obj.text) styleClass "memo-area"
-    private val computeSize = Text(obj.text)
+    private val edit = TextArea(obj.memoText) styleClass "memo-area"
+    private val display = Label(obj.memoText) styleClass "memo-area"
+    private val computeSize = Text(obj.memoText)
 
     private var isEditing = false
 
     init {
         children.setAll(HBox(display).centerChildren())
         edit.textProperty().addListener { _, _, text ->
-            if (obj.text != text) obj.text = text
-        }
-        detailPaneTextArea.textProperty().addListener { _, _, text ->
-            if (obj.text != text) obj.text = text
+            obj.memoText = text
         }
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
             if (isEditing) return@addEventFilter
@@ -66,26 +61,22 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
         if (!isEditing) return
         children.setAll(HBox(display).centerChildren())
         isEditing = false
-        if (obj.text.isBlank()) {
+        if (obj.memoText.isBlank()) {
             instance.score!!.removeObject(instance, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
         }
-    }
-
-    override fun setupDetailPane(pane: DetailPane) {
-        pane.addLargeItem("Text:", detailPaneTextArea)
     }
 
     override fun getDisplayWidth(): Double = computeSize.prefWidth(-1.0) + 20
 
     override fun getDisplayHeight(): Double = computeSize.prefHeight(-1.0) + 10
 
-    fun textChanged(value: String) {
-        if (value != edit.text) {
-            edit.text = value
+    override fun updatedMemoText(text: String) {
+        super.updatedMemoText(text)
+        if (text != edit.text) {
+            edit.text = text
         }
-        display.text = value
-        computeSize.text = value
-        detailPaneTextArea.text = value
+        display.text = text
+        computeSize.text = text
         resizedObject(obj)
     }
 
