@@ -1,4 +1,4 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
 import fxutils.*
 import fxutils.actions.*
@@ -48,6 +48,8 @@ import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
+import ponticello.ui.live.LauncherGridItemDropHandler
+import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.registry.ParameterDefSelectorPrompt
 import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.score.FlowGroupManager

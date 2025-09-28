@@ -1,4 +1,4 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
 import javax.sound.sampled.*
 

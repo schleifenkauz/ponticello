@@ -1,11 +1,10 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.WritableImage
-import kotlin.math.ceil
-import kotlin.math.max
+import ponticello.impl.*
 
 class SpectrogramImageCache(
     private val buffer: LiveAudioFileBuffer,
@@ -14,8 +13,8 @@ class SpectrogramImageCache(
     var isActive = false
     private val segments = mutableListOf<SpectrogramSegment>()
     private val fftFramesPerSecond = buffer.sampleRate / buffer.bufferSize
-    private val regionsPerSecond = fftFramesPerSecond * regionSize
-    private var currentRange: DoubleRange = 0.0..0.0
+    private val regionsPerSecond = (fftFramesPerSecond * regionSize).toDecimal()
+    private var currentRange: DecimalRange = zero..zero
 
     fun start() {
         buffer.addListener(this)
@@ -28,30 +27,34 @@ class SpectrogramImageCache(
         }
     }
 
-    fun paint(range: DoubleRange, canvas: Canvas) {
+    fun paint(range: DecimalRange, canvas: Canvas) {
         val pixelsPerFrame = canvas.width / range.dur / fftFramesPerSecond
         val firstRegion = (range.start / regionsPerSecond).toInt()
-        val lastRegion = ceil(range.endInclusive / regionsPerSecond).toInt()
+        val lastRegion = (range.endInclusive / regionsPerSecond).ceilToInt()
         for (i in firstRegion..lastRegion) {
             val segment = segments.getOrNull(i) ?: break
             val img = segment.getImage()
-            val sx = if (i < range.start) (range.start - i) * img.width else 0.0
-            var sw = img.width
-            if (i < range.start) sw -= (range.start - i) * img.width
-            if (i + 1 > range.endInclusive) sw -= (i + 1 - range.endInclusive) * img.width
+            val sx = if (i.toDecimal() < range.start) (range.start - i) * img.width else 0.0
+            var sw = img.width.toDecimal()
+            if (i.toDecimal() < range.start) sw -= (range.start - i) * img.width
+            if (i + one > range.endInclusive) sw -= (i + 1 - range.endInclusive) * img.width
             val sy = 0.0
             val sh = img.height
-            val dx = max(i.toDouble(), range.start)
+            val dx = maxOf(i.toDecimal(), range.start)
             val dw = sw * pixelsPerFrame
             val dy = 0.0
             val dh = canvas.height
-            canvas.graphicsContext2D.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+            canvas.graphicsContext2D.drawImage(
+                img,
+                sx.toDouble(), sy, sw.toDouble(), sh,
+                dx.toDouble(), dy, dw.toDouble(), dh
+            )
         }
         currentRange = range
     }
 
     private inner class SpectrogramSegment(
-        private val range: DoubleRange,
+        private val range: DecimalRange,
         private var image: WritableImage?,
         private var lastTouchedMs: Long
     ) {

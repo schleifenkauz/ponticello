@@ -1,10 +1,13 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
 import javafx.application.Application
 import javafx.scene.Scene
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
+import ponticello.impl.rangeTo
+import ponticello.impl.toDecimal
+import ponticello.impl.zero
 import java.io.File
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
@@ -17,7 +20,8 @@ class LiveAudioViewApp : Application() {
     override fun start(primaryStage: Stage) {
         val tmpFile = File("tmp.bin")
         val sampleRate = 44100.toDouble()
-        val buffer = LiveAudioFileBuffer(tmpFile, sampleRate)
+        val bufferSize = 1024
+        val buffer = LiveAudioFileBuffer(tmpFile, sampleRate, bufferSize)
         val format = AudioFormat(sampleRate.toFloat(), 16, 1, true, false)
         val mixerInfos = AudioSystem.getMixerInfo().filter { info ->
             val mixer = AudioSystem.getMixer(info)
@@ -33,10 +37,9 @@ class LiveAudioViewApp : Application() {
             return
         }
         val mixer = AudioSystem.getMixer(info)
-        val bufferSize = 1024
 
         val peaks = WaveformPeaks(buffer, minZoom = 4, maxZoom = 12)
-        val canvas = WaveformCanvas(peaks, initialDisplayRange = 0.0..10.0)
+        val canvas = WaveformCanvas(peaks, initialDisplayRange = zero..10.toDecimal())
         canvas.width = 1000.0
         canvas.height = 200.0
         canvas.repaint()

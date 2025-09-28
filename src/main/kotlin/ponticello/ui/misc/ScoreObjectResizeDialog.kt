@@ -1,4 +1,4 @@
-package ponticello.ui.live
+package ponticello.ui.misc
 
 import fxutils.button
 import fxutils.prompt.CompoundPrompt

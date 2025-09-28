@@ -1,10 +1,10 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
 data class Peaks(
     val size: Int,
     private val minima: List<Double>, private val maxima: List<Double>
 ) {
-    val indices = 0 until minima.size
+    val indices = minima.indices
 
     fun getMin(idx: Int): Double = when (idx) {
         in minima.indices -> minima[idx]

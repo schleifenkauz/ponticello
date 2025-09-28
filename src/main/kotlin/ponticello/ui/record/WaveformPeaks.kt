@@ -1,4 +1,6 @@
-package ponticello.ui.live
+package ponticello.ui.record
+
+import ponticello.impl.*
 
 class WaveformPeaks(
     val buffer: LiveAudioFileBuffer,
@@ -9,7 +11,7 @@ class WaveformPeaks(
         WaveformPeakCache(buffer, regionSize)
     }
 
-    fun getPeaks(range: DoubleRange, zoomFactor: Int): Peaks {
+    fun getPeaks(range: DecimalRange, zoomFactor: Int): Peaks {
         val regionSize = zoomFactor.pow2()
         val nSamples = range.dur * buffer.sampleRate
         val pixels = (nSamples / regionSize).toInt()
@@ -49,7 +51,7 @@ class WaveformPeaks(
         }
     }
 
-    fun getPeaks(range: DoubleRange, width: Double): Peaks {
+    fun getPeaks(range: DecimalRange, width: Double): Peaks {
         val samplesPerPixel = (range.dur * buffer.sampleRate) / width
         val regionSize = samplesPerPixel.toInt()
         val zoomFactor = (0..31).first { z -> z.pow2() >= regionSize }

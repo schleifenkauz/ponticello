@@ -1,14 +1,15 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
+import ponticello.impl.DecimalRange
 
 class WaveformCanvas(
     private val peaks: WaveformPeaks,
-    initialDisplayRange: DoubleRange
+    initialDisplayRange: DecimalRange
 ) : Canvas(), LiveAudioFileBuffer.Listener {
-    var displayRange: DoubleRange = initialDisplayRange
+    var displayRange: DecimalRange = initialDisplayRange
         set(value) {
             field = value
             repaint()

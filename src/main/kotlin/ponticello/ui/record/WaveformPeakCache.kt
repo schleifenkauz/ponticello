@@ -1,4 +1,8 @@
-package ponticello.ui.live
+package ponticello.ui.record
+
+import ponticello.impl.DecimalRange
+import ponticello.impl.div
+import ponticello.impl.times
 
 class WaveformPeakCache(
     private val buffer: LiveAudioFileBuffer,
@@ -45,8 +49,8 @@ class WaveformPeakCache(
     }
 
     @Synchronized
-    fun getPeaks(range: ClosedRange<Double>): Peaks {
-        val from = (range.start * buffer.sampleRate / regionSize).toInt()
+    fun getPeaks(range: DecimalRange): Peaks {
+        val from = (buffer.sampleRate * range.start / regionSize).toInt()
         val to = (range.endInclusive * buffer.sampleRate / regionSize).toInt()
         val minima = min.subList(from, to.coerceAtMost(min.size)).toList()
         val maxima = max.subList(from, to.coerceAtMost(min.size)).toList()

@@ -1,5 +1,8 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
+import ponticello.impl.DecimalRange
+import ponticello.impl.dur
+import ponticello.impl.times
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
@@ -12,7 +15,7 @@ class LiveAudioFileBuffer(file: File, val sampleRate: Double, val bufferSize: In
     private val listeners = mutableListOf<Listener>()
     private var nSamples = 0
 
-    fun read(range: DoubleRange): DoubleArray {
+    fun read(range: DecimalRange): DoubleArray {
         val samples = (range.dur * sampleRate).toInt()
         val sampleOffset = (range.start * sampleRate).toLong()
         raf.seek(sampleOffset)

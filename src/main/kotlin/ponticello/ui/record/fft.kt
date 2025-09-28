@@ -1,4 +1,4 @@
-package ponticello.ui.live
+package ponticello.ui.record
 
 import kotlin.math.cos
 import kotlin.math.ln

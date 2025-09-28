@@ -18,10 +18,10 @@ import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.actions.toolbarPart
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.live.LiveObjectRegistryPane
-import ponticello.ui.live.ScoreObjectResizeDialog
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.misc.PlayHead
+import ponticello.ui.misc.ScoreObjectResizeDialog
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
