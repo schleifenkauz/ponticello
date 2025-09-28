@@ -37,7 +37,7 @@ data class ValueControl(
         when {
             spec is NumericalControlSpec && spec.allocateBus -> false
             spec !is NumericalControlSpec -> false
-            spec.defaultValue.get() == adjustValueIfIsBufferPosition(obj, spec, cutoff) -> false
+//            spec.defaultValue.get() == adjustValueIfIsBufferPosition(obj, spec, cutoff) -> false
             else -> true
         }
 

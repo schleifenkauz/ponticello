@@ -27,9 +27,9 @@ import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.flow.MixerPane
 import ponticello.ui.launcher.PonticelloMainActivity
-import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.*
+import ponticello.ui.record.LauncherGridPane
 import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectDetailPane

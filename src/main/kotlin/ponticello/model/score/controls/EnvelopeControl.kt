@@ -136,7 +136,7 @@ class EnvelopeControl(
     ): ScExpr {
         spec as NumericalControlSpec
         return when (context) {
-            CodegenContext.Synth -> DecimalLiteral(points.points.first().value)
+            CodegenContext.Synth -> DecimalLiteral(points.interpolateValueAt(cutoff, spec.warp))
             CodegenContext.Process -> lambda("t") {
                 val argName = auxilBusName(uniqueName, parameter)
                 Identifier(argName).send("at", Identifier("t"))

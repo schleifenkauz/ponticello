@@ -84,6 +84,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         i = -(i + 1)
         val (x1, y1) = if (i == 0) points[1] else points[i - 1]
         val (x2, y2) = if (i == points.size) points[i - 2] else points[i]
+        if (x1 == x2) return y1 //to prevent NaN
         val precision = max(y1.precision, y2.precision)
         val slope = (warp.map(y2.value) - warp.map(y1.value)) / (x2 - x1)
         val dx = t - x1

@@ -31,6 +31,8 @@ operator fun DecimalRange.plus(delta: Decimal) = DecimalRange(start + delta, end
 
 operator fun DecimalRange.minus(delta: Decimal) = DecimalRange(start - delta, endInclusive - delta)
 
+val DecimalRange.dur get() = endInclusive - start
+
 fun Double.withPrecision(precision: Int) = Decimal(this, precision)
 
 val Double.asTime get() = withPrecision(ObjectPosition.TIME_PRECISION)

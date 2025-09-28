@@ -113,7 +113,8 @@ data class NumericalControlSpec(
         inlineDisplay: Boolean = false, attackRelease: Boolean = false, allocateBus: Boolean = false
     ) : this(
         DecimalLiteral(default), DecimalLiteral(min), DecimalLiteral(max), warp,
-        DecimalLiteral(step), DecimalLiteral(lag), associatedColor, inlineDisplay
+        DecimalLiteral(step), DecimalLiteral(lag), associatedColor,
+        inlineDisplay, attackRelease, allocateBus
     )
 
     override val type: ParameterType

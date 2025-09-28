@@ -256,7 +256,7 @@ object PonticelloHextantPlugin : PluginInitializer({
                         controls.addControl(name, ctrl, customSpec = spec, idx)
                         val selector = ParameterControlSelector()
                         selector.selectInitial(controls.get(name))
-                        editor.expand(selector)
+                        editor.expand(ParameterReferenceEditor(selector))
                     }
                 }
 

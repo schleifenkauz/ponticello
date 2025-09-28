@@ -120,3 +120,5 @@ fun Spinner<Double>.sync(
     userData = variable.observe { _, _, v -> editor.text = v.toString() }
     return this
 }
+
+fun Int.pow2() = 1 shl this
