@@ -52,8 +52,9 @@ class WaveformPeakCache(
     fun getPeaks(range: DecimalRange): Peaks {
         val from = (buffer.sampleRate * range.start / regionSize).toInt()
         val to = (range.endInclusive * buffer.sampleRate / regionSize).toInt()
-        val minima = min.subList(from, to.coerceAtMost(min.size)).toList()
-        val maxima = max.subList(from, to.coerceAtMost(min.size)).toList()
+        if (from >= to || from >= min.size || to < 0) return Peaks(0, emptyList(), emptyList())
+        val minima = min.subList(from.coerceAtLeast(0), to.coerceAtMost(min.size)).toList()
+        val maxima = max.subList(from.coerceAtLeast(0), to.coerceAtMost(min.size)).toList()
         val size = to - from
         return Peaks(size, minima, maxima)
     }

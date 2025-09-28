@@ -16,7 +16,8 @@ abstract class AbstractAudioBuffer(
 
     override fun read(range: DecimalRange): DoubleArray {
         val sampleOffset = (range.start * sampleRate).toLong()
-        val availableSamples = (nSamples - sampleOffset).toInt().coerceAtLeast(0)
+        val availableSamples = (nSamples - sampleOffset).toInt()
+        if (availableSamples <= 0) return DoubleArray(0)
         val samples = (range.dur * sampleRate).toInt().coerceAtMost(availableSamples)
         return read(sampleOffset, samples)
     }

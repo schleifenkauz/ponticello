@@ -1,22 +1,22 @@
 package ponticello.ui.record
 
 import javafx.application.Platform
-import javafx.scene.canvas.Canvas
 import javafx.scene.image.PixelWriter
 import javafx.scene.image.WritableImage
+import javafx.scene.paint.Color.BLACK
 import org.jtransforms.fft.DoubleFFT_1D
 import ponticello.impl.*
 import java.awt.Color
+import java.util.concurrent.Executors
 import kotlin.math.log10
 import kotlin.math.sqrt
 
-class SpectrogramCanvas(
+class LiveSpectrogramView(
     private val buffer: AudioBuffer,
     private val framesPerImage: Int,
     initialDisplayRange: DecimalRange
-) : AudioBuffer.Listener, Canvas() {
+) : AudioBuffer.Listener, LiveAudioBufferView(initialDisplayRange) {
     private val segments = mutableListOf<SpectrogramSegment>()
-    var displayRange: DecimalRange = initialDisplayRange
 
     private val fftSize = buffer.bufferSize
     private val hopSize = fftSize / 2
@@ -30,19 +30,17 @@ class SpectrogramCanvas(
 
     private var lastAcceptedSamples = DoubleArray(fftSize)
 
-    private var repainting = false
-
     fun start() {
         buffer.addListener(this)
         CleanupThread().start()
     }
 
-    override fun accept(sampleOffset: Long, samples: DoubleArray) {
+    override fun accept(sampleOffset: Long, samples: DoubleArray) = executor.execute {
         var frameIndex = (sampleOffset / hopSize).toInt()
         val segmentIdx = frameIndex / framesPerImage
         frameIndex %= framesPerImage
         val affectedSegment = getSegment(segmentIdx)
-        if (!affectedSegment.isInDisplayRange()) return
+        if (!affectedSegment.isInDisplayRange()) return@execute
         val img = affectedSegment.getImage()
 
         fftBuf.prepareBufForFFT(lastAcceptedSamples, srcOffset = hopSize, dstOffset = 0, len = hopSize)
@@ -61,10 +59,12 @@ class SpectrogramCanvas(
     private fun getSegment(i: Int): SpectrogramSegment = when {
         i < segments.size -> segments[i]
         i >= segments.size -> {
-            for (j in segments.size..i) {
-                val range = DecimalRange(j * regionDuration, (j + 1) * regionDuration)
-                val segment = SpectrogramSegment(range, null, 0L)
-                segments.add(segment)
+            synchronized(segments) {
+                for (j in segments.size..i) {
+                    val range = DecimalRange(j * regionDuration, (j + 1) * regionDuration)
+                    val segment = SpectrogramSegment(range, null, 0L)
+                    segments.add(segment)
+                }
             }
             segments.last()
         }
@@ -72,15 +72,18 @@ class SpectrogramCanvas(
         else -> error("Invalid segment index: $i.")
     }
 
-    fun repaint() {
-        if (repainting) return
-        repainting = true
-        val firstRegion = (displayRange.start * regionDuration).toInt()
-        val lastRegion = (displayRange.endInclusive * regionDuration).ceilToInt()
-        for (i in firstRegion..lastRegion) {
-            drawSegment(i)
+    public override fun repaint() {
+        Platform.runLater {
+            graphicsContext.fill = BLACK
+            graphicsContext.fillRect(0.0, 0.0, width, height)
         }
-        repainting = false
+        executor.execute {
+            val firstRegion = (displayRange.start * regionDuration).toInt()
+            val lastRegion = (displayRange.endInclusive * regionDuration).ceilToInt()
+            for (i in firstRegion..lastRegion) {
+                drawSegment(i)
+            }
+        }
     }
 
     private fun drawSegment(i: Int) {
@@ -90,7 +93,7 @@ class SpectrogramCanvas(
         val y = 0.0
         val h = this.height
         Platform.runLater {
-            graphicsContext2D.drawImage(img, x.toDouble(), y, regionWidth, h)
+            graphicsContext.drawImage(img, x.toDouble(), y, regionWidth, h)
         }
     }
 
@@ -160,8 +163,10 @@ class SpectrogramCanvas(
 
         override fun run() {
             while (!(interrupted())) {
-                for (seg in segments) {
-                    seg.clearIfUnused()
+                synchronized(segments) {
+                    for (seg in segments) {
+                        seg.clearIfUnused()
+                    }
                 }
                 try {
                     sleep(CLEANUP_INTERVAL)
@@ -178,5 +183,12 @@ class SpectrogramCanvas(
 
         private const val MIN_DB = -50.0
         private const val MAX_DB = 0.0
+
+        private val executor =
+            Executors.newSingleThreadExecutor { r ->
+                val thread = Thread(r, "Spectrogram view thread")
+                thread.isDaemon = true
+                thread
+            }
     }
 }

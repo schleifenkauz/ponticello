@@ -80,6 +80,5 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
 
     fun scroll(amount: Double) {
         display(displayStart + amount, displayEnd + amount)
-        repaint()
     }
 }

@@ -43,13 +43,11 @@ class LiveAudioViewApp : Application() {
         val mixer = AudioSystem.getMixer(info)
 
         val initialDisplayRange = zero..10.toDecimal()
-//        val peaks = WaveformPeaks(buffer, minZoom = 4, maxZoom = 12)
-//        val canvas = WaveformCanvas(peaks, initialDisplayRange)
-        val canvas = SpectrogramCanvas(buffer, framesPerImage = 100, initialDisplayRange)
-        canvas.start()
-        canvas.width = 1000.0
-        canvas.height = 200.0
-        canvas.repaint()
+        val peaks = WaveformPeaks(buffer, minZoom = 4, maxZoom = 12)
+        val canvas = LiveWaveformView(peaks, initialDisplayRange)
+//        val canvas = LiveSpectrogramView(buffer, framesPerImage = 100, initialDisplayRange)
+//        canvas.start()
+        canvas.setPrefSize(1000.0, 500.0)
 
         capture = LiveAudioCapture(buffer, format, mixer, bufferSize)
         capture.start()

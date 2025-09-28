@@ -1,28 +1,21 @@
 package ponticello.ui.record
 
 import javafx.application.Platform
-import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 import ponticello.impl.DecimalRange
 
-class WaveformCanvas(
+class LiveWaveformView(
     private val peaks: WaveformPeaks,
     initialDisplayRange: DecimalRange
-) : Canvas(), AudioBuffer.Listener {
-    var displayRange: DecimalRange = initialDisplayRange
-        set(value) {
-            field = value
-            repaint()
-        }
-
+) : LiveAudioBufferView(initialDisplayRange), AudioBuffer.Listener {
     init {
         peaks.buffer.addListener(this)
     }
 
-    fun repaint() {
+    override fun repaint() {
         val peaks = peaks.getPeaks(displayRange, width)
         Platform.runLater {
-            with(graphicsContext2D) {
+            with(graphicsContext) {
                 fill = Color.BLACK
                 fillRect(0.0, 0.0, width, height)
                 stroke = Color.LIMEGREEN
