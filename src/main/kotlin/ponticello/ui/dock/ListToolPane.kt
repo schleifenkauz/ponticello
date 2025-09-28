@@ -63,7 +63,4 @@ abstract class ListToolPane<O : ContextualObject>(
                 .map(IndexedValue<*>::index)
         }
     }
-
-    companion object
-
 }

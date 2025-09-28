@@ -22,6 +22,8 @@ import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.ui.controls.NamePrompt
+import ponticello.ui.impl.getFrom
+import reaktive.value.now
 
 interface ListDisplayConfig<O : Any> {
     val boxStyle: Array<String> get() = arrayOf("object-box")
@@ -80,7 +82,20 @@ interface ListDisplayConfig<O : Any> {
         }
         else emptyArray()
 
-    fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<O>): List<O> = emptyList()
+    fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<O>): List<O> {
+        val format = dataFormat
+        if (format != null && ev.dragboard.hasContent(format)) {
+            val source = targetView.source
+            if (source !is NamedObjectList<*>) return emptyList()
+            val obj = ev.dragboard.getFrom(source, format) ?: return emptyList()
+            return if (ev.acceptedTransferMode == TransferMode.COPY) {
+                val newName = NamePrompt(source, "Name for copy", obj.name.now + "_copy")
+                    .showDialog(ev) ?: return emptyList()
+                listOf(duplicate(obj as O, newName))
+            } else listOf(obj as O)
+        }
+        return emptyList()
+    }
 
     fun canDelete(obj: O): Boolean = !(obj is NamedObject && !obj.canDelete)
 

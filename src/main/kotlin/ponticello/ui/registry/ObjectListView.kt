@@ -428,6 +428,9 @@ class ObjectListView<O : Any>(
         val newIdx = idx + deltaIdx
         if (newIdx !in boxes.indices) return
         source.move(selected.obj, newIdx)
+        runAfterLayout {
+            select(selected.obj)
+        }
     }
 
     private fun copySelected() {
