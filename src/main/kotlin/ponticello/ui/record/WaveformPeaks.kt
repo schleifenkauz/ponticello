@@ -21,7 +21,7 @@ class WaveformPeaks(
                 val minima = DoubleArray(pixels) { 1.0 }
                 val maxima = DoubleArray(pixels) { -1.0 }
                 for (p in 0 until pixels) {
-                    for (i in p * regionSize until (p + 1) * regionSize) {
+                    for (i in p * regionSize until ((p + 1) * regionSize).coerceAtMost(samples.size)) {
                         val v = samples[i]
                         if (v < minima[p]) minima[p] = v
                         else if (v > maxima[p]) maxima[p] = v

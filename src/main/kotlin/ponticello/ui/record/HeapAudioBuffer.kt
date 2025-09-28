@@ -8,14 +8,10 @@ class HeapAudioBuffer(
 ) : AbstractAudioBuffer(sampleRate, bufferSize) {
     private var buffer = DoubleArray(initialCapacity)
 
-    override fun read(samples: Int, offset: Long, len: Int): DoubleArray {
-        val arr = DoubleArray(samples)
-        System.arraycopy(buffer, offset.toInt(), arr, 0, len)
-        return arr
-    }
+    override fun read(offset: Long, len: Int): DoubleArray = buffer.copyOfRange(offset.toInt(), offset.toInt() + len)
 
     override fun append(bytes: ByteArray) {
-        val nSamples = samples()
+        val nSamples = totalSamples().toInt()
         val minCapacity = bytes.size / 2 + nSamples
         if (minCapacity > buffer.size) {
             buffer = buffer.copyOf(newSize = minCapacity * 2)

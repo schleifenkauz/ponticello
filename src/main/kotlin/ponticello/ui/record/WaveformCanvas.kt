@@ -3,7 +3,6 @@ package ponticello.ui.record
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
-import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 
 class WaveformCanvas(
@@ -38,7 +37,7 @@ class WaveformCanvas(
         }
     }
 
-    override fun accept(currentTime: Decimal, samples: DoubleArray) {
+    override fun accept(sampleOffset: Long, samples: DoubleArray) {
         repaint()
     }
 }

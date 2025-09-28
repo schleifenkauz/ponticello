@@ -2,37 +2,60 @@ package ponticello.ui.record
 
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
-import javafx.scene.image.Image
+import javafx.scene.image.PixelWriter
 import javafx.scene.image.WritableImage
 import org.jtransforms.fft.DoubleFFT_1D
 import ponticello.impl.*
+import java.awt.Color
 import kotlin.math.log10
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 class SpectrogramCanvas(
     private val buffer: AudioBuffer,
-    private val regionDuration: Decimal, //duration represented by individual images
+    private val framesPerImage: Int,
     initialDisplayRange: DecimalRange
 ) : AudioBuffer.Listener, Canvas() {
     private val segments = mutableListOf<SpectrogramSegment>()
     var displayRange: DecimalRange = initialDisplayRange
 
-    private val pixelsPerSecond get() = width / displayRange.dur
-    private var repainting = false
+    private val fftSize = buffer.bufferSize
+    private val hopSize = fftSize / 2
+    private val freqBins = fftSize / 2
+    private val fft = DoubleFFT_1D(fftSize.toLong())
+    private val hammingWindow = hammingWindow(fftSize)
+    private val fftBuf = DoubleArray(fftSize * 2)
 
-    private val fft = DoubleFFT_1D(buffer.bufferSize.toLong())
+    private val regionDuration = ((hopSize * framesPerImage) / buffer.sampleRate).toDecimal()
+    private val regionWidth get() = (regionDuration * (width / displayRange.dur)).toDouble()
+
+    private var lastAcceptedSamples = DoubleArray(fftSize)
+
+    private var repainting = false
 
     fun start() {
         buffer.addListener(this)
         CleanupThread().start()
-        RepaintThread().start()
     }
 
-    override fun accept(currentTime: Decimal, samples: DoubleArray) {
-        val segmentIdx = (currentTime * regionDuration).toInt()
+    override fun accept(sampleOffset: Long, samples: DoubleArray) {
+        var frameIndex = (sampleOffset / hopSize).toInt()
+        val segmentIdx = frameIndex / framesPerImage
+        frameIndex %= framesPerImage
         val affectedSegment = getSegment(segmentIdx)
-        affectedSegment.invalidate()
+        if (!affectedSegment.isInDisplayRange()) return
+        val img = affectedSegment.getImage()
+
+        fftBuf.prepareBufForFFT(lastAcceptedSamples, srcOffset = hopSize, dstOffset = 0, len = hopSize)
+        fftBuf.prepareBufForFFT(samples, srcOffset = 0, dstOffset = hopSize, len = hopSize)
+        fft.complexForward(fftBuf)
+        img.pixelWriter.writeFrame(fftBuf, frameIndex)
+
+        fftBuf.prepareBufForFFT(samples, srcOffset = 0, len = fftSize)
+        fft.complexForward(fftBuf)
+        img.pixelWriter.writeFrame(fftBuf, frameIndex + 1)
+
+        drawSegment(segmentIdx)
+        lastAcceptedSamples = samples
     }
 
     private fun getSegment(i: Int): SpectrogramSegment = when {
@@ -52,20 +75,46 @@ class SpectrogramCanvas(
     fun repaint() {
         if (repainting) return
         repainting = true
-        val regionWidth = (regionDuration * (pixelsPerSecond)).toDouble()
         val firstRegion = (displayRange.start * regionDuration).toInt()
         val lastRegion = (displayRange.endInclusive * regionDuration).ceilToInt()
         for (i in firstRegion..lastRegion) {
-            val segment = getSegment(i)
-            val img = segment.getImage()
-            val x = (i - displayRange.start) * regionWidth
-            val y = 0.0
-            val h = this.height
-            Platform.runLater {
-                graphicsContext2D.drawImage(img, x.toDouble(), y, regionWidth, h)
-            }
+            drawSegment(i)
         }
         repainting = false
+    }
+
+    private fun drawSegment(i: Int) {
+        val segment = getSegment(i)
+        val img = segment.getImage()
+        val x = (i - displayRange.start) * regionWidth
+        val y = 0.0
+        val h = this.height
+        Platform.runLater {
+            graphicsContext2D.drawImage(img, x.toDouble(), y, regionWidth, h)
+        }
+    }
+
+    private fun DoubleArray.prepareBufForFFT(
+        src: DoubleArray, srcOffset: Int = 0,
+        dstOffset: Int = 0, len: Int = src.size
+    ) {
+        for (i in 0 until len) {
+            val v = src.getOrElse(srcOffset + i) { 0.0 }
+            this[2 * (i + dstOffset)] = v * hammingWindow[i + dstOffset]
+            this[2 * (i + dstOffset) + 1] = 0.0
+        }
+    }
+
+    private fun PixelWriter.writeFrame(buf: DoubleArray, x: Int) {
+        for (y in 0 until freqBins) {
+            val re = buf[2 * y]
+            val im = buf[2 * y + 1]
+            val mag = sqrt(re * re + im * im)
+            val db = 20.0 * log10(mag + 1e-6)
+            val norm = ((db - MIN_DB) / (MAX_DB - MIN_DB)).coerceIn(0.0, 1.0).toFloat()
+            val color = Color.getHSBColor(0.66f - norm * 0.66f, 1.0f, norm)
+            setArgb(x, freqBins - 1 - y, color.rgb)
+        }
     }
 
     private inner class SpectrogramSegment(
@@ -73,72 +122,34 @@ class SpectrogramCanvas(
         private var image: WritableImage?,
         private var lastTouchedMs: Long
     ) {
-        fun getImage(): Image {
+        fun getImage(): WritableImage {
             lastTouchedMs = System.currentTimeMillis()
             if (image != null) return image!!
             val samples = buffer.read(range)
-            val fftSize = buffer.bufferSize
-            val hopSize = fftSize / 2
             val frames = (samples.size - fftSize) / hopSize
-            val freqBins = fftSize / 2
-
-            val img = WritableImage(frames, freqBins)
+            val img = WritableImage(framesPerImage, freqBins)
             val pw = img.pixelWriter
 
-            val window = hammingWindow(fftSize)
             val buf = DoubleArray(fftSize * 2)
-
             for (frame in 0 until frames) {
-                val offset = frame * hopSize
-                for (i in 0 until fftSize) {
-                    val v = samples.getOrElse(offset + i) { 0.0 }
-                    buf[2 * i] = v * window[i]
-                    buf[2 * i + 1] = 0.0
-                }
+                val srcOffset = frame * hopSize
+                if (srcOffset >= samples.size) break
+                buf.prepareBufForFFT(samples, srcOffset, dstOffset = 0, len = fftSize)
                 fft.complexForward(buf)
-                for (k in 0 until freqBins) {
-                    val re = buf[2 * k]
-                    val im = buf[2 * k + 1]
-                    val mag = sqrt(re * re + im * im)
-
-                    val db = 20.0 * log10(mag + 1e-6)
-                    val norm = ((db - MIN_DB) / (MAX_DB - MIN_DB)).coerceIn(0.0, 1.0)
-                    val argb = heatMap(norm)
-                    pw.setArgb(frame, k, argb)
-                }
+                pw.writeFrame(buf, frame)
             }
             image = img
             return img
         }
 
-        fun invalidate() {
-            image = null
-        }
+        fun isInDisplayRange() =
+            range.endInclusive >= displayRange.start && range.start <= displayRange.endInclusive
 
         fun clearIfUnused() {
             if (image == null) return
-            if (range.endInclusive >= displayRange.start && range.start <= displayRange.endInclusive) return
+            if (isInDisplayRange()) return
             if (System.currentTimeMillis() - lastTouchedMs < CLEANUP_THRESHOLD) return
             image = null
-        }
-    }
-
-    private inner class RepaintThread : Thread("Spectrogram repaint thread") {
-        init {
-            isDaemon = true
-        }
-
-        override fun run() {
-            while (!interrupted()) {
-
-                repaint()
-                try {
-                    val repaintPeriodMs = pixelsPerSecond.toLong()
-                    sleep(repaintPeriodMs)
-                } catch (e: InterruptedException) {
-                    break
-                }
-            }
         }
     }
 
@@ -165,14 +176,7 @@ class SpectrogramCanvas(
         private const val CLEANUP_THRESHOLD = 10000L
         private const val CLEANUP_INTERVAL = 1000L
 
-        private const val MIN_DB = -40.0
+        private const val MIN_DB = -50.0
         private const val MAX_DB = 0.0
-
-        private fun heatMap(norm: Double): Int {
-            val r = ((norm * 3).coerceAtMost(1.0) * 255).roundToInt()
-            val g = ((norm * 3 - 1).coerceIn(0.0, 1.0) * 255).roundToInt()
-            val b = ((norm * 3 - 2).coerceIn(0.0, 1.0) * 255).roundToInt()
-            return 0xFF shl 24 or (r shl 16) or (g shl 8) or b
-        }
     }
 }

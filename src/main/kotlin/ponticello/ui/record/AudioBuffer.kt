@@ -7,15 +7,17 @@ interface AudioBuffer {
     val sampleRate: Double
     val bufferSize: Int
 
+    val currentPosition: Decimal
+
     fun read(range: DecimalRange): DoubleArray
 
     fun append(bytes: ByteArray)
 
-    fun samples(): Int
+    fun totalSamples(): Long
 
     fun addListener(listener: Listener)
 
     interface Listener {
-        fun accept(currentTime: Decimal, samples: DoubleArray)
+        fun accept(sampleOffset: Long, samples: DoubleArray)
     }
 }

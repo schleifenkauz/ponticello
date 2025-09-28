@@ -13,8 +13,6 @@ import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 import kotlin.math.log10
-import kotlin.math.max
-import kotlin.math.min
 
 class LiveSpectrogram : JPanel() {
     private val spectrogram = BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB)
@@ -64,7 +62,7 @@ class LiveSpectrogram : JPanel() {
         for (y in magnitudes.indices) {
             val mag = magnitudes[y]
             val dB = 20 * log10(mag + 1e-6) // Avoid log(0)
-            val norm = max(0.0, min(1.0, (dB + 60) / 60.0)).toFloat()
+            val norm = (dB + 60).toFloat() / 60
             val color = Color.getHSBColor(0.66f - norm * 0.66f, 1.0f, norm)
             spectrogram.setRGB(drawX, HEIGHT - 1 - y, color.rgb)
         }

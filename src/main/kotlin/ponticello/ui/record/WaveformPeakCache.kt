@@ -1,6 +1,5 @@
 package ponticello.ui.record
 
-import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 import ponticello.impl.div
 import ponticello.impl.times
@@ -20,7 +19,7 @@ class WaveformPeakCache(
     }
 
     @Synchronized
-    override fun accept(currentTime: Decimal, samples: DoubleArray) {
+    override fun accept(sampleOffset: Long, samples: DoubleArray) {
         if (samples.size >= regionSize) {
             for (i in samples.indices step regionSize) {
                 currentMin = 1.0

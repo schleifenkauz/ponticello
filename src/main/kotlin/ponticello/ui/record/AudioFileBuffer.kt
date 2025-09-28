@@ -8,9 +8,9 @@ class AudioFileBuffer(file: File, sampleRate: Double, bufferSize: Int) : Abstrac
     private val raf = RandomAccessFile(file, "rw")
     private val channel = raf.channel
 
-    override fun read(samples: Int, offset: Long, len: Int): DoubleArray {
+    override fun read(offset: Long, len: Int): DoubleArray {
         raf.seek(offset)
-        val bytes = ByteArray(samples * 2) //TODO reuse
+        val bytes = ByteArray(len * 2) //TODO reuse
         raf.read(bytes, 0, len * 2)
         return bytes.toDoubleArray()
     }

@@ -6,7 +6,6 @@ import javafx.scene.Scene
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
-import ponticello.impl.one
 import ponticello.impl.rangeTo
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
@@ -46,7 +45,7 @@ class LiveAudioViewApp : Application() {
         val initialDisplayRange = zero..10.toDecimal()
 //        val peaks = WaveformPeaks(buffer, minZoom = 4, maxZoom = 12)
 //        val canvas = WaveformCanvas(peaks, initialDisplayRange)
-        val canvas = SpectrogramCanvas(buffer, regionDuration = one, initialDisplayRange)
+        val canvas = SpectrogramCanvas(buffer, framesPerImage = 100, initialDisplayRange)
         canvas.start()
         canvas.width = 1000.0
         canvas.height = 200.0
