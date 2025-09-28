@@ -65,5 +65,3 @@ fun applyHannWindow(samples: DoubleArray) {
         samples[i] *= 0.5 * (1 - cos(2 * Math.PI * i / (samples.size - 1)))
     }
 }
-
-fun hammingWindow(n: Int): DoubleArray = DoubleArray(n) { i -> 0.54 - 0.46 * cos(2 * Math.PI * i / (n - 1)); }

@@ -27,9 +27,10 @@ import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.flow.MixerPane
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.*
-import ponticello.ui.record.LauncherGridPane
+import ponticello.ui.record.LiveBuffersPane
 import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectDetailPane
@@ -268,7 +269,7 @@ class AppLayout(
         }
     }
 
-    override fun removed(obj: ToolPane.Type) {
+    override fun removed(obj: ToolPane.Type, idx: Int) {
         val toolPane = getToolPane(obj) ?: error("ToolPane $obj not found")
         if (toolPane.isShowing.now) {
             hideDocked(toolPane)
@@ -284,7 +285,7 @@ class AppLayout(
     }
 
     override fun moved(obj: ToolPane.Type, idx: Int) {
-        removed(obj)
+        removed(obj, idx)
         added(obj, idx)
     }
 
@@ -435,6 +436,7 @@ class AppLayout(
             add(MixerPane)
             add(ScoreObjectViewPane)
             add(ConsoleOutputPane)
+            add(LiveBuffersPane)
         }.toMutableList()
 
         fun toolPaneType(uid: Int) = allToolPaneTypes.find { it.uid == uid }

@@ -1,9 +1,9 @@
-package ponticello.ui.record
+package ponticello.model.record
 
+import ponticello.impl.Logger
 import javax.sound.sampled.*
 
 class LiveAudioCapture(
-    private val buffer: AudioBuffer,
     private val format: AudioFormat,
     private val mixer: Mixer,
     private val bufferSize: Int
@@ -12,7 +12,14 @@ class LiveAudioCapture(
     private var activeThread: Thread? = null
     private var activeLine: TargetDataLine? = null
 
-    fun start() {
+    private lateinit var buffer: AudioBuffer
+
+    fun start(buffer: AudioBuffer) {
+        if (activeThread != null) {
+            Logger.error("Attempt to start LiveAudioCapture for input ${mixer.mixerInfo.name} while it is already running.")
+            return
+        }
+        this.buffer = buffer
         val thread = Thread(::run, "LiveAudioCapture [${mixer.mixerInfo.name}]")
         thread.isDaemon = true
         thread.start()

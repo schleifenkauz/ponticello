@@ -326,7 +326,7 @@ class ObjectListView<O : Any>(
         return -(j + 1)
     }
 
-    override fun removed(obj: O) = Platform.runLater {
+    override fun removed(obj: O, idx: Int) = Platform.runLater {
         val box = boxesCache[obj] ?: return@runLater
         val idx = boxes.indexOf(box)
         boxes.removeAt(idx)
@@ -345,7 +345,7 @@ class ObjectListView<O : Any>(
     }
 
     override fun moved(obj: O, idx: Int) {
-        removed(obj)
+        removed(obj, idx)
         added(obj, idx)
     }
 

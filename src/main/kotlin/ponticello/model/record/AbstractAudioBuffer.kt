@@ -1,4 +1,4 @@
-package ponticello.ui.record
+package ponticello.model.record
 
 import ponticello.impl.*
 import java.nio.ByteBuffer

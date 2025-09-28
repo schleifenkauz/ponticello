@@ -122,7 +122,7 @@ class VSTPluginFlow private constructor(
         }
     }
 
-    override fun removed(obj: VSTPluginParameterMapping) {
+    override fun removed(obj: VSTPluginParameterMapping, idx: Int) {
         obj.dispose()
     }
 

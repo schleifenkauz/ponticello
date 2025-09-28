@@ -64,7 +64,7 @@ class AttackReleaseOverlay(private val view: SoundProcessView) : ParameterContro
         if (ctrl is AttackReleaseControl) addedAttackReleaseControl(ctrl)
     }
 
-    override fun removed(obj: NamedParameterControl) {
+    override fun removed(obj: NamedParameterControl, idx: Int) {
         val ctrl = obj.now
         if (ctrl is AttackReleaseControl) removedAttackReleaseControl()
     }

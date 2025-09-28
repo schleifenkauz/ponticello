@@ -132,7 +132,7 @@ class LFOsManager : ParameterControlList.Listener {
         }
     }
 
-    override fun removed(obj: NamedParameterControl) {
+    override fun removed(obj: NamedParameterControl, idx: Int) {
         removeLFO(obj)
         observers.remove(obj)?.kill()
     }

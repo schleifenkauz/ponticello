@@ -3,13 +3,21 @@ package ponticello.ui.record
 import javafx.application.Platform
 import javafx.scene.paint.Color
 import ponticello.impl.DecimalRange
+import ponticello.model.record.AudioBuffer
+import ponticello.model.record.WaveformPeaks
+import reaktive.Observer
+import reaktive.value.now
 
 class LiveWaveformView(
     private val peaks: WaveformPeaks,
-    initialDisplayRange: DecimalRange
+    initialDisplayRange: DecimalRange,
+    private val config: LiveBufferViewConfig.Waveform,
 ) : LiveAudioBufferView(initialDisplayRange), AudioBuffer.Listener {
+    private val configObserver: Observer
+
     init {
         peaks.buffer.addListener(this)
+        configObserver = config.yScale.observe { _, _, _ -> repaint() }
     }
 
     override fun repaint() {
@@ -22,8 +30,9 @@ class LiveWaveformView(
                 for (i in peaks.indices) {
                     val x = width * i / peaks.size
                     val h = height / 2
-                    val yMin = h - (peaks.getMin(i) * h * 5)
-                    val yMax = h - (peaks.getMax(i) * h * 5)
+                    val yScale = config.yScale.now
+                    val yMin = h - (peaks.getMin(i) * h * yScale)
+                    val yMax = h - (peaks.getMax(i) * h * yScale)
                     strokeLine(x, yMin, x, yMax)
                 }
             }

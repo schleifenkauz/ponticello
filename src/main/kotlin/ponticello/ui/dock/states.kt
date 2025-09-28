@@ -2,6 +2,7 @@ package ponticello.ui.dock
 
 import kotlinx.serialization.Serializable
 import ponticello.model.flow.MixerFlow
+import ponticello.model.obj.LiveObjectReference
 import ponticello.model.registry.ObjectReference
 import ponticello.ui.misc.HelpBrowser
 import ponticello.ui.registry.BufferRegistryPane
@@ -106,6 +107,18 @@ class BrowserPaneState private constructor() : ListToolPaneState() {
         fun default() = BrowserPaneState().apply {
             mode = ToolPaneMode.Docked
             url = HelpBrowser.DEFAULT_URL
+        }
+    }
+}
+
+@Serializable
+class LiveBufferRegistryPaneState private constructor() : ListToolPaneState() {
+    lateinit var selected: LiveObjectReference
+
+    companion object {
+        fun default() = LiveBufferRegistryPaneState().apply {
+            mode = ToolPaneMode.Docked
+            selected = ObjectReference.none()
         }
     }
 }

@@ -89,7 +89,7 @@ class AudioFlowGroup(
         }
     }
 
-    override fun removed(obj: AudioFlow) {
+    override fun removed(obj: AudioFlow, idx: Int) {
         if (isActive.now && obj.isActive.now && obj.parentGroup == this) obj.removeFromServer()
         observers.remove(obj)?.kill()
     }

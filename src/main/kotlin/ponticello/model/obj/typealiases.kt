@@ -9,6 +9,7 @@ import ponticello.model.live.LiveObject
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.player.ClockObject
 import ponticello.model.project.flows
+import ponticello.model.record.LiveBufferObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.ScoreObject
 import reaktive.value.now
@@ -28,6 +29,7 @@ typealias LiveObjectReference = ObjectReference<@Contextual LiveObject>
 typealias LiveTaskReference = ObjectReference<@Contextual LiveTaskObject>
 typealias FlowReference = ObjectReference<@Contextual AudioFlow>
 typealias VSTPluginReference = ObjectReference<@Contextual VSTPluginFlow>
+typealias LiveBufferReference = ObjectReference<@Contextual LiveBufferObject>
 
 fun FlowReference.resolve(context: Context) {
     val allFlows = context.project.flows.allFlows()

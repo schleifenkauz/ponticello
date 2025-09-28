@@ -218,7 +218,7 @@ class ParameterControlList(
         }
     }
 
-    override fun removed(obj: ParameterDefObject) {
+    override fun removed(obj: ParameterDefObject, idx: Int) {
         parameterObservers.remove(obj)!!.kill()
         val ctrl = getOrNull(obj.name.now) ?: return
         if (ctrl.customSpec() == null) {
@@ -316,7 +316,7 @@ class ParameterControlList(
         override fun added(obj: NamedParameterControl, idx: Int) {
         }
 
-        override fun removed(obj: NamedParameterControl) {
+        override fun removed(obj: NamedParameterControl, idx: Int) {
         }
 
         fun reassignedControl(

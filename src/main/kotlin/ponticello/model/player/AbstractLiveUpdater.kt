@@ -93,7 +93,7 @@ abstract class AbstractLiveUpdater(
         addedControl(parameter, ctrl, obj.spec.now, replaceAuxilSynth = false, remap = true)
     }
 
-    override fun removed(obj: NamedParameterControl) {
+    override fun removed(obj: NamedParameterControl, idx: Int) {
         controlObservers.remove(obj.now)?.kill()
         val parameter = obj.name.now
         val spec = obj.spec.now

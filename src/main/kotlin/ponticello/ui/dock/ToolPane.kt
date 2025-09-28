@@ -340,6 +340,10 @@ abstract class ToolPane : VBox() {
     override fun toString(): String = "ToolPane [${title.now}]"
 
     abstract class Type(val uid: Int, val title: String) : AbstractContextualObject() {
+        init {
+            if (!usedUids.add(uid)) throw IllegalArgumentException("UID $uid is already used by another ToolPane type")
+        }
+
         abstract val defaultSide: Side
 
         open val supportedModes: List<ToolPaneMode> = ToolPaneMode.entries
@@ -353,6 +357,8 @@ abstract class ToolPane : VBox() {
         override fun toString(): String = "ToolPane [$title]"
 
         companion object {
+            private val usedUids = mutableSetOf<Int>()
+
             val DATA_FORMAT = DataFormat("ponticello/tool-pane-type")
         }
     }

@@ -1,4 +1,4 @@
-package ponticello.ui.record
+package ponticello.model.record
 
 data class Peaks(
     val size: Int,

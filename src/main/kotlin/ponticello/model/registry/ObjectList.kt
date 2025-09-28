@@ -79,7 +79,7 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
         objects.removeAt(idx)
         onRemoved(obj, idx)
         context[UndoManager].record(ListEdit.RemoveObject(this, obj, idx))
-        listeners.notifyListeners { removed(obj) }
+        listeners.notifyListeners { removed(obj, idx) }
     }
 
     fun move(obj: O, idx: Int) {
@@ -125,7 +125,7 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
                 observers[obj] = observe(obj)
             }
 
-            override fun removed(obj: O) {
+            override fun removed(obj: O, idx: Int) {
                 observers.remove(obj)?.kill()
             }
         }
@@ -135,7 +135,7 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
 
     interface Listener<in O> {
         fun added(obj: O, idx: Int)
-        fun removed(obj: O)
+        fun removed(obj: O, idx: Int)
         fun moved(obj: O, idx: Int) {
         }
     }

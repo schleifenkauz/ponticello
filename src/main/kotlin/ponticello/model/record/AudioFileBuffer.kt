@@ -1,4 +1,4 @@
-package ponticello.ui.record
+package ponticello.model.record
 
 import java.io.File
 import java.io.RandomAccessFile

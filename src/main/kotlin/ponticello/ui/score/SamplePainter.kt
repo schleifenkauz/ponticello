@@ -87,7 +87,7 @@ class SamplePainter(
         }
     }
 
-    override fun removed(obj: NamedParameterControl) {
+    override fun removed(obj: NamedParameterControl, idx: Int) {
         if (obj.now is ValueControl) {
             removedConstantControl(obj)
         }

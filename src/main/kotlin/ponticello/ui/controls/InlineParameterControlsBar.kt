@@ -59,7 +59,7 @@ class InlineParameterControlsBar(
         }
     }
 
-    override fun removed(obj: NamedParameterControl) {
+    override fun removed(obj: NamedParameterControl, idx: Int) {
         val box = boxes.getValue(obj)
         children.remove(box)
     }

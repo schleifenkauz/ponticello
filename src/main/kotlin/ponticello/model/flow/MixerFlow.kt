@@ -165,7 +165,7 @@ class MixerFlow(
         client.run("$superColliderName.setn(\\volumes, $volumes)")
     }
 
-    override fun removed(obj: MixerComponent) {
+    override fun removed(obj: MixerComponent, idx: Int) {
         sync()
         if (obj.isSolo) soloed--
         componentObservers.remove(obj)?.kill()

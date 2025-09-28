@@ -131,7 +131,7 @@ class FlowGroupManager(
         }
     }
 
-    override fun removed(obj: AudioFlowGroup) {
+    override fun removed(obj: AudioFlowGroup, idx: Int) {
         val line = lines.remove(obj)
         if (line == null) {
             Logger.warn("No line found for flow group $obj", Logger.Category.Score)

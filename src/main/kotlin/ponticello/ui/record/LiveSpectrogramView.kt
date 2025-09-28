@@ -6,15 +6,20 @@ import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color.BLACK
 import org.jtransforms.fft.DoubleFFT_1D
 import ponticello.impl.*
+import ponticello.model.record.AudioBuffer
+import reaktive.Observer
+import reaktive.value.now
 import java.awt.Color
 import java.util.concurrent.Executors
+import kotlin.math.cos
 import kotlin.math.log10
 import kotlin.math.sqrt
 
 class LiveSpectrogramView(
     private val buffer: AudioBuffer,
     private val framesPerImage: Int,
-    initialDisplayRange: DecimalRange
+    initialDisplayRange: DecimalRange,
+    private val config: LiveBufferViewConfig.Spectrogram
 ) : AudioBuffer.Listener, LiveAudioBufferView(initialDisplayRange) {
     private val segments = mutableListOf<SpectrogramSegment>()
 
@@ -30,9 +35,19 @@ class LiveSpectrogramView(
 
     private var lastAcceptedSamples = DoubleArray(fftSize)
 
+    private lateinit var configObserver: Observer
+
     fun start() {
         buffer.addListener(this)
         CleanupThread().start()
+        configObserver = config.noiseFloorDb.observe { _, _, _ ->
+            synchronized(segments) {
+                for (seg in segments) {
+                    seg.invalidate()
+                }
+            }
+            repaint()
+        }
     }
 
     override fun accept(sampleOffset: Long, samples: DoubleArray) = executor.execute {
@@ -114,7 +129,8 @@ class LiveSpectrogramView(
             val im = buf[2 * y + 1]
             val mag = sqrt(re * re + im * im)
             val db = 20.0 * log10(mag + 1e-6)
-            val norm = ((db - MIN_DB) / (MAX_DB - MIN_DB)).coerceIn(0.0, 1.0).toFloat()
+            val noiseFloor = config.noiseFloorDb.now
+            val norm = ((db - noiseFloor) / (-noiseFloor)).coerceIn(0.0, 1.0).toFloat()
             val color = Color.getHSBColor(0.66f - norm * 0.66f, 1.0f, norm)
             setArgb(x, freqBins - 1 - y, color.rgb)
         }
@@ -148,10 +164,15 @@ class LiveSpectrogramView(
         fun isInDisplayRange() =
             range.endInclusive >= displayRange.start && range.start <= displayRange.endInclusive
 
+        fun invalidate() {
+            image = null
+        }
+
         fun clearIfUnused() {
             if (image == null) return
             if (isInDisplayRange()) return
-            if (System.currentTimeMillis() - lastTouchedMs < CLEANUP_THRESHOLD) return
+            val cleanupThreshold = (config.cleanupThreshold.now * 1000).toLong()
+            if (System.currentTimeMillis() - lastTouchedMs < cleanupThreshold) return
             image = null
         }
     }
@@ -169,7 +190,8 @@ class LiveSpectrogramView(
                     }
                 }
                 try {
-                    sleep(CLEANUP_INTERVAL)
+                    val cleanupPeriodSeconds = config.cleanupPeriod.now
+                    sleep((cleanupPeriodSeconds * 1000).toLong())
                 } catch (e: InterruptedException) {
                     break
                 }
@@ -178,17 +200,13 @@ class LiveSpectrogramView(
     }
 
     companion object {
-        private const val CLEANUP_THRESHOLD = 10000L
-        private const val CLEANUP_INTERVAL = 1000L
-
-        private const val MIN_DB = -50.0
-        private const val MAX_DB = 0.0
-
         private val executor =
             Executors.newSingleThreadExecutor { r ->
                 val thread = Thread(r, "Spectrogram view thread")
                 thread.isDaemon = true
                 thread
             }
+
+        fun hammingWindow(n: Int): DoubleArray = DoubleArray(n) { i -> 0.54 - 0.46 * cos(2 * Math.PI * i / (n - 1)); }
     }
 }

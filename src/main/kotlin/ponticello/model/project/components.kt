@@ -9,6 +9,7 @@ import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.ScriptRegistry
+import ponticello.model.record.LiveBufferRegistry
 import ponticello.model.registry.*
 import ponticello.model.score.Score
 import ponticello.ui.launcher.PonticelloLauncher
@@ -56,6 +57,11 @@ val LIVE_OBJECTS = Component(
     )
 )
 
+val LIVE_BUFFERS = Component(
+    "live_buffers", LiveBufferRegistry::createDefault,
+    SingleFileComponentSerializer(LiveBufferRegistry.serializer())
+)
+
 val SCRIPTS = Component(
     "scripts", ScriptRegistry::createDefault,
     MultiFileComponentSerializer(::ScriptRegistry, extension = "script.json")
@@ -76,7 +82,7 @@ val allComponents = listOf<Component<out ContextualObject>>(
     BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS,
     UI_STATE, FLOWS, SERVER_OPTIONS, PLAYBACK_SETTINGS,
-    OBJECTS, LIVE_OBJECTS, SCORE, SCRIPTS, LAUNCHER_GRID
+    OBJECTS, LIVE_OBJECTS, LIVE_BUFFERS, SCORE, SCRIPTS, LAUNCHER_GRID
 )
 
 inline operator fun <reified T : ContextualObject> PonticelloProject.get(component: Component<out T>) =
