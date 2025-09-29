@@ -21,6 +21,7 @@ class LiveWaveformView(
     }
 
     override fun repaint() {
+        if (width == 0.0 || height == 0.0) return
         val peaks = peaks.getPeaks(displayRange, width)
         Platform.runLater {
             with(graphicsContext) {
