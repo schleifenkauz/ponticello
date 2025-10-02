@@ -63,7 +63,7 @@ fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
         registerActions(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))
         registerActions(ServerActions.withContext(context.project))
-        registerActions(ProjectUtilityActions.withContext(context.project))
+        registerActions(ProjectActions.projectUtilityActions.withContext(context.project))
         registerActions(UndoRedoActions.withContext(context[UndoManager]))
         registerActions(
             listOf(

@@ -200,6 +200,10 @@ class PonticelloLauncher {
             })
     }
 
+    fun cloneRepository() {
+        //TODO
+    }
+
     fun saveProject(): Boolean {
         val project = rootContext.project
         val file =

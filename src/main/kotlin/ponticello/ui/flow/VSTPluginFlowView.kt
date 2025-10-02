@@ -19,9 +19,10 @@ class VSTPluginFlowView(private val flow: VSTPluginFlow) : VBox() {
         val busSelector = ObjectSelectorControl(flow.busSelector, createBundle())
             .widthAtLeast(100.0)
 
-        val pluginSelectorBtn = button(flow.pluginName, style = "selector-button") { ev ->
+        val pluginSelectorBtn = selectorButton(flow.pluginName) { ev ->
             val options = VSTPlugins.availablePlugins(flow.context).toList()
-            val newPluginName = SimpleSelectorPrompt(options, "Select VST Plugin").showPopup(ev) ?: return@button
+            val newPluginName = SimpleSelectorPrompt(options, "Select VST Plugin")
+                .showPopup(ev) ?: return@selectorButton
             flow.loadPlugin(newPluginName)
         }
         val saveGlobalPresetBtn = Material2MZ.SAVE.button("Save global preset", "medium-icon-button") { ev ->

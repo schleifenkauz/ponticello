@@ -19,7 +19,7 @@ import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
-import ponticello.ui.actions.ProjectActions
+import ponticello.ui.actions.LauncherActions
 import ponticello.ui.actions.WindowActions
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.impl.showDialog
@@ -38,8 +38,8 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
     private val boxes = mutableListOf<ProjectBox>()
     private val recentProjects = VBox().styleClass("recent-projects-list")
 
-    private val openBtn = ProjectActions.openProject.withContext(launcher).makeButton("large-icon-button")
-    private val createBtn = ProjectActions.newProject.withContext(launcher).makeButton("large-icon-button")
+    private val openBtn = LauncherActions.openProject.withContext(launcher).makeButton("large-icon-button")
+    private val createBtn = LauncherActions.newProject.withContext(launcher).makeButton("large-icon-button")
     private val quitBtn = ActionBar(
         listOf(WindowActions.quitAction.withContext(launcher)),
         buttonStyle = "large-icon-button"
@@ -79,7 +79,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
             primaryStage.isResizable = false
             primaryStage.centerOnScreen()
         }
-        val actions = launcherActions.withContext(launcher)
+        val actions = LauncherActions.all.withContext(launcher) + WindowActions.quitAction.withContext(launcher)
         primaryStage.scene.root.registerShortcuts(actions)
         super.afterShowing()
     }
@@ -93,7 +93,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
             children.addAll(
                 VBox(name, path),
                 infiniteSpace(),
-                ActionBar(projectActions.withContext(this), "large-icon-button")
+                ActionBar(projectItemActions.withContext(this), "large-icon-button")
             )
             isFocusTraversable = true
             setOnMouseClicked { ev ->
@@ -102,7 +102,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
                     ev.consume()
                 } else requestFocus()
             }
-            registerShortcuts(projectActions.withContext(this))
+            registerShortcuts(projectItemActions.withContext(this))
             if (!projectFile.isFile) {
                 path.textFill = Color.RED
             }
@@ -128,13 +128,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
     }
 
     companion object {
-        private val launcherActions = collectActions {
-            add(ProjectActions.openProject)
-            add(ProjectActions.newProject)
-            add(WindowActions.quitAction)
-        }
-
-        private val projectActions = collectActions<ProjectBox> {
+        private val projectItemActions = collectActions<ProjectBox> {
             addAction("Open") {
                 description("Open this project")
                 icon(Material2MZ.PLAY_ARROW)

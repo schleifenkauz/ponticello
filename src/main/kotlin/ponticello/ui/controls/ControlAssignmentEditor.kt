@@ -2,9 +2,9 @@ package ponticello.ui.controls
 
 import fxutils.actions.ActionBar
 import fxutils.alwaysHGrow
-import fxutils.button
 import fxutils.infiniteSpace
 import fxutils.prompt.SimpleSelectorPrompt
+import fxutils.selectorButton
 import fxutils.styleClass
 import javafx.event.Event
 import javafx.scene.Node
@@ -16,7 +16,7 @@ import reaktive.value.now
 
 class ControlAssignmentEditor(val control: NamedParameterControl, val view: ScoreObjectView?) : HBox() {
     private var selectedOption: ControlType<*>? = null
-    private val optionButton = button(style = "selector-button")
+    private val optionButton = selectorButton()
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private var settingControl = false
     private var detailEditor: Node? = null

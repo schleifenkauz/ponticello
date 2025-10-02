@@ -10,9 +10,11 @@ import fxutils.actions.collectActions
 import fxutils.undo.UndoManager
 import hextant.context.withoutUndo
 import javafx.beans.binding.Bindings
+import javafx.geometry.Insets
 import javafx.geometry.Orientation
 import javafx.scene.control.Button
 import javafx.scene.control.SplitPane
+import javafx.scene.image.ImageView
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
@@ -26,7 +28,10 @@ import ponticello.ui.actions.*
 import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.flow.MixerPane
+import ponticello.ui.launcher.Activity
+import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.launcher.ProjectSelectorPrompt
 import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.*
@@ -289,12 +294,31 @@ class AppLayout(
         added(obj, idx)
     }
 
+    private fun createProjectSelectorButton(): Button {
+        val launcher = context[PonticelloLauncher]
+        val projectSelector = ProjectSelectorPrompt(launcher)
+        val button = selectorButton(project.name)
+        button.setOnAction {
+            val option = projectSelector.showDialog(button) ?: return@setOnAction
+            option.openProject(launcher)
+        }
+        return button
+    }
+
+    private fun ponticelloIcon(): ImageView = ImageView(Activity.APP_ICON).apply {
+        fitHeight = 28.0
+        isPreserveRatio = true
+        padding = Insets(0.0, 0.0, 0.0, 5.0)
+    }
+
     private fun createToolbar(): Pane = BorderPane().apply {
         left = HBox(
             10.0,
-            toolbarPart(ProjectActions.withContext(activity.launcher)),
+            ponticelloIcon(),
+            createProjectSelectorButton(),
+            toolbarPart(ProjectActions.withContext(context[PonticelloLauncher])),
             toolbarPart(UndoRedoActions.withContext(scoreView.context[UndoManager])),
-        )
+        ).centerChildren()
         val playerBar = toolbarPart(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))
         val recordBtn = playerBar.getButton(PlaybackActions.toggleRecording)
         recordBtn.setOnDragDetected { ev ->
@@ -313,8 +337,7 @@ class AppLayout(
                 infiniteSpace()
             ).centerChildren().neverVGrow()
         ).centerChildren().pad(2.0)
-        val serverActions = ServerActions.withContext(project) + ProjectUtilityActions.menuAction.withContext(project)
-        topRightBar = toolbarPart(serverActions)
+        topRightBar = toolbarPart(ServerActions.withContext(project))
         right = HBox(
             topRightBar,
             hspace(10.0),
