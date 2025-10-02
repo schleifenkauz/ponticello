@@ -2,9 +2,9 @@ package ponticello.ui.score
 
 import fxutils.*
 import fxutils.drag.setupDragging
+import fxutils.prompt.YesNoPrompt
 import hextant.context.compoundEdit
 import javafx.beans.binding.Bindings
-import javafx.event.Event
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
 import javafx.scene.control.Label
@@ -23,6 +23,7 @@ import ponticello.model.score.Envelope.EnvelopePoint
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.EnvelopeControl
+import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.mapOnto
 import ponticello.ui.controls.ControlSpecPrompt
@@ -292,7 +293,7 @@ class EnvelopeEditor(
         var dragging = false
         handle.registerShortcuts {
             val idx = handles.indexOf(handle)
-            on("V") { ev -> showPromptFor(idx, ev) }
+            on("V") { ev -> showPromptFor(idx) }
             on("DELETE") { removePoint(idx) }
         }
         handle.registerShortcuts(KeyEvent.KEY_PRESSED) {
@@ -348,7 +349,7 @@ class EnvelopeEditor(
             if (ev.button == SECONDARY) {
                 removePoint(idx)
             } else if (ev.clickCount >= 2) {
-                showPromptFor(idx, ev)
+                showPromptFor(idx)
             } else if (!ev.isShiftDown) {
                 handle.requestFocus()
                 bringToFront()
@@ -397,11 +398,26 @@ class EnvelopeEditor(
         envelope.finishEdit()
     }
 
-    private fun showPromptFor(idx: Int, ev: Event) {
+    private fun showPromptFor(idx: Int) {
         val point = envelope.points[idx]
-        val value = DecimalPrompt("Value for $parameterName", point.value, spec.range)
-            .showDialog(ev) ?: return
+        val anchor = handles[idx].localToScreen(0.0, 0.0)
+        val value = showValuePrompt(point, anchor) ?: return
         envelope.editPoint(idx, value.value.snap(valueGrid))
+    }
+
+    private fun showValuePrompt(point: EnvelopePoint, anchor: Point2D): Decimal? {
+        val value = DecimalPrompt("Value for $parameterName", point.value)
+            .showDialog(pane.scene.window, anchor) ?: return null
+        if (value !in spec.range) {
+            val adjustSpec = YesNoPrompt("The value is not in the range ${spec.range}. Adjust the spec?")
+                .showDialog(pane.scene.window, anchor) ?: return null
+            if (adjustSpec) {
+                val min = DecimalLiteral(minOf(value, spec.range.start))
+                val max = DecimalLiteral(maxOf(value, spec.range.endInclusive))
+                namedControl.setCustomSpec(spec.copy(min = min, max = max))
+            } else return null
+        }
+        return value
     }
 
     private fun removePoint(idx: Int) {

@@ -64,6 +64,7 @@ dependencies {
     implementation 'com.illposed.osc:javaosc-core:0.9'
     implementation 'net.jthink:jaudiotagger:3.0.1'
     implementation 'com.github.wendykierp:JTransforms:3.1'
+    implementation 'org.jaudiolibs:jnajack:1.4.0'
 
     implementation 'org.slf4j:log4j-over-slf4j:2.0.17'
 

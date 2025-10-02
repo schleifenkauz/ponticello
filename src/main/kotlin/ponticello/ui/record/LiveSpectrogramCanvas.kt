@@ -4,7 +4,7 @@ import javafx.application.Platform
 import javafx.scene.image.PixelWriter
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color.BLACK
-import org.jtransforms.fft.DoubleFFT_1D
+import org.jtransforms.fft.FloatFFT_1D
 import ponticello.impl.*
 import ponticello.model.record.AudioBuffer
 import reaktive.Observer
@@ -15,25 +15,25 @@ import kotlin.math.cos
 import kotlin.math.log10
 import kotlin.math.sqrt
 
-class LiveSpectrogramView(
+class LiveSpectrogramCanvas(
     private val buffer: AudioBuffer,
     private val framesPerImage: Int,
     initialDisplayRange: DecimalRange,
     private val config: LiveBufferViewConfig.Spectrogram
-) : AudioBuffer.Listener, LiveAudioBufferView(initialDisplayRange) {
+) : AudioBuffer.Listener, LiveAudioBufferCanvas(initialDisplayRange) {
     private val segments = mutableListOf<SpectrogramSegment>()
 
     private val fftSize = buffer.bufferSize
     private val hopSize = fftSize / 2
     private val freqBins = fftSize / 2
-    private val fft = DoubleFFT_1D(fftSize.toLong())
+    private val fft = FloatFFT_1D(fftSize.toLong())
     private val hammingWindow = hammingWindow(fftSize)
-    private val fftBuf = DoubleArray(fftSize * 2)
+    private val fftBuf = FloatArray(fftSize * 2)
 
     private val regionDuration = ((hopSize * framesPerImage) / buffer.sampleRate).toDecimal()
     private val regionWidth get() = (regionDuration * (width / displayRange.dur)).toDouble()
 
-    private var lastAcceptedSamples = DoubleArray(fftSize)
+    private var lastAcceptedSamples = FloatArray(fftSize)
 
     private lateinit var configObserver: Observer
 
@@ -50,7 +50,7 @@ class LiveSpectrogramView(
         }
     }
 
-    override fun accept(sampleOffset: Long, samples: DoubleArray) = executor.execute {
+    override fun accept(sampleOffset: Long, samples: FloatArray) = executor.execute {
         var frameIndex = (sampleOffset / hopSize).toInt()
         val segmentIdx = frameIndex / framesPerImage
         frameIndex %= framesPerImage
@@ -87,10 +87,10 @@ class LiveSpectrogramView(
         else -> error("Invalid segment index: $i.")
     }
 
-    public override fun repaint() {
+    override fun repaint() {
         Platform.runLater {
-            graphicsContext.fill = BLACK
-            graphicsContext.fillRect(0.0, 0.0, width, height)
+            graphicsContext2D.fill = BLACK
+            graphicsContext2D.fillRect(0.0, 0.0, width, height)
         }
         executor.execute {
             val firstRegion = (displayRange.start * regionDuration).toInt()
@@ -108,22 +108,22 @@ class LiveSpectrogramView(
         val y = 0.0
         val h = this.height
         Platform.runLater {
-            graphicsContext.drawImage(img, x.toDouble(), y, regionWidth, h)
+            graphicsContext2D.drawImage(img, x.toDouble(), y, regionWidth, h)
         }
     }
 
-    private fun DoubleArray.prepareBufForFFT(
-        src: DoubleArray, srcOffset: Int = 0,
+    private fun FloatArray.prepareBufForFFT(
+        src: FloatArray, srcOffset: Int = 0,
         dstOffset: Int = 0, len: Int = src.size
     ) {
         for (i in 0 until len) {
-            val v = src.getOrElse(srcOffset + i) { 0.0 }
+            val v = src.getOrElse(srcOffset + i) { 0.0f }
             this[2 * (i + dstOffset)] = v * hammingWindow[i + dstOffset]
-            this[2 * (i + dstOffset) + 1] = 0.0
+            this[2 * (i + dstOffset) + 1] = 0.0f
         }
     }
 
-    private fun PixelWriter.writeFrame(buf: DoubleArray, x: Int) {
+    private fun PixelWriter.writeFrame(buf: FloatArray, x: Int) {
         for (y in 0 until freqBins) {
             val re = buf[2 * y]
             val im = buf[2 * y + 1]
@@ -149,7 +149,7 @@ class LiveSpectrogramView(
             val img = WritableImage(framesPerImage, freqBins)
             val pw = img.pixelWriter
 
-            val buf = DoubleArray(fftSize * 2)
+            val buf = FloatArray(fftSize * 2)
             for (frame in 0 until frames) {
                 val srcOffset = frame * hopSize
                 if (srcOffset >= samples.size) break
@@ -207,6 +207,7 @@ class LiveSpectrogramView(
                 thread
             }
 
-        fun hammingWindow(n: Int): DoubleArray = DoubleArray(n) { i -> 0.54 - 0.46 * cos(2 * Math.PI * i / (n - 1)); }
+        fun hammingWindow(n: Int): FloatArray =
+            FloatArray(n) { i -> 0.54f - 0.46f * cos(2 * Math.PI * i / (n - 1)).toFloat() }
     }
 }

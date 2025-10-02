@@ -1,8 +1,9 @@
 package ponticello.model.record
 
 import ponticello.impl.*
+import java.util.*
 
-class WaveformPeaks(
+class WaveformPeaks private constructor(
     val buffer: AudioBuffer,
     private val minZoom: Int, private val maxZoom: Int
 ) {
@@ -18,8 +19,8 @@ class WaveformPeaks(
         return when {
             zoomFactor < minZoom -> {
                 val samples = buffer.read(range)
-                val minima = DoubleArray(pixels) { 1.0 }
-                val maxima = DoubleArray(pixels) { -1.0 }
+                val minima = FloatArray(pixels) { 1.0f }
+                val maxima = FloatArray(pixels) { -1.0f }
                 for (p in 0 until pixels) {
                     for (i in p * regionSize until ((p + 1) * regionSize).coerceAtMost(samples.size)) {
                         val v = samples[i]
@@ -33,8 +34,8 @@ class WaveformPeaks(
             zoomFactor > maxZoom -> {
                 val cache = caches.last()
                 val peaks = cache.getPeaks(range)
-                val minima = DoubleArray(regionSize) { 1.0 }
-                val maxima = DoubleArray(regionSize) { -1.0 }
+                val minima = FloatArray(regionSize) { 1.0f }
+                val maxima = FloatArray(regionSize) { -1.0f }
                 val n = regionSize / cache.regionSize
                 for (p in 0 until pixels) {
                     for (i in p * n until (p + 1) * n) {
@@ -56,5 +57,15 @@ class WaveformPeaks(
         val regionSize = samplesPerPixel.toInt()
         val zoomFactor = (0..31).first { z -> z.pow2() >= regionSize }
         return getPeaks(range, zoomFactor)
+    }
+
+    companion object {
+        private val cache = WeakHashMap<AudioBuffer, WaveformPeaks>()
+
+        private const val MIN_ZOOM = 4
+        private const val MAX_ZOOM = 16
+
+        fun get(buffer: AudioBuffer): WaveformPeaks =
+            cache.getOrPut(buffer) { WaveformPeaks(buffer, MIN_ZOOM, MAX_ZOOM) }
     }
 }

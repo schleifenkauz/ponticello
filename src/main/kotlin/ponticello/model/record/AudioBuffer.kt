@@ -9,15 +9,15 @@ interface AudioBuffer {
 
     val currentPosition: Decimal
 
-    fun read(range: DecimalRange): DoubleArray
+    fun read(range: DecimalRange): FloatArray
 
-    fun append(bytes: ByteArray)
+    fun append(samples: FloatArray)
 
     fun totalSamples(): Long
 
     fun addListener(listener: Listener)
 
     interface Listener {
-        fun accept(sampleOffset: Long, samples: DoubleArray)
+        fun accept(sampleOffset: Long, samples: FloatArray)
     }
 }

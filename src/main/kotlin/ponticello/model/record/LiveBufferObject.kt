@@ -34,15 +34,11 @@ class LiveBufferObject(
     override var _name: ReactiveVariable<String>? = null
 
     @Transient
-    lateinit var buffer: AudioBuffer
+    lateinit var buffer: MultiChannelAudioBuffer
         private set
 
     @Transient
-    lateinit var peaks: WaveformPeaks
-        private set
-
-    @Transient
-    private var capture: LiveAudioCapture? = null
+    private var capture: MixerAudioCapture? = null
 
     var viewConfig
         get() = _viewConfig
@@ -55,17 +51,25 @@ class LiveBufferObject(
     val enabled: ReactiveBoolean get() = _enabled
 
     fun setEnabled(enabled: Boolean) {
-
+        _enabled.set(enabled)
+        if (enabled) {
+            capture?.start()
+        } else {
+            capture?.stop()
+        }
     }
 
     override fun initialize(context: Context) {
         super.initialize(context)
         val sampleRate = context[SuperColliderClient].sampleRate
-        buffer = HeapAudioBuffer(sampleRate, source.bufferSize, INITIAL_CAPACITY)
-        peaks = WaveformPeaks(buffer, minZoom = 4, maxZoom = 16)
+        val channelConfig = ChannelConfiguration.default(source.channels)
+        buffer = MultiChannelHeapAudioBuffer(sampleRate, channelConfig, source.bufferSize, INITIAL_CAPACITY)
         val capture = source.capture(context)
-        if (capture != null && enabled.now) {
-            capture.start(buffer)
+        if (capture != null) {
+            capture.prepare(buffer)
+            if (enabled.now) {
+                capture.start()
+            }
             this.capture = capture
         }
     }
@@ -84,9 +88,14 @@ class LiveBufferObject(
 
     companion object {
         val toggleEnabledAction = action<LiveBufferObject>("Enable/Disable") {
-            toggles(LiveBufferObject::_enabled)
-            icon(MaterialDesignR.RECORD)
+            icon { b ->
+                `if`(
+                    b.enabled,
+                    then = { MaterialDesignR.RECORD },
+                    otherwise = { MaterialDesignR.RECORD_CIRCLE_OUTLINE })
+            }
             description { b -> `if`(b.enabled, then = { "Disable" }, otherwise = { "Enable" }) }
+            executes { b -> b.setEnabled(!b.enabled.now) }
         }
 
         private const val INITIAL_CAPACITY = 1024 * 1024

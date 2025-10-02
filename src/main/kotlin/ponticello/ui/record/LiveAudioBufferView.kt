@@ -1,27 +1,30 @@
 package ponticello.ui.record
 
-import javafx.scene.canvas.Canvas
-import javafx.scene.canvas.GraphicsContext
-import javafx.scene.layout.StackPane
+import javafx.scene.layout.VBox
 import ponticello.impl.*
+import ponticello.model.record.LiveBufferObject
 
-abstract class LiveAudioBufferView(initialDisplayRange: DecimalRange) : StackPane() {
-    private val canvas = Canvas()
-    protected val graphicsContext: GraphicsContext get() = canvas.graphicsContext2D
+class LiveAudioBufferView(
+    private val buffer: LiveBufferObject,
+    initialDisplayRange: DecimalRange
+) : VBox() {
+    private var displayRange = initialDisplayRange
+    private val canvases = mutableListOf<LiveAudioBufferCanvas>()
 
-    var displayRange: DecimalRange = initialDisplayRange
-        private set
-
-    val pixelsPerSecond get() = width / displayRange.dur.toDouble()
+    private val pixelsPerSecond get() = width / displayRange.dur.toDouble()
 
     init {
-        children.add(canvas)
-        canvas.widthProperty().bind(widthProperty())
-        canvas.heightProperty().bind(heightProperty())
+        val channelHeight = heightProperty().divide(buffer.buffer.channelConfig.outputChannels)
+        for ((ch, buf) in buffer.buffer.channels.withIndex()) {
+            val canvas = buffer.viewConfig.createBufferCanvas(buf, displayRange)
+            canvases.add(canvas)
+            canvas.widthProperty().bind(widthProperty())
+            canvas.heightProperty().bind(channelHeight)
+//            canvas.layoutYProperty().bind(channelHeight.multiply(ch))
+        }
+        children.addAll(canvases)
         setupScrollingAndZooming()
     }
-
-    protected abstract fun repaint()
 
     private fun setupScrollingAndZooming() {
         setOnScroll { ev ->
@@ -39,18 +42,14 @@ abstract class LiveAudioBufferView(initialDisplayRange: DecimalRange) : StackPan
         }
     }
 
-    fun display(range: DecimalRange) {
-        if (range.isEmpty()) {
-            Logger.severe("Attempt to display empty time range: $range", Logger.Category.Score)
-            return
-        }
-        displayRange =
-            if (displayRange.start >= zero) range
-            else range - range.start
-        repaint()
-    }
 
     private fun getTime(x: Double) = displayRange.start + (x / pixelsPerSecond).toDecimal()
+
+    private fun display(range: DecimalRange) {
+        for (canvas in canvases) {
+            canvas.display(range)
+        }
+    }
 
     fun zoom(amount: Double, evX: Double) {
         val newIntervalSize = (displayRange.dur) * amount

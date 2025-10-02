@@ -28,12 +28,10 @@ import ponticello.model.record.LiveBufferRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
-import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.LiveBufferRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
-import javax.sound.sampled.AudioFormat
 
 class LiveBuffersPane(
     private val buffers: LiveBufferRegistry
@@ -118,7 +116,7 @@ class LiveBuffersPane(
 
     private fun getLiveBufferView(obj: LiveBufferObject) =
         cachedViews.getOrPut(obj) {
-            val view = obj.viewConfig.createBufferView(obj, displayRange = zero..10.toDecimal())
+            val view = LiveAudioBufferView(obj, initialDisplayRange = zero..10.toDecimal())
             setVgrow(view, Priority.ALWAYS)
             view
         }
@@ -147,9 +145,7 @@ class LiveBuffersPane(
         private val addItemButton = action<LiveBuffersPane>("Add buffer") {
             icon(MaterialDesignP.PLUS_CIRCLE)
             executes { pane, ev ->
-                val sampleRate = pane.context[SuperColliderClient].sampleRate.toFloat()
-                val format = AudioFormat(sampleRate, 16, 1, true, false)
-                val buffer = NewLiveBufferPrompt(format).showDialog(ev) ?: return@executes
+                val buffer = NewLiveBufferPrompt(context).showDialog(ev) ?: return@executes
                 pane.buffers.add(buffer)
                 pane.select(buffer)
             }

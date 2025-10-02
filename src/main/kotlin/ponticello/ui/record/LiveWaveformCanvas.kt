@@ -8,11 +8,11 @@ import ponticello.model.record.WaveformPeaks
 import reaktive.Observer
 import reaktive.value.now
 
-class LiveWaveformView(
+class LiveWaveformCanvas(
     private val peaks: WaveformPeaks,
     initialDisplayRange: DecimalRange,
     private val config: LiveBufferViewConfig.Waveform,
-) : LiveAudioBufferView(initialDisplayRange), AudioBuffer.Listener {
+) : LiveAudioBufferCanvas(initialDisplayRange), AudioBuffer.Listener {
     private val configObserver: Observer
 
     init {
@@ -24,7 +24,7 @@ class LiveWaveformView(
         if (width == 0.0 || height == 0.0) return
         val peaks = peaks.getPeaks(displayRange, width)
         Platform.runLater {
-            with(graphicsContext) {
+            with(graphicsContext2D) {
                 fill = Color.BLACK
                 fillRect(0.0, 0.0, width, height)
                 stroke = Color.LIMEGREEN
@@ -40,7 +40,7 @@ class LiveWaveformView(
         }
     }
 
-    override fun accept(sampleOffset: Long, samples: DoubleArray) {
+    override fun accept(sampleOffset: Long, samples: FloatArray) {
         repaint()
     }
 }

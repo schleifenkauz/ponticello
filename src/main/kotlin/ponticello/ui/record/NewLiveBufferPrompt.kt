@@ -2,6 +2,7 @@ package ponticello.ui.record
 
 import fxutils.prompt.CompoundPrompt
 import fxutils.styleClass
+import hextant.context.Context
 import javafx.scene.control.TextField
 import ponticello.model.obj.withName
 import ponticello.model.record.CaptureSource
@@ -15,12 +16,11 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import javax.sound.sampled.AudioFormat
 
-class NewLiveBufferPrompt(format: AudioFormat) : CompoundPrompt<LiveBufferObject>("Add LiveBuffer") {
+class NewLiveBufferPrompt(context: Context) : CompoundPrompt<LiveBufferObject>("Add LiveBuffer") {
     private val nameField = TextField() styleClass "sleek-text-field" named "Name:"
     private val source: ReactiveVariable<CaptureSource> = reactiveVariable(CaptureSource.None)
-    private val sourceSelector = AudioSourceSelectorPrompt(format).selectorButton(source)
+    private val sourceSelector = AudioSourceSelectorPrompt(context).selectorButton(source)
 
     init {
         addItem("Source: ", sourceSelector)

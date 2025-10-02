@@ -8,22 +8,22 @@ class WaveformPeakCache(
     private val buffer: AudioBuffer,
     val regionSize: Int
 ) : AudioBuffer.Listener {
-    private val max = ArrayList<Double>(MAX_INITIAL_CAPACITY / regionSize)
-    private val min = ArrayList<Double>(MAX_INITIAL_CAPACITY / regionSize)
+    private val max = ArrayList<Float>(MAX_INITIAL_CAPACITY / regionSize)
+    private val min = ArrayList<Float>(MAX_INITIAL_CAPACITY / regionSize)
     private var acceptedSamples = 0
-    private var currentMin = 1.0
-    private var currentMax = -1.0
+    private var currentMin = 1.0f
+    private var currentMax = -1.0f
 
     init {
         buffer.addListener(this)
     }
 
     @Synchronized
-    override fun accept(sampleOffset: Long, samples: DoubleArray) {
+    override fun accept(sampleOffset: Long, samples: FloatArray) {
         if (samples.size >= regionSize) {
             for (i in samples.indices step regionSize) {
-                currentMin = 1.0
-                currentMax = -1.0
+                currentMin = 1.0f
+                currentMax = -1.0f
                 for (j in i until i + regionSize) {
                     val v = samples[j]
                     if (v > currentMax) currentMax = v
@@ -41,8 +41,8 @@ class WaveformPeakCache(
             if (acceptedSamples == regionSize) {
                 max.add(currentMax)
                 min.add(currentMin)
-                currentMin = 1.0
-                currentMax = -1.0
+                currentMin = 1.0f
+                currentMax = -1.0f
                 acceptedSamples = 0
             }
         }

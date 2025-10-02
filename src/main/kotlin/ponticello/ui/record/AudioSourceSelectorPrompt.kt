@@ -1,16 +1,14 @@
 package ponticello.ui.record
 
 import fxutils.prompt.SimpleSelectorPrompt
+import hextant.context.Context
 import javafx.scene.control.Label
 import javafx.scene.layout.Region
 import ponticello.model.record.CaptureSource
-import javax.sound.sampled.AudioFormat
-import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.DataLine
-import javax.sound.sampled.TargetDataLine
+import ponticello.sc.client.SuperColliderClient
 
-class AudioSourceSelectorPrompt(format: AudioFormat) : SimpleSelectorPrompt<CaptureSource>(
-    getOptions(format), "Select audio input device"
+class AudioSourceSelectorPrompt(context: Context) : SimpleSelectorPrompt<CaptureSource>(
+    getOptions(context), "Select audio input device"
 ) {
     override fun createCell(option: CaptureSource): Region =
         when (option) {
@@ -24,9 +22,9 @@ class AudioSourceSelectorPrompt(format: AudioFormat) : SimpleSelectorPrompt<Capt
     }
 
     companion object {
-        private fun getOptions(format: AudioFormat) = AudioSystem.getMixerInfo().filter { info ->
-            val mixer = AudioSystem.getMixer(info)
-            mixer != null && mixer.isLineSupported(DataLine.Info(TargetDataLine::class.java, format))
-        }.map { info -> CaptureSource.Mixer(info.name, bufferSize = 1024, channels = 1) }
+        private fun getOptions(context: Context): List<CaptureSource.Mixer> {
+            val sampleRate = context[SuperColliderClient].sampleRate
+            return CaptureSource.Mixer.getAvailable(sampleRate)
+        }
     }
 }
