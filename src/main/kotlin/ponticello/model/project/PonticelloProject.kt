@@ -5,6 +5,8 @@ import fxutils.undo.UndoManager
 import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlows
+import ponticello.model.git.ProjectGitRepository
+import ponticello.model.git.ProjectVersionControl
 import ponticello.model.obj.ContextualObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.UnresolvedScoreObject
@@ -13,7 +15,9 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.launcher.ProgressIndicator
+import reaktive.value.ReactiveValue
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 import java.io.File
 
 class PonticelloProject private constructor(val components: Map<Component<out ContextualObject>, ContextualObject>) {
@@ -29,11 +33,16 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
     lateinit var projectDirectory: File
         private set
 
-    val name: String get() = projectDirectory.name
+    val name: String get() = getName(projectDirectory)
 
     val dataDir get() = projectDirectory.resolve("data")
 
+    private var _versionControl = reactiveVariable<ProjectVersionControl?>(null)
+
+    val versionControl: ReactiveValue<ProjectVersionControl?> get() = _versionControl
+
     fun initialize(context: Context, progressBar: ProgressIndicator, totalDeltaProgress: Double) {
+        _versionControl.now = ProjectGitRepository.get(projectDirectory)
         EnvelopeControl.resetCounter()
         context[currentProject] = this
         this.context = context
@@ -44,7 +53,7 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         }
     }
 
-    fun saveTo(projectDirectory: File): Boolean {
+    fun save(): Boolean {
         for (inst in mainScore.allInstances()) {
             if (inst.obj !is UnresolvedScoreObject && !objects.has(inst.obj.name.now)) {
                 Logger.warn("Had to add object for $inst", Logger.Category.Project)
@@ -71,6 +80,11 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
             if (!ok) savedAllComponents = false
         }
         if (savedAllComponents) context[UndoManager].savedChanges()
+        if (savedAllComponents) {
+            Logger.confirm("Saved project $name", Logger.Category.Project)
+        } else {
+            Logger.error("Failed to save project $name", Logger.Category.Project)
+        }
         return savedAllComponents
     }
 
@@ -124,15 +138,11 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         else -> false
     }
 
-    fun openInExplorer() {
-        val os = System.getProperty("os.name").lowercase()
-        when {
-            os.contains("win") -> Runtime.getRuntime().exec("explorer.exe /select,$projectDirectory")
-            os.contains("nix") || os.contains("nux") || os.contains("aix") ->
-                Runtime.getRuntime().exec("xdg-open $projectDirectory")
-
-            os.contains("mac") -> Runtime.getRuntime().exec("open $projectDirectory")
-        }
+    fun createGitRepository(): ProjectGitRepository? {
+        check(versionControl.now == null) { "Project $name is already a git repository." }
+        val repo = ProjectGitRepository.create(this)
+        _versionControl.now = repo
+        return repo
     }
 
     companion object {
@@ -165,5 +175,11 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
             project.initialize(context, progressBar, totalDeltaProgress)
             return project
         }
+
+        fun getName(projectDir: File): String = projectDir.resolve("project.pont")
+            .takeIf { f -> f.isFile }
+            ?.readText()
+            ?.takeIf { txt -> txt.isNotBlank() }
+            ?: projectDir.name
     }
 }

@@ -40,6 +40,7 @@ import ponticello.ui.registry.*
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectDetailPane
 import ponticello.ui.score.ScoreObjectViewPane
+import ponticello.ui.vc.VersionControlActions
 import reaktive.value.now
 import kotlin.reflect.KClass
 
@@ -316,7 +317,8 @@ class AppLayout(
             10.0,
             ponticelloIcon(),
             createProjectSelectorButton(),
-            toolbarPart(ProjectActions.withContext(context[PonticelloLauncher])),
+            toolbarPart(ProjectActions.withContext(project)),
+            toolbarPart(VersionControlActions.withContext(project)),
             toolbarPart(UndoRedoActions.withContext(scoreView.context[UndoManager])),
         ).centerChildren()
         val playerBar = toolbarPart(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))

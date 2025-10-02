@@ -14,19 +14,19 @@ import ponticello.model.registry.*
 import ponticello.model.score.Score
 import ponticello.ui.launcher.PonticelloLauncher
 
-val UI_STATE = Component<UIState>("ui-state", UIState::default)
+val UI_STATE = Component<UIState>("ui-state", "UI State", UIState::default)
 
-val CLOCKS = Component<ClockRegistry>("clocks", ClockRegistry::createDefault)
+val CLOCKS = Component<ClockRegistry>("clocks", "Clocks", ClockRegistry::createDefault)
 
-val METERS = Component<MeterRegistry>("meters", MeterRegistry::createDefault)
+val METERS = Component<MeterRegistry>("meters", "Meters", MeterRegistry::createDefault)
 
 val BUSSES = Component<BusRegistry>(
-    "busses", BusRegistry::createDefault,
+    "busses", "Busses", BusRegistry::createDefault,
     ObjectListSerializer(serializer(), ::BusRegistry)
 )
-val BUFFERS = Component<BufferRegistry>("buffers", BufferRegistry::createDefault)
+val BUFFERS = Component<BufferRegistry>("buffers", "Buffers", BufferRegistry::createDefault)
 val PATTERNS = Component(
-    "patterns", GlobalPatternRegistry::createDefault,
+    "patterns", "Patterns", GlobalPatternRegistry::createDefault,
     MultiFileComponentSerializer(
         ::GlobalPatternRegistry,
         listSerializer = GlobalPatternRegistry.Serializer,
@@ -34,22 +34,22 @@ val PATTERNS = Component(
     )
 )
 val INSTRUMENTS = Component(
-    "instruments", InstrumentRegistry::createDefault,
+    "instruments", "Instruments", InstrumentRegistry::createDefault,
     MultiFileComponentSerializer(::InstrumentRegistry, extension = "instr.json")
 )
 val FLOWS = Component(
-    "flows", AudioFlows::createDefault, AudioFlowsSerializer
+    "flows", "Flows", AudioFlows::createDefault, AudioFlowsSerializer
 ).onSave { flows -> flows.writeVSTPluginStates() }
 
-val SERVER_OPTIONS = Component<ServerOptions>("server_options", ServerOptions::default)
+val SERVER_OPTIONS = Component<ServerOptions>("server_options", "Server Options", ServerOptions::default)
 
 val OBJECTS = Component(
-    "objects", ScoreObjectRegistry::createDefault,
+    "objects", "Score Objects", ScoreObjectRegistry::createDefault,
     MultiFileComponentSerializer(::ScoreObjectRegistry, extension = "obj.json")
 ).beforeClosing { objects -> objects.removeUnusedObjects() }
 
 val LIVE_OBJECTS = Component(
-    "live_objects", LiveObjectRegistry::createDefault,
+    "live_objects", "Live Objects", LiveObjectRegistry::createDefault,
     MultiFileComponentSerializer(
         ::LiveObjectRegistry,
         listSerializer = LiveObjectRegistry.Serializer,
@@ -58,20 +58,20 @@ val LIVE_OBJECTS = Component(
 )
 
 val LIVE_BUFFERS = Component(
-    "live_buffers", LiveBufferRegistry::createDefault,
+    "live_buffers", "Live Buffers", LiveBufferRegistry::createDefault,
     SingleFileComponentSerializer(LiveBufferRegistry.serializer())
 )
 
 val SCRIPTS = Component(
-    "scripts", ScriptRegistry::createDefault,
+    "scripts", "Scripts", ScriptRegistry::createDefault,
     MultiFileComponentSerializer(::ScriptRegistry, extension = "script.json")
 )
 
-val SCORE = Component<Score>("score", ::Score)
+val SCORE = Component<Score>("score", "Score", ::Score)
 
-val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", { LauncherGrid.createNByN(4) })
+val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", "Launcher Grid", { LauncherGrid.createNByN(4) })
 
-val PLAYBACK_SETTINGS = Component<PlaybackSettings>("playback_settings", {
+val PLAYBACK_SETTINGS = Component<PlaybackSettings>("playback_settings", "Playback Settings", {
     PlaybackSettings.createDefault(
         PonticelloLauncher.rootContext[GlobalSettings]
     )

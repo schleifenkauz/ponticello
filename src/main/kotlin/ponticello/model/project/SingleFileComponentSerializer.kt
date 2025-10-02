@@ -8,13 +8,15 @@ import ponticello.impl.json
 import java.io.File
 
 open class SingleFileComponentSerializer<T>(val serializer: KSerializer<T>) : ComponentSerializer<T>() {
+    private val fileName get() = "${component.name}.json"
+
     override fun serializeComponent(value: T, dataDirectory: File) {
-        val file = dataDirectory.resolve("${component.name}.json")
+        val file = dataDirectory.resolve(fileName)
         file.writeJson(serializer, value, json)
     }
 
     override fun deserializeComponent(dataDirectory: File): T {
-        val file = dataDirectory.resolve("${component.name}.json")
+        val file = dataDirectory.resolve(fileName)
         return if (file.isFile) {
             try {
                 file.readJson(serializer, json)

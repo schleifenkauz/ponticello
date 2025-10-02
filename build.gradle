@@ -66,6 +66,8 @@ dependencies {
     implementation 'com.github.wendykierp:JTransforms:3.1'
     implementation 'org.jaudiolibs:jnajack:1.4.0'
 
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:7.3.0.202506031305-r'
+
     implementation 'org.slf4j:log4j-over-slf4j:2.0.17'
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")

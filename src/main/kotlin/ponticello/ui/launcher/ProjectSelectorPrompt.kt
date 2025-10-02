@@ -9,17 +9,14 @@ import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import ponticello.model.project.PonticelloProject
 
 class ProjectSelectorPrompt(
     private val launcher: PonticelloLauncher
 ) : SelectorPrompt<OpenProjectOption>("Project...") {
     override fun options(): List<OpenProjectOption> {
         val recent = launcher.recentProjects.list().map { dir ->
-            val name = dir.resolve("project.pont")
-                .takeIf { f -> f.isFile }
-                ?.readText()
-                ?.takeIf { txt -> txt.isNotBlank() }
-                ?: dir.name
+            val name = PonticelloProject.getName(dir)
             OpenProjectOption.RecentProject(dir, name)
         }
         val otherOptions = listOf(

@@ -25,6 +25,7 @@ import ponticello.impl.registerImplementationsFromClasspath
 import ponticello.model.GlobalSettings
 import ponticello.model.ServerOptions
 import ponticello.model.flow.NodeTree
+import ponticello.model.git.ProjectGitRepository
 import ponticello.model.obj.ScriptObject
 import ponticello.model.obj.project
 import ponticello.model.player.ActiveObjectsManager
@@ -97,19 +98,20 @@ class PonticelloLauncher {
         project[UI_STATE].saveWindowStates()
         project.save(UI_STATE)
         if (autoSave) {
-            val ok = saveProject()
+            val ok = save(rootContext.project)
             return ok
         }
         if (!project.context[UndoManager].hasUnsavedChanges.now) return true
         val save = askIfUserWantsToSave() ?: return false
         if (save) {
-            val ok = saveProject()
+            val ok = save(rootContext.project)
             return ok
         }
         return true
     }
 
     fun openProject(folder: File) {
+        maybeSyncRepository(folder)
         val context = rootContext.extend()
         context[UndoManager] = UndoManager.newInstance()
         val progressBar = getOrLaunchLoadingScreen()
@@ -146,6 +148,15 @@ class PonticelloLauncher {
                 }
             }
         )
+    }
+
+    private fun maybeSyncRepository(directory: File) {
+        val repo = ProjectGitRepository.get(directory) ?: return
+        if (!repo.hasRemote.now) return
+        val sync = YesNoPrompt("Sync repository before opening?").showDialog(rootContext) ?: return
+        if (sync) {
+            repo.pullFromRemote()
+        }
     }
 
     private fun getOrLaunchLoadingScreen() =
@@ -194,7 +205,7 @@ class PonticelloLauncher {
             serverReady = {
                 progressBar.displayProgress(0.2, "Booted SuperCollider server, creating new project...")
                 val project = PonticelloProject.create(location, context, progressBar, totalDeltaProgress = 0.7)
-                save(project, location)
+                save(project)
                 progressBar.displayProgress(0.95, "Created new project...")
                 openProject(project)
             })
@@ -204,22 +215,9 @@ class PonticelloLauncher {
         //TODO
     }
 
-    fun saveProject(): Boolean {
-        val project = rootContext.project
-        val file =
-            recentProjects.activeProject() ?: rootContext[PonticelloFiles].showOpenDialog("*.pont") ?: return false
-        val ok = save(project, file)
-        if (ok) {
-            Logger.confirm("Saved project ${project.projectDirectory.name}", Logger.Category.Project)
-        } else {
-            Logger.error("Failed to save project ${project.projectDirectory.name}", Logger.Category.Project)
-        }
-        return ok
-    }
-
-    private fun save(project: PonticelloProject, folder: File): Boolean {
-        val ok = project.saveTo(folder)
-        recentProjects.push(folder)
+    private fun save(project: PonticelloProject): Boolean {
+        val ok = project.save()
+        recentProjects.push(project.projectDirectory)
         return ok
     }
 
@@ -312,7 +310,7 @@ class PonticelloLauncher {
 
     private fun askIfUserWantsToSave() =
         YesNoPrompt("Save project before exiting?", cancellable = true, default = null)
-            .showDialog(rootContext)
+            .showDialog(rootContext) //TODO also ask whether to commit/push
 
     fun quitApplication() {
         rootContext[PonticelloFiles].resolve("settings.json").writeJson(rootContext[GlobalSettings])

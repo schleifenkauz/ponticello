@@ -115,11 +115,11 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     override fun getLayout() = appLayout
 
     private fun registerMainActivityShortcuts() = primaryStage.scene.registerShortcuts {
-        registerActions(ProjectActions.withContext(launcher))
+        registerActions(ProjectActions.withContext(project))
+        registerActions(LauncherActions.all.withContext(launcher))
         registerActions(ScoreNavigationActions.withContext(mainScoreView))
         interactionConfig.addGridRelatedShortcuts(this)
         SelectionRelatedActions.addShortcuts(this, context)
-        registerActions(ProjectActions.withContext(launcher))
         registerActions(WindowActions.all.withContext(this@PonticelloMainActivity))
         registerActions(appLayout.actions())
     }

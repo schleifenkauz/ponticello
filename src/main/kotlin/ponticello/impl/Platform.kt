@@ -1,24 +1,35 @@
 package ponticello.impl
 
+import java.awt.Desktop
 import java.io.File
 import java.io.IOException
+import java.net.URI
 
 
 abstract class Platform {
-    fun runCommand(vararg command: String) {
-        ProcessBuilder(*command).start()
+    fun runCommand(vararg command: String): Process {
+        return ProcessBuilder(*command).start()
     }
 
     fun isCommandAvailable(command: String): Boolean {
         val checkCmd = if (this is Windows) "where" else "which"
         val process = ProcessBuilder(checkCmd, command).start()
-        return try {
-            process.inputStream.bufferedReader().use { reader ->
-                !reader.readLine().isNullOrEmpty()
-            }
+        try {
+            val reader = process.inputStream.bufferedReader()
+            val result = reader.readLine()
+            return !result.isNullOrEmpty()
         } catch (e: IOException) {
-            false
+            e.printStackTrace()
+            return false
         }
+    }
+
+    fun openBrowser(url: String) {
+        if (!Desktop.isDesktopSupported()) {
+            Logger.error("Desktop is not supported")
+            return
+        }
+        Desktop.getDesktop().browse(URI(url))
     }
 
     abstract fun openDirectory(path: File)

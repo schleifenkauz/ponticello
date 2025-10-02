@@ -68,7 +68,7 @@ fun Scene.registerGlobalShortcuts(context: Context) {
         registerActions(
             listOf(
                 WindowActions.quitAction.withContext(context[PonticelloLauncher]),
-                ProjectActions.saveProject.withContext(context[PonticelloLauncher])
+                ProjectActions.saveProject.withContext(context.project)
             )
         )
     }

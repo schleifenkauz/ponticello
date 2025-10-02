@@ -104,13 +104,12 @@ object Logger {
         object Buffers : Category(superCategory = Registries)
         object AudioFlow : Category()
         object Instruments : Category(superCategory = Registries)
-        object Groups : Category(superCategory = null)
-        object GlobalControls : Category(superCategory = Registries)
         object Server : Category()
         object Project : Category()
         object VSTPlugins : Category()
         object Layout: Category()
         object Memory: Category()
+        object VersionControl: Category()
 
         fun filter(category: Category?): Boolean = when {
             this == All -> true
