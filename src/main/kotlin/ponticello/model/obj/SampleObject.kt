@@ -111,7 +111,10 @@ class SampleObject(
 
     override fun onLoadedIntoRegistry() {
         super.onLoadedIntoRegistry()
-        if (audioFile.lastModified() > spectrogramFile.lastModified()) {
+        if (registry.copyAudioFiles.now && !audioFile.isFile) {
+            copyReferencedFileToSamplesDir()
+        }
+        if (!spectrogramFile.isFile || audioFile.lastModified() > spectrogramFile.lastModified()) {
             updateSpectrogram()
         }
     }

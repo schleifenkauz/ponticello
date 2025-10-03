@@ -2,7 +2,6 @@ package ponticello.ui.launcher
 
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
-import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
 import fxutils.infiniteSpace
 import fxutils.label
@@ -38,13 +37,13 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
     private val boxes = mutableListOf<ProjectBox>()
     private val recentProjects = VBox().styleClass("recent-projects-list")
 
-    private val openBtn = LauncherActions.openProject.withContext(launcher).makeButton("large-icon-button")
-    private val createBtn = LauncherActions.newProject.withContext(launcher).makeButton("large-icon-button")
     private val quitBtn = ActionBar(
         listOf(WindowActions.quitAction.withContext(launcher)),
         buttonStyle = "large-icon-button"
     )
-    private val header = HBox(searchField, openBtn, createBtn, infiniteSpace(), quitBtn)
+    private val projectActions = LauncherActions.all.withContext(launcher)
+
+    private val header = HBox(searchField, ActionBar(projectActions, "large-icon-button"), infiniteSpace(), quitBtn)
         .styleClass("startup-screen-top-bar")
 
     init {
@@ -79,7 +78,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
             primaryStage.isResizable = false
             primaryStage.centerOnScreen()
         }
-        val actions = LauncherActions.all.withContext(launcher) + WindowActions.quitAction.withContext(launcher)
+        val actions = projectActions + WindowActions.quitAction.withContext(launcher)
         primaryStage.scene.root.registerShortcuts(actions)
         super.afterShowing()
     }
@@ -110,7 +109,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
 
         fun tryOpen() {
             if (projectFile.isDirectory) {
-                activity.launcher.openProject(projectFile)
+                activity.launcher.openProject(projectFile, askSync = true)
             } else {
                 removeFromRecentProjects("Project file does not exist. Remove from list?")
             }

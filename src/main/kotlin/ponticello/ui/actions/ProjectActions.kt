@@ -19,6 +19,13 @@ object ProjectActions : Action.Collector<PonticelloProject>() {
         executes { project -> project.save() }
     }
 
+    val reopenProject = action<PonticelloProject>("Reopen project") {
+        icon(Codicons.SYNC)
+        executes { project ->
+            project.context[PonticelloLauncher].openProject(project.projectDirectory, askSync = true)
+        }
+    }
+
     val projectUtilityActions = Action.Collector<PonticelloProject> {
         addAction("Open in File Explorer") {
             shortcut("Ctrl+Shift+O")
@@ -39,6 +46,7 @@ object ProjectActions : Action.Collector<PonticelloProject>() {
 
     init {
         add(saveProject)
+        add(reopenProject)
         addAction("Close Project") {
 //            icon(MaterialDesignC.CLOSE)
             shortcut("Ctrl+Shift?+W")

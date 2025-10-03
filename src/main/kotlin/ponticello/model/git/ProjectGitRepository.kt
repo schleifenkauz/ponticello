@@ -4,8 +4,6 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.PullResult
 import org.eclipse.jgit.api.errors.GitAPIException
 import org.eclipse.jgit.api.errors.JGitInternalException
-import org.eclipse.jgit.lib.Repository
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.transport.CredentialsProvider
 import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.RemoteConfig
@@ -18,17 +16,11 @@ import reaktive.value.reactiveVariable
 import java.io.File
 import java.io.IOException
 
-class ProjectGitRepository(repository: Repository) : ProjectVersionControl {
-    private val git = Git(repository)
+class ProjectGitRepository(private val git: Git) : ProjectVersionControl {
     private val _hasRemote = reactiveVariable(getRemote() != null)
 
     override val hasRemote: ReactiveBoolean
         get() = _hasRemote
-
-    private suspend fun getCredentials(interaction: GitUserInteraction): CredentialsProvider? {
-        val token = GitHubAuthentication.getToken(interaction::authenticate) ?: return null
-        return UsernamePasswordCredentialsProvider("schleifenkauz", token)
-    }
 
     private fun getRemote(): RemoteConfig? {
         try {
@@ -77,7 +69,7 @@ class ProjectGitRepository(repository: Repository) : ProjectVersionControl {
                     .setProgressMonitor(interaction)
                     .setRemote(remote.name)
                     .setRefSpecs(RefSpec("master"))
-                    .setCredentialsProvider(getCredentials(interaction))
+                    .setCredentialsProvider(Companion.getCredentials(interaction))
                     .call()
             } catch (e: GitAPIException) {
                 Logger.error("Error pushing to $remote: ${e.message}", e)
@@ -86,42 +78,41 @@ class ProjectGitRepository(repository: Repository) : ProjectVersionControl {
             onResult(true)
         }
 
-    override fun pullFromRemote(interaction: GitUserInteraction, onResult: (result: PullResult?) -> Unit) = interaction.launch {
-        val remote = getRemote()
-        if (remote == null) {
-            Logger.error("No remote defined")
-            return@launch onResult(null)
+    override fun pullFromRemote(interaction: GitUserInteraction, onResult: (result: PullResult?) -> Unit) =
+        interaction.launch {
+            val remote = getRemote()
+            if (remote == null) {
+                Logger.error("No remote defined")
+                return@launch onResult(null)
+            }
+            try {
+                val result = git.pull()
+                    .setProgressMonitor(interaction)
+                    .setRemote(remote.name)
+                    .setCredentialsProvider(Companion.getCredentials(interaction))
+                    .call()
+                onResult(result)
+            } catch (e: GitAPIException) {
+                Logger.error("Error pulling from ${getRemote()}: ${e.message}", e)
+                onResult(null)
+            }
         }
-        try {
-            val result = git.pull()
-                .setProgressMonitor(interaction)
-                .setRemote(remote.name)
-                .setCredentialsProvider(getCredentials(interaction))
-                .call()
-            onResult(result)
-        } catch (e: GitAPIException) {
-            Logger.error("Error pulling from ${getRemote()}: ${e.message}", e)
-            onResult(null)
-        }
-    }
 
     companion object {
         fun create(project: PonticelloProject): ProjectGitRepository? {
             val gitDir = project.projectDirectory.resolve(".git")
             check(!gitDir.isDirectory) { "Project ${project.name} already has a git repository" }
-            val gitInitExitCode = ProcessBuilder("git", "init")
-                .directory(project.projectDirectory)
-                .start().waitFor()
-            if (gitInitExitCode != 0) {
-                Logger.error("Error initializing git repository for project ${project.name}: 'git init' returned $gitInitExitCode")
-            }
-            val repository = try {
-                FileRepositoryBuilder.create(gitDir)
-            } catch (e: IOException) {
-                Logger.error("Error creating git repository for project ${project.name}: ${e.message}", e)
+
+            val git = try {
+                Git.init()
+                    .setDirectory(project.projectDirectory)
+                    .setGitDir(gitDir)
+                    .setInitialBranch("master")
+                    .call()
+            } catch (e: GitAPIException) {
+                Logger.error("Error initializing git repository: ${e.message}", e)
                 return null
             }
-            val git = Git(repository)
             try {
                 git.add()
                     .addFilepattern("project.pont")
@@ -145,22 +136,24 @@ class ProjectGitRepository(repository: Repository) : ProjectVersionControl {
                 Logger.error("Error during initial commit for project ${project.name}: ${e.message}", e)
                 return null
             }
-            return ProjectGitRepository(repository)
+            return ProjectGitRepository(git)
         }
 
         fun get(directory: File): ProjectGitRepository? {
             val gitDir = directory.resolve(".git")
             if (!gitDir.isDirectory) return null
-            val repository = try {
-                FileRepositoryBuilder()
-                    .setGitDir(gitDir)
-                    .build()
+            val git = try {
+                Git.open(directory)
             } catch (e: IOException) {
-                val projectName = PonticelloProject.getName(directory)
-                Logger.error("Error reading git repository for project ${projectName}: ${e.message}", e)
+                Logger.error("Error reading git repository: ${e.message}", e)
                 return null
             }
-            return ProjectGitRepository(repository)
+            return ProjectGitRepository(git)
+        }
+
+        suspend fun getCredentials(interaction: GitUserInteraction): CredentialsProvider? {
+            val token = GitHubAuthentication.getToken(interaction::authenticate) ?: return null
+            return UsernamePasswordCredentialsProvider("schleifenkauz", token)
         }
     }
 }

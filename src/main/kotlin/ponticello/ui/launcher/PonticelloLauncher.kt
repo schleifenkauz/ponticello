@@ -18,7 +18,12 @@ import hextant.serial.writeJson
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.stage.Stage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.serializer
+import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.errors.GitAPIException
 import ponticello.impl.Logger
 import ponticello.impl.json
 import ponticello.impl.registerImplementationsFromClasspath
@@ -89,7 +94,7 @@ class PonticelloLauncher {
     fun openProject() {
         if (!confirmCloseRequest()) return
         val file = rootContext[PonticelloFiles].showOpenDialog("*.pont") ?: return
-        openProject(file.parentFile)
+        openProject(file.parentFile, askSync = true)
     }
 
     private fun confirmCloseRequest(autoSave: Boolean = false): Boolean {
@@ -111,8 +116,8 @@ class PonticelloLauncher {
         return true
     }
 
-    fun openProject(folder: File) {
-        maybeSyncRepository(folder) {
+    fun openProject(folder: File, askSync: Boolean) {
+        maybeSyncRepository(folder, askSync) {
             val context = rootContext.extend()
             context[UndoManager] = UndoManager.newInstance()
             val progressBar = getOrLaunchLoadingScreen()
@@ -152,7 +157,8 @@ class PonticelloLauncher {
         }
     }
 
-    private fun maybeSyncRepository(directory: File, afterwards: () -> Unit) {
+    private fun maybeSyncRepository(directory: File, askSync: Boolean, afterwards: () -> Unit) {
+        if (!askSync) return afterwards()
         val repo = ProjectGitRepository.get(directory) ?: return
         if (!repo.hasRemote.now) return
         val sync = YesNoPrompt("Sync repository before opening?").showDialog() ?: return
@@ -219,7 +225,30 @@ class PonticelloLauncher {
     }
 
     fun cloneRepository() {
-        //TODO
+        val prompt = PredicateTextPrompt("Git repository URL", "") { url -> url.isNotBlank() }
+        prompt.content.prefWidth = 300.0
+        val url = prompt.showDialog(rootContext) ?: return
+        val projectName = url.substringAfterLast('/').substringBeforeLast('.')
+        val location = PonticelloFiles.projectsDir.resolve(projectName)
+        Logger.confirm("Cloning $url into $location, this may take a while.", Logger.Category.VersionControl)
+        scope.launch {
+            val credentials = ProjectGitRepository.getCredentials(JavaFXGitUserInteraction)
+            try {
+                Git.cloneRepository()
+                    .setURI(url)
+                    .setDirectory(location)
+                    .setGitDir(location.resolve(".git"))
+                    .setCredentialsProvider(credentials)
+                    .setProgressMonitor(JavaFXGitUserInteraction)
+                    .call()
+            } catch (e: GitAPIException) {
+                Logger.error("Error cloning repository: $url", e)
+                return@launch
+            }
+            Platform.runLater {
+                openProject(location, askSync = false)
+            }
+        }
     }
 
     private fun save(project: PonticelloProject): Boolean {
@@ -242,7 +271,7 @@ class PonticelloLauncher {
         }
         val file = projectFromCLArgs ?: recentProjects.activeProject()
         if (file != null) {
-            openProject(file)
+            openProject(file, askSync = true)
         } else {
             showLauncher()
         }
@@ -325,6 +354,8 @@ class PonticelloLauncher {
     }
 
     companion object : PublicProperty<PonticelloLauncher> by publicProperty("ponticello-launcher") {
+        private val scope = CoroutineScope(Dispatchers.IO)
+
         val currentProject = publicProperty<PonticelloProject>("current-project")
 
         val rootContext: Context = HextantCore.defaultContext().apply {

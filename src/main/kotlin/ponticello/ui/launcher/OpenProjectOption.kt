@@ -25,7 +25,7 @@ sealed interface OpenProjectOption {
 
     data class RecentProject(val directory: File, val name: String) : OpenProjectOption {
         override fun openProject(launcher: PonticelloLauncher) {
-            launcher.openProject(directory)
+            launcher.openProject(directory, askSync = true)
         }
     }
 
