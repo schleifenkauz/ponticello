@@ -58,9 +58,12 @@ class MixerAudioCapture(
         try {
             val line = activeLine
             while (line != null && !Thread.interrupted()) {
-                if (line.available() == 0) Thread.sleep(10)
+                if (line.available() == 0) {
+                    Thread.sleep(10)
+                    continue
+                }
                 val bytesRead = line.read(buf, 0, line.available().coerceAtMost(buf.size))
-                if (bytesRead == 0) break
+                if (bytesRead == 0) continue
                 val frames = bytesRead / (format.channels * 2)
 //                require(bytesRead == bufferSize * format.channels * 2) { "Invalid buffer size: $bytesRead" }
 

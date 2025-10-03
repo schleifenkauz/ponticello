@@ -3,7 +3,6 @@ package ponticello.model.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
-import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.event.Event
@@ -61,12 +60,9 @@ class ScoreObjectRegistry(
     fun removeUnusedObjects() {
         val unusedObjects = filter { obj -> !context.project.hasReferencesTo(obj) }
         if (unusedObjects.isEmpty()) return
-        val remove = YesNoPrompt("${unusedObjects.size} unused score objects. Remove them?").showDialog() ?: return
-        if (remove) {
-            context.compoundEdit("Remove unused objects") {
-                for (obj in unusedObjects) {
-                    remove(obj)
-                }
+        context.compoundEdit("Remove unused objects") {
+            for (obj in unusedObjects) {
+                remove(obj)
             }
         }
     }

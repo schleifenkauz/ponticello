@@ -26,6 +26,7 @@ import ponticello.ui.score.FlowGroupManager
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.ScoreObjectSelectionManager
+import ponticello.ui.vc.VersionControlActions
 import reaktive.value.reactiveValue
 
 class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
@@ -116,6 +117,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
 
     private fun registerMainActivityShortcuts() = primaryStage.scene.registerShortcuts {
         registerActions(ProjectActions.withContext(project))
+        registerActions(VersionControlActions.withContext(project))
         registerActions(LauncherActions.all.withContext(launcher))
         registerActions(ScoreNavigationActions.withContext(mainScoreView))
         interactionConfig.addGridRelatedShortcuts(this)

@@ -46,6 +46,7 @@ class LiveAudioBufferView(
     private fun getTime(x: Double) = displayRange.start + (x / pixelsPerSecond).toDecimal()
 
     private fun display(range: DecimalRange) {
+        displayRange = range
         for (canvas in canvases) {
             canvas.display(range)
         }

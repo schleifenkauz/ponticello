@@ -37,11 +37,8 @@ import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
-import ponticello.model.project.PonticelloProject
+import ponticello.model.project.*
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
-import ponticello.model.project.SERVER_OPTIONS
-import ponticello.model.project.UI_STATE
-import ponticello.model.project.get
 import ponticello.model.registry.GlobalDefinitionLibrary
 import ponticello.sc.client.ConsoleMonitor
 import ponticello.sc.client.DummySuperColliderClient
@@ -109,10 +106,20 @@ class PonticelloLauncher {
             return ok
         }
         if (!project.context[UndoManager].hasUnsavedChanges.now) return true
-        val save = askIfUserWantsToSave() ?: return false
-        if (save) {
+        val result = CloseProjectDialog(project).showDialog(rootContext) ?: return false
+        if (result.cleanupObjects) {
+            project.objects.removeUnusedObjects()
+        }
+        if (result.action != CloseProjectDialog.Action.None) {
             val ok = save(rootContext.project)
-            return ok
+            if (!ok) return false
+        }
+        if (result.action is CloseProjectDialog.Action.Commit) {
+            val vc = project.versionControl.now!!
+            vc.commitChanges((allComponents - UI_STATE).toSet(), result.action.message)
+            if (result.action.push) {
+                vc.pushToRemote(JavaFXGitUserInteraction) {}
+            }
         }
         return true
     }

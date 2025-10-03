@@ -2,7 +2,6 @@ package ponticello.ui.vc
 
 import fxutils.actions.Action
 import org.kordamp.ikonli.codicons.Codicons
-import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignG
 import ponticello.impl.Logger
 import ponticello.impl.Platform
@@ -51,7 +50,7 @@ object VersionControlActions : Action.Collector<PonticelloProject>({
     }
     addAction("Push changes") {
         shortcut("Ctrl+Shift+K")
-        icon(MaterialDesignE.EXPORT_VARIANT)
+        icon(Codicons.REPO_PUSH)
         executes { project ->
             val vc = project.versionControl.now ?: return@executes
             vc.pushToRemote(JavaFXGitUserInteraction) { success ->

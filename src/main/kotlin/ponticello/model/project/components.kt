@@ -46,7 +46,7 @@ val SERVER_OPTIONS = Component<ServerOptions>("server_options", "Server Options"
 val OBJECTS = Component(
     "objects", "Score Objects", ScoreObjectRegistry::createDefault,
     MultiFileComponentSerializer(::ScoreObjectRegistry, extension = "obj.json")
-).beforeClosing { objects -> objects.removeUnusedObjects() }
+)
 
 val LIVE_OBJECTS = Component(
     "live_objects", "Live Objects", LiveObjectRegistry::createDefault,

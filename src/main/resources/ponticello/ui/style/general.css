@@ -38,3 +38,11 @@
     -fx-border-color: black;
     -fx-border-width: 1px 1px 0px 0px;
 }
+
+ToggleButton {
+    -fx-border-color: black;
+}
+
+ToggleButton:selected {
+    -fx-background-color: #351919 !important;
+}
