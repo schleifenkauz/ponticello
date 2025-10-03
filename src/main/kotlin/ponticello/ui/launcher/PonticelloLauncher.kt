@@ -56,6 +56,7 @@ import ponticello.ui.vc.JavaFXGitUserInteraction
 import reaktive.Observer
 import reaktive.value.now
 import java.io.File
+import java.net.URL
 import kotlin.concurrent.thread
 import kotlin.random.Random
 import kotlin.system.exitProcess
@@ -228,6 +229,10 @@ class PonticelloLauncher {
         val prompt = PredicateTextPrompt("Git repository URL", "") { url -> url.isNotBlank() }
         prompt.content.prefWidth = 300.0
         val url = prompt.showDialog(rootContext) ?: return
+        cloneRepository(url)
+    }
+
+    private fun cloneRepository(url: String) {
         val projectName = url.substringAfterLast('/').substringBeforeLast('.')
         val location = PonticelloFiles.projectsDir.resolve(projectName)
         Logger.confirm("Cloning $url into $location, this may take a while.", Logger.Category.VersionControl)
@@ -243,6 +248,9 @@ class PonticelloLauncher {
                     .call()
             } catch (e: GitAPIException) {
                 Logger.error("Error cloning repository: $url", e)
+                Platform.runLater {
+                    showLauncher()
+                }
                 return@launch
             }
             Platform.runLater {
@@ -259,21 +267,50 @@ class PonticelloLauncher {
 
     fun launchPonticello(primaryStage: Stage, parameters: Application.Parameters) {
         applicationParameters = parameters
-        val projectPath = parameters.unnamed.firstOrNull { arg -> !arg.startsWith("-") }
+        val projectRef = parameters.unnamed.firstOrNull { arg -> !arg.startsWith("-") }
         primaryStage.setOnCloseRequest { quitPonticello() }
         currentActivity = LoadingScreen(rootContext)
         currentActivity.show(primaryStage)
-        val projectFromCLArgs = when {
-            projectPath == null -> null
-            projectPath.startsWith("/") -> File(projectPath)
-            projectPath.startsWith("~/") -> PonticelloFiles.userHome.resolve(projectPath.drop(2))
-            else -> PonticelloFiles.projectsDir.resolve(projectPath)
+        val projectLocation = when {
+            projectRef == null -> null
+            projectRef.startsWith("https://") -> try {
+                URL(projectRef)
+            } catch (e: Exception) {
+                Logger.error("Invalid URL $projectRef.")
+                null
+            }
+
+            projectRef.startsWith("~/") -> PonticelloFiles.userHome.resolve(projectRef.drop(2))
+            projectRef.contains('/') -> File(projectRef)
+            else -> PonticelloFiles.projectsDir.resolve(projectRef).takeIf { f -> f.isDirectory }
         }
-        val file = projectFromCLArgs ?: recentProjects.activeProject()
-        if (file != null) {
-            openProject(file, askSync = true)
-        } else {
-            showLauncher()
+        when (projectLocation) {
+            is File -> {
+                when {
+                    !projectLocation.isDirectory -> {
+                        Logger.error("Ponticello project not found. $projectLocation is not a valid directory.")
+                        showLauncher()
+                    }
+
+                    !projectLocation.resolve("project.pont").isFile -> {
+                        Logger.error("$projectLocation does not contains a Ponticello project. (Missing file project.pont)")
+                        showLauncher()
+                    }
+
+                    else -> {
+                        openProject(projectLocation, askSync = true)
+                    }
+                }
+            }
+
+            is URL -> {
+                cloneRepository(projectRef!!)
+            }
+            else -> {
+                val recentProject = recentProjects.activeProject()
+                if (recentProject != null) openProject(recentProject, askSync = true)
+                else showLauncher()
+            }
         }
     }
 
