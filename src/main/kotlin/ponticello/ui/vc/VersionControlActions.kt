@@ -1,7 +1,6 @@
 package ponticello.ui.vc
 
 import fxutils.actions.Action
-import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignG
@@ -20,7 +19,8 @@ object VersionControlActions : Action.Collector<PonticelloProject>({
         ifNotApplicable(Action.IfNotApplicable.Hide)
         executes { project ->
             project.save()
-            if (project.createGitRepository() != null) {
+            val repo = project.createGitRepository()
+            if (repo != null) {
                 Logger.confirm("Version control initialized successfully!", Logger.Category.VersionControl)
             } else {
                 Logger.error("Version control initialization failed!", Logger.Category.VersionControl)
@@ -49,26 +49,17 @@ object VersionControlActions : Action.Collector<PonticelloProject>({
             CommitPrompt(project, vc).showDialog(ev)
         }
     }
-    addAction("Update project") {
-        shortcut("Ctrl+Shift+U")
-        icon(Codicons.SYNC)
-        executes { project ->
-            val vc = project.versionControl.now ?: return@executes
-            val results = vc.pullFromRemote()
-            if (results != null) {
-                Logger.confirm("Pull successful!", Logger.Category.VersionControl)
-            }
-        }
-    }
     addAction("Push changes") {
         shortcut("Ctrl+Shift+K")
         icon(MaterialDesignE.EXPORT_VARIANT)
         executes { project ->
             val vc = project.versionControl.now ?: return@executes
-            if (vc.pushToRemote()) {
-                Logger.confirm("Push successful!", Logger.Category.VersionControl)
-            } else {
-                Logger.error("Push failed!", Logger.Category.VersionControl)
+            vc.pushToRemote(JavaFXGitUserInteraction) { success ->
+                if (success) {
+                    Logger.confirm("Push successful!", Logger.Category.VersionControl)
+                } else {
+                    Logger.error("Push failed!", Logger.Category.VersionControl)
+                }
             }
         }
     }

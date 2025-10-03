@@ -40,10 +40,12 @@ class CommitPrompt(
         if (versionControl.commitChanges(selectedComponents, message = commitMessageArea.text)) {
             Logger.confirm("Commit successful!", Logger.Category.VersionControl)
             if (pushOptions.isSelected) {
-                if (versionControl.pushToRemote()) {
-                    Logger.confirm("Pushed to remote.", Logger.Category.VersionControl)
-                } else {
-                    Logger.error("Failed to push to remote.", Logger.Category.VersionControl)
+                versionControl.pushToRemote(JavaFXGitUserInteraction) { success ->
+                    if (success) {
+                        Logger.confirm("Pushed to remote.", Logger.Category.VersionControl)
+                    } else {
+                        Logger.error("Failed to push to remote.", Logger.Category.VersionControl)
+                    }
                 }
             }
         } else {

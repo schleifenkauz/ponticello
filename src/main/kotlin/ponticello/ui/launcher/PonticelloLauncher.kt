@@ -47,6 +47,7 @@ import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.score.ScoreObjectDuplicator
+import ponticello.ui.vc.JavaFXGitUserInteraction
 import reaktive.Observer
 import reaktive.value.now
 import java.io.File
@@ -111,51 +112,56 @@ class PonticelloLauncher {
     }
 
     fun openProject(folder: File) {
-        maybeSyncRepository(folder)
-        val context = rootContext.extend()
-        context[UndoManager] = UndoManager.newInstance()
-        val progressBar = getOrLaunchLoadingScreen()
-        setupSuperCollider(
-            context,
-            "opening project",
-            clientReady = { client ->
-                val beforeBootFile = folder.resolve("data/scripts").resolve("before_boot.json")
-                if (beforeBootFile.exists()) {
-                    try {
-                        val beforeBoot = beforeBootFile.readJson(ScriptObject.serializer())
-                        beforeBoot.initialize(context)
-                        beforeBoot.executeContents(client).join()
-                    } catch (e: Exception) {
-                        Logger.error("Error while executing setup script: $beforeBootFile", e)
+        maybeSyncRepository(folder) {
+            val context = rootContext.extend()
+            context[UndoManager] = UndoManager.newInstance()
+            val progressBar = getOrLaunchLoadingScreen()
+            setupSuperCollider(
+                context,
+                "opening project",
+                clientReady = { client ->
+                    val beforeBootFile = folder.resolve("data/scripts").resolve("before_boot.json")
+                    if (beforeBootFile.exists()) {
+                        try {
+                            val beforeBoot = beforeBootFile.readJson(ScriptObject.serializer())
+                            beforeBoot.initialize(context)
+                            beforeBoot.executeContents(client).join()
+                        } catch (e: Exception) {
+                            Logger.error("Error while executing setup script: $beforeBootFile", e)
+                        }
+                    }
+                    val serverOptionsFile = folder.resolve("data").resolve("server_options.json")
+                    if (serverOptionsFile.exists()) {
+                        val serverOptions = serverOptionsFile.readJson<ServerOptions>(json)
+                        serverOptions.configureOptions(client)
+                    }
+                    client.run("s.boot")
+                },
+                serverReady = {
+                    progressBar.displayProgress(0.2, "Booted SuperCollider server, opening project...")
+                    thread(isDaemon = true) {
+                        context[projectDirectory] = folder
+                        val project = PonticelloProject.loadFrom(folder, progressBar, targetProgress = 0.5)
+                        progressBar.displayProgress(0.5, "Loaded project, initializing...")
+                        project.initialize(context, progressBar, totalDeltaProgress = 0.45)
+                        project[SERVER_OPTIONS].configureIOBuses()
+                        openProject(project)
                     }
                 }
-                val serverOptionsFile = folder.resolve("data").resolve("server_options.json")
-                if (serverOptionsFile.exists()) {
-                    val serverOptions = serverOptionsFile.readJson<ServerOptions>(json)
-                    serverOptions.configureOptions(client)
-                }
-                client.run("s.boot")
-            },
-            serverReady = {
-                progressBar.displayProgress(0.2, "Booted SuperCollider server, opening project...")
-                thread(isDaemon = true) {
-                    context[projectDirectory] = folder
-                    val project = PonticelloProject.loadFrom(folder, progressBar, targetProgress = 0.5)
-                    progressBar.displayProgress(0.5, "Loaded project, initializing...")
-                    project.initialize(context, progressBar, totalDeltaProgress = 0.45)
-                    project[SERVER_OPTIONS].configureIOBuses()
-                    openProject(project)
-                }
-            }
-        )
+            )
+        }
     }
 
-    private fun maybeSyncRepository(directory: File) {
+    private fun maybeSyncRepository(directory: File, afterwards: () -> Unit) {
         val repo = ProjectGitRepository.get(directory) ?: return
         if (!repo.hasRemote.now) return
-        val sync = YesNoPrompt("Sync repository before opening?").showDialog(rootContext) ?: return
+        val sync = YesNoPrompt("Sync repository before opening?").showDialog() ?: return
         if (sync) {
-            repo.pullFromRemote()
+            repo.pullFromRemote(JavaFXGitUserInteraction) {
+                Platform.runLater(afterwards)
+            }
+        } else {
+            afterwards()
         }
     }
 
@@ -204,7 +210,8 @@ class PonticelloLauncher {
             clientReady = { client -> client.run("s.boot") },
             serverReady = {
                 progressBar.displayProgress(0.2, "Booted SuperCollider server, creating new project...")
-                val project = PonticelloProject.create(location, context, progressBar, totalDeltaProgress = 0.7)
+                val project = PonticelloProject.create(location, context)
+                project.initialize(context, progressBar, totalDeltaProgress = 0.7)
                 save(project)
                 progressBar.displayProgress(0.95, "Created new project...")
                 openProject(project)

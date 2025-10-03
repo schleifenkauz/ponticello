@@ -164,15 +164,11 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
             return project
         }
 
-        fun create(
-            location: File, context: Context,
-            progressBar: ProgressIndicator, totalDeltaProgress: Double,
-        ): PonticelloProject {
+        fun create(location: File, context: Context): PonticelloProject {
             val components = allComponents.associateWith { component -> component.default() }
             val project = PonticelloProject(components)
             context[projectDirectory] = location
             project.projectDirectory = location
-            project.initialize(context, progressBar, totalDeltaProgress)
             return project
         }
 

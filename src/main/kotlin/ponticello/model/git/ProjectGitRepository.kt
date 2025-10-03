@@ -4,9 +4,12 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.PullResult
 import org.eclipse.jgit.api.errors.GitAPIException
 import org.eclipse.jgit.api.errors.JGitInternalException
-import org.eclipse.jgit.lib.ProgressMonitor
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
+import org.eclipse.jgit.transport.CredentialsProvider
+import org.eclipse.jgit.transport.RefSpec
+import org.eclipse.jgit.transport.RemoteConfig
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import ponticello.impl.Logger
 import ponticello.model.project.Component
 import ponticello.model.project.PonticelloProject
@@ -15,24 +18,35 @@ import reaktive.value.reactiveVariable
 import java.io.File
 import java.io.IOException
 
-class ProjectGitRepository(repository: Repository) :
-    ProjectVersionControl {
+class ProjectGitRepository(repository: Repository) : ProjectVersionControl {
     private val git = Git(repository)
-
-    private val _hasRemote = reactiveVariable(/*remoteName != null*/false)
+    private val _hasRemote = reactiveVariable(getRemote() != null)
 
     override val hasRemote: ReactiveBoolean
         get() = _hasRemote
 
-    private fun getRemote() = git.lsRemote().call().firstOrNull()
+    private suspend fun getCredentials(interaction: GitUserInteraction): CredentialsProvider? {
+        val token = GitHubAuthentication.getToken(interaction::authenticate) ?: return null
+        return UsernamePasswordCredentialsProvider("schleifenkauz", token)
+    }
 
-    override fun getRemoteUrl(): String = TODO()
+    private fun getRemote(): RemoteConfig? {
+        try {
+            return git.remoteList()
+                .call()
+                .firstOrNull()
+        } catch (e: GitAPIException) {
+            Logger.error("Error getting remote: ${e.message}", e)
+            return null
+        }
+    }
+
+    override fun getRemoteUrl(): String? = getRemote()?.urIs?.firstOrNull()?.toString()
 
     override fun commitChanges(components: Set<Component<*>>, message: String): Boolean {
         val addCommand = git.add()
         for (component in components) {
             addCommand.addFilepattern(component.gitFilePattern)
-
         }
         try {
             addCommand.call()
@@ -51,38 +65,43 @@ class ProjectGitRepository(repository: Repository) :
         return true
     }
 
-    override fun pushToRemote(monitor: ProgressMonitor?): Boolean {
-        val remote = getRemote()
-        if (remote == null) {
-            Logger.error("No remote defined")
-            return false
+    override fun pushToRemote(interaction: GitUserInteraction, onResult: (success: Boolean) -> Unit) =
+        interaction.launch {
+            val remote = getRemote()
+            if (remote == null) {
+                Logger.error("No remote defined")
+                return@launch onResult(false)
+            }
+            try {
+                git.push()
+                    .setProgressMonitor(interaction)
+                    .setRemote(remote.name)
+                    .setRefSpecs(RefSpec("master"))
+                    .setCredentialsProvider(getCredentials(interaction))
+                    .call()
+            } catch (e: GitAPIException) {
+                Logger.error("Error pushing to $remote: ${e.message}", e)
+                return@launch onResult(false)
+            }
+            onResult(true)
         }
-        try {
-            git.push()
-                .setProgressMonitor(monitor)
-                .setRemote(remote.name)
-                .call()
-        } catch (e: GitAPIException) {
-            Logger.error("Error pushing to $remote: ${e.message}", e)
-            return false
-        }
-        return true
-    }
 
-    override fun pullFromRemote(monitor: ProgressMonitor?): PullResult? {
+    override fun pullFromRemote(interaction: GitUserInteraction, onResult: (result: PullResult?) -> Unit) = interaction.launch {
         val remote = getRemote()
         if (remote == null) {
             Logger.error("No remote defined")
-            return null
+            return@launch onResult(null)
         }
         try {
-            return git.pull()
-                .setProgressMonitor(monitor)
+            val result = git.pull()
+                .setProgressMonitor(interaction)
                 .setRemote(remote.name)
+                .setCredentialsProvider(getCredentials(interaction))
                 .call()
+            onResult(result)
         } catch (e: GitAPIException) {
             Logger.error("Error pulling from ${getRemote()}: ${e.message}", e)
-            return null
+            onResult(null)
         }
     }
 
