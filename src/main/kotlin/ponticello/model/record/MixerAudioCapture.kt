@@ -1,18 +1,24 @@
 package ponticello.model.record
 
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import javax.sound.sampled.*
+import kotlin.concurrent.thread
 
 class MixerAudioCapture(
     private val format: AudioFormat,
     private val mixer: Mixer,
-    private val bufferSize: Int
-) : AbstractAudioCapture(format.channels) {
+    private val bufferSize: Int,
+) : AbstractAudioCapture() {
     private val buf = ByteArray(bufferSize * 2 * format.channels)
     private var activeThread: Thread? = null
     private var activeLine: TargetDataLine? = null
+    private lateinit var floatBuffers: List<FloatArray>
 
     override fun doPrepare(): Boolean {
-        val info = DataLine.Info(TargetDataLine::class.java, format, bufferSize)
+        floatBuffers = List(channelConfig.outputChannels) { FloatArray(bufferSize) }
+
+        val info = DataLine.Info(TargetDataLine::class.java, format)
         val line = try {
             mixer.getLine(info) as TargetDataLine
         } catch (e: LineUnavailableException) {
@@ -23,9 +29,9 @@ class MixerAudioCapture(
         activeLine = line
         line.open(format)
 
-        val thread = Thread(::run, "LiveAudioCapture [${mixer.mixerInfo.name}]")
-        thread.isDaemon = true
-        thread.start()
+        val thread = thread {
+            run()
+        }
         activeThread = thread
 
         return true
@@ -50,11 +56,22 @@ class MixerAudioCapture(
 
     private fun run() {
         try {
-            while (activeLine != null) {
-                val bytesRead = activeLine!!.read(buf, 0, buf.size)
-                if (bytesRead == buf.size) {
-                    buffer.appendBytes(buf)
+            val line = activeLine
+            while (line != null && !Thread.interrupted()) {
+                if (line.available() == 0) Thread.sleep(10)
+                val bytesRead = line.read(buf, 0, line.available().coerceAtMost(buf.size))
+                if (bytesRead == 0) break
+                val frames = bytesRead / (format.channels * 2)
+//                require(bytesRead == bufferSize * format.channels * 2) { "Invalid buffer size: $bytesRead" }
+
+                val bb = ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN)
+                for (i in 0 until frames) {
+                    for (j in 0 until format.channels) {
+                        val outputIdx = channelConfig.map(j)
+                        floatBuffers[outputIdx][i] = bb.getShort().toFloat() / Short.MAX_VALUE
+                    }
                 }
+                buffer.receive(floatBuffers, frames)
             }
         } catch (e: InterruptedException) {
             return

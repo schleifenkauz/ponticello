@@ -40,3 +40,21 @@
 .instrument-type-label {
     -fx-text-fill: grey;
 }
+
+Button.channel-grid-cell {
+    -fx-pref-width: 20px;
+    -fx-pref-height: 20px;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+}
+
+Button.channel-grid-cell:hover {
+    -fx-background-color: rgba(0, 128, 0, 0.5);
+}
+
+Button.channel-grid-cell:selected {
+    -fx-background-color: #501717 !important;
+}

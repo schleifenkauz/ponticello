@@ -26,9 +26,8 @@ class LiveAudioViewApp : Application() {
         val bufferSize = 1024
 //        val tmpFile = File("tmp.bin")
 //        val buffer = AudioFileBuffer(tmpFile, sampleRate, bufferSize)
-        val channelConfig = ChannelConfiguration.mono()
         val buffer = MultiChannelHeapAudioBuffer(
-            sampleRate, channelConfig, bufferSize,
+            1, sampleRate, bufferSize,
             initialCapacity = (sampleRate * 20).toInt()
         )
         val format = AudioFormat(
@@ -59,7 +58,7 @@ class LiveAudioViewApp : Application() {
         canvas.height = 500.0
 
         capture = MixerAudioCapture(format, mixer, bufferSize)
-        capture.prepare(buffer)
+        capture.prepare(buffer, ChannelConfiguration.mono())
 
         val controls = HBox()
         primaryStage.scene = Scene(VBox(controls, canvas))

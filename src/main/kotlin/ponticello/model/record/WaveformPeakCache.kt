@@ -19,9 +19,9 @@ class WaveformPeakCache(
     }
 
     @Synchronized
-    override fun accept(sampleOffset: Long, samples: FloatArray) {
-        if (samples.size >= regionSize) {
-            for (i in samples.indices step regionSize) {
+    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
+        if (frames >= regionSize) {
+            for (i in 0 until frames step regionSize) {
                 currentMin = 1.0f
                 currentMax = -1.0f
                 for (j in i until i + regionSize) {
@@ -33,7 +33,8 @@ class WaveformPeakCache(
                 min.add(currentMin)
             }
         } else {
-            for (v in samples) {
+            for (i in 0 until frames) {
+                val v = samples[i]
                 if (v > currentMax) currentMax = v
                 if (v < currentMin) currentMin = v
             }

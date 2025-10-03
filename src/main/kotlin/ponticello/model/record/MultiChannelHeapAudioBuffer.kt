@@ -1,15 +1,16 @@
 package ponticello.model.record
 
 class MultiChannelHeapAudioBuffer(
-    sampleRate: Double, channelConfig: ChannelConfiguration, bufferSize: Int,
+    nChannels: Int, sampleRate: Double, bufferSize: Int,
     initialCapacity: Int,
-) : MultiChannelAudioBuffer(sampleRate, channelConfig, bufferSize) {
-    private val floatBuffers = List(channelConfig.inputChannels) { FloatArray(bufferSize) }
-    override val channels: List<AudioBuffer> = List(channelConfig.outputChannels) {
+) : MultiChannelAudioBuffer(sampleRate, nChannels, bufferSize) {
+    override val channels: List<AudioBuffer> = List(nChannels) {
         HeapAudioBuffer(sampleRate, bufferSize, initialCapacity)
     }
 
-    override fun appendBytes(bytes: ByteArray) {
-        readInto(channels, bytes, floatBuffers)
+    override fun receive(samples: List<FloatArray>, frames: Int) {
+        for ((ch, arr) in samples.withIndex()) {
+            channels[ch].append(arr, frames)
+        }
     }
 }

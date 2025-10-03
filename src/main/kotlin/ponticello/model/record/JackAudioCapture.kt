@@ -3,7 +3,23 @@ package ponticello.model.record
 import org.jaudiolibs.jnajack.*
 import java.util.*
 
-class JackAudioCapture {
+class JackAudioCapture : AbstractAudioCapture() {
+    override fun doPrepare(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun doStart(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun doStop() {
+        TODO("Not yet implemented")
+    }
+
+    override fun doClose() {
+        TODO("Not yet implemented")
+    }
+
     companion object {
         fun create(channels: Int) {
             val options = EnumSet.noneOf(JackOptions::class.java)

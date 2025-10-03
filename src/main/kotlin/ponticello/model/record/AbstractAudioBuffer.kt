@@ -22,12 +22,12 @@ abstract class AbstractAudioBuffer(
 
     protected abstract fun read(offset: Long, len: Int): FloatArray
 
-    override fun append(samples: FloatArray) {
-        require(samples.size == bufferSize) { "Invalid buffer size: ${samples.size}" }
+    override fun append(samples: FloatArray, frames: Int) {
+//        require(frames == bufferSize) { "Invalid buffer size: ${samples.size}" }
         val sampleOffset = nSamples
         nSamples += samples.size
         for (listener in listeners) {
-            listener.accept(sampleOffset, samples)
+            listener.accept(sampleOffset, samples, frames)
         }
     }
 

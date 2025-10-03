@@ -21,6 +21,7 @@ import reaktive.value.now
 @Serializable
 class LiveBufferObject(
     private val source: CaptureSource,
+    private val channelConfig: ChannelConfiguration,
     @SerialName("viewConfig") private var _viewConfig: LiveBufferViewConfig,
     @SerialName("enabled") private val _enabled: ReactiveVariable<Boolean>
 ) : AbstractRenamableObject() {
@@ -62,11 +63,13 @@ class LiveBufferObject(
     override fun initialize(context: Context) {
         super.initialize(context)
         val sampleRate = context[SuperColliderClient].sampleRate
-        val channelConfig = ChannelConfiguration.default(source.channels)
-        buffer = MultiChannelHeapAudioBuffer(sampleRate, channelConfig, source.bufferSize, INITIAL_CAPACITY)
+        buffer = MultiChannelHeapAudioBuffer(
+            channelConfig.outputChannels, sampleRate,
+            source.bufferSize, INITIAL_CAPACITY
+        )
         val capture = source.capture(context)
         if (capture != null) {
-            capture.prepare(buffer)
+            capture.prepare(buffer, channelConfig)
             if (enabled.now) {
                 capture.start()
             }
@@ -75,7 +78,7 @@ class LiveBufferObject(
     }
 
     override fun onRemoved() {
-        capture?.stop()
+        capture?.close()
     }
 
     fun addListener(listener: Listener) {

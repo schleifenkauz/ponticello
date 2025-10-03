@@ -14,7 +14,7 @@ class LiveAudioBufferView(
     private val pixelsPerSecond get() = width / displayRange.dur.toDouble()
 
     init {
-        val channelHeight = heightProperty().divide(buffer.buffer.channelConfig.outputChannels)
+        val channelHeight = heightProperty().divide(buffer.buffer.nChannels)
         for ((ch, buf) in buffer.buffer.channels.withIndex()) {
             val canvas = buffer.viewConfig.createBufferCanvas(buf, displayRange)
             canvases.add(canvas)

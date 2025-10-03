@@ -6,12 +6,19 @@ import kotlinx.serialization.Serializable
 data class ChannelConfiguration(
     val inputChannels: Int,
     val outputChannels: Int,
-    val mapping: List<Int>
+    private val mapping: List<Int>
 ) {
+    private val reverseMapping = IntArray(inputChannels) { -1 }
+
     init {
-        require(mapping.size == inputChannels) { "Invalid mapping size: ${mapping.size}" }
-        require(mapping.all { ch -> ch in 0 until outputChannels })
+        require(mapping.size == outputChannels) { "Invalid mapping size: ${mapping.size}" }
+        for ((output, input) in mapping.withIndex()) {
+            require(input in 0 until inputChannels)
+            reverseMapping[input] = output
+        }
     }
+
+    fun map(inputChannel: Int): Int = reverseMapping[inputChannel]
 
     companion object {
         fun mono() = ChannelConfiguration(1, 1, listOf(0))
@@ -19,7 +26,5 @@ data class ChannelConfiguration(
         fun stereo() = ChannelConfiguration(2, 2, listOf(0, 1))
 
         fun default(channels: Int) = ChannelConfiguration(channels, channels, List(channels) { ch -> ch })
-
-        fun monoMixdown(inputChannels: Int) = ChannelConfiguration(inputChannels, 1, List(inputChannels) { 0 })
     }
 }

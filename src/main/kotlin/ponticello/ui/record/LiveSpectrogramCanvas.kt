@@ -50,7 +50,7 @@ class LiveSpectrogramCanvas(
         }
     }
 
-    override fun accept(sampleOffset: Long, samples: FloatArray) = executor.execute {
+    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) = executor.execute {
         var frameIndex = (sampleOffset / hopSize).toInt()
         val segmentIdx = frameIndex / framesPerImage
         frameIndex %= framesPerImage

@@ -3,7 +3,7 @@ package ponticello.model.record
 interface AudioCapture {
     val status: Status
 
-    fun prepare(dest: MultiChannelAudioBuffer)
+    fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration)
 
     fun start()
 

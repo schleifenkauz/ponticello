@@ -9,11 +9,11 @@ class HeapAudioBuffer(
         return buffer.copyOfRange(offset.toInt(), offset.toInt() + len)
     }
 
-    override fun append(samples: FloatArray) {
+    override fun append(samples: FloatArray, frames: Int) {
         ensureCapacity(additionalSize = samples.size)
         val offset = totalSamples().toInt()
         System.arraycopy(samples, 0, buffer, offset, samples.size)
-        super.append(samples)
+        super.append(samples, frames)
     }
 
     private fun ensureCapacity(additionalSize: Int) {

@@ -40,7 +40,7 @@ class LiveWaveformCanvas(
         }
     }
 
-    override fun accept(sampleOffset: Long, samples: FloatArray) {
+    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
         repaint()
     }
 }

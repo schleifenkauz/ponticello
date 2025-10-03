@@ -1,7 +1,9 @@
 package ponticello.model.record
 
-abstract class AbstractAudioCapture(private val channels: Int) : AudioCapture {
+abstract class AbstractAudioCapture : AudioCapture {
     protected lateinit var buffer: MultiChannelAudioBuffer
+        private set
+    lateinit var channelConfig: ChannelConfiguration
         private set
     final override var status: AudioCapture.Status = AudioCapture.Status.UNPREPARED
         private set
@@ -14,11 +16,12 @@ abstract class AbstractAudioCapture(private val channels: Int) : AudioCapture {
 
     protected abstract fun doClose()
 
-    final override fun prepare(dest: MultiChannelAudioBuffer) {
+    final override fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration) {
         check(status == AudioCapture.Status.UNPREPARED) { "Illegal status: $status" }
-        require(dest.channelConfig.inputChannels == channels) {
-            "Invalid number of destination channels: ${dest.channelConfig.inputChannels}. Expected: $channels."
+        require(dest.nChannels == config.outputChannels) {
+            "Invalid number of destination channels: ${dest.channels}. Expected: ${config.outputChannels}."
         }
+        this.channelConfig = config
         buffer = dest
         doPrepare()
         status = AudioCapture.Status.PREPARED

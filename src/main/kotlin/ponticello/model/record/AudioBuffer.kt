@@ -11,13 +11,13 @@ interface AudioBuffer {
 
     fun read(range: DecimalRange): FloatArray
 
-    fun append(samples: FloatArray)
+    fun append(samples: FloatArray, frames: Int)
 
     fun totalSamples(): Long
 
     fun addListener(listener: Listener)
 
     interface Listener {
-        fun accept(sampleOffset: Long, samples: FloatArray)
+        fun accept(sampleOffset: Long, samples: FloatArray, frames: Int)
     }
 }
