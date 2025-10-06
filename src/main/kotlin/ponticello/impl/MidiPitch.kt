@@ -12,6 +12,13 @@ class MidiPitch(step: Int) {
         return "$noteName$octave"
     }
 
+    override fun equals(other: Any?): Boolean = when {
+        other !is MidiPitch -> false
+        else -> step == other.step
+    }
+
+    override fun hashCode(): Int = step
+
     fun isBlackKey() = NOTE_NAMES[step % 12].contains('#')
 
     override fun toString(): String = getNoteName().removeSuffix("0")

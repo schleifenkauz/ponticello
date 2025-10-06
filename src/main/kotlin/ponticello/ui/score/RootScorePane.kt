@@ -158,15 +158,10 @@ abstract class RootScorePane(
 
     override fun getNearestGrid(position: ObjectPosition): TempoGrid? {
         val grids = getAllGrids()
-        val relevantGrids = grids.filter { g -> position.time in g.timeRange }
-        val gridHeight = getScoreY(TempoGrid.GRID_HEIGHT)
-        return relevantGrids.minByOrNull { g ->
-            when {
-                g.yPosition < position.y -> position.y - g.yPosition
-                g.yPosition > position.y + gridHeight -> position.y - (g.yPosition + gridHeight)
-                else -> 0.0.asY
-            }
+        val relevantGrids = grids.filter { g ->
+            position.time in g.timeRange && g.yPosition > position.y
         }
+        return relevantGrids.minByOrNull { g -> g.yPosition }
     }
 
     private fun getAllGrids(): List<TempoGrid> = allViews.mapNotNull { view -> view.tempoGrid }

@@ -119,7 +119,8 @@ class MidiObjectView(
                 val rootPitchSelector = OptionSpinner(
                     rootPitch, MidiPitch.allPitchClasses(),
                     selectorPrompt = SimpleSelectorPrompt(MidiPitch.allPitchClasses(), "Select root pitch class")
-                ) named "Root pitch class"
+                )
+                addItem("Root pitch class", rootPitchSelector)
                 val registerSpinner = IntSpinner(0, 10, 4).minColumns(2) named "Base register"
                 val octaves = IntSpinner(1, 12, 2).minColumns(2) named "Octaves"
                 onConfirm {
