@@ -307,9 +307,9 @@ class AppLayout(
     }
 
     private fun ponticelloIcon(): ImageView = ImageView(Activity.APP_ICON).apply {
-        fitHeight = 28.0
+        fitHeight = 24.0
         isPreserveRatio = true
-        padding = Insets(0.0, 0.0, 0.0, 5.0)
+        padding = Insets(0.0, 0.0, 0.0, 0.0)
     }
 
     private fun createToolbar(): Pane = BorderPane().apply {

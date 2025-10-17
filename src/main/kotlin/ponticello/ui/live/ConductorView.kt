@@ -4,6 +4,7 @@ import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
+import fxutils.controls.DoubleSpinner
 import fxutils.controls.IntSpinner
 import hextant.context.Context
 import javafx.animation.AnimationTimer
@@ -19,9 +20,11 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.util.Duration
 import org.kordamp.ikonli.material2.Material2MZ
-import ponticello.impl.Decimal
-import ponticello.impl.Logger
+import ponticello.impl.*
+import ponticello.model.player.AccelerationBasedConductor
 import ponticello.model.player.Conductor
+import ponticello.model.player.GRUConductor
+import ponticello.ui.impl.DecimalSpinner
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.ScorePane
@@ -34,11 +37,22 @@ class ConductorView(
 ) : VBox(5.0), Conductor.View {
     private val portSpinner = IntSpinner(conductor.options.port, 1024..65535).minColumns(5)
     private val countdownTimeSpinner = IntSpinner(conductor.options.countdownTime, 1, 20).minColumns(5)
+    private val beatThresholdSpinner = DecimalSpinner(
+        conductor.options.beatThreshold,
+        min = zero, max = one, step = 0.02.toDecimal()
+    ).minColumns(5)
+    private val smoothingFactorSpinner = DecimalSpinner(
+        conductor.options.smoothingFactor,
+        min = zero, max = one, step = 0.05.toDecimal()
+    ).minColumns(5)
     private val extraOptionsField = textField(conductor.options.extraArguments.now) {
         setOnAction {
             conductor.options.extraArguments.set(text)
         }
     } styleClass "sleek-text-field"
+
+    private val configControls = listOf(portSpinner, countdownTimeSpinner, extraOptionsField)
+
     private val toggleButton = startStopAction.withContext(this).makeButton("large-icon-button")
     private val countdownIndicator = ProgressBar() styleClass "conductor-countdown"
     private val centerPane = StackPane(toggleButton)
@@ -53,10 +67,12 @@ class ConductorView(
         countdownIndicator.prefHeight = 30.0
         countdownIndicator.pad(5.0)
         countdownIndicator.maxWidth = Double.POSITIVE_INFINITY
-        extraOptionsField.prefWidth = 200.0
+        extraOptionsField.prefWidth = 400.0
         children.addAll(
             HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
             HBox(5.0, Label("Countdown:"), countdownTimeSpinner).centerChildren(),
+            HBox(5.0, Label("Threshold:"), beatThresholdSpinner).centerChildren(),
+            HBox(5.0, Label("Smoothing:"), smoothingFactorSpinner).centerChildren(),
             Label("Options:  "),
             extraOptionsField,
             centerPane,
@@ -75,8 +91,9 @@ class ConductorView(
             conductorTimeIndicator.endX = 0.0
         }
         centerPane.children.setAll(countdownIndicator)
-        countdownTimeSpinner.isDisable = true
-        portSpinner.isDisable = true
+        for (ctrl in configControls) {
+            ctrl.isDisable = true
+        }
         val totalMs = countdownTimeSpinner.value.get() * 1000.0
         CountdownTimer(countdownIndicator, totalMs).start()
     }
@@ -97,8 +114,9 @@ class ConductorView(
 
     override fun onStopped() = Platform.runLater {
         barPositionLabel.text = "- / ${conductor.beatsPerBar}"
-        countdownTimeSpinner.isDisable = false
-        portSpinner.isDisable = false
+        for (ctrl in configControls) {
+            ctrl.isDisable = false
+        }
         scorePane.children.remove(conductorTimeIndicator)
     }
 
@@ -126,7 +144,12 @@ class ConductorView(
     companion object {
         private val startStopAction = action<ConductorView>("Start/stop") {
             description { v -> `if`(v.conductor.isActive, then = { "Stop" }, otherwise = { "Start" }) }
-            icon { v -> `if`(v.conductor.isActive, then = { Material2MZ.STOP }, otherwise = { Material2MZ.PLAY_ARROW }) }
+            icon { v ->
+                `if`(
+                    v.conductor.isActive,
+                    then = { Material2MZ.STOP },
+                    otherwise = { Material2MZ.PLAY_ARROW })
+            }
             shortcut("Ctrl+SPACE")
             executes { v ->
                 if (v.conductor.isActive.now) v.conductor.stop()
@@ -140,7 +163,7 @@ class ConductorView(
         }
 
         fun showWindow(context: Context) {
-            val conductor = Conductor.get(context)
+            val conductor = GRUConductor.get(context)
             val scorePane = context[PonticelloMainActivity].mainScoreView
             val view = ConductorView(conductor, scorePane)
             val window = makeSubWindow(view, "Conductor", context)
