@@ -36,10 +36,12 @@ class CloseProjectDialog(project: PonticelloProject) : CompoundPrompt<CloseProje
 
         commitBtn.selectedProperty().addListener { _, _, selected ->
             commitMessageArea.isManaged = selected || pushBtn.isSelected
+            commitMessageArea.isVisible = commitMessageArea.isManaged
             window.sizeToScene()
         }
         pushBtn.selectedProperty().addListener { _, _, selected ->
             commitMessageArea.isManaged = selected || commitBtn.isSelected
+            commitMessageArea.isVisible = commitMessageArea.isManaged
             window.sizeToScene()
         }
         content.children.add(cleanupObjectsOption)

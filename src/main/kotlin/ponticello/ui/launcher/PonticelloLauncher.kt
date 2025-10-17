@@ -209,7 +209,7 @@ class PonticelloLauncher {
         val name = PredicateTextPrompt("Project name", "") { name -> name.isNotBlank() }
             .showDialog(rootContext) ?: return
         val location = PonticelloFiles.projectsDir.resolve(name)
-        location.mkdir()
+        location.mkdirs()
         location.resolve("project.pont").writeText(location.name)
         createNewProject(location)
     }

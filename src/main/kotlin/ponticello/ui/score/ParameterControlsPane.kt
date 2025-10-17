@@ -8,6 +8,7 @@ import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
@@ -156,15 +157,15 @@ class ParameterControlsPane(
     }
 
     override fun getHeaderContent(obj: NamedParameterControl): List<Node> {
-        val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
+            val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
         editor.setControl(obj.now)
         return listOf(editor)
     }
 
     override fun getContent(obj: NamedParameterControl, box: ObjectBox<NamedParameterControl>): Parent? =
         when (val ctrl = obj.now) {
-            is ExprControl -> ctrl.expr.control
-            is UGenControl -> ctrl.expr.control
+            is ExprControl -> ScrollPane(ctrl.expr.control)
+            is UGenControl -> ScrollPane(ctrl.expr.control)
             else -> null
         }
 

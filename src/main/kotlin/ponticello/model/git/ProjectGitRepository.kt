@@ -89,7 +89,7 @@ class ProjectGitRepository(private val git: Git) : ProjectVersionControl {
                 val result = git.pull()
                     .setProgressMonitor(interaction)
                     .setRemote(remote.name)
-                    .setCredentialsProvider(Companion.getCredentials(interaction))
+                    .setCredentialsProvider(getCredentials(interaction))
                     .call()
                 onResult(result)
             } catch (e: GitAPIException) {

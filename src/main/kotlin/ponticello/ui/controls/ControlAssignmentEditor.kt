@@ -24,7 +24,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
     init {
         optionButton.isFocusTraversable = false
         optionButton.setOnMouseClicked { ev -> showOptionPopup(ev) }
-        optionButton.prefWidth = 45.0
+        optionButton.prefWidth = 55.0
         styleClass("parameter-control-item")
         alwaysHGrow()
     }
