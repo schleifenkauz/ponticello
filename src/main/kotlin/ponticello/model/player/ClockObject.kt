@@ -35,21 +35,25 @@ class ClockObject(
 
     @Transient
     private val activePlayers = mutableSetOf<ActivePlayer>()
+
     @Transient
     private val activeMeters = mutableSetOf<ActiveMeter>()
+
     @Transient
     private val scheduledActions = mutableListOf<ScheduledAction>()
 
     @Transient
     private var clockTime = 0.0.asTime
+
     @Transient
     private var runClock = false
+
     @Transient
     private lateinit var thread: Thread
 
     @Transient
     private lateinit var timeWarpObserver: Observer
-    
+
     private val client get() = context[SuperColliderClient]
 
     override val canDelete: Boolean
@@ -62,7 +66,11 @@ class ClockObject(
     override fun initialize(context: Context) {
         super.initialize(context)
         timeWarpObserver = timeWarp.forEach { warp ->
-            client.sendAsync("set_time_warp", listOf(warp.toString()))
+            val scoreTime = activePlayers.firstOrNull()?.player?.currentTime
+            val args =
+                if (scoreTime != null) listOf(warp.toString(), scoreTime.toString())
+                else listOf(warp.toString())
+            client.sendAsync("set_time_warp", args)
         }
         startClockThread()
     }
@@ -137,7 +145,7 @@ class ClockObject(
         } else {
             start(player)
         }
-     }
+    }
 
     @Synchronized
     fun scheduleAction(quantization: QuantizationConfig, action: (delay: Decimal) -> Unit) {
@@ -186,7 +194,7 @@ class ClockObject(
     private fun scheduleStart(
         player: ScorePlayer?, action: ((Decimal) -> Unit)?,
         startTime: Decimal, offset: Decimal
-    ) { 
+    ) {
         if (player != null) {
             activePlayers.add(ActivePlayer(player, startTime, offset))
         }

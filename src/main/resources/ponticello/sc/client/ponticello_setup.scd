@@ -1,6 +1,11 @@
 (
 ~ponticello_addr = NetAddr("localhost", 7775);
 
+SynthDef(\score_clock) {
+    arg rate, out;
+    var clock = Sweep.kr(rate: In.kr(rate));
+    Out.kr(out, clock);
+}.add;
 SynthDef(\vst_plugin, {
     arg bus = 0;
     var dry = In.ar(bus, 2), snd, mix, dry_mix = \dry.kr(0), bypass = \bypass.kr(0);
@@ -26,6 +31,7 @@ SynthDef(\send, {
 
 ServerBoot.add {
     ~time_warp_bus = Bus.control(s, 1);
+    ~score_time_bus = Bus.control(s, 1);
 	Task {
 		1.wait;
 		VSTPlugin.search(verbose: false, action: { ~ponticello_addr.sendMsg('/booted') });
@@ -86,11 +92,13 @@ OSCdef('start_play', { |msg|
     var player_id = msg[2];
     "START PLAY ".post; msg.postln;
 	~play_start[player_id] = TempoClock.beats;
+	~score_time_counter = Synth(\score_clock, [rate: ~time_warp_bus, out: ~score_time_bus]);
 }, '/start_play');
 OSCdef('pause_play', { |msg|
     var player_id = msg[2];
     "PAUSE_PLAY ".post; player_id.postln;
     ~play_start[player_id] = nil;
+    ~score_time_counter.free;
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
@@ -132,6 +140,12 @@ OSCdef(\save_plugin_state, { |msg|
 }, \save_plugin_state);
 OSCdef(\set_time_warp, { |msg|
     var tempo = msg[2].asFloat;
+    if (msg[3] != nil) {
+        var score_time = msg[3].asFloat;
+        var diff = score_time - ~score_time_bus.getSynchronous;
+        postf("exp(tanh(% - %)) = %\n", score_time, ~score_time_bus.getSynchronous, diff.tanh.exp);
+        tempo = tempo * diff.tanh.exp;
+    };
     if (tempo > 0) {
         TempoClock.tempo = tempo;
         ~time_warp_bus.set(tempo);
