@@ -25,6 +25,8 @@ class GRUConductor private constructor(player: ScorePlayer, options: ConductorOp
                 pythonExe, scriptPath,
                 "--udp-port", options.port.now.toString(),
                 "--start-at", startAt.toString(),
+                "--model", options.modelName.now,
+                "--input", options.videoInput.now,
                 "-bt", options.beatThreshold.now.toString(),
                 *extraArguments
             )
@@ -41,31 +43,23 @@ class GRUConductor private constructor(player: ScorePlayer, options: ConductorOp
             "/next_beat" -> {
                 val timestamp = event.message.getArgument<Long>(0, "timestamp")?.toSeconds() ?: return
                 val predictedTimeToNextBeat = event.message.getArgument<Float>(1, "Time to next beat") ?: return
-                val slope = predictedTimeToNextBeat - lastPrediction
-                val threshold = options.beatThreshold.now.toFloat()
-                if (slope > 0) {
-                    val time = System.currentTimeMillis()
-                    if (predictedTimeToNextBeat <= threshold && time > lastBeatMs + 500 && gate) {
-                        beat(timestamp)
-                        gate = false
-                    } else if (player.isScheduled.now) {
-                        clock.timeWarp.now = currentTempo() / meter.beatsPerMinute.now
-                    }
+                val beatProbability = event.message.getArgument<Float>(2, "Beat probability") ?: return
+                val now = System.currentTimeMillis()
+                if (beatProbability >= options.beatThreshold.now.value && now > lastBeatMs + 500) {
+                    beat(timestamp)
                 } else if (player.isScheduled.now) {
-                    val conductorTime = conductorTime
-                    val playerTime = player.currentTime
-                    val scoreTimeToNextBeat = (conductorTime + meter.getDuration(TimeUnit.Beats) - playerTime)
-                        .coerceAtLeast(0.1.toDecimal())
-                    val pred = (predictedTimeToNextBeat.toDouble() + 0.1).coerceAtLeast(0.01)
-                    val warp = scoreTimeToNextBeat / pred
-                    val alpha = options.warpFactor.now
-//                    clock.timeWarp.now = (clock.timeWarp.now * alpha + warp * (one - alpha))
-//                        .coerceAtMost(2.0.toDecimal())
-                    clock.timeWarp.now = (warp * alpha).coerceAtMost(2.0.toDecimal())
-//                    println("$scoreTimeToNextBeat / $predictedTimeToNextBeat = ${clock.timeWarp.now}")
-                }
-                if (slope < 0 && predictedTimeToNextBeat > threshold) {
-                    gate = true
+                    if (predictedTimeToNextBeat > lastPrediction) {
+                        clock.timeWarp.now = currentTempo() / meter.beatsPerMinute.now
+                    } else {
+                        val conductorTime = conductorTime
+                        val playerTime = player.currentTime
+                        val scoreTimeToNextBeat = (conductorTime + meter.getDuration(TimeUnit.Beats) - playerTime)
+                            .coerceAtLeast(0.1.toDecimal())
+                        val pred = (predictedTimeToNextBeat.toDouble() + 0.1).coerceAtLeast(0.01)
+                        val warp = scoreTimeToNextBeat / pred
+                        val alpha = options.warpFactor.now
+                        clock.timeWarp.now = (warp * alpha).coerceAtMost(1.5.toDecimal())
+                    }
                 }
                 lastPrediction = predictedTimeToNextBeat
             }

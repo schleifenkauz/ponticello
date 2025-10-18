@@ -5,13 +5,16 @@ import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
 import fxutils.controls.IntSpinner
+import fxutils.prompt.SelectorPrompt
 import hextant.context.Context
 import javafx.animation.AnimationTimer
 import javafx.animation.PauseTransition
 import javafx.application.Platform
+import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
+import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
@@ -26,30 +29,40 @@ import ponticello.ui.impl.DecimalSpinner
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.ScorePane
+import reaktive.value.ReactiveVariable
 import reaktive.value.binding.`if`
+import reaktive.value.binding.notEqualTo
+import reaktive.value.fx.asObservableValue
+import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
+import java.io.File
 
 class ConductorView(
     private val conductor: Conductor,
     private val scorePane: ScorePane
 ) : VBox(5.0), Conductor.View {
     private val portSpinner = IntSpinner(conductor.options.port, 1024..65535).minColumns(5)
+
     private val countdownTimeSpinner = IntSpinner(conductor.options.countdownTime, 1, 20).minColumns(5)
+
     private val beatThresholdSpinner = DecimalSpinner(
         conductor.options.beatThreshold,
         min = zero, max = one, step = 0.01.toDecimal()
     ).minColumns(5)
+
     private val warpFactorSpinner = DecimalSpinner(
         conductor.options.warpFactor,
         min = zero, max = 2.toDecimal(), step = 0.05.toDecimal()
     ).minColumns(5)
-    private val extraOptionsField = textField(conductor.options.extraArguments.now) {
-        setOnAction {
-            conductor.options.extraArguments.set(text)
-        }
-    } styleClass "sleek-text-field"
 
-    private val configControls = listOf(portSpinner, countdownTimeSpinner, extraOptionsField)
+    private val extraOptionsField = textField(conductor.options.extraArguments.now) styleClass "sleek-text-field"
+
+    private val modelSelector = ModelSelector().selectorButton(conductor.options.modelName)
+
+    private val videoInputField = textField(conductor.options.videoInput.now) styleClass "sleek-text-field"
+
+    private
+    val configControls = listOf(portSpinner, countdownTimeSpinner, extraOptionsField, modelSelector, videoInputField)
 
     private val toggleButton = startStopAction.withContext(this).makeButton("large-icon-button")
     private val countdownIndicator = ProgressBar() styleClass "conductor-countdown"
@@ -58,6 +71,9 @@ class ConductorView(
     private val conductorTimeIndicator = Line().styleClass("play-head", "conductor-time")
 
     init {
+        sync(extraOptionsField, conductor.options.extraArguments)
+        sync(videoInputField, conductor.options.videoInput)
+
         conductor.addView(this)
         conductorTimeIndicator.endYProperty().bind(scorePane.heightProperty())
         StackPane.setAlignment(toggleButton, Pos.CENTER)
@@ -70,16 +86,23 @@ class ConductorView(
             HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
             HBox(5.0, Label("Countdown:"), countdownTimeSpinner).centerChildren(),
             HBox(5.0, Label("Threshold:"), beatThresholdSpinner).centerChildren(),
-            HBox(5.0, Label("Factor   :"), warpFactorSpinner).centerChildren(),
+            HBox(5.0, Label("Factor:   "), warpFactorSpinner).centerChildren(),
+            HBox(5.0, Label("Model:    "), modelSelector.alwaysHGrow()).centerChildren(),
+            HBox(5.0, Label("Input:    "), videoInputField.alwaysHGrow()).centerChildren(),
             Label("Options:  "),
             extraOptionsField,
             centerPane,
             barPositionLabel.centered()
         )
         pad(5.0)
-        prefHeight = 140.0
-
         registerShortcuts(listOf(startStopAction.withContext(this)))
+    }
+
+    private fun sync(field: TextField, variable: ReactiveVariable<String>) {
+        field.setOnAction { variable.set(field.text) }
+        field.userData = field.bindPseudoClassState(
+            "dirty", field.textProperty().asReactiveValue().notEqualTo(variable)
+        )
     }
 
     override fun onScheduled() = Platform.runLater {
@@ -137,6 +160,15 @@ class ConductorView(
                 stop()
             }
         }
+    }
+
+    private class ModelSelector : SelectorPrompt<String>("Select model") {
+        override fun extractText(option: String): String = option
+
+        override fun options(): List<String> =
+            File(System.getProperty("user.home"), "dev/rubato/models").listFiles()
+                .filter { f -> f.extension == "pth" }
+                .map { f -> f.nameWithoutExtension }
     }
 
     companion object {

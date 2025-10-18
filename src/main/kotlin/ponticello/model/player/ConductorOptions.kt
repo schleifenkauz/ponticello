@@ -12,7 +12,9 @@ data class ConductorOptions(
     val extraArguments: ReactiveVariable<String> = reactiveVariable(""),
     val countdownTime: ReactiveVariable<Int> = reactiveVariable(5),
     val beatThreshold: ReactiveVariable<Decimal> = reactiveVariable(0.2.toDecimal()),
-    val warpFactor: ReactiveVariable<Decimal> = reactiveVariable(1.toDecimal())
+    val warpFactor: ReactiveVariable<Decimal> = reactiveVariable(1.toDecimal()),
+    val modelName: ReactiveVariable<String> = reactiveVariable("<none>"),
+    val videoInput: ReactiveVariable<String> = reactiveVariable("/dev/video0")
 ) {
     companion object {
         fun createDefault() = ConductorOptions()
