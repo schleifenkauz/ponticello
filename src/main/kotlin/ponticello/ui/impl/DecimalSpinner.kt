@@ -13,6 +13,10 @@ class DecimalSpinner(
     private val step: Decimal,
     private val maxPrecision: Int = 2,
 ) : AbstractSpinner<Decimal>(value, min, max) {
+    init {
+        bind()
+    }
+
     override fun increment(value: Decimal): Decimal = (value + step).withMaxPrecision(maxPrecision)
 
     override fun decrement(value: Decimal): Decimal = (value - step).withPrecision(maxPrecision)

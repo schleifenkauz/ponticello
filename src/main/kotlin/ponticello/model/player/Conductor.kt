@@ -99,6 +99,7 @@ abstract class Conductor(
     override fun acceptMessage(event: OSCMessageEvent) {
         if (event.message.address == "/started") {
             active.set(true)
+            conductorTime = player.currentTime
             views.notifyListeners { onStarted() }
         }
         if (event.message.address == "/exited") {

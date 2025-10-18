@@ -50,18 +50,19 @@ class GRUConductor private constructor(player: ScorePlayer, options: ConductorOp
                         gate = false
                     } else if (player.isScheduled.now) {
                         clock.timeWarp.now = currentTempo() / meter.beatsPerMinute.now
-                        println("Set to current tempo: ${currentTempo()} / $beatsPerBar = ${clock.timeWarp.now}")
                     }
                 } else if (player.isScheduled.now) {
                     val conductorTime = conductorTime
                     val playerTime = player.currentTime
                     val scoreTimeToNextBeat = (conductorTime + meter.getDuration(TimeUnit.Beats) - playerTime)
                         .coerceAtLeast(0.1.toDecimal())
-                    val warp = scoreTimeToNextBeat / predictedTimeToNextBeat.toDouble()
-                    val alpha = options.smoothingFactor.now
-                    clock.timeWarp.now = (clock.timeWarp.now * alpha + warp * (one - alpha))
-                        .coerceAtMost(2.0.toDecimal())
-                    println("$scoreTimeToNextBeat / $predictedTimeToNextBeat = ${clock.timeWarp.now}")
+                    val pred = (predictedTimeToNextBeat.toDouble() + 0.1).coerceAtLeast(0.01)
+                    val warp = scoreTimeToNextBeat / pred
+                    val alpha = options.warpFactor.now
+//                    clock.timeWarp.now = (clock.timeWarp.now * alpha + warp * (one - alpha))
+//                        .coerceAtMost(2.0.toDecimal())
+                    clock.timeWarp.now = (warp * alpha).coerceAtMost(2.0.toDecimal())
+//                    println("$scoreTimeToNextBeat / $predictedTimeToNextBeat = ${clock.timeWarp.now}")
                 }
                 if (slope < 0 && predictedTimeToNextBeat > threshold) {
                     gate = true

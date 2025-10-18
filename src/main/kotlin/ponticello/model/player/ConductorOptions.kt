@@ -12,7 +12,7 @@ data class ConductorOptions(
     val extraArguments: ReactiveVariable<String> = reactiveVariable(""),
     val countdownTime: ReactiveVariable<Int> = reactiveVariable(5),
     val beatThreshold: ReactiveVariable<Decimal> = reactiveVariable(0.2.toDecimal()),
-    val smoothingFactor: ReactiveVariable<Decimal> = reactiveVariable(0.8.toDecimal())
+    val warpFactor: ReactiveVariable<Decimal> = reactiveVariable(1.toDecimal())
 ) {
     companion object {
         fun createDefault() = ConductorOptions()

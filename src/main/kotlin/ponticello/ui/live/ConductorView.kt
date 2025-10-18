@@ -4,7 +4,6 @@ import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
-import fxutils.controls.DoubleSpinner
 import fxutils.controls.IntSpinner
 import hextant.context.Context
 import javafx.animation.AnimationTimer
@@ -21,7 +20,6 @@ import javafx.scene.shape.Line
 import javafx.util.Duration
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.*
-import ponticello.model.player.AccelerationBasedConductor
 import ponticello.model.player.Conductor
 import ponticello.model.player.GRUConductor
 import ponticello.ui.impl.DecimalSpinner
@@ -39,11 +37,11 @@ class ConductorView(
     private val countdownTimeSpinner = IntSpinner(conductor.options.countdownTime, 1, 20).minColumns(5)
     private val beatThresholdSpinner = DecimalSpinner(
         conductor.options.beatThreshold,
-        min = zero, max = one, step = 0.02.toDecimal()
+        min = zero, max = one, step = 0.01.toDecimal()
     ).minColumns(5)
-    private val smoothingFactorSpinner = DecimalSpinner(
-        conductor.options.smoothingFactor,
-        min = zero, max = one, step = 0.05.toDecimal()
+    private val warpFactorSpinner = DecimalSpinner(
+        conductor.options.warpFactor,
+        min = zero, max = 2.toDecimal(), step = 0.05.toDecimal()
     ).minColumns(5)
     private val extraOptionsField = textField(conductor.options.extraArguments.now) {
         setOnAction {
@@ -72,7 +70,7 @@ class ConductorView(
             HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
             HBox(5.0, Label("Countdown:"), countdownTimeSpinner).centerChildren(),
             HBox(5.0, Label("Threshold:"), beatThresholdSpinner).centerChildren(),
-            HBox(5.0, Label("Smoothing:"), smoothingFactorSpinner).centerChildren(),
+            HBox(5.0, Label("Factor   :"), warpFactorSpinner).centerChildren(),
             Label("Options:  "),
             extraOptionsField,
             centerPane,
