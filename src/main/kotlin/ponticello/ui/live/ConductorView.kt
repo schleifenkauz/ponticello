@@ -30,8 +30,7 @@ import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.ScorePane
 import reaktive.value.ReactiveVariable
-import reaktive.value.binding.`if`
-import reaktive.value.binding.notEqualTo
+import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
@@ -71,9 +70,6 @@ class ConductorView(
     private val conductorTimeIndicator = Line().styleClass("play-head", "conductor-time")
 
     init {
-        sync(extraOptionsField, conductor.options.extraArguments)
-        sync(videoInputField, conductor.options.videoInput)
-
         conductor.addView(this)
         conductorTimeIndicator.endYProperty().bind(scorePane.heightProperty())
         StackPane.setAlignment(toggleButton, Pos.CENTER)
@@ -94,15 +90,13 @@ class ConductorView(
             centerPane,
             barPositionLabel.centered()
         )
+        toggleButton.disableProperty().bind(
+            conductor.options.modelName.equalTo("<none>")
+                .or(conductor.options.videoInput.map(String::isBlank))
+                .asObservableValue()
+        )
         pad(5.0)
         registerShortcuts(listOf(startStopAction.withContext(this)))
-    }
-
-    private fun sync(field: TextField, variable: ReactiveVariable<String>) {
-        field.setOnAction { variable.set(field.text) }
-        field.userData = field.bindPseudoClassState(
-            "dirty", field.textProperty().asReactiveValue().notEqualTo(variable)
-        )
     }
 
     override fun onScheduled() = Platform.runLater {
@@ -166,7 +160,7 @@ class ConductorView(
         override fun extractText(option: String): String = option
 
         override fun options(): List<String> =
-            File(System.getProperty("user.home"), "dev/rubato/models").listFiles()
+            File(System.getProperty("user.home"), "dev/rubato/models").listFiles()!!
                 .filter { f -> f.extension == "pth" }
                 .map { f -> f.nameWithoutExtension }
     }
@@ -184,7 +178,9 @@ class ConductorView(
             executes { v ->
                 if (v.conductor.isActive.now) v.conductor.stop()
                 else {
-                    v.conductor.options.extraArguments.set(v.extraOptionsField.text)
+                    val options = v.conductor.options
+                    options.extraArguments.set(v.extraOptionsField.text)
+                    options.videoInput.set(v.videoInputField.text)
                     if (!v.conductor.start()) {
                         Logger.error("Failed to start live beat detection", Logger.Category.Playback)
                     }

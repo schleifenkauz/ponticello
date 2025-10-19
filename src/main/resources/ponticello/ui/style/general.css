@@ -46,7 +46,3 @@ ToggleButton {
 ToggleButton:selected {
     -fx-background-color: #351919 !important;
 }
-
-TextField:dirty {
-    -fx-text-fill: green;
-}

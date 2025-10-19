@@ -143,7 +143,7 @@ OSCdef(\set_time_warp, { |msg|
     if (msg[3] != nil) {
         var score_time = msg[3].asFloat;
         var diff = score_time - ~score_time_bus.getSynchronous;
-        postf("exp(tanh(% - %)) = %\n", score_time, ~score_time_bus.getSynchronous, diff.tanh.exp);
+        //postf("exp(tanh(% - %)) = %\n", score_time, ~score_time_bus.getSynchronous, diff.tanh.exp);
         tempo = tempo * diff.tanh.exp;
     };
     if (tempo > 0) {

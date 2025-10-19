@@ -14,7 +14,6 @@ import java.util.*
 
 class GRUConductor private constructor(player: ScorePlayer, options: ConductorOptions) : Conductor(player, options) {
     private var lastPrediction = Float.MAX_VALUE
-    private var gate = false
 
     override fun startVideoAnalysis(pythonExe: String, rubatoDir: File, startAt: Long): Process {
         val scriptPath = rubatoDir.resolve("live-gru.py").absolutePath
