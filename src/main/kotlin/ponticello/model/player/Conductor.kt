@@ -36,7 +36,7 @@ abstract class Conductor(
     protected val clock get() = player.getClock()
     protected val activeMeter get() = clock.activeMeter?.meter ?: startingMeter
     val beatsPerBar: Int
-        get() = startingMeter?.beatsPerBar?.now ?: 0
+        get() = activeMeter?.beatsPerBar?.now ?: 0
     val isActive: ReactiveBoolean get() = active
     val isScheduled: ReactiveBoolean get() = scheduled
 

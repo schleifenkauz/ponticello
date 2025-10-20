@@ -28,18 +28,23 @@ import ponticello.model.player.GRUConductor
 import ponticello.ui.impl.DecimalSpinner
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloMainActivity
+import ponticello.ui.score.RootScorePane
 import ponticello.ui.score.ScorePane
+import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import java.io.File
+import java.util.WeakHashMap
 
 class ConductorView(
     private val conductor: Conductor,
-    private val scorePane: ScorePane
+    private val scorePane: RootScorePane
 ) : VBox(5.0), Conductor.View {
+    private var conductorTime: Decimal = zero
+
     private val portSpinner = IntSpinner(conductor.options.port, 1024..65535).minColumns(5)
 
     private val countdownTimeSpinner = IntSpinner(conductor.options.countdownTime, 1, 20).minColumns(5)
@@ -69,6 +74,8 @@ class ConductorView(
     private val barPositionLabel = Label("- / 0")
     private val conductorTimeIndicator = Line().styleClass("play-head", "conductor-time")
 
+    private val scoreRepaintObserver: Observer
+
     init {
         conductor.addView(this)
         conductorTimeIndicator.endYProperty().bind(scorePane.heightProperty())
@@ -97,14 +104,15 @@ class ConductorView(
         )
         pad(5.0)
         registerShortcuts(listOf(startStopAction.withContext(this)))
+        scoreRepaintObserver = scorePane.onRepaint.observe { _ -> repositionConductorTimeIndicator() }
     }
 
     override fun onScheduled() = Platform.runLater {
+        conductorTime = zero
         if (conductorTimeIndicator !in scorePane.children) {
             scorePane.children.add(conductorTimeIndicator)
-            conductorTimeIndicator.startX = 0.0
-            conductorTimeIndicator.endX = 0.0
         }
+        repositionConductorTimeIndicator()
         centerPane.children.setAll(countdownIndicator)
         for (ctrl in configControls) {
             ctrl.isDisable = true
@@ -118,12 +126,17 @@ class ConductorView(
     }
 
     override fun onBeat(barPosition: Int, conductorTime: Decimal) = Platform.runLater {
+        this.conductorTime = conductorTime
         background = background(Color.RED)
         val pause = PauseTransition(Duration.millis(100.0))
         pause.setOnFinished { background = null }
         pause.play()
         barPositionLabel.text = "$barPosition / ${conductor.beatsPerBar}"
-        conductorTimeIndicator.startX = scorePane.getWidth(conductorTime)
+        repositionConductorTimeIndicator()
+    }
+
+    private fun repositionConductorTimeIndicator() {
+        conductorTimeIndicator.startX = scorePane.getX(conductorTime)
         conductorTimeIndicator.endX = conductorTimeIndicator.startX
     }
 
@@ -188,10 +201,12 @@ class ConductorView(
             }
         }
 
+        private val instances = WeakHashMap<Conductor, ConductorView>()
+
         fun showWindow(context: Context) {
             val conductor = GRUConductor.get(context)
             val scorePane = context[PonticelloMainActivity].mainScoreView
-            val view = ConductorView(conductor, scorePane)
+            val view = instances.getOrPut(conductor) { ConductorView(conductor, scorePane) }
             val window = makeSubWindow(view, "Conductor", context)
             window.show()
             window.setOnHidden { conductor.stop() }

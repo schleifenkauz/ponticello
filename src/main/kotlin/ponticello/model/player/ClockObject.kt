@@ -224,10 +224,12 @@ class ClockObject(
     fun attach(player: ScorePlayer, meter: MeterObject, offset: Decimal) {
         val startTime = clockTime - offset
         activeMeters.add(ActiveMeter(meter, player, startTime))
+        println("Attaching $meter to $player.")
     }
 
     @Synchronized
     fun detach(player: ScorePlayer, meter: MeterObject) {
+        println("Detaching $meter from $player")
         activeMeters.removeIf { active -> active.meter == meter && active.player == player }
     }
 

@@ -41,7 +41,7 @@ abstract class ObjectRegistryPane<O : NamedObject>(
                 }
             }
         }
-        return emptyList()
+        return super.getDroppedObjects(ev, targetView)
     }
 
     override fun extraHeaderActions(): List<ContextualizedAction> = actions.withContext(this)

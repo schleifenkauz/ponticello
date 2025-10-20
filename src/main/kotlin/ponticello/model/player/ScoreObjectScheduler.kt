@@ -42,12 +42,12 @@ class ScoreObjectScheduler(val context: Context) {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
                     val startPos = position + ObjectPosition(-obj.duration, zero)
                     if (obj.duration == zero) continue
-                    val active = activeObjects.remove(obj, startPos) ?: continue
-                    active.stopped()
                     if (obj is TempoGridObject && obj.meter.isResolved.now) {
                         val meter = obj.meter.force()
                         player.getClock().detach(player, meter)
                     }
+                    val active = activeObjects.remove(obj, startPos)
+                    active?.stopped()
                 }
 
                 else -> {}
@@ -114,7 +114,6 @@ class ScoreObjectScheduler(val context: Context) {
         scLangLatency: Decimal = this.sclangLatency, serverLatency: Decimal = this.serverLatency,
         extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
     ): ActiveScoreObject? {
-        if (!obj.affectsPlayback) return null
         val time = absolutePosition.time + cutoff + player.timeOffset
         val scheduledTime = (time + scLangLatency - extraLatency)
         return scheduleObject(
@@ -130,7 +129,6 @@ class ScoreObjectScheduler(val context: Context) {
         serverLatency: Decimal, scheduledTime: Decimal, absolute: Boolean,
         extraArguments: Map<ParameterDefObject, ParameterControl>,
     ): ActiveScoreObject? {
-        if (!obj.affectsPlayback) return null
         try {
             if (!obj.validate()) return null
         } catch (e: Exception) {
@@ -141,6 +139,7 @@ class ScoreObjectScheduler(val context: Context) {
             val meter = obj.meter.force()
             player.getClock().attach(player, meter, cutoff)
         }
+        if (!obj.affectsPlayback) return null
         val activeObject = try {
             activeObjects.insert(player, obj, instance, absolutePosition, cutoff, extraArguments)
         } catch (e: Exception) {

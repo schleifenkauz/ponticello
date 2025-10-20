@@ -185,6 +185,7 @@ class ScorePlayer private constructor(
         scheduler.scheduleObject(obj, inst, position, cutoff = cutoff, this)
     }
 
+    override fun toString(): String = "ScorePlayer [$id]"
 
     companion object {
         val MAIN = publicProperty<ScorePlayer>("MainScorePlayer")

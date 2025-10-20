@@ -144,6 +144,8 @@ class MeterObject private constructor(
     fun observe(handler: (Reactive) -> Unit): Observer =
         beatsPerMinute.observe(handler) and beatsPerBar.observe(handler) and ticksPerBeat.observe(handler)
 
+    override fun toString(): String = "#${name.now} (${beatsPerMinute.now}bpm, ${beatsPerBar.now}x${ticksPerBeat.now})"
+
     private class UpdateMeterEdit(
         private val meter: MeterObject,
         private val bpmBefore: Decimal,
