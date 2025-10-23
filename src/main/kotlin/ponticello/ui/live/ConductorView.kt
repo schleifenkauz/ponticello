@@ -5,6 +5,8 @@ import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
 import fxutils.controls.IntSpinner
+import fxutils.drag.ConfiguredDropHandler
+import fxutils.drag.setupDropArea
 import fxutils.prompt.SelectorPrompt
 import hextant.context.Context
 import javafx.animation.AnimationTimer
@@ -20,6 +22,7 @@ import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
+import javafx.stage.Window
 import javafx.util.Duration
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.*
@@ -34,6 +37,7 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
+import reaktive.value.fx.asProperty
 import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import java.io.File
@@ -43,6 +47,8 @@ class ConductorView(
     private val conductor: Conductor,
     private val scorePane: RootScorePane
 ) : VBox(5.0), Conductor.View {
+    private var window: SubWindow? = null
+
     private var conductorTime: Decimal = zero
 
     private val portSpinner = IntSpinner(conductor.options.port, 1024..65535).minColumns(5)
@@ -77,6 +83,7 @@ class ConductorView(
     private val scoreRepaintObserver: Observer
 
     init {
+        styleClass("conductor-view")
         conductor.addView(this)
         conductorTimeIndicator.endYProperty().bind(scorePane.heightProperty())
         StackPane.setAlignment(toggleButton, Pos.CENTER)
@@ -85,6 +92,8 @@ class ConductorView(
         countdownIndicator.pad(5.0)
         countdownIndicator.maxWidth = Double.POSITIVE_INFINITY
         extraOptionsField.prefWidth = 400.0
+        videoInputField.textProperty().bindBidirectional(conductor.options.videoInput.asProperty())
+        extraOptionsField.textProperty().bindBidirectional(conductor.options.extraArguments.asProperty())
         children.addAll(
             HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
             HBox(5.0, Label("Countdown:"), countdownTimeSpinner).centerChildren(),
@@ -105,6 +114,12 @@ class ConductorView(
         pad(5.0)
         registerShortcuts(listOf(startStopAction.withContext(this)))
         scoreRepaintObserver = scorePane.onRepaint.observe { _ -> repositionConductorTimeIndicator() }
+        setupDropArea(ConfiguredDropHandler {
+            handleSingleFile("mp4", "webm", "mkv") { _, file ->
+                conductor.options.videoInput.set(file.absolutePath)
+                true
+            }
+        })
     }
 
     override fun onScheduled() = Platform.runLater {
@@ -191,9 +206,6 @@ class ConductorView(
             executes { v ->
                 if (v.conductor.isActive.now) v.conductor.stop()
                 else {
-                    val options = v.conductor.options
-                    options.extraArguments.set(v.extraOptionsField.text)
-                    options.videoInput.set(v.videoInputField.text)
                     if (!v.conductor.start()) {
                         Logger.error("Failed to start live beat detection", Logger.Category.Playback)
                     }
@@ -207,7 +219,8 @@ class ConductorView(
             val conductor = GRUConductor.get(context)
             val scorePane = context[PonticelloMainActivity].mainScoreView
             val view = instances.getOrPut(conductor) { ConductorView(conductor, scorePane) }
-            val window = makeSubWindow(view, "Conductor", context)
+            val window = view.window ?: makeSubWindow(view, "Conductor", context)
+            view.window = window
             window.show()
             window.setOnHidden { conductor.stop() }
         }

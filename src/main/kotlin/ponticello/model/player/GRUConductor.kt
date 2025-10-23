@@ -56,7 +56,8 @@ class GRUConductor private constructor(player: ScorePlayer, options: ConductorOp
                             .coerceAtLeast(0.1.toDecimal())
                         val warp = scoreTimeToNextBeat / predictedTimeToNextBeat.toDouble()
                         val alpha = options.warpFactor.now
-                        clock.timeWarp.now = (warp * alpha).coerceAtMost(1.5.toDecimal())
+                        clock.timeWarp.now = (alpha * warp) + (1 - alpha) * clock.timeWarp.now
+//                        clock.timeWarp.now = (warp * alpha).coerceAtMost(1.5.toDecimal())
                     }
                 }
                 lastPrediction = predictedTimeToNextBeat

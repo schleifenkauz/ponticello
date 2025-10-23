@@ -18,6 +18,7 @@
 .selector-button:drop-possible,
 .parameter-control-item:drop-possible,
 .tool-pane:drop-possible,
+.conductor-view:drop-possible,
 .empty-display:drop-possible {
     -fx-background-color: rgba(0, 128, 0, 0.5) !important;
 }
