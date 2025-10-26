@@ -82,6 +82,9 @@ class ConductorView(
 
     private val scoreRepaintObserver: Observer
 
+    private val videoInputProperty = conductor.options.videoInput.asProperty()
+    private val extraOptionsProperty = conductor.options.extraArguments.asProperty()
+
     init {
         styleClass("conductor-view")
         conductor.addView(this)
@@ -92,8 +95,8 @@ class ConductorView(
         countdownIndicator.pad(5.0)
         countdownIndicator.maxWidth = Double.POSITIVE_INFINITY
         extraOptionsField.prefWidth = 400.0
-        videoInputField.textProperty().bindBidirectional(conductor.options.videoInput.asProperty())
-        extraOptionsField.textProperty().bindBidirectional(conductor.options.extraArguments.asProperty())
+        videoInputProperty.bindBidirectional(videoInputField.textProperty())
+        extraOptionsProperty.bindBidirectional(extraOptionsField.textProperty())
         children.addAll(
             HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
             HBox(5.0, Label("Countdown:"), countdownTimeSpinner).centerChildren(),
