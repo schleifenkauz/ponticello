@@ -29,6 +29,7 @@ class OSCSuperColliderClient(
     private val receiver: OSCPortIn,
     override val context: Context
 ) : SuperColliderClient, OSCMessageListener {
+    private var isReady = false
     private var idCounter = 1
     private val waitingForReply = mutableMapOf<Int, PendingRequest>()
     private val eventExecutor = Executors.newSingleThreadExecutor()
@@ -43,15 +44,24 @@ class OSCSuperColliderClient(
     override fun onServerBooted(action: () -> Unit): Observer {
         val observer = serverBoot.stream.observe(action)
         eventObservers.add(observer)
+        if (isReady && eval("s.hasBooted").get() == "true") {
+            action()
+        }
         return observer
     }
 
     override fun onTreeCleared(action: () -> Unit) {
         eventObservers.add(treeClear.stream.observe(action))
+/*        if (isReady && eval("s.hasBooted").get() == "true") {
+            action()
+        }*/
     }
 
     override fun onClientReady(action: () -> Unit) {
         eventObservers.add(ready.stream.observe(action))
+/*        if (isReady) {
+            action()
+        }*/
     }
 
     override var sampleRate: Double = -1.0
@@ -107,6 +117,7 @@ class OSCSuperColliderClient(
         when (address) {
             "/ready" -> eventExecutor.execute {
                 ready.fire()
+                isReady = true
             }
 
             "/booted" -> eventExecutor.execute {

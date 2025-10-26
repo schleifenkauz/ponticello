@@ -17,11 +17,6 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         +"if ($superColliderName != nil) { $superColliderName.free; $superColliderName = nil; }"
     }
 
-    override fun onLoadedIntoRegistry() {
-        super<AbstractRenamableObject>.onLoadedIntoRegistry()
-        client.run { createObject() }
-    }
-
     override fun onRemoved() {
         client.run { freeObject() }
     }

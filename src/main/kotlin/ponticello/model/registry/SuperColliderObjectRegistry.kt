@@ -29,8 +29,8 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
     }
 
     private fun createAll() {
-        for (obj in all()) {
-            client.run {
+        client.run {
+            for (obj in all()) {
                 obj.run { createObject() }
             }
         }

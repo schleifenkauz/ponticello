@@ -14,6 +14,7 @@ import javafx.scene.input.MouseButton
 import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 import ponticello.impl.Logger
+import ponticello.impl.zero
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
@@ -135,8 +136,8 @@ data object ValueControlType : ControlType<ValueControl>() {
         parameterName: String,
         ev: Event?,
     ): ValueControl {
-        spec as NumericalControlSpec
-        val value = oldControl?.getNumericalValue() ?: spec.defaultValue.get()
+        val defaultValue = (spec as? NumericalControlSpec)?.defaultValue?.get() ?: zero
+        val value = oldControl?.getNumericalValue() ?: defaultValue
         return ValueControl.create(value)
     }
 
