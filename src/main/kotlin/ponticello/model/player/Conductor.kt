@@ -53,14 +53,15 @@ abstract class Conductor(
     protected abstract fun startVideoAnalysis(pythonExe: String, rubatoDir: File, startAt: Long): Process
 
     fun start(): Boolean {
-        startingMeter = player.score.activeInstances(zero.rangeTo(one))
+        val meter = player.score.activeInstances(conductorTime..conductorTime + one)
             .map(ScoreObjectInstance::obj)
             .filterIsInstance<TempoGridObject>()
-            .firstOrNull()?.meter?.get() ?: return false
+            .firstOrNull()?.meter?.get()
+        startingMeter = meter ?: return false
 
         scheduled.set(true)
-
         views.notifyListeners { onScheduled() }
+        nBeats = -meter.beatsPerBar.now
 
         val receiver = OSCPortIn(options.port.now)
         receiver.startListening()
@@ -118,23 +119,25 @@ abstract class Conductor(
         lastBeatMs = System.currentTimeMillis()
 
         nBeats++
-        if (nBeats > beatsPerBar + 1) {
+        if (nBeats > 1) {
             conductorTime += meter.getDuration(TimeUnit.Beats)
         }
-        val barPosition = if (beatsPerBar != 0) ((nBeats - 1) % beatsPerBar) + 1 else 0
+        if (nBeats == beatsPerBar) {
+            nBeats -= beatsPerBar
+            if (!(player.isScheduled.now)) {
+                val conductorTempo = currentTempo()
+                val beatDur = 60 / conductorTempo
+                println("Beat duration: $beatDur")
+                val delay = ((beatDur - player.lookAhead) * 1000).toLong()
+                println("Scheduling the player with a delay of $delay ms.")
+                scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+            }
+        }
+        val barPosition = if (beatsPerBar != 0) (nBeats - 1).mod(beatsPerBar) + 1 else 0
         views.notifyListeners { onBeat(barPosition, conductorTime) }
 
         beatTimes.addLast(timestamp)
         while (beatTimes.size > beatsPerBar) beatTimes.removeFirst()
-
-        if (nBeats == beatsPerBar) {
-            val conductorTempo = currentTempo()
-            val beatDur = 60 / conductorTempo
-            println("Beat duration: $beatDur")
-            val delay = ((beatDur - player.lookAhead) * 1000).toLong()
-            println("Scheduling the player with a delay of $delay ms.")
-            scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
-        }
     }
 
 
