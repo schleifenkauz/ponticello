@@ -30,13 +30,14 @@ abstract class Conductor(
     protected var nBeats = 0
     private val active = reactiveVariable(false)
     private val scheduled = reactiveVariable(false)
+    private var playing = false
     private var startingMeter: MeterObject? = null
     private var analysisProcess: Process? = null
     private var receiver: OSCPortIn? = null
     protected val clock get() = player.getClock()
     protected val activeMeter get() = clock.activeMeter?.meter ?: startingMeter
     val beatsPerBar: Int
-        get() = activeMeter?.beatsPerBar?.now ?: 0
+        get() = activeMeter?.beatsPerBar?.now ?: 1
     val isActive: ReactiveBoolean get() = active
     val isScheduled: ReactiveBoolean get() = scheduled
 
@@ -53,14 +54,16 @@ abstract class Conductor(
     protected abstract fun startVideoAnalysis(pythonExe: String, rubatoDir: File, startAt: Long): Process
 
     fun start(): Boolean {
-        val meter = player.score.activeInstances(conductorTime..conductorTime + one)
+        val startTime = player.currentTime
+        val meter = player.score.activeInstances(startTime..startTime + one)
+            .sortedByDescending { inst -> inst.start }
             .map(ScoreObjectInstance::obj)
             .filterIsInstance<TempoGridObject>()
             .firstOrNull()?.meter?.get()
         startingMeter = meter ?: return false
 
         scheduled.set(true)
-        views.notifyListeners { onScheduled() }
+        views.notifyListeners { onScheduled(startTime) }
         nBeats = -meter.beatsPerBar.now
 
         val receiver = OSCPortIn(options.port.now)
@@ -88,6 +91,7 @@ abstract class Conductor(
         conductorTime = 0.0.asTime
         scheduled.set(false)
         active.set(false)
+        playing = false
         analysisProcess = null
         receiver?.stopListening()
         receiver = null
@@ -118,32 +122,39 @@ abstract class Conductor(
         val meter = activeMeter ?: return
         lastBeatMs = System.currentTimeMillis()
 
-        nBeats++
-        if (nBeats > 1) {
-            conductorTime += meter.getDuration(TimeUnit.Beats)
-        }
-        if (nBeats == beatsPerBar) {
-            nBeats -= beatsPerBar
-            if (!(player.isScheduled.now)) {
-                val conductorTempo = currentTempo()
-                val beatDur = 60 / conductorTempo
-                println("Beat duration: $beatDur")
-                val delay = ((beatDur - player.lookAhead) * 1000).toLong()
-                println("Scheduling the player with a delay of $delay ms.")
-                scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+        println(nBeats)
+        if (nBeats >= 0) {
+            if (playing) {
+                conductorTime += meter.getDuration(TimeUnit.Beats)
+                println("$conductorTime")
+            } else {
+                playing = true
             }
         }
-        val barPosition = if (beatsPerBar != 0) (nBeats - 1).mod(beatsPerBar) + 1 else 0
+        if (nBeats == -1 && !player.isScheduled.now) {
+            val conductorTempo = currentTempo()
+            val beatDur = 60 / conductorTempo
+            println("Beat duration: $beatDur")
+            val delay = ((beatDur - player.lookAhead) * 1000).toLong()
+            println("Scheduling the player with a delay of $delay ms.")
+            scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+        }
+        val barPosition = if (beatsPerBar != 0) nBeats.mod(beatsPerBar) + 1 else 0
         views.notifyListeners { onBeat(barPosition, conductorTime) }
 
         beatTimes.addLast(timestamp)
         while (beatTimes.size > beatsPerBar) beatTimes.removeFirst()
+
+        nBeats++
+        if (nBeats == beatsPerBar) {
+            nBeats = 0
+        }
     }
 
 
     interface View {
         fun onBeat(barPosition: Int, conductorTime: Decimal)
-        fun onScheduled()
+        fun onScheduled(startTime: Decimal)
         fun onStopped()
         fun onStarted()
     }

@@ -12,17 +12,14 @@ import hextant.context.Context
 import javafx.animation.AnimationTimer
 import javafx.animation.PauseTransition
 import javafx.application.Platform
-import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
-import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
-import javafx.stage.Window
 import javafx.util.Duration
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.*
@@ -32,13 +29,10 @@ import ponticello.ui.impl.DecimalSpinner
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.RootScorePane
-import ponticello.ui.score.ScorePane
 import reaktive.Observer
-import reaktive.value.ReactiveVariable
 import reaktive.value.binding.*
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
-import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import java.io.File
 import java.util.WeakHashMap
@@ -125,8 +119,8 @@ class ConductorView(
         })
     }
 
-    override fun onScheduled() = Platform.runLater {
-        conductorTime = zero
+    override fun onScheduled(startTime: Decimal) = Platform.runLater {
+        conductorTime = startTime
         if (conductorTimeIndicator !in scorePane.children) {
             scorePane.children.add(conductorTimeIndicator)
         }
@@ -136,6 +130,7 @@ class ConductorView(
             ctrl.isDisable = true
         }
         val totalMs = countdownTimeSpinner.value.get() * 1000.0
+        barPositionLabel.text = "0 / ${conductor.beatsPerBar}"
         CountdownTimer(countdownIndicator, totalMs).start()
     }
 
@@ -159,7 +154,7 @@ class ConductorView(
     }
 
     override fun onStopped() = Platform.runLater {
-        barPositionLabel.text = "- / ${conductor.beatsPerBar}"
+        barPositionLabel.text = "- / 0"
         for (ctrl in configControls) {
             ctrl.isDisable = false
         }

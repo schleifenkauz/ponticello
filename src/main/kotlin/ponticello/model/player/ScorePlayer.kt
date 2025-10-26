@@ -135,9 +135,9 @@ class ScorePlayer private constructor(
     fun startPlaying() = execute {
         playing.set(true)
         System.err.println("Start Player [$id]")
-        client.send("start_play", listOf(id))
-        context[Recorder].startingPlayback()
         val time = playHead.currentTime
+        client.send("start_play", listOf(id.toString(), time.toString()))
+        context[Recorder].startingPlayback()
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
         lastPlayFrom = time
         loopedTime = zero
