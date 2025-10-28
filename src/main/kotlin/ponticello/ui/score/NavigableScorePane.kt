@@ -69,6 +69,10 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
                 scroll(-delta / pixelsPerSecond)
             }
         }
+        setOnZoom { ev ->
+            val factor = ev.zoomFactor
+            zoom(factor, ev.x)
+        }
     }
 
     fun zoom(amount: Double, evX: Double) {
