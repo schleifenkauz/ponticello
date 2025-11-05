@@ -24,6 +24,7 @@ abstract class Conductor(
 ) : OSCMessageListener {
     private val views = ListenerManager.createWeakListenerManager<View>()
     protected var conductorTime = 0.0.asTime
+    private var currentMeasure = 0
     protected var lastBeatMs = 0L
         private set
     private val beatTimes: Deque<Decimal> = LinkedList()
@@ -55,16 +56,24 @@ abstract class Conductor(
 
     fun start(): Boolean {
         val startTime = player.currentTime
-        val meter = player.score.activeInstances(startTime..startTime + one)
+        val gridInst = player.score.activeInstances(startTime..startTime + one)
             .sortedByDescending { inst -> inst.start }
-            .map(ScoreObjectInstance::obj)
-            .filterIsInstance<TempoGridObject>()
-            .firstOrNull()?.meter?.get()
-        startingMeter = meter ?: return false
+            .firstOrNull { inst -> inst.obj is TempoGridObject }
+        if (gridInst == null) {
+            Logger.warn("No tempo grid found at $startTime s", Logger.Category.Playback)
+            return false
+        }
+        val grid = gridInst.obj as TempoGridObject
+        val meter = grid.meter.get() ?: return false
+        startingMeter = meter
 
         scheduled.set(true)
         views.notifyListeners { onScheduled(startTime) }
         nBeats = -meter.beatsPerBar.now
+        val offset = startTime - gridInst.start
+        val measureOffset = (offset / meter.getDuration(TimeUnit.Bars)).roundToInt()
+        currentMeasure = grid.firstBar.now + measureOffset
+
 
         val receiver = OSCPortIn(options.port.now)
         receiver.startListening()
@@ -88,6 +97,7 @@ abstract class Conductor(
     private fun doStop() {
         beatTimes.clear()
         nBeats = 0
+        currentMeasure = 0
         conductorTime = 0.0.asTime
         scheduled.set(false)
         active.set(false)
@@ -129,6 +139,7 @@ abstract class Conductor(
                 println("$conductorTime")
             } else {
                 playing = true
+                currentMeasure = 1
             }
         }
         if (nBeats == -1 && !player.isScheduled.now) {
@@ -140,7 +151,7 @@ abstract class Conductor(
             scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
         }
         val barPosition = if (beatsPerBar != 0) nBeats.mod(beatsPerBar) + 1 else 0
-        views.notifyListeners { onBeat(barPosition, conductorTime) }
+        views.notifyListeners { onBeat(currentMeasure, barPosition, conductorTime) }
 
         beatTimes.addLast(timestamp)
         while (beatTimes.size > beatsPerBar) beatTimes.removeFirst()
@@ -148,12 +159,13 @@ abstract class Conductor(
         nBeats++
         if (nBeats == beatsPerBar) {
             nBeats = 0
+            currentMeasure += 1
         }
     }
 
 
     interface View {
-        fun onBeat(barPosition: Int, conductorTime: Decimal)
+        fun onBeat(measure: Int, barPosition: Int, conductorTime: Decimal)
         fun onScheduled(startTime: Decimal)
         fun onStopped()
         fun onStarted()

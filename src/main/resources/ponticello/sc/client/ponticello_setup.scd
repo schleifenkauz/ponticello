@@ -100,6 +100,7 @@ OSCdef('pause_play', { |msg|
     "PAUSE_PLAY ".post; player_id.postln;
     ~play_start[player_id] = nil;
     ~score_time_counter.free;
+    ~score_time_counter = nil;
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
@@ -143,7 +144,7 @@ OSCdef(\set_time_warp, { |msg|
     var tempo = msg[2].asFloat;
     if (msg[3] != nil) {
         var score_time = msg[3].asFloat;
-        if (score_time > 4) {
+        if (score_time > 1) {
             var diff = score_time - ~score_time_bus.getSynchronous;
             postf("exp(tanh(% - %)) = %\n", score_time, ~score_time_bus.getSynchronous, diff.tanh.exp);
             tempo = tempo * (diff.tanh * 0.3).exp;

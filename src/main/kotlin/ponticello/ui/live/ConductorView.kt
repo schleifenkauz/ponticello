@@ -20,6 +20,7 @@ import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
+import javafx.scene.text.Font
 import javafx.util.Duration
 import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.impl.*
@@ -36,6 +37,7 @@ import reaktive.value.fx.asProperty
 import reaktive.value.now
 import java.io.File
 import java.util.WeakHashMap
+import kotlin.time.measureTime
 
 class ConductorView(
     private val conductor: Conductor,
@@ -59,19 +61,34 @@ class ConductorView(
         min = zero, max = 2.toDecimal(), step = 0.05.toDecimal()
     ).minColumns(5)
 
+    private val minWarpSpinner = DecimalSpinner(
+        conductor.options.minWarp,
+        min = 0.2.toDecimal(), max = 1.toDecimal(), step = 0.05.toDecimal()
+    ).minColumns(5)
+
+    private val maxWarpSpinner = DecimalSpinner(
+        conductor.options.maxWarp,
+        min = 1.toDecimal(), max = 2.0.toDecimal(), step = 0.05.toDecimal()
+    ).minColumns(5)
+
+    private val minBeatDurSpinner = DecimalSpinner(
+        conductor.options.minBeatDur,
+        min = 0.1.toDecimal(), max = 2.toDecimal(), step = 0.1.toDecimal()
+    ).minColumns(5)
+
     private val extraOptionsField = textField(conductor.options.extraArguments.now) styleClass "sleek-text-field"
 
     private val modelSelector = ModelSelector().selectorButton(conductor.options.modelName)
 
     private val videoInputField = textField(conductor.options.videoInput.now) styleClass "sleek-text-field"
 
-    private
-    val configControls = listOf(portSpinner, countdownTimeSpinner, extraOptionsField, modelSelector, videoInputField)
+    private val configControls = listOf(portSpinner, countdownTimeSpinner, extraOptionsField, modelSelector, videoInputField)
 
     private val toggleButton = startStopAction.withContext(this).makeButton("large-icon-button")
     private val countdownIndicator = ProgressBar() styleClass "conductor-countdown"
     private val centerPane = StackPane(toggleButton)
-    private val barPositionLabel = Label("- / 0")
+    private val barPositionLabel = Label("Beat: - / 0")
+    private val currentMeasureLabel = Label("Measure: 0")
     private val conductorTimeIndicator = Line().styleClass("play-head", "conductor-time")
 
     private val scoreRepaintObserver: Observer
@@ -85,6 +102,8 @@ class ConductorView(
         conductorTimeIndicator.endYProperty().bind(scorePane.heightProperty())
         StackPane.setAlignment(toggleButton, Pos.CENTER)
         StackPane.setAlignment(countdownIndicator, Pos.CENTER)
+        barPositionLabel.font = Font(18.0)
+        currentMeasureLabel.font = Font(18.0)
         countdownIndicator.prefHeight = 30.0
         countdownIndicator.pad(5.0)
         countdownIndicator.maxWidth = Double.POSITIVE_INFINITY
@@ -92,16 +111,18 @@ class ConductorView(
         videoInputProperty.bindBidirectional(videoInputField.textProperty())
         extraOptionsProperty.bindBidirectional(extraOptionsField.textProperty())
         children.addAll(
-            HBox(5.0, Label("Port:     "), portSpinner).centerChildren(),
-            HBox(5.0, Label("Countdown:"), countdownTimeSpinner).centerChildren(),
-            HBox(5.0, Label("Threshold:"), beatThresholdSpinner).centerChildren(),
-            HBox(5.0, Label("Factor:   "), warpFactorSpinner).centerChildren(),
-            HBox(5.0, Label("Model:    "), modelSelector.alwaysHGrow()).centerChildren(),
-            HBox(5.0, Label("Input:    "), videoInputField.alwaysHGrow()).centerChildren(),
-            Label("Options:  "),
+            HBox(5.0, Label("Port:        "), portSpinner).centerChildren(),
+            HBox(5.0, Label("Countdown:   "), countdownTimeSpinner).centerChildren(),
+            HBox(5.0, Label("Threshold:   "), beatThresholdSpinner).centerChildren(),
+            HBox(5.0, Label("Factor:      "), warpFactorSpinner).centerChildren(),
+            HBox(5.0, Label("Min interval:"), minBeatDurSpinner).centerChildren(),
+            HBox(5.0, Label("Warp range:  "), minWarpSpinner, Label("-"), maxWarpSpinner),
+            HBox(5.0, Label("Model:       "), modelSelector.alwaysHGrow()).centerChildren(),
+            HBox(5.0, Label("Input:       "), videoInputField.alwaysHGrow()).centerChildren(),
+            Label("Command line options:  "),
             extraOptionsField,
             centerPane,
-            barPositionLabel.centered()
+            HBox(10.0, currentMeasureLabel, barPositionLabel).center()
         )
         toggleButton.disableProperty().bind(
             conductor.options.modelName.equalTo("<none>")
@@ -130,7 +151,7 @@ class ConductorView(
             ctrl.isDisable = true
         }
         val totalMs = countdownTimeSpinner.value.get() * 1000.0
-        barPositionLabel.text = "0 / ${conductor.beatsPerBar}"
+        barPositionLabel.text = "Beat: 0 / ${conductor.beatsPerBar}"
         CountdownTimer(countdownIndicator, totalMs).start()
     }
 
@@ -138,13 +159,14 @@ class ConductorView(
         centerPane.children.setAll(toggleButton)
     }
 
-    override fun onBeat(barPosition: Int, conductorTime: Decimal) = Platform.runLater {
+    override fun onBeat(measure: Int, barPosition: Int, conductorTime: Decimal) = Platform.runLater {
         this.conductorTime = conductorTime
         background = background(Color.RED)
         val pause = PauseTransition(Duration.millis(100.0))
         pause.setOnFinished { background = null }
         pause.play()
-        barPositionLabel.text = "$barPosition / ${conductor.beatsPerBar}"
+        currentMeasureLabel.text = "Measure: $measure"
+        barPositionLabel.text = "Beat: $barPosition / ${conductor.beatsPerBar}"
         repositionConductorTimeIndicator()
     }
 
@@ -154,7 +176,8 @@ class ConductorView(
     }
 
     override fun onStopped() = Platform.runLater {
-        barPositionLabel.text = "- / 0"
+        barPositionLabel.text = "Beat: - / 0"
+        currentMeasureLabel.text = "Measure: 0"
         for (ctrl in configControls) {
             ctrl.isDisable = false
         }

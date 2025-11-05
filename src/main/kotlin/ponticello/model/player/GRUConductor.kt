@@ -3,6 +3,7 @@ package ponticello.model.player
 import com.illposed.osc.OSCMessageEvent
 import hextant.context.Context
 import ponticello.impl.*
+import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
@@ -14,6 +15,7 @@ import java.util.*
 
 class GRUConductor private constructor(player: ScorePlayer, options: ConductorOptions) : Conductor(player, options) {
     private var lastPrediction = Float.MAX_VALUE
+    private var lastMeter: MeterObject? = null
 
     override fun startVideoAnalysis(pythonExe: String, rubatoDir: File, startAt: Long): Process {
         val scriptPath = rubatoDir.resolve("live-gru.py").absolutePath
@@ -44,25 +46,30 @@ class GRUConductor private constructor(player: ScorePlayer, options: ConductorOp
                 val predictedTimeToNextBeat = event.message.getArgument<Float>(1, "Time to next beat") ?: return
                 val beatProbability = event.message.getArgument<Float>(2, "Beat probability") ?: return
                 val now = System.currentTimeMillis()
-                if (beatProbability >= options.beatThreshold.now.value && now > lastBeatMs + 500) {
+                val minBeatDurMs = (options.minWarp.now * 1000).toLong()
+                if (beatProbability >= options.beatThreshold.now.value && now > lastBeatMs + minBeatDurMs) {
                     beat(timestamp)
                 } else if (player.isScheduled.now) {
-                    if (predictedTimeToNextBeat > lastPrediction || conductorTime <= meter.getDuration(TimeUnit.Bars)) {
-                        clock.timeWarp.now = currentTempo() / meter.beatsPerMinute.now
-                    } else {
+                    if (predictedTimeToNextBeat <= lastPrediction) {
                         val conductorTime = conductorTime
                         val playerTime = player.playHead.currentTime
                         val scoreTimeToNextBeat = (conductorTime + meter.getDuration(TimeUnit.Beats) - playerTime)
                             .coerceAtLeast(0.1.toDecimal())
                         val warp = scoreTimeToNextBeat / predictedTimeToNextBeat.toDouble()
-                        val alpha = options.warpFactor.now
-                        clock.timeWarp.now = (alpha * warp) + (1 - alpha) * clock.timeWarp.now
-//                        clock.timeWarp.now = (warp * alpha).coerceAtMost(1.5.toDecimal())
+                        if (meter == lastMeter) {
+                            val alpha = options.warpFactor.now
+                            clock.timeWarp.now = (alpha * warp) + (1 - alpha) * clock.timeWarp.now
+                        } else {
+                            clock.timeWarp.now = warp
+                        }
+                        val warpRange = options.minWarp.now..options.maxWarp.now
+                        clock.timeWarp.set(clock.timeWarp.now.coerceIn(warpRange))
                     }
                 }
                 lastPrediction = predictedTimeToNextBeat
             }
         }
+        lastMeter = meter
     }
 
     companion object {
