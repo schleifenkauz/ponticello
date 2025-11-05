@@ -22,12 +22,17 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import javafx.util.Duration
+import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2MZ
+import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import ponticello.impl.*
 import ponticello.model.player.Conductor
 import ponticello.model.player.GRUConductor
+import ponticello.model.project.PonticelloProject
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.ToolPane
+import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DecimalSpinner
-import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.RootScorePane
 import reaktive.Observer
@@ -37,13 +42,12 @@ import reaktive.value.fx.asProperty
 import reaktive.value.now
 import java.io.File
 import java.util.WeakHashMap
-import kotlin.time.measureTime
 
-class ConductorView(
+class ConductorPane(
     private val conductor: Conductor,
     private val scorePane: RootScorePane
-) : VBox(5.0), Conductor.View {
-    private var window: SubWindow? = null
+) : ToolPane(), Conductor.View {
+    override val type: Type get() = ConductorPane
 
     private var conductorTime: Decimal = zero
 
@@ -96,6 +100,10 @@ class ConductorView(
     private val videoInputProperty = conductor.options.videoInput.asProperty()
     private val extraOptionsProperty = conductor.options.extraArguments.asProperty()
 
+    override val content: VBox
+
+    override fun defaultState(): ToolPaneState = ToolPaneState.docked
+
     init {
         styleClass("conductor-view")
         conductor.addView(this)
@@ -110,7 +118,7 @@ class ConductorView(
         extraOptionsField.prefWidth = 400.0
         videoInputProperty.bindBidirectional(videoInputField.textProperty())
         extraOptionsProperty.bindBidirectional(extraOptionsField.textProperty())
-        children.addAll(
+        content = VBox(
             HBox(5.0, Label("Port:        "), portSpinner).centerChildren(),
             HBox(5.0, Label("Countdown:   "), countdownTimeSpinner).centerChildren(),
             HBox(5.0, Label("Threshold:   "), beatThresholdSpinner).centerChildren(),
@@ -123,13 +131,12 @@ class ConductorView(
             extraOptionsField,
             centerPane,
             HBox(10.0, currentMeasureLabel, barPositionLabel).center()
-        )
+        ).pad(5.0)
         toggleButton.disableProperty().bind(
             conductor.options.modelName.equalTo("<none>")
                 .or(conductor.options.videoInput.map(String::isBlank))
                 .asObservableValue()
         )
-        pad(5.0)
         registerShortcuts(listOf(startStopAction.withContext(this)))
         scoreRepaintObserver = scorePane.onRepaint.observe { _ -> repositionConductorTimeIndicator() }
         setupDropArea(ConfiguredDropHandler {
@@ -214,8 +221,18 @@ class ConductorView(
                 .map { f -> f.nameWithoutExtension }
     }
 
-    companion object {
-        private val startStopAction = action<ConductorView>("Start/stop") {
+    companion object : Type(uid = 19, "Conductor Sync") {
+        override val defaultSide: Side get() = Side.LEFT
+
+        override val icon: Ikon get() = MaterialDesignF.FACE
+
+        override fun createToolPane(project: PonticelloProject): ToolPane {
+            val conductor = GRUConductor.get(project.context)
+            val scorePane = project.context[PonticelloMainActivity].mainScoreView
+            return ConductorPane(conductor, scorePane)
+        }
+
+        private val startStopAction = action<ConductorPane>("Start/stop") {
             description { v -> `if`(v.conductor.isActive, then = { "Stop" }, otherwise = { "Start" }) }
             icon { v ->
                 `if`(
@@ -234,16 +251,6 @@ class ConductorView(
             }
         }
 
-        private val instances = WeakHashMap<Conductor, ConductorView>()
-
-        fun showWindow(context: Context) {
-            val conductor = GRUConductor.get(context)
-            val scorePane = context[PonticelloMainActivity].mainScoreView
-            val view = instances.getOrPut(conductor) { ConductorView(conductor, scorePane) }
-            val window = view.window ?: makeSubWindow(view, "Conductor", context)
-            view.window = window
-            window.show()
-            window.setOnHidden { conductor.stop() }
-        }
+        private val instances = WeakHashMap<Conductor, ConductorPane>()
     }
 }

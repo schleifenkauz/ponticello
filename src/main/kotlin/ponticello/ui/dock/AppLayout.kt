@@ -32,6 +32,7 @@ import ponticello.ui.launcher.Activity
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.launcher.ProjectSelectorPrompt
+import ponticello.ui.live.ConductorPane
 import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.*
@@ -444,6 +445,7 @@ class AppLayout(
             add(ClockRegistryPane)
             add(BusRegistryPane)
             add(ScoreObjectDetailPane)
+            add(ConductorPane)
 
             //default right side-pane
             add(LogPane)

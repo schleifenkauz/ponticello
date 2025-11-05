@@ -14,7 +14,6 @@ import ponticello.impl.toDecimal
 import ponticello.model.PlaybackSettings
 import ponticello.sc.NumericalControlSpec
 import ponticello.ui.controls.Knob
-import ponticello.ui.live.ConductorView
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 
@@ -33,10 +32,6 @@ class PlaybackSettingsPrompt(
         vspace(10.0),
         HBox(infiniteSpace(), CheckBox(logScCode, "Log SuperCollider code: "), infiniteSpace()).centerChildren(),
         HBox(infiniteSpace(), CheckBox(djMode, "DJ mode: "), infiniteSpace()).centerChildren(),
-        HBox(infiniteSpace(), button("Show conductor window") {
-            hide()
-            ConductorView.showWindow(settings.context)
-        }, infiniteSpace()).centerChildren()
     )
 
     override fun confirm() {
