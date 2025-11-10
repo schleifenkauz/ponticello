@@ -8,9 +8,7 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import java.util.*
-import kotlin.math.exp
-import kotlin.math.ln
-import kotlin.math.sin
+import kotlin.math.*
 
 private const val TWO_PI = 2.0 * Math.PI
 
@@ -205,6 +203,82 @@ data class Sine(val frequency: LFO, val initialPhase: Double) : LFO() {
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         generatePhaseSignal(frequency, initialPhase, duration, sampleRate, dest) { _, phase -> sin(phase) }
+    }
+}
+
+data class Tri(val frequency: LFO, val initialPhase: Double) : LFO() {
+    override val min: Double
+        get() = -1.0
+    override val max: Double
+        get() = 1.0
+
+    override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
+        generatePhaseSignal(frequency, initialPhase, duration, sampleRate, dest) { _, phase ->
+            2 / PI * asin(sin(phase))
+        }
+    }
+}
+
+class WhiteNoise : LFO() {
+    private val random: Random = Random()
+
+    override val min: Double
+        get() = -1.0
+    override val max: Double
+        get() = 1.0
+
+    override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
+        for (i in dest.indices) {
+            dest[i] = random.nextDouble(-1.0, 1.0)
+        }
+    }
+}
+
+data class LFNoise0(val frequency: LFO): LFO() {
+    private val random = Random()
+
+    override val min: Double get() = -1.0
+    override val max: Double get() = 1.0
+
+    override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
+        var value = random.nextDouble(-1.0, 1.0)
+        frequency.generateValues(duration, sampleRate, dest)
+        var phase = 0.0
+        val phaseFactor = 1.0 / sampleRate
+        for (i in dest.indices) {
+            val phaseIncrement = phaseFactor * dest[i]
+            dest[i] = value
+            phase = (phase + phaseIncrement)
+            if (phase >= 1.0) {
+                value = random.nextDouble(-1.0, 1.0)
+                phase %= 1.0
+            }
+        }
+    }
+}
+
+data class LFNoise1(val frequency: LFO): LFO() {
+    private val random = Random()
+
+    override val min: Double get() = -1.0
+    override val max: Double get() = 1.0
+
+    override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
+        var prev = random.nextDouble(-1.0, 1.0)
+        var next = random.nextDouble(-1.0, 1.0)
+        frequency.generateValues(duration, sampleRate, dest)
+        var phase = 0.0
+        val phaseFactor = 1.0 / sampleRate
+        for (i in dest.indices) {
+            val phaseIncrement = phaseFactor * dest[i]
+            dest[i] = (prev * (1.0 - phase) + next * phase) / 2.0
+            phase = (phase + phaseIncrement)
+            if (phase >= 1.0) {
+                prev = next
+                next = random.nextDouble(-1.0, 1.0)
+                phase %= 1.0
+            }
+        }
     }
 }
 

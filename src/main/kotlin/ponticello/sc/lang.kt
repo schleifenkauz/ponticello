@@ -391,6 +391,16 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
                 when (receiver.text) {
                     "SinOsc" -> Sine(freq, phase)
                     "Saw", "LFSaw" -> Sawtooth(freq, phase)
+                    "LFTri" -> Tri(freq, phase)
+                    "LFNoise0", "LFDNoise0" -> {
+                        if (arguments.size != 1) return null
+                        LFNoise0(freq)
+                    }
+                    "LFNoise1", "LFDNoise1" -> {
+                        if (arguments.size != 1) return null
+                        LFNoise1(freq)
+                    }
+
                     else -> null
                 }
             }
@@ -407,7 +417,7 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
                 }
             }
 
-            "unipolar", "bipolar" ->  {
+            "unipolar", "bipolar" -> {
                 if (receiverLFO == null) return null
                 if (arguments.size != 1) return null
                 val mult = arguments[0].getLfo() ?: return null
