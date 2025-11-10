@@ -52,7 +52,7 @@ class CustomizableSynthDefObject(
         "attack", "release" -> parameters.any { p ->
             val spec = p.spec.now
             spec is NumericalControlSpec && spec.attackRelease
-        }
+        } || super<ConfigurableInstrumentObject>.hasParameter(name)
         else -> super<ConfigurableInstrumentObject>.hasParameter(name)
     }
 
@@ -100,7 +100,7 @@ class CustomizableSynthDefObject(
                         "index: Sweep.kr(rate: ~time_warp_bus.kr))"
             )
             extraStatements.add(
-                "env_ = Env.asr(attack, 1, release, curve: 2)" +
+                "env_ = Env.asr(attack, 1, release)" +
                         ".kr(Done.freeSelf, gate: gate_env_ * \\gate.kr(1), timeScale: ~time_warp_bus.kr)"
             )
             for ((param, spec) in attackReleaseParameters) {

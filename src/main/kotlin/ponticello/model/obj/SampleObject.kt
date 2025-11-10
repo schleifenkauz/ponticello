@@ -151,6 +151,7 @@ class SampleObject(
     private fun readTempoMetadata() {
         try {
             if (!referencedFile().isFile) return
+            if (referencedFile().extension == "wav") return
             val metadata = AudioFileIO.read(referencedFile()).tag ?: return
             val bpm = metadata.getFirst(FieldKey.BPM).toIntOrNull() ?: return
             meter.beatsPerMinute.now = bpm.toDecimal()

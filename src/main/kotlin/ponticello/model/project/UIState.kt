@@ -3,6 +3,7 @@ package ponticello.model.project
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import fxutils.actions.isShiftDown
 import hextant.context.Context
 import javafx.event.Event
 import kotlinx.serialization.Serializable
@@ -42,7 +43,7 @@ class UIState private constructor(
     }
 
     fun getOrSelectInstrument(event: Event?): InstrumentObject? =
-        selectedInstrument.get()?.get() ?: selectInstrument(event)
+        selectedInstrument.get()?.get().takeIf { !event.isShiftDown() } ?: selectInstrument(event)
 
     fun selectInstrument(event: Event?): InstrumentObject? {
         val instrument = SimpleRegistrySelectorPrompt(context[InstrumentRegistry], "Select instrument")
