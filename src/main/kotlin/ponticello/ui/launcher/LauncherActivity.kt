@@ -3,6 +3,7 @@ package ponticello.ui.launcher
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.actions.registerShortcuts
+import fxutils.drag.setupDropArea
 import fxutils.infiniteSpace
 import fxutils.label
 import fxutils.prompt.YesNoPrompt
@@ -46,6 +47,8 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
     private val header = HBox(searchField, ActionBar(projectActions, "large-icon-button"), infiniteSpace(), quitBtn)
         .styleClass("startup-screen-top-bar")
 
+    private val layout = VBox(header, recentProjects).styleClass("startup-screen")
+
     init {
         for (proj in launcher.recentProjects.list()) {
             val box = ProjectBox(this, proj)
@@ -53,6 +56,13 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
         }
         recentProjects.children.addAll(boxes)
         setupSearchFilter()
+        layout.setupDropArea {
+            handleSingleFile(".pont") { ev, file ->
+                launcher.openProject(file, askSync = true)
+                ev.consume()
+                true
+            }
+        }
     }
 
     private fun setupSearchFilter() {
@@ -63,7 +73,7 @@ class LauncherActivity(private val launcher: PonticelloLauncher) : Activity() {
         }
     }
 
-    override fun getLayout(): Parent = VBox(header, recentProjects).styleClass("startup-screen")
+    override fun getLayout(): Parent = layout
 
     override fun beforeShowing() {
         primaryStage.initStyle(StageStyle.UNDECORATED)

@@ -98,7 +98,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         _points.add(idx, point)
         viewManager.notifyListeners {
             addedPoint(idx, point)
-            editedEnvelope()
+            if (undoable) editedEnvelope()
         }
         if (undoable) context[UndoManager].record(AddPoint(point, idx, this))
     }
@@ -172,7 +172,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         val p = _points.removeAt(idx)
         viewManager.notifyListeners {
             removedPoint(idx, p)
-            editedEnvelope()
+            if (undoable) editedEnvelope()
         }
         if (undoable) context[UndoManager].record(RemovePoint(p, idx, this))
     }
@@ -218,39 +218,29 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         when {
             newDur == duration -> return
             dir == LEFT && newDur > duration -> {
-                val y = interpolateValueAt(duration - newDur, spec.warp).coerceIn(spec.range)
+//                val y = interpolateValueAt(duration - newDur, spec.warp).coerceIn(spec.range)
                 shiftAll(points.withIndex().drop(1), deltaDur)
-                modifyPoint(0, EnvelopePoint(time = zero, value = y))
+//                modifyPoint(0, EnvelopePoint(time = zero, value = points.first().value))
             }
 
             dir == LEFT && newDur < duration -> {
-                val y = interpolateValueAt(zero, spec.warp).coerceIn(spec.range)
-                for ((i, p) in points.toList().withIndex()) {
+                for ((i, p) in points.toList().withIndex().drop(1)) {
                     if (p.time < (duration - newDur)) removePoint(i, undoable = false)
                 }
                 shiftAll(points.withIndex(), deltaDur)
-                if (points[0].time.absoluteValue > 0.01) {
-                    addPoint(0, EnvelopePoint(time = zero, value = y), undoable = false)
-                } else {
-                    modifyPoint(0, points[0].copy(time = zero))
-                }
+                modifyPoint(0, points[0].copy(time = zero))
             }
 
             dir == RIGHT && newDur > duration -> {
-                val y = interpolateValueAt(newDur, spec.warp).coerceIn(spec.range)
-                modifyPoint(points.size - 1, EnvelopePoint(newDur, y))
+//                val y = interpolateValueAt(newDur, spec.warp).coerceIn(spec.range)
+                modifyPoint(points.size - 1, EnvelopePoint(newDur, points.last().value))
             }
 
             dir == RIGHT && newDur < duration -> {
-                val y = interpolateValueAt(newDur, spec.warp).coerceIn(spec.range)
-                for ((i, p) in points.withIndex().reversed()) {
-                    if (p.time > newDur) removePoint(i, undoable = false)
+                for ((i, p) in points.withIndex().reversed().drop(1)) {
+                    if (p.time >= newDur) removePoint(i, undoable = false)
                 }
-                if ((duration - newDur).absoluteValue > 0.01) {
-                    addPoint(points.size, EnvelopePoint(time = newDur, value = y), undoable = false)
-                } else {
-                    modifyPoint(points.size - 1, points.last().copy(time = newDur))
-                }
+                modifyPoint(points.size - 1, points.last().copy(time = newDur))
             }
         }
     }
