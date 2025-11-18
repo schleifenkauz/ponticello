@@ -82,9 +82,6 @@ class SoundProcessView(
         samplePainter.initialize()
         envelopeManager.initialize()
         attackReleaseOverlay.initialize()
-        context[ContextualMidiReceiver].registerMidiContext(this) {
-            midiContext.takeIf { context[AppLayout].get<ScoreObjectDetailPane>(setup = false).isShowing.now }
-        }
     }
 
     override fun configureInlineControls() {

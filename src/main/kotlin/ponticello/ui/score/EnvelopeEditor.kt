@@ -29,6 +29,8 @@ import ponticello.sc.mapOnto
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.impl.Cursors
+import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.midi.EnvelopeMidiContext
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -276,6 +278,9 @@ class EnvelopeEditor(
         }, handle.focusedProperty(), color.asObservableValue()))
         handle.viewOrder = -1000.0
         setupHandle(handle)
+        envelope.context[ContextualMidiReceiver].registerMidiContext(handle) {
+            EnvelopeMidiContext(envelope, spec, handles.indexOf(handle))
+        }
         pane.children.add(innerCircle)
         pane.children.add(handle)
         handles.add(idx, handle)
