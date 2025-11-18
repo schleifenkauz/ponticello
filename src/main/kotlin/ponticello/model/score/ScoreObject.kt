@@ -145,7 +145,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
         resizeMode = mode
         resizeSide = side
         envelopesBeforeResize = envelopeControls()
-        envelopesBeforeResize.forEach { (name, env) -> println("$name: ${env.size}") }
         return mode != ResizeMode.DeepStretch
     }
 
@@ -279,16 +278,18 @@ sealed class ScoreObject : AbstractRenamableObject() {
         viewManager.removeListener(listener)
     }
 
-    open fun addedToScore(score: Score, group: AbstractScoreObjectGroup?) {
+    fun addedToScore(score: Score) {
         if (this is UnresolvedScoreObject) return
-        val registry = score.context[ScoreObjectRegistry]
+        val registry = context[ScoreObjectRegistry]
         if (!registry.has(this)) {
             registry.context.withoutUndo { registry.add(this) }
         }
-        instances.now += 1
+        if (!score.isAuxiliary) {
+            instances.now += 1
+        }
         if (this is AbstractScoreObjectGroup) {
             for (inst in this.score.objectInstances) {
-                inst.obj.addedToScore(score, this)
+                inst.obj.addedToScore(score)
             }
         }
     }
@@ -305,11 +306,6 @@ sealed class ScoreObject : AbstractRenamableObject() {
             ).showDialog(owner = context[primaryStage]) ?: false
             if (!remove) return
             context.withoutUndo { registry.remove(this) }
-            if (this is ScoreObjectGroup) {
-                for (subInst in score.objectInstances) {
-                    subInst.obj.removedFromScore(option)
-                }
-            }
         }
     }
 

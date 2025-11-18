@@ -77,16 +77,7 @@ class MidiScorePane(
     }
 
     override fun acceptObject(obj: ScoreObject): ScoreObject? = when (obj) {
-        is MidiNoteObject -> {
-            if (!obj.initialized || obj.parentObject == this.obj) obj
-            else {
-                val name = context[ScoreObjectRegistry].availableName("midinote")
-                obj.clone(name)
-            }
-        }
-
         is SoundProcess -> obj
-
         else -> null
     }
 

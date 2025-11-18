@@ -303,7 +303,6 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             is ScoreObjectGroup -> ScoreObjectGroupView(obj, instance)
             is TempoGridObject -> TempoGridObjectView(obj, instance)
             is MidiObject -> MidiObjectView(obj, instance)
-            is MidiNoteObject -> MidiNoteObjectView(obj, instance)
             is UnresolvedScoreObject -> UnresolvedScoreObjectView(instance)
         }
 

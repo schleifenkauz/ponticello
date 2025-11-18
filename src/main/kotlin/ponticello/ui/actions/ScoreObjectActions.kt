@@ -141,7 +141,6 @@ object ScoreObjectActions {
                     when (obj) {
                         is SoundProcess -> obj.instrumentRef.set(newInstrument)
                         is MidiObject -> obj.instrument.set(newInstrument)
-                        is MidiNoteObject -> obj.parentObject.instrument.set(newInstrument)
                         else -> Logger.warn("Cannot set instrument for $obj", Logger.Category.Score)
                     }
                 }
@@ -165,7 +164,7 @@ object ScoreObjectActions {
                 if (obj is SoundProcess) reactiveValue(Codicons.CODE)
                 else reactiveValue(MaterialDesignE.EYE)
             }
-            applicableIf { obj -> obj is SoundProcess || obj is MidiObject || obj is MidiNoteObject }
+            applicableIf { obj -> obj is SoundProcess || obj is MidiObject }
             ifNotApplicable(Action.IfNotApplicable.Disable)
             executes { obj, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) {
@@ -174,7 +173,6 @@ object ScoreObjectActions {
                 when (obj) {
                     is SoundProcess -> showInstrumentDef(obj.def, obj.context)
                     is MidiObject -> showInstrument(obj.instrument.now, obj.context)
-                    is MidiNoteObject -> showInstrument(obj.parentObject.instrument.now, obj.context)
                     else -> {}
                 }
             }

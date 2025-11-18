@@ -53,7 +53,7 @@ open class Score(
         val itr = instances.listIterator()
         for (inst in itr) {
             inst.resolveObject(context)
-            inst.addedToScore(this, parentObject as? AbstractScoreObjectGroup)
+            inst.addedToScore(this)
             inst.initialize(context)
             if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {
                 Logger.warn("Removing zero-duration object $inst from score", Logger.Category.Score)
@@ -71,8 +71,8 @@ open class Score(
 
     fun initialize(context: Context, parentObject: ScoreObject, auxiliary: Boolean = false) {
         this.parentObject = parentObject
-        initialize(context)
         this.isAuxiliary = auxiliary
+        initialize(context)
     }
 
     fun addListener(listener: ScoreListener, notify: Boolean = true) {
@@ -112,8 +112,8 @@ open class Score(
         if (inst.obj == parentObject) {
             Logger.error("Cannot add ${inst.obj} as a child to itself", Logger.Category.Score)
         }
-        inst.addedToScore(this, parentObject as? AbstractScoreObjectGroup)
         inst.initialize(context)
+        inst.addedToScore(this)
         Logger.info("Adding object ${inst.obj.name.now} at ${inst.position} to ${scoreName.now}", Logger.Category.Score)
         instances.add(inst)
         intervalTree.add(inst, inst.start, inst.end)
@@ -136,6 +136,7 @@ open class Score(
         for (inst in set) {
             Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)
             instances.remove(inst)
+            inst.removedFromScore(RegistryOption.ASK_IF_NEEDED)
             intervalTree.remove(inst, inst.start, inst.end)
             instancesByObject[inst.obj]?.remove(inst)
             if (instancesByObject[inst.obj]?.isEmpty() == true) {

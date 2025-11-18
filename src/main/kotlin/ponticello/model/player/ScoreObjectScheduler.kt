@@ -91,18 +91,6 @@ class ScoreObjectScheduler(val context: Context) {
                 client.run("$name.stop;")
             }
 
-            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is InstrumentReference.UserDefined -> {
-                val name = active.superColliderName
-                client.run("$name.release")
-            }
-
-            active.obj is MidiNoteObject && active.obj.parentObject.instrument.now is InstrumentReference.VST -> {
-                val instrument = active.obj.parentObject.instrument.now as InstrumentReference.VST
-                val controllerVar = instrument.flow.get()?.controllerVar ?: return
-                val midinote = active.instance?.y ?: return
-                client.run("$controllerVar.midi.noteOff(0, $midinote)")
-            }
-
             else -> {}
         }
     }
@@ -147,8 +135,7 @@ class ScoreObjectScheduler(val context: Context) {
             return null
         }
         val placement = when {
-            (obj is SoundProcess && obj.def is SynthDefObject) ||
-                    (obj is MidiNoteObject && obj.parentObject.instrument.now is InstrumentReference.UserDefined) -> {
+            obj is SoundProcess && obj.def is SynthDefObject -> {
                 try {
                     val node = ActiveObjectNode(obj, activeObject)
                     nodeTree.addNode(node)

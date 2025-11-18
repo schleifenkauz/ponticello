@@ -15,7 +15,7 @@ import ponticello.model.score.*
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 
 abstract class RegularScorePane(score: Score, context: Context) : ScorePane(score, context) {
-    override fun acceptObject(obj: ScoreObject): ScoreObject? = obj.takeIf { it !is MidiNoteObject }
+    override fun acceptObject(obj: ScoreObject): ScoreObject? = obj
 
     override fun rightClicked(ev: MouseEvent) {
         when (ev.modifiers) {

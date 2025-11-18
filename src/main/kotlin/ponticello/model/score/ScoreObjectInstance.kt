@@ -66,17 +66,15 @@ class ScoreObjectInstance(
 
     val obj: ScoreObject get() = objectRef.get() ?: UnresolvedScoreObject()
 
-    fun addedToScore(score: Score, group: AbstractScoreObjectGroup?) {
+    fun addedToScore(score: Score) {
         this.score = score
-        if (obj !is UnresolvedScoreObject && !score.isAuxiliary) {
-            obj.addedToScore(score, group)
-        }
+        obj.addedToScore(score)
     }
 
     fun removedFromScore(option: Score.RegistryOption) {
         val oldScore = score ?: return
         score = null
-        if (obj !is UnresolvedScoreObject && oldScore.isAuxiliary) {
+        if (!oldScore.isAuxiliary) {
             obj.removedFromScore(option)
         }
     }

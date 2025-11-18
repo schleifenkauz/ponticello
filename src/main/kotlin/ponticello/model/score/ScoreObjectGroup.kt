@@ -32,5 +32,19 @@ class ScoreObjectGroup(
         busSelector.initialize(context)
     }
 
+    override fun onLoadedIntoRegistry() {
+        super.onLoadedIntoRegistry()
+        for (obj in score.objects) {
+            obj.addedToScore(score)
+        }
+    }
+
+    override fun onRemoved() {
+        super.onRemoved()
+        for (obj in score.objects) {
+            obj.removedFromScore(Score.RegistryOption.ASK_IF_NEEDED)
+        }
+    }
+
     override fun cloneWith(score: Score): AbstractScoreObjectGroup = ScoreObjectGroup(score, defaultBusRef.copy())
 }

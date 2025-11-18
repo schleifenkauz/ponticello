@@ -11,6 +11,7 @@ import ponticello.impl.Logger
 import ponticello.model.obj.project
 import ponticello.model.project.UIState
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.UnresolvedScoreObject
 import ponticello.ui.controls.NamePrompt
 import reaktive.value.now
