@@ -238,26 +238,19 @@ class EnvelopeEditor(
         mouseInfo.relocate(infoX, y)
     }
 
-    fun repaint() {
-        if (line.points.isEmpty()) {
-            if (mouseInfo !in pane.children) pane.children.add(mouseInfo)
-            if (line !in pane.children) pane.children.add(line)
-            for ((idx, p) in envelope.points.withIndex()) {
-                val x = objectView.getWidth(p.time)
-                val y = yTransform.map(p.value.toDouble())
-                line.points.addAll(x, y)
-                addHandle(idx, x, y)
-            }
-        } else {
-            for (i in envelope.points.indices) {
-                val p = envelope.points[i]
-                val x = objectView.getWidth(p.time)
-                val y = yTransform.map(p.value.toDouble())
-                line.points[i * 2] = x
-                line.points[i * 2 + 1] = y
-                handles[i].centerX = x
-                handles[i].centerY = y
-            }
+    override fun repaint() {
+        pane.children.removeAll(handles)
+        pane.children.removeAll(innerCircles)
+        handles.clear()
+        innerCircles.clear()
+        line.points.clear()
+        if (mouseInfo !in pane.children) pane.children.add(mouseInfo)
+        if (line !in pane.children) pane.children.add(line)
+        for ((idx, p) in envelope.points.withIndex()) {
+            val x = objectView.getWidth(p.time)
+            val y = yTransform.map(p.value.toDouble())
+            line.points.addAll(x, y)
+            addHandle(idx, x, y)
         }
     }
 

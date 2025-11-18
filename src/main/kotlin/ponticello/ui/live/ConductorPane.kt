@@ -250,7 +250,5 @@ class ConductorPane(
                 }
             }
         }
-
-        private val instances = WeakHashMap<Conductor, ConductorPane>()
     }
 }

@@ -17,7 +17,7 @@ private val SPECIAL_PARAMETERS = setOf("auto_release")
 
 fun ParameterControl.getNumericalValue() = when (this) {
     is ValueControl -> value.now
-    is EnvelopeControl -> points.points.first().value
+    is EnvelopeControl -> points.points.firstOrNull()?.value
     else -> null
 }
 

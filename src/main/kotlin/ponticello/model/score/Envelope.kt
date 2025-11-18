@@ -77,7 +77,6 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         return "IEnvGen.kr($envCode, index: Sweep.kr(rate: ~time_warp_bus.kr) + $offset)"
     }
 
-
     fun interpolateValueAt(t: Decimal, warp: Warp): Decimal {
         var i = points.binarySearch(EnvelopePoint(t, zero))
         if (i >= 0) return points[i].value
@@ -213,14 +212,12 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         for ((i, p) in points) modifyPoint(i, p.copy(time = p.time + delta))
     }
 
-    fun resize(newDur: Decimal, dir: HorizontalDirection, spec: NumericalControlSpec) {
+    fun resize(newDur: Decimal, dir: HorizontalDirection) {
         val deltaDur = newDur - duration
         when {
             newDur == duration -> return
             dir == LEFT && newDur > duration -> {
-//                val y = interpolateValueAt(duration - newDur, spec.warp).coerceIn(spec.range)
                 shiftAll(points.withIndex().drop(1), deltaDur)
-//                modifyPoint(0, EnvelopePoint(time = zero, value = points.first().value))
             }
 
             dir == LEFT && newDur < duration -> {
@@ -232,7 +229,6 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
             }
 
             dir == RIGHT && newDur > duration -> {
-//                val y = interpolateValueAt(newDur, spec.warp).coerceIn(spec.range)
                 modifyPoint(points.size - 1, EnvelopePoint(newDur, points.last().value))
             }
 
@@ -267,8 +263,28 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         viewManager.notifyListeners { editedEnvelope() }
     }
 
-    fun finishedResize() {
+    fun update() {
         viewManager.notifyListeners { editedEnvelope() }
+    }
+
+    fun copyFrom(src: Envelope, offset: Decimal = zero, duration: Decimal = src.duration) {
+        var startIdx = src.points.binarySearch { p -> p.time.compareTo(offset) }
+        if (startIdx < 0) startIdx = -(startIdx + 1)
+        if (startIdx != 0) startIdx -= 1
+        var endIdx = src.points.binarySearch { p -> p.time.compareTo(offset + duration) }
+        if (endIdx < 0) endIdx = -(endIdx + 1)
+        if (endIdx >= src.points.size) endIdx = points.size - 1
+        _points.clear()
+        for (i in startIdx .. endIdx) {
+            val (t, v) = src.points[i]
+            val time = when (i) {
+                startIdx -> zero
+                endIdx -> duration
+                else -> (t - offset).coerceIn(zero, duration)
+            }
+            _points.add(EnvelopePoint(time, v))
+        }
+        viewManager.notifyListeners { repaint() }
     }
 
     private class AddPoint(val point: EnvelopePoint, val idx: Int, val envelope: Envelope) : AbstractEdit() {

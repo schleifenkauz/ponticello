@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
+import ponticello.impl.Logger
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.ParameterizedObject
 import ponticello.model.obj.SynthDefObject
@@ -66,11 +67,15 @@ class EnvelopeControl(
     }
 
     private fun updateSynthDef() {
-        val spec = associatedControl.spec.now as? NumericalControlSpec
+        if (points.size < 2) {
+            Logger.warn("Envelope with less than 2 points", Logger.Category.Score)
+            return
+        }
+        val spec = associatedControl.spec.now
         if (spec !is NumericalControlSpec) {
             System.err.println("Expected NumericalControlSpec but got $spec")
         }
-        val warp = spec?.warp
+        val warp = (spec as? NumericalControlSpec)?.warp
         synthDefSynchronizerJob.join()
         val curve = (warp ?: Warp.Linear).toString()
         val arguments = mutableListOf<Any>(index, points.size, curve)

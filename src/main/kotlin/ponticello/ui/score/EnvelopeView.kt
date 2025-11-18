@@ -10,4 +10,6 @@ interface EnvelopeView {
     fun changedPoint(idx: Int, newPoint: EnvelopePoint) {}
 
     fun editedEnvelope() {}
+
+    fun repaint() {}
 }

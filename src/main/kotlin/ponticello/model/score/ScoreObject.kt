@@ -1,6 +1,5 @@
 package ponticello.model.score
 
-import fxutils.asHorizontalDirection
 import fxutils.drag.TypedDataFormat
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.AbstractEdit
@@ -84,6 +83,9 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private set
 
     @Transient
+    private var envelopesBeforeResize: Map<String, Envelope> = emptyMap()
+
+    @Transient
     protected var resizeSide: Side? = null
 
     @Transient
@@ -142,6 +144,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
         heightBeforeResize = height
         resizeMode = mode
         resizeSide = side
+        envelopesBeforeResize = envelopeControls()
+        envelopesBeforeResize.forEach { (name, env) -> println("$name: ${env.size}") }
         return mode != ResizeMode.DeepStretch
     }
 
@@ -153,8 +157,10 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 for ((parameter, ctrl) in associatedControls) {
                     if (ctrl !is EnvelopeControl) continue
                     val spec = getSpec(parameter) as? NumericalControlSpec
-                    if (spec != null && resizeSide in setOf(Side.LEFT, Side.RIGHT)) {
-                        ctrl.points.resize(targetDuration, side.asHorizontalDirection(), spec)
+                    if (spec != null && side in setOf(Side.LEFT, Side.RIGHT)) {
+                        val env = envelopesBeforeResize[parameter] ?: continue
+                        val offset = if (side == Side.LEFT) durationBeforeResize - targetDuration else zero
+                        ctrl.points.copyFrom(env, offset, targetDuration)
                     }
                 }
             }
@@ -194,18 +200,27 @@ sealed class ScoreObject : AbstractRenamableObject() {
         }
         for (ctrl in associatedControls.values) {
             if (ctrl is EnvelopeControl) {
-                ctrl.points.finishedResize()
+                ctrl.points.update()
             }
         }
         if (recordEdit) {
+            val newEnvelopes = envelopeControls()
             context[UndoManager].record(
                 ResizeEdit(
-                    this, durationBeforeResize, heightBeforeResize, this.duration, this.height,
+                    this, durationBeforeResize, heightBeforeResize,
+                    this.duration, this.height,
+                    envelopesBeforeResize, newEnvelopes,
                     mode, side
                 )
             )
         }
     }
+
+    private fun envelopeControls(): Map<String, Envelope> = if (this is SoundProcess) controls.mapNotNull { ctrl ->
+        val value = ctrl.now
+        if (value is EnvelopeControl) ctrl.name.now to value.points.copy()
+        else null
+    }.toMap() else emptyMap()
 
     fun resize(targetDuration: Decimal, targetHeight: Decimal, type: ResizeMode, side: Side) {
         beginResize(type, side)
@@ -314,18 +329,41 @@ sealed class ScoreObject : AbstractRenamableObject() {
         private val oldHeight: Decimal,
         private val newDuration: Decimal,
         private val newHeight: Decimal,
+        private val oldEnvelopes: Map<String, Envelope>,
+        private val newEnvelopes: Map<String, Envelope>,
         private val type: ResizeMode,
-        private val side: Side,
+        private val side: Side
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Resize object"
 
         override fun doUndo() {
-            obj.resize(oldDuration, oldHeight, type, side)
+            obj.beginResize(type, side)
+            obj.envelopesBeforeResize = emptyMap()
+            obj.resize(oldDuration, oldHeight)
+            updateEnvelopeControls(oldEnvelopes)
+            obj.finishResize(recordEdit = false)
         }
 
         override fun doRedo() {
-            obj.resize(newDuration, newHeight, type, side)
+            obj.beginResize(type, side)
+            obj.envelopesBeforeResize = emptyMap()
+            obj.resize(newDuration, newHeight)
+            updateEnvelopeControls(newEnvelopes)
+            obj.finishResize(recordEdit = false)
+        }
+
+        private fun updateEnvelopeControls(map: Map<String, Envelope>) {
+            if (obj is SoundProcess) {
+                for ((parameter, envelope) in map) {
+                    val ctrl = obj.controls.getControl(parameter)
+                    if (ctrl !is EnvelopeControl) {
+                        Logger.warn("Control for $parameter is not an envelope control", Logger.Category.Score)
+                        continue
+                    }
+                    ctrl.points.copyFrom(envelope)
+                }
+            }
         }
 
         override fun mergeWith(other: Edit): Edit? {
@@ -338,7 +376,8 @@ sealed class ScoreObject : AbstractRenamableObject() {
                 this.newHeight != other.oldHeight -> null
                 else -> ResizeEdit(
                     obj, oldDuration, oldHeight, other.newDuration, other.newHeight,
-                    type, side
+                    oldEnvelopes, other.newEnvelopes,
+                    type, side,
                 )
             }
         }
