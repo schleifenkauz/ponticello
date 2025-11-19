@@ -25,6 +25,7 @@ import ponticello.ui.impl.sceneFill
 import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.misc.InteractionConfigBar
+import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.score.FlowGroupManager
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectDuplicator
@@ -132,6 +133,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         interactionConfig.addGridRelatedShortcuts(this)
         SelectionRelatedActions.addShortcuts(this, context)
         registerActions(WindowActions.all.withContext(this@PonticelloMainActivity))
+        registerActions(ScriptActions.withContext(appLayout))
         registerActions(appLayout.actions())
     }
 

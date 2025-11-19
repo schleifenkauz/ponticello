@@ -196,37 +196,12 @@ class CodePane(
 
     private fun showResult(result: String, anchorNode: Region, error: Boolean) {
         Platform.runLater {
-            val copyButton = copyResultAction.withContext(result).makeButton("medium-icon-button")
-            val resultText = Text(limitString(result, 100))
-            resultText.fill = if (error) Color.RED else Color.WHITE
-            val layout = HBox(HBox(resultText).centerChildren(), VBox(infiniteSpace(), copyButton))
-                .styleClass("result-pane")
-            layout.border = createBorder(Color.GRAY, 2.0)
-            layout.registerShortcuts(listOf(copyResultAction.withContext(result)))
-            val popup = SubWindow(layout, "Result", SubWindow.Type.Popup)
-            popup.scene.fill = Color.BLACK
-            popup.scene.initHextantScene(context)
-            val popupHeight = resultText.prefHeight(-1.0) + 30.0
-            val offset = Point2D(anchorNode.width + 10.0, anchorNode.height - popupHeight)
-            popup.show(anchorNode, offset)
+            ResultPopup(context, result, error).show(anchorNode)
         }
     }
 
-    private fun limitString(input: String, maxLength: Int): String =
-        if (input.length > maxLength) input.take(maxLength) + "..."
-        else input
-
     companion object {
         private val resultWaiter = Executors.newCachedThreadPool()
-
-        private val copyResultAction = action<String>("Copy result") {
-            shortcut("Ctrl+C")
-            icon(MaterialDesignC.CONTENT_COPY)
-            executes { result ->
-                val content = mapOf(DataFormat.PLAIN_TEXT to result)
-                Clipboard.getSystemClipboard().setContent(content)
-            }
-        }
 
         private val evaluateSelectedCodeAction = action<CodePane>("Execute selected code") {
             icon(MaterialDesignS.SEND)

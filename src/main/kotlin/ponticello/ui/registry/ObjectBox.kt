@@ -176,6 +176,8 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             subWindow = createSubWindow()
         }
         val w = subWindow ?: return null
+        w.minWidth = 100.0
+        w.minHeight = 100.0
         w.showAndBringToFront()
         return w
     }
