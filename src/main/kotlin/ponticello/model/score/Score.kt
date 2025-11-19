@@ -53,8 +53,8 @@ open class Score(
         val itr = instances.listIterator()
         for (inst in itr) {
             inst.resolveObject(context)
-            inst.addedToScore(this)
             inst.initialize(context)
+            inst.addedToScore(this)
             if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {
                 Logger.warn("Removing zero-duration object $inst from score", Logger.Category.Score)
                 itr.remove()

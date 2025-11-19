@@ -25,6 +25,7 @@ import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
+import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.MultiObjectControlPopup
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
@@ -174,6 +175,20 @@ object ScoreObjectActions {
                     is SoundProcess -> showInstrumentDef(obj.def, obj.context)
                     is MidiObject -> showInstrument(obj.instrument.now, obj.context)
                     else -> {}
+                }
+            }
+        }
+        addAction("Scale object") {
+            shortcut("Ctrl+Shift?+I")
+            applicableIf { obj -> obj is SoundProcess || obj is AbstractScoreObjectGroup }
+            executes { obj, ev ->
+                val ratio = DecimalPrompt("Scaling factor", precision = 10, 1.0, 0.001..1000.0)
+                    .showDialog(ev) ?: return@executes
+                val mode =
+                    if (ev.isShiftDown()) ScoreObject.ResizeMode.DeepStretch
+                    else ScoreObject.ResizeMode.Stretch
+                obj.context.compoundEdit("Scale object") {
+                    obj.resize(obj.duration * ratio, obj.height, mode, Side.RIGHT)
                 }
             }
         }

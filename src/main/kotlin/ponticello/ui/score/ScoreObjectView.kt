@@ -527,7 +527,8 @@ abstract class ScoreObjectView(
 
     open fun getDisplayHeight(): Double {
         val parent = parentPane
-        return parent.getScreenY(obj.height)
+        return if (parent is MidiScorePane) parent.pixelsPerPitch
+        else parent.getScreenY(obj.height)
     }
 
     open fun rescale() {
