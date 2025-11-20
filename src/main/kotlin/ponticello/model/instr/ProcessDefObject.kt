@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import bundles.set
 import hextant.context.Context
@@ -14,7 +14,8 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
-import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.obj.AbstractSuperColliderObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.sc.ParameterType

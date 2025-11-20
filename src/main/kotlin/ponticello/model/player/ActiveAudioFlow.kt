@@ -1,7 +1,7 @@
 package ponticello.model.player
 
 import ponticello.model.flow.AudioFlow
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 
 class ActiveAudioFlow(val flow: AudioFlow) : ActiveObject() {
     override val associatedObject: ParameterizedObject?

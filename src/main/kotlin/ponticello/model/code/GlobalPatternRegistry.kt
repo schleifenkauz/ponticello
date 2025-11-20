@@ -1,4 +1,4 @@
-package ponticello.model.registry
+package ponticello.model.code
 
 import bundles.PublicProperty
 import bundles.publicProperty
@@ -7,9 +7,10 @@ import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import ponticello.model.obj.GlobalPatternObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
+import ponticello.model.registry.CustomNamedObjectListSerializer
+import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.editor.ScExprExpander
 
 @Serializable(with = GlobalPatternRegistry.Serializer::class)

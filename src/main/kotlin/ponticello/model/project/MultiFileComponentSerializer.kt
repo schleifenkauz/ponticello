@@ -6,7 +6,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import ponticello.impl.Logger
 import ponticello.impl.json
-import ponticello.model.registry.NamedObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectListSerializer
 import reaktive.value.now

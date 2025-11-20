@@ -8,8 +8,8 @@ import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.flow.VSTPluginParameterMapping
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectList
+import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import ponticello.sc.editor.BusSelector
 import ponticello.sc.view.ObjectSelectorControl

@@ -14,8 +14,8 @@ import ponticello.impl.one
 import ponticello.impl.zero
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.live.QuantizationUnit
-import ponticello.model.registry.ClockRegistry
-import ponticello.model.registry.MeterRegistry
+import ponticello.model.player.ClockRegistry
+import ponticello.model.player.MeterRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject.ResizeMode

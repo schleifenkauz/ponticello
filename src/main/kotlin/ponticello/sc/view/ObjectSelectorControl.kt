@@ -10,7 +10,7 @@ import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
-import ponticello.model.registry.NamedObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.sc.editor.ObjectSelector

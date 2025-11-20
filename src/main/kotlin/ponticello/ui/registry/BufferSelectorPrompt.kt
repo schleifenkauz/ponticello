@@ -4,10 +4,10 @@ import ponticello.impl.Decimal
 import ponticello.impl.one
 import ponticello.impl.rangeTo
 import ponticello.impl.zero
-import ponticello.model.obj.AllocatedBufferObject
-import ponticello.model.obj.BufferObject
-import ponticello.model.registry.BufferRegistry
 import ponticello.model.score.ObjectPosition
+import ponticello.model.server.AllocatedBufferObject
+import ponticello.model.server.BufferObject
+import ponticello.model.server.BufferRegistry
 import ponticello.ui.controls.DecimalPrompt
 import reaktive.value.now
 

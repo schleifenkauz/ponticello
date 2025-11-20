@@ -3,9 +3,9 @@ package ponticello.sc.editor
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
 import hextant.context.Context
-import ponticello.model.obj.BufferObject
 import ponticello.model.project.BUFFERS
 import ponticello.model.project.get
+import ponticello.model.server.BufferObject
 import ponticello.ui.launcher.PonticelloLauncher
 
 class BufferRefCompleter(

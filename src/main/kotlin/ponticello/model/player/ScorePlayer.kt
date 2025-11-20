@@ -4,7 +4,6 @@ import bundles.publicProperty
 import ponticello.impl.*
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.playbackSettings
-import ponticello.model.registry.ClockRegistry
 import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead

@@ -15,9 +15,9 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import javafx.stage.Window
+import ponticello.model.obj.NamedObject
 import ponticello.model.obj.project
 import ponticello.model.project.*
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference

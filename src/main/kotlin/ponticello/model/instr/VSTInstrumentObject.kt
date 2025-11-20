@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import hextant.context.Context
 import javafx.scene.paint.Color

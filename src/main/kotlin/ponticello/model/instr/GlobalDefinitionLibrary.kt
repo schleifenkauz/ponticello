@@ -1,4 +1,4 @@
-package ponticello.model.registry
+package ponticello.model.instr
 
 import bundles.publicProperty
 import fxutils.prompt.YesNoPrompt
@@ -10,7 +10,7 @@ import kotlinx.serialization.KSerializer
 import ponticello.impl.Logger
 import ponticello.impl.async
 import ponticello.impl.json
-import ponticello.model.obj.InstrumentObject
+import ponticello.model.obj.NamedObject
 import reaktive.value.now
 import java.io.File
 

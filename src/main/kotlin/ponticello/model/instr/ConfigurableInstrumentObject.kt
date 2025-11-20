@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import javafx.scene.paint.Color
 import ponticello.sc.ParameterType

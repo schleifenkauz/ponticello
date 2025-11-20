@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.code
 
 import bundles.set
 import fxutils.drag.TypedDataFormat
@@ -11,6 +11,10 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.ScriptObjectReference
+import ponticello.model.obj.project
+import ponticello.model.obj.withName
 import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval

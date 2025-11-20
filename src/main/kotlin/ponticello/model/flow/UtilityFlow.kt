@@ -5,13 +5,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.ReferencedSynthDefObject
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.ReferencedSynthDefObject
 import ponticello.model.registry.reference
-import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.BusControl
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.ValueControl
 import ponticello.model.score.controls.writeSynthCode
 import reaktive.Observer

@@ -15,7 +15,9 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonNames
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
-import ponticello.model.obj.*
+import ponticello.model.instr.*
+import ponticello.model.obj.BufferReference
+import ponticello.model.obj.withName
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.LiveSynthUpdater
 import ponticello.model.player.ScorePlayer

@@ -39,10 +39,14 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.impl.Logger
 import ponticello.impl.parseDecimal
 import ponticello.impl.zero
-import ponticello.model.obj.*
+import ponticello.model.obj.project
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.buffers
-import ponticello.model.registry.BufferRegistry
+import ponticello.model.score.MeterObject
+import ponticello.model.server.AllocatedBufferObject
+import ponticello.model.server.BufferObject
+import ponticello.model.server.BufferRegistry
+import ponticello.model.server.SampleObject
 import ponticello.sc.Identifier
 import ponticello.ui.actions.undoable
 import ponticello.ui.dock.BufferRegistryPaneState

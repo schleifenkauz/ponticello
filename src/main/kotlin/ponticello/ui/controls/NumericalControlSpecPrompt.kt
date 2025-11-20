@@ -8,7 +8,7 @@ import javafx.beans.binding.Bindings
 import javafx.scene.Node
 import javafx.scene.control.ColorPicker
 import ponticello.impl.parseDecimal
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 

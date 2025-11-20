@@ -1,9 +1,9 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import ponticello.impl.Decimal
 import ponticello.model.player.ActiveObject
-import ponticello.model.registry.NamedObject
-import ponticello.model.score.ParameterControlList
+import ponticello.model.obj.NamedObject
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
 import reaktive.value.ReactiveValue
 import reaktive.value.now

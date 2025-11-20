@@ -13,7 +13,7 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
-import ponticello.model.obj.GlobalPatternObject
+import ponticello.model.code.GlobalPatternObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.project.PATTERNS
 import ponticello.model.project.PonticelloProject

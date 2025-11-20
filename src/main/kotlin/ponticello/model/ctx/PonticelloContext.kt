@@ -2,10 +2,10 @@ package ponticello.model.ctx
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import ponticello.model.obj.ConfigurableInstrumentObject
-import ponticello.model.obj.CustomizableSynthDefObject
-import ponticello.model.obj.ProcessDefObject
-import ponticello.model.score.ParameterControlList
+import ponticello.model.instr.ConfigurableInstrumentObject
+import ponticello.model.instr.CustomizableSynthDefObject
+import ponticello.model.instr.ProcessDefObject
+import ponticello.model.score.controls.ParameterControlList
 
 sealed class PonticelloContext {
     sealed class InstrumentDef : PonticelloContext() {

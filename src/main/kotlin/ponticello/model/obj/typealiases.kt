@@ -2,16 +2,24 @@ package ponticello.model.obj
 
 import hextant.context.Context
 import kotlinx.serialization.Contextual
+import ponticello.model.code.GlobalPatternObject
+import ponticello.model.code.ScriptObject
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.VSTPluginFlow
+import ponticello.model.instr.BusObject
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ProcessDefObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.live.LiveObject
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.player.ClockObject
 import ponticello.model.project.flows
 import ponticello.model.record.LiveBufferObject
 import ponticello.model.registry.ObjectReference
+import ponticello.model.score.MeterObject
 import ponticello.model.score.ScoreObject
+import ponticello.model.server.BufferObject
 import reaktive.value.now
 
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>

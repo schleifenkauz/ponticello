@@ -14,10 +14,14 @@ import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import ponticello.impl.MidiPitch
-import ponticello.model.obj.InstrumentReference
+import ponticello.model.instr.InstrumentReference
 import ponticello.model.obj.withName
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.*
+import ponticello.model.score.MidiObject
+import ponticello.model.score.Score
+import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.SoundProcess
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.Identifier
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.impl.showDialog

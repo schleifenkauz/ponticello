@@ -8,9 +8,9 @@ import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.flow.NodePlacement
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.MeterReference
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.registry.MeterRegistry
+import ponticello.model.player.MeterRegistry
 import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.Observer

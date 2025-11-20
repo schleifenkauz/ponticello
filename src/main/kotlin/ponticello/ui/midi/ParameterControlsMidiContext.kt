@@ -1,6 +1,6 @@
 package ponticello.ui.midi
 
-import ponticello.model.score.ParameterControlList
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.NumericalControlSpec
 import reaktive.value.now

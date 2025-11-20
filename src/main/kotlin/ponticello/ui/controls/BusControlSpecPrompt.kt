@@ -6,7 +6,7 @@ import fxutils.prompt.DetailPane
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import javafx.scene.Node
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.sc.BusControlSpec
 import ponticello.sc.Rate
 

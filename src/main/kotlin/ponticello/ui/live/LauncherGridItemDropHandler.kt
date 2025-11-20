@@ -5,21 +5,21 @@ import javafx.scene.input.DragEvent
 import javafx.scene.input.TransferMode
 import ponticello.impl.Decimal
 import ponticello.impl.zero
+import ponticello.model.code.ScriptObject
 import ponticello.model.flow.AudioFlow
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
 import ponticello.model.live.LiveObject
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.SampleObject
-import ponticello.model.obj.ScriptObject
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
-import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
+import ponticello.model.server.BufferObject
+import ponticello.model.server.BufferRegistry
+import ponticello.model.server.SampleObject
 import ponticello.ui.actions.PlaybackActions
 import reaktive.value.reactiveVariable
 

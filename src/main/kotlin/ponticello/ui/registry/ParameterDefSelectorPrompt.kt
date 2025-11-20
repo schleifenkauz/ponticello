@@ -3,6 +3,11 @@ package ponticello.ui.registry
 import fxutils.SubWindow
 import fxutils.prompt.SimpleSelectorPrompt
 import javafx.geometry.Point2D
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.ProcessDefObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.obj.*
 import ponticello.sc.Identifier
 import ponticello.sc.ParameterType

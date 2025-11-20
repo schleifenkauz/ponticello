@@ -3,8 +3,8 @@ package ponticello.model.score.controls
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.*
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.score.Envelope
 import ponticello.model.score.Envelope.EnvelopePoint
 import ponticello.sc.ControlSpec

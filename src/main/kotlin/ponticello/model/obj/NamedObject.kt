@@ -1,6 +1,6 @@
-package ponticello.model.registry
+package ponticello.model.obj
 
-import ponticello.model.obj.ContextualObject
+import ponticello.model.registry.NamedObjectList
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 

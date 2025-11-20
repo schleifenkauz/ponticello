@@ -4,8 +4,8 @@ import fxutils.prompt.SelectorPrompt
 import fxutils.prompt.YesNoPrompt
 import fxutils.registerShortcuts
 import fxutils.runFXWithTimeout
+import ponticello.model.obj.NamedObject
 import ponticello.model.obj.RenamableObject
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.sc.Identifier
 import ponticello.ui.controls.RenamePrompt

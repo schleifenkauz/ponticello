@@ -4,14 +4,21 @@ import kotlinx.serialization.serializer
 import ponticello.model.GlobalSettings
 import ponticello.model.PlaybackSettings
 import ponticello.model.ServerOptions
+import ponticello.model.code.GlobalPatternRegistry
+import ponticello.model.code.ScriptRegistry
 import ponticello.model.flow.AudioFlows
+import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.ContextualObject
-import ponticello.model.obj.ScriptRegistry
+import ponticello.model.player.ClockRegistry
+import ponticello.model.player.MeterRegistry
 import ponticello.model.record.LiveBufferRegistry
-import ponticello.model.registry.*
+import ponticello.model.registry.ObjectListSerializer
+import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.Score
+import ponticello.model.server.BufferRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.ui.launcher.PonticelloLauncher
 
 val UI_STATE = Component<UIState>("ui-state", "UI State", UIState::default)

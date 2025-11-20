@@ -24,11 +24,11 @@ import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.impl.toDecimal
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.project.BUSSES
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.busses
-import ponticello.model.registry.BusRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient

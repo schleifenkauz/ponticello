@@ -11,9 +11,9 @@ import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.BusReference
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec

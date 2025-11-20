@@ -5,13 +5,13 @@ import hextant.core.HextantCore
 import io.mockk.mockk
 import ponticello.impl.asTime
 import ponticello.impl.toDecimal
-import ponticello.model.obj.InstrumentReference
-import ponticello.model.registry.BusRegistry
-import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.instr.InstrumentReference
+import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.SoundProcess
+import ponticello.model.server.BusRegistry
 import ponticello.sc.client.SuperColliderClient
 
 object Utils {

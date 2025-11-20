@@ -19,8 +19,8 @@ import ponticello.model.player.ScorePlayer
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
-import ponticello.model.registry.BufferRegistry
-import ponticello.model.registry.BusRegistry
+import ponticello.model.server.BufferRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.model.registry.reference
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient

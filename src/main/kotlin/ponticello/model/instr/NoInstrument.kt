@@ -1,6 +1,7 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import javafx.scene.paint.Color
+import ponticello.model.obj.AbstractContextualObject
 import ponticello.sc.client.ScWriter
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.*

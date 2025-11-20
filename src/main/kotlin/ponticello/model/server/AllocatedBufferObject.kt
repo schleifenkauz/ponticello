@@ -1,11 +1,12 @@
-package ponticello.model.obj
+package ponticello.model.server
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.copy
-import ponticello.model.registry.BufferRegistry
+import ponticello.model.obj.RenamableObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient

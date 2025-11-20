@@ -7,8 +7,8 @@ import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
 import ponticello.model.GlobalSettings
-import ponticello.model.obj.ConfigurableInstrumentObject
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ConfigurableInstrumentObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import reaktive.value.now

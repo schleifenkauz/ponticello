@@ -8,6 +8,7 @@ import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import ponticello.impl.Logger
+import ponticello.model.obj.NamedObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.score.ScoreObject
 import ponticello.sc.ScExpr

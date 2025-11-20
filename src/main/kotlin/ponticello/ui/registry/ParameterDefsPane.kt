@@ -4,7 +4,7 @@ import fxutils.prompt.SimpleSelectorPrompt
 import javafx.event.Event
 import javafx.scene.input.DragEvent
 import ponticello.model.GlobalSettings
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.registry.ObjectList
 import ponticello.sc.ParameterType

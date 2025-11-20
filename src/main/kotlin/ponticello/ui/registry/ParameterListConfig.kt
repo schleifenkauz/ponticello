@@ -21,7 +21,7 @@ import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import ponticello.impl.json
 import ponticello.model.GlobalSettings
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.reference
 import ponticello.sc.ParameterType

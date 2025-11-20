@@ -1,9 +1,9 @@
 package ponticello.sc.editor
 
 import javafx.scene.input.DataFormat
-import ponticello.model.obj.BufferObject
-import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ObjectRegistry
+import ponticello.model.server.BufferObject
+import ponticello.model.server.BufferRegistry
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.registry.BufferRegistryPane
 import reaktive.value.ReactiveValue

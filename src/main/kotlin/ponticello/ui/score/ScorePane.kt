@@ -9,12 +9,12 @@ import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import ponticello.impl.*
-import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
+import ponticello.model.server.SampleObject
 import ponticello.ui.misc.TempoSyncPrompt
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture

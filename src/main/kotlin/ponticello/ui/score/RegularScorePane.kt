@@ -9,9 +9,12 @@ import hextant.context.compoundEdit
 import javafx.event.Event
 import javafx.scene.input.MouseEvent
 import ponticello.model.obj.withName
-import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.score.*
+import ponticello.model.score.Score
+import ponticello.model.score.ScoreObject
+import ponticello.model.score.ScoreObjectGroup
+import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.server.BufferRegistry
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 
 abstract class RegularScorePane(score: Score, context: Context) : ScorePane(score, context) {

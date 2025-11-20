@@ -12,10 +12,10 @@ import ponticello.impl.Decimal
 import ponticello.impl.one
 import ponticello.impl.sync
 import ponticello.model.live.QuantizationConfig
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.MeterReference
-import ponticello.model.registry.MeterRegistry
+import ponticello.model.player.MeterRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.MeterObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObject.ResizeMode
 import ponticello.model.score.TimeUnit

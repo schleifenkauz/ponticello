@@ -8,13 +8,13 @@ import hextant.context.compoundEdit
 import javafx.event.Event
 import javafx.scene.Node
 import ponticello.impl.Logger
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.registry.BusRegistry
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.registry.reference
-import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.getBus
+import ponticello.model.server.BusRegistry
 import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.ui.actions.ServerActions

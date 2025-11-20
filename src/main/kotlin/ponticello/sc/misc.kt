@@ -5,7 +5,7 @@ import hextant.codegen.Compound
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import ponticello.model.registry.ObjectReference
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.ParameterControlSelector
 import reaktive.value.now

@@ -17,12 +17,12 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Polyline
 import ponticello.impl.*
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.Envelope
 import ponticello.model.score.Envelope.EnvelopePoint
 import ponticello.model.score.ObjectPosition
-import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.EnvelopeControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.mapOnto

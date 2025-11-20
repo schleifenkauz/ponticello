@@ -13,13 +13,13 @@ import javafx.scene.shape.Line
 import javafx.scene.transform.Scale
 import javafx.scene.transform.Translate
 import ponticello.impl.*
-import ponticello.model.obj.SampleObject
-import ponticello.model.score.ParameterControlList
-import ponticello.model.score.ParameterControlList.NamedParameterControl
 import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ValueControl
+import ponticello.model.server.SampleObject
 import ponticello.ui.score.ScoreObjectView.Companion.MAX_OBJECT_WIDTH
 import reaktive.Observer
 import reaktive.dependencies

@@ -1,11 +1,11 @@
-package ponticello.model.registry
+package ponticello.model.player
 
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import ponticello.model.player.ClockObject
+import ponticello.model.registry.ObjectRegistry
 
 @Serializable
 class ClockRegistry(override val objects: MutableList<ClockObject>) : ObjectRegistry<ClockObject>() {

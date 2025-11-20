@@ -3,10 +3,10 @@ package ponticello.model.player
 import com.illposed.osc.OSCMessageEvent
 import hextant.context.Context
 import ponticello.impl.*
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
+import ponticello.model.score.MeterObject
 import ponticello.model.score.TimeUnit
 import ponticello.sc.client.getArgument
 import reaktive.value.now

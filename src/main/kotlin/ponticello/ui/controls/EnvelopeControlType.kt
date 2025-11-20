@@ -10,11 +10,11 @@ import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.scene.Node
 import ponticello.impl.asTime
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec

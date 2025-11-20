@@ -17,8 +17,8 @@ import ponticello.impl.Logger
 import ponticello.impl.one
 import ponticello.impl.randomColor
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.DecimalLiteral

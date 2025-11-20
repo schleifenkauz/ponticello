@@ -1,12 +1,13 @@
-package ponticello.model.registry
+package ponticello.model.player
 
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.registry.SuperColliderObjectRegistry
+import ponticello.model.score.MeterObject
 
 @Serializable
 class MeterRegistry(override val objects: MutableList<MeterObject>) : SuperColliderObjectRegistry<MeterObject>() {

@@ -1,4 +1,4 @@
-package ponticello.model.registry
+package ponticello.model.instr
 
 import bundles.PublicProperty
 import bundles.publicProperty
@@ -8,9 +8,8 @@ import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import javafx.scene.paint.Color
 import ponticello.impl.Logger
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.ReferencedSynthDefObject
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument
 import reaktive.value.reactiveVariable

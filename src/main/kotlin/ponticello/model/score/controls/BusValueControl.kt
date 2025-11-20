@@ -6,10 +6,9 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.registry.BusRegistry
-import ponticello.model.score.ParameterControlList
+import ponticello.model.server.BusRegistry
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveVariable

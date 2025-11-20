@@ -2,9 +2,9 @@ package ponticello.model.player
 
 import javafx.geometry.Side
 import ponticello.impl.Decimal
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl

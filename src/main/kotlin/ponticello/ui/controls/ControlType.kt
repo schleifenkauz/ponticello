@@ -4,9 +4,9 @@ import fxutils.actions.ContextualizedAction
 import hextant.context.Context
 import javafx.event.Event
 import javafx.scene.Node
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.*
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.ui.score.ScoreObjectView
 

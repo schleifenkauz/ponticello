@@ -9,7 +9,11 @@ import ponticello.impl.unaryMinus
 import ponticello.impl.zero
 import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.NodeTree
-import ponticello.model.obj.*
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ProcessDefObject
+import ponticello.model.instr.SynthDefObject
+import ponticello.model.instr.VSTInstrumentObject
+import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.model.score.*

@@ -1,7 +1,7 @@
 package ponticello.model.player
 
 import ponticello.impl.Decimal
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance

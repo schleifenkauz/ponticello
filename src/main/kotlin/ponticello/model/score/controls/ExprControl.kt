@@ -12,8 +12,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.ScExpr
 import ponticello.sc.editor.ScExprExpander

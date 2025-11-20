@@ -17,12 +17,12 @@ import javafx.scene.input.TransferMode.COPY_OR_MOVE
 import org.kordamp.ikonli.codicons.Codicons
 import ponticello.impl.json
 import ponticello.model.GlobalSettings
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
-import ponticello.model.score.ParameterControlList
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ExprControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.UGenControl

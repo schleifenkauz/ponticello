@@ -1,17 +1,22 @@
-package ponticello.model.obj
+package ponticello.model.server
 
 import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.toDecimal
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.InstrumentReference
+import ponticello.model.obj.AbstractSuperColliderObject
+import ponticello.model.obj.BufferReference
+import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
-import ponticello.model.score.ParameterControlList
 import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.BusControl
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.client.SuperColliderClient

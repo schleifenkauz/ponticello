@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import hextant.context.Context
 import kotlinx.serialization.KSerializer
@@ -8,6 +8,8 @@ import kotlinx.serialization.descriptors.serialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import ponticello.model.flow.VSTPluginFlow
+import ponticello.model.obj.VSTPluginReference
+import ponticello.model.obj.project
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.flows
 import ponticello.model.project.instruments

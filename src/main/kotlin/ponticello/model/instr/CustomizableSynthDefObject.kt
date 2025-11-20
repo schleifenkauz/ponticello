@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import bundles.publicProperty
 import bundles.set
@@ -16,7 +16,8 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.withName
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
@@ -44,7 +45,8 @@ class CustomizableSynthDefObject(
             val spec = it.spec.now
             spec is NumericalControlSpec && spec.attackRelease
         }
-        val additionalParameters = if (attackRelease) listOf(ParameterDefObject.ATTACK_RELEASE) else emptyList()
+        val additionalParameters =
+            if (attackRelease) listOf(ParameterDefObject.Companion.ATTACK_RELEASE) else emptyList()
         return parameters + additionalParameters
     }
 
@@ -166,12 +168,12 @@ class CustomizableSynthDefObject(
 
         fun sine() = create(
             name = "sine",
-            ParameterDefObject("out", BusControlSpec(Rate.Audio, 2))
+            ParameterDefObject.Companion("out", BusControlSpec(Rate.Audio, 2))
         )
 
         fun lpf() = create(
             name = "lpf",
-            ParameterDefObject("bus", BusControlSpec(Rate.Audio, 2))
+            ParameterDefObject.Companion("bus", BusControlSpec(Rate.Audio, 2))
         )
     }
 }

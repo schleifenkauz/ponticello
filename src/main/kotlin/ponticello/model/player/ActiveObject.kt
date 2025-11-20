@@ -1,8 +1,8 @@
 package ponticello.model.player
 
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.registry.NamedObject
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.obj.NamedObject
 
 sealed class ActiveObject {
     abstract val associatedObject: NamedObject?

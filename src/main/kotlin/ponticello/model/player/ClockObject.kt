@@ -7,10 +7,9 @@ import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.AbstractRenamableObject
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.playbackSettings
 import ponticello.model.obj.withName
-import ponticello.model.registry.ClockRegistry
+import ponticello.model.score.MeterObject
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient

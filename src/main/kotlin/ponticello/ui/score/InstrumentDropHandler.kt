@@ -8,9 +8,9 @@ import javafx.scene.input.TransferMode
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.VSTPluginFlow
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.InstrumentReference
-import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.InstrumentReference
+import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.registry.reference
 import reaktive.value.ReactiveVariable
 

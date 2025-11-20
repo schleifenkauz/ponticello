@@ -16,11 +16,11 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.InstrumentReference
+import ponticello.model.instr.NoInstrument
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.live.LiveObjectRegistry
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.InstrumentReference
-import ponticello.model.obj.NoInstrument
-import ponticello.model.obj.ParameterizedObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry

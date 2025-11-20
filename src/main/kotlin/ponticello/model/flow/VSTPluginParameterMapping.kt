@@ -4,11 +4,11 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.reference
+import ponticello.model.server.BusRegistry
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.SuperColliderContext

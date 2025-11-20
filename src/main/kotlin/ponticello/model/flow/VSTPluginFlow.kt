@@ -10,7 +10,7 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.superColliderPath
 import ponticello.impl.writeCode
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.registry.ObjectList

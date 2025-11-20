@@ -18,6 +18,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.NodePlacement
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.*
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.ActiveScoreObject

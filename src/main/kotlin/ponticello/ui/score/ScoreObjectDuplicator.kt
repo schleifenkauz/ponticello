@@ -9,11 +9,11 @@ import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.robot.Robot
 import ponticello.impl.Decimal
-import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.score.ScoreObject
+import ponticello.model.server.SampleObject
 import reaktive.Observer
 
 class ScoreObjectDuplicator {

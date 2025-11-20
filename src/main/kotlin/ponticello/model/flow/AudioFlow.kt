@@ -4,8 +4,8 @@ import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.AbstractRenamableObject
-import ponticello.model.obj.BusObject
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.project
 import ponticello.model.project.flows

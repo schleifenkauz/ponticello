@@ -32,14 +32,14 @@ import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.Companion.VOLUME_SPEC
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.project
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.flows
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import ponticello.model.server.BusRegistry
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.actions.undoable
 import ponticello.ui.controls.DecimalPrompt

@@ -17,12 +17,10 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
-import ponticello.model.obj.*
+import ponticello.model.instr.*
 import ponticello.model.project.INSTRUMENTS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.instruments
-import ponticello.model.registry.GlobalDefinitionLibrary
-import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.ListToolPaneState

@@ -3,7 +3,7 @@ package ponticello.model.live
 import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.LiveObjectReference
-import ponticello.model.registry.NamedObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.score.ScoreObject
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue

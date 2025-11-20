@@ -9,12 +9,12 @@ import ponticello.impl.toDecimal
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.MixerFlow
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.withName
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.reference
+import ponticello.model.server.BusRegistry
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.flow.MixerPane
 import ponticello.ui.launcher.PonticelloMainActivity

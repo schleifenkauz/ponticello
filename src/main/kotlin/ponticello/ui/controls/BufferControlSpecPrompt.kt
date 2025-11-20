@@ -4,7 +4,7 @@ import fxutils.controls.CheckBox
 import fxutils.controls.IntSpinner
 import fxutils.prompt.DetailPane
 import javafx.scene.Node
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.sc.BufferControlSpec
 
 class BufferControlSpecPrompt(

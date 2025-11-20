@@ -1,13 +1,13 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import kotlinx.serialization.Serializable
 import ponticello.impl.zero
 import ponticello.model.flow.NodePlacement
+import ponticello.model.obj.SuperColliderObject
 import ponticello.model.player.ActiveAudioFlow
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScorePlayer
-import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.sc.client.SuperColliderClient

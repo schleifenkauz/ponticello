@@ -5,7 +5,7 @@ import fxutils.hbox
 import javafx.scene.control.Label
 import javafx.scene.control.ListCell
 import javafx.scene.control.ListView
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.sc.*
 import reaktive.list.ReactiveList
 import reaktive.list.fx.asObservableList

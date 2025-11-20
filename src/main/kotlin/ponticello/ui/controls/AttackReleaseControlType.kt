@@ -10,10 +10,10 @@ import javafx.scene.paint.Color
 import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.AttackReleaseControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec

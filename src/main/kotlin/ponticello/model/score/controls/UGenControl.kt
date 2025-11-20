@@ -11,11 +11,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.obj.ProcessDefObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.ProcessDefObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.player.ActiveObject
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient

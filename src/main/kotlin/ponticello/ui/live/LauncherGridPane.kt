@@ -26,13 +26,13 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
 import ponticello.model.live.LiveScoreObject
 import ponticello.model.live.LiveTaskObject
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.ParameterizedObject
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PonticelloProject

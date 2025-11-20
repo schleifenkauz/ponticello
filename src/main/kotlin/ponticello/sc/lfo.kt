@@ -2,7 +2,7 @@ package ponticello.sc
 
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.Envelope
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.ui.misc.LFOsManager
 import reaktive.value.ReactiveValue
 import reaktive.value.now

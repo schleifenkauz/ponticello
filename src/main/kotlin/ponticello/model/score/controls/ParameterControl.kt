@@ -4,12 +4,12 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.obj.SynthDefObject
-import ponticello.model.registry.NamedObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectReference
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter

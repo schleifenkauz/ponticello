@@ -6,16 +6,16 @@ import hextant.serial.readJson
 import javafx.event.Event
 import javafx.scene.input.TransferMode
 import ponticello.impl.Logger
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.SampleObject
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
-import ponticello.model.registry.BufferRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.server.BufferObject
+import ponticello.model.server.BufferRegistry
+import ponticello.model.server.SampleObject
 
 class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHandler() {
     init {

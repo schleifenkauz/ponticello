@@ -4,9 +4,8 @@ import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
 import javafx.geometry.Point2D
 import ponticello.model.flow.*
-import ponticello.model.obj.*
-import ponticello.model.registry.BusRegistry
-import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.instr.*
+import ponticello.model.server.BusRegistry
 import ponticello.sc.Identifier
 import ponticello.ui.registry.BusSelectorPrompt
 import ponticello.ui.score.SoundProcessView

@@ -8,7 +8,7 @@ import hextant.context.Context
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import ponticello.model.obj.InstrumentReference
+import ponticello.model.instr.InstrumentReference
 import ponticello.model.obj.project
 import reaktive.value.now
 

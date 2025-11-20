@@ -19,10 +19,10 @@ import ponticello.impl.Decimal
 import ponticello.impl.one
 import ponticello.impl.times
 import ponticello.impl.toDecimal
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.uiState
+import ponticello.model.score.MeterObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit

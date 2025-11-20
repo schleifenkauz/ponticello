@@ -9,10 +9,10 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.model.flow.NodePlacement
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.score.Envelope
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient

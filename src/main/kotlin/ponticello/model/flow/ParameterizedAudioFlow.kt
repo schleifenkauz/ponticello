@@ -4,8 +4,8 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
-import ponticello.model.obj.BusObject
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.BusObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.player.ActiveAudioFlow
 import ponticello.model.player.ActiveObject
 import ponticello.model.player.LiveSynthUpdater

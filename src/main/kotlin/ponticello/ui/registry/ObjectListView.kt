@@ -28,8 +28,8 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
+import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ListEdit
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.ui.dock.ToolPane

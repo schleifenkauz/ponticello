@@ -7,11 +7,11 @@ import kotlinx.serialization.Transient
 import ponticello.impl.copy
 import ponticello.impl.writeCode
 import ponticello.impl.zero
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.obj.NoInstrument
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.NoInstrument
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
-import ponticello.model.score.ParameterControlList
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.writeSynthCode
 import ponticello.sc.editor.InstrumentSelector
 import reaktive.value.ReactiveValue

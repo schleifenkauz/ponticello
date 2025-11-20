@@ -7,9 +7,9 @@ import javafx.beans.binding.BooleanBinding
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.control.Button
-import ponticello.model.obj.ConfigurableInstrumentObject
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ConfigurableInstrumentObject
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.sc.*
 import reaktive.value.now
 

@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.score
 
 import fxutils.undo.AbstractEdit
 import fxutils.undo.UndoManager
@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.live.QuantizationUnit
-import ponticello.model.score.TimeUnit
+import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.sc.client.ScWriter
 import reaktive.Observer
 import reaktive.Reactive

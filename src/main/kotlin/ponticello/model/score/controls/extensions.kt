@@ -4,9 +4,8 @@ import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.NodePlacement.AddAction
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ParameterControl.CodegenContext
 import ponticello.sc.ControlSpec

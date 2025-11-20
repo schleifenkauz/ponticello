@@ -1,8 +1,8 @@
 package ponticello.sc.editor
 
 import javafx.scene.input.DataFormat
-import ponticello.model.obj.GlobalPatternObject
-import ponticello.model.registry.GlobalPatternRegistry
+import ponticello.model.code.GlobalPatternObject
+import ponticello.model.code.GlobalPatternRegistry
 import ponticello.model.registry.ObjectRegistry
 
 class GlobalPatternSelector : ObjectSelector<GlobalPatternObject>() {

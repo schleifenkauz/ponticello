@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import fxutils.drag.TypedDataFormat
 import fxutils.undo.UndoManager
@@ -10,8 +10,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.zero
-import ponticello.model.registry.BusRegistry
+import ponticello.model.obj.AbstractSuperColliderObject
+import ponticello.model.obj.BusReference
+import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.sc.*
 import ponticello.sc.Rate.Audio
 import ponticello.sc.Rate.Control

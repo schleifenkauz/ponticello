@@ -1,8 +1,8 @@
 package ponticello.sc.editor
 
 import javafx.scene.input.DataFormat
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.registry.InstrumentRegistry
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.registry.ObjectRegistry
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.registry.InstrumentRegistryPane

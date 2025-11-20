@@ -9,7 +9,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.obj.*
+import ponticello.model.instr.*
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
 import reaktive.value.*
 import reaktive.value.binding.flatMap

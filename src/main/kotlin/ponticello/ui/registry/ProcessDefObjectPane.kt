@@ -3,7 +3,7 @@ package ponticello.ui.registry
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.EditorControl
 import javafx.scene.Node
-import ponticello.model.obj.ProcessDefObject
+import ponticello.model.instr.ProcessDefObject
 import ponticello.ui.misc.CodePane
 
 class ProcessDefObjectPane(

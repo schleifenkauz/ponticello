@@ -6,7 +6,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.withPrecision
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now

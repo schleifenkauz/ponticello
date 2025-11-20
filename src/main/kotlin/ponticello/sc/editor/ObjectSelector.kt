@@ -5,7 +5,7 @@ import hextant.serial.string
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import ponticello.model.registry.NamedObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference

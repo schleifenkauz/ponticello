@@ -11,7 +11,7 @@ import javafx.event.Event
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.ParameterControl
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 

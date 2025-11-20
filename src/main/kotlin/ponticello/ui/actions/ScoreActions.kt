@@ -13,7 +13,7 @@ import javafx.scene.robot.Robot
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.obj.withName
-import ponticello.model.registry.MeterRegistry
+import ponticello.model.player.MeterRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.*

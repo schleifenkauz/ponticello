@@ -1,7 +1,7 @@
 package ponticello.ui.registry
 
 import kotlinx.serialization.Serializable
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.registry.CustomNamedObjectListSerializer
 import ponticello.model.registry.NamedObjectList
 import ponticello.sc.ControlSpec

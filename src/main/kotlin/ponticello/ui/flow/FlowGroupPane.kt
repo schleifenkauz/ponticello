@@ -22,11 +22,11 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.flow.*
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.obj.FlowReference
-import ponticello.model.obj.InstrumentObject
 import ponticello.model.obj.resolve
 import ponticello.model.obj.withName
-import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
 import ponticello.sc.Identifier

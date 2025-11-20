@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.code
 
 import hextant.context.Context
 import ponticello.model.registry.ObjectRegistry

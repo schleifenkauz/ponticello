@@ -1,9 +1,9 @@
 package ponticello.sc.editor
 
 import javafx.scene.input.DataFormat
-import ponticello.model.obj.BusObject
-import ponticello.model.registry.BusRegistry
+import ponticello.model.instr.BusObject
 import ponticello.model.registry.ObjectRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import reaktive.value.ReactiveValue
 import reaktive.value.now

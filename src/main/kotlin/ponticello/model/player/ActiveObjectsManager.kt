@@ -9,8 +9,8 @@ import ponticello.impl.Decimal
 import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
-import ponticello.model.obj.ParameterDefObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject

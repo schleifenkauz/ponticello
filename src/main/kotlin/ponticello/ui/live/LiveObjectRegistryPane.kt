@@ -24,10 +24,10 @@ import ponticello.model.live.LiveScoreObject
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
+import ponticello.model.player.MeterRegistry
 import ponticello.model.project.LIVE_OBJECTS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
-import ponticello.model.registry.MeterRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject

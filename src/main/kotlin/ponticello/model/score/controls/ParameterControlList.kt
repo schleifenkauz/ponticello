@@ -1,4 +1,4 @@
-package ponticello.model.score
+package ponticello.model.score.controls
 
 import fxutils.drag.TypedDataFormat
 import fxutils.undo.UndoManager
@@ -13,14 +13,15 @@ import ponticello.impl.Logger
 import ponticello.impl.asTime
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import ponticello.model.obj.*
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.withName
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
-import ponticello.model.score.controls.BufferControl
-import ponticello.model.score.controls.EnvelopeControl
-import ponticello.model.score.controls.ExprControl
-import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.ScoreObject
 import ponticello.sc.BufferPositionControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
@@ -134,7 +135,7 @@ class ParameterControlList(
             val before = customSpec
             customSpec = custom
             if (initialized) {
-                context[UndoManager].record(ParameterControlEdit.EditCustomSpec(this, before, custom))
+                context[UndoManager.Companion].record(ParameterControlEdit.EditCustomSpec(this, before, custom))
                 val defaultSpec = controls.getDefaultSpec(this)
                 val newSpec = custom ?: defaultSpec
                 updateSpec(newSpec)
@@ -170,7 +171,7 @@ class ParameterControlList(
             val oldControl = now
             newControl.initialize(context, this)
             value.now = newControl
-            context[UndoManager].record(ParameterControlEdit.ReassignControl(this, oldControl, newControl))
+            context[UndoManager.Companion].record(ParameterControlEdit.ReassignControl(this, oldControl, newControl))
             controls.notifyListeners<Listener> { reassignedControl(this@NamedParameterControl, oldControl, newControl) }
         }
 

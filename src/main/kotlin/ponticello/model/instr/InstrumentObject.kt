@@ -1,15 +1,17 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import fxutils.drag.TypedDataFormat
 import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
-import ponticello.model.registry.BusRegistry
+import ponticello.model.obj.BusReference
+import ponticello.model.obj.SuperColliderObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.server.BusRegistry
 import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.defaultControl

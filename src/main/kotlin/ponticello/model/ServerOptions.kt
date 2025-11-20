@@ -3,12 +3,12 @@ package ponticello.model
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import ponticello.impl.isWindows
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import ponticello.model.server.BusRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import reaktive.value.now

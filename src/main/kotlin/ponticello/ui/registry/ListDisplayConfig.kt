@@ -16,9 +16,9 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import ponticello.model.obj.NamedObject
 import ponticello.model.obj.RenamableObject
 import ponticello.model.obj.withName
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.ui.controls.NamePrompt

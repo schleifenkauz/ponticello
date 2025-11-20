@@ -7,11 +7,11 @@ import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ExprControl
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander

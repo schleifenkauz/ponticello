@@ -1,8 +1,8 @@
 package ponticello.sc.editor
 
-import ponticello.model.obj.MeterObject
-import ponticello.model.registry.MeterRegistry
+import ponticello.model.player.MeterRegistry
 import ponticello.model.registry.NamedObjectList
+import ponticello.model.score.MeterObject
 import ponticello.ui.registry.MeterSelectorPrompt
 
 class MeterSelector : ObjectSelector<MeterObject>() {

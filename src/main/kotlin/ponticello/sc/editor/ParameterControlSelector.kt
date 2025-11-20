@@ -3,9 +3,9 @@ package ponticello.sc.editor
 import bundles.getOrNull
 import ponticello.impl.Logger
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 
 class ParameterControlSelector : ObjectSelector<NamedParameterControl>() {
     private lateinit var associatedObject: ParameterizedObject

@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.code
 
 import fxutils.drag.TypedDataFormat
 import hextant.context.Context
@@ -7,8 +7,10 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ponticello.model.obj.AbstractSuperColliderObject
+import ponticello.model.obj.GlobalPatternReference
+import ponticello.model.obj.withName
 import ponticello.model.project.busses
-import ponticello.model.registry.GlobalPatternRegistry
 import ponticello.sc.EmptyExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.ScExprExpander

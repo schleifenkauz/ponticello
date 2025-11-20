@@ -1,6 +1,6 @@
 package ponticello.ui.registry
 
-import ponticello.model.registry.NamedObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectRegistry
 import reaktive.value.now
 

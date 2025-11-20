@@ -1,7 +1,5 @@
 package ponticello.model.obj
 
-import ponticello.model.registry.NamedObject
-
 interface RenamableObject : NamedObject {
     fun setInitialName(name: String)
 

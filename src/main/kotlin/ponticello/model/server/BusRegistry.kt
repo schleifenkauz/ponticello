@@ -1,12 +1,13 @@
-package ponticello.model.registry
+package ponticello.model.server
 
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Serializable
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.Rate
 import ponticello.sc.client.run
 import reaktive.value.now

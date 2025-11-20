@@ -8,10 +8,10 @@ import javafx.scene.Node
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import ponticello.model.player.ClockObject
+import ponticello.model.player.ClockRegistry
 import ponticello.model.project.CLOCKS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
-import ponticello.model.registry.ClockRegistry
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState

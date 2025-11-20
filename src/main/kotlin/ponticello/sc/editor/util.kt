@@ -2,7 +2,7 @@ package ponticello.sc.editor
 
 import hextant.core.editor.Expander
 import hextant.core.editor.isSubEditor
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.registry.reference
 import ponticello.sc.Rate
 

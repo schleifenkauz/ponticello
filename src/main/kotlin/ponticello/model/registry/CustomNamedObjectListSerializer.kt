@@ -8,8 +8,9 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
-import reaktive.value.now
 import ponticello.impl.json
+import ponticello.model.obj.NamedObject
+import reaktive.value.now
 
 abstract class CustomNamedObjectListSerializer<O : NamedObject, C, L : NamedObjectList<O>>(
     private val contentSerializer: KSerializer<C>,

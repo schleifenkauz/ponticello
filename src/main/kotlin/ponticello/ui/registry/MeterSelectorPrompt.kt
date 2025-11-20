@@ -8,9 +8,9 @@ import javafx.scene.control.Label
 import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.withName
-import ponticello.model.registry.MeterRegistry
+import ponticello.model.player.MeterRegistry
+import ponticello.model.score.MeterObject
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.value.binding.map

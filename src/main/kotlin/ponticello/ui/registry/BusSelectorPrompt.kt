@@ -1,10 +1,10 @@
 package ponticello.ui.registry
 
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.project
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
-import ponticello.model.registry.BusRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import reaktive.value.now
 

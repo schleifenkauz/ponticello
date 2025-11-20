@@ -14,8 +14,8 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.model.obj.ContextualObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.obj.RenamableObject
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.reference
 import ponticello.ui.controls.NameControl
 import ponticello.ui.impl.makeSubWindow

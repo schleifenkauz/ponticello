@@ -15,9 +15,9 @@ import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 import ponticello.impl.Logger
 import ponticello.impl.zero
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec

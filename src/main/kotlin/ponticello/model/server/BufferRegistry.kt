@@ -1,4 +1,4 @@
-package ponticello.model.registry
+package ponticello.model.server
 
 import bundles.PublicProperty
 import bundles.publicProperty
@@ -18,10 +18,9 @@ import kotlinx.serialization.json.*
 import ponticello.impl.Logger
 import ponticello.impl.json
 import ponticello.impl.toDecimal
-import ponticello.model.obj.BufferObject
-import ponticello.model.obj.SampleObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
+import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.Identifier
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument

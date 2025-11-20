@@ -1,4 +1,4 @@
-package ponticello.model.obj
+package ponticello.model.server
 
 import fxutils.SubWindow
 import hextant.context.Context
@@ -11,8 +11,9 @@ import kotlinx.serialization.Transient
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import ponticello.impl.*
+import ponticello.model.obj.withName
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
-import ponticello.model.registry.BufferRegistry
+import ponticello.model.score.MeterObject
 import ponticello.model.score.ObjectPosition
 import ponticello.sc.client.ScWriter
 import ponticello.ui.launcher.PonticelloFiles
@@ -26,7 +27,8 @@ import java.util.concurrent.CompletableFuture
 @SerialName("SoundFile")
 class SampleObject(
     @SerialName("path") private val referencedFile: ReactiveVariable<String>,
-    val meter: MeterObject = MeterObject.none(),
+    private var channelMapping: List<Int> = emptyList(),
+    val meter: MeterObject = MeterObject.Companion.none(),
     val firstBeat: ReactiveVariable<Decimal> = reactiveVariable(zero),
 ) : BufferObject() {
     @Transient

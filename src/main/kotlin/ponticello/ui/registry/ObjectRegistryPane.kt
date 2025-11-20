@@ -8,9 +8,9 @@ import hextant.serial.readJson
 import javafx.scene.input.DragEvent
 import kotlinx.serialization.KSerializer
 import ponticello.impl.Logger
+import ponticello.model.obj.NamedObject
 import ponticello.model.project.ComponentSerializer
 import ponticello.model.project.MultiFileComponentSerializer
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectRegistry
 import ponticello.ui.dock.SearchableToolPane
 

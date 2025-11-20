@@ -17,7 +17,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.parseDecimal
 import ponticello.impl.snap
 import ponticello.impl.unaryMinus
-import ponticello.model.score.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.SpecTransformation

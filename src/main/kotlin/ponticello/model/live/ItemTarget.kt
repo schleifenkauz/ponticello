@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.flow.AudioFlows
+import ponticello.model.instr.ParameterDefObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.*
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
@@ -26,7 +28,6 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.*
 import reaktive.value.binding.and
-import kotlin.collections.set
 
 @Serializable
 sealed class ItemTarget : AbstractContextualObject() {

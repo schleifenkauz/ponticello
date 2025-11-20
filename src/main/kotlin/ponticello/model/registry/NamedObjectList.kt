@@ -2,6 +2,7 @@ package ponticello.model.registry
 
 import hextant.context.Context
 import ponticello.impl.Logger
+import ponticello.model.obj.NamedObject
 import reaktive.value.now
 
 abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {

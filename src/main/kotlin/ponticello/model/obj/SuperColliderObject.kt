@@ -2,7 +2,6 @@ package ponticello.model.obj
 
 import fxutils.actions.collectActions
 import org.kordamp.ikonli.material2.Material2MZ
-import ponticello.model.registry.NamedObject
 import ponticello.sc.Identifier
 import ponticello.sc.client.ScWriter
 

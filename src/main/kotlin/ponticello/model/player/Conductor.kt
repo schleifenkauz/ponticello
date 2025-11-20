@@ -5,8 +5,7 @@ import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.transport.OSCPortIn
 import hextant.core.editor.ListenerManager
 import ponticello.impl.*
-import ponticello.model.obj.MeterObject
-import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.MeterObject
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
 import ponticello.sc.client.OSCSuperColliderClient

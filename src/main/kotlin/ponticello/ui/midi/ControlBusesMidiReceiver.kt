@@ -1,7 +1,7 @@
 package ponticello.ui.midi
 
-import ponticello.model.obj.BusObject
-import ponticello.model.registry.BusRegistry
+import ponticello.model.instr.BusObject
+import ponticello.model.server.BusRegistry
 import reaktive.value.now
 
 class ControlBusesMidiReceiver(private val buses: BusRegistry) : AbstractMidiContext(buses.context) {

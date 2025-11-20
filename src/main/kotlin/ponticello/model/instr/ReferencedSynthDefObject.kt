@@ -1,10 +1,11 @@
-package ponticello.model.obj
+package ponticello.model.instr
 
 import hextant.context.Context
 import hextant.context.withoutUndo
 import javafx.scene.paint.Color
 import kotlinx.serialization.Serializable
 import ponticello.impl.*
+import ponticello.model.obj.AbstractNamedObject
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.BusControlSpec
 import ponticello.sc.NumericalControlSpec
@@ -67,14 +68,14 @@ class ReferencedSynthDefObject(
 
     private fun getSynthDefParameters(name: String): List<ParameterDefObject> = when (name) {
         "send" -> listOf(
-            ParameterDefObject.AMP,
-            ParameterDefObject.IN,
-            ParameterDefObject.OUT
+            ParameterDefObject.Companion.AMP,
+            ParameterDefObject.Companion.IN,
+            ParameterDefObject.Companion.OUT
         )
         "utility" -> listOf(
-            ParameterDefObject.BUS,
-            ParameterDefObject.AMP,
-            ParameterDefObject.PAN
+            ParameterDefObject.Companion.BUS,
+            ParameterDefObject.Companion.AMP,
+            ParameterDefObject.Companion.PAN
         )
         else -> with(context[SuperColliderClient]) {
             val params = mutableListOf<ParameterDefObject>()
@@ -105,7 +106,7 @@ class ReferencedSynthDefObject(
                             )
                         }
                     }
-                    val param = ParameterDefObject(paramName, spec)
+                    val param = ParameterDefObject.Companion(paramName, spec)
                     params.add(param)
                 } catch (ex: Exception) {
                     Logger.error("Failed to get parameter for SynthDef #$name", ex)

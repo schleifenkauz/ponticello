@@ -9,7 +9,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.zero
 import ponticello.model.obj.project
-import ponticello.model.registry.BufferRegistry
+import ponticello.model.server.BufferRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument
 import java.io.File

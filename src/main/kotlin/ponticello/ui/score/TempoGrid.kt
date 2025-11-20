@@ -5,10 +5,10 @@ import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import javafx.scene.text.Font
 import ponticello.impl.*
-import ponticello.model.obj.MeterObject
 import ponticello.model.obj.project
 import ponticello.model.project.UIState
 import ponticello.model.project.uiState
+import ponticello.model.score.MeterObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.TimeUnit

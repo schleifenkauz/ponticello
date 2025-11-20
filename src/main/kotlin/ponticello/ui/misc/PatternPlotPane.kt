@@ -11,7 +11,7 @@ import javafx.scene.control.TextField
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.HBox
 import ponticello.impl.writeCode
-import ponticello.model.obj.GlobalPatternObject
+import ponticello.model.code.GlobalPatternObject
 import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval

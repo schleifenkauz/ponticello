@@ -6,15 +6,15 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
+import ponticello.model.instr.BusObject
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.BusObject
 import ponticello.model.obj.BusReference
-import ponticello.model.registry.BusRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.guardAgainstReplaceNil
+import ponticello.model.server.BusRegistry
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient

@@ -8,9 +8,9 @@ import hextant.context.Context
 import javafx.event.Event
 import kotlinx.serialization.Serializable
 import ponticello.impl.DecimalRange
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.obj.InstrumentObject
-import ponticello.model.registry.InstrumentRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.TimeUnit

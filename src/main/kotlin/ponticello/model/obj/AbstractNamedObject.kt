@@ -1,7 +1,6 @@
 package ponticello.model.obj
 
 import kotlinx.serialization.Transient
-import ponticello.model.registry.NamedObject
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable

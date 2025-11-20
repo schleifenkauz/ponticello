@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.model.flow.NodePlacement
-import ponticello.model.obj.ParameterDefObject
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.score.controls.ParameterControl
 import reaktive.value.ReactiveVariable
 

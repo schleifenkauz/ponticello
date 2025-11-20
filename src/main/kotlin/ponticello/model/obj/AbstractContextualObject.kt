@@ -4,7 +4,6 @@ import bundles.PublicProperty
 import hextant.context.Context
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
-import ponticello.model.registry.NamedObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ObjectRegistry
 import kotlin.properties.ReadOnlyProperty

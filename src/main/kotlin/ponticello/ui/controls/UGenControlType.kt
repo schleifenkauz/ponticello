@@ -13,11 +13,11 @@ import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
-import ponticello.model.obj.ParameterizedObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.player.ActiveObject
 import ponticello.model.player.ActiveScoreObject
-import ponticello.model.score.ParameterControlList
 import ponticello.model.score.controls.ParameterControl
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec

@@ -10,7 +10,7 @@ import org.controlsfx.control.textfield.CustomTextField
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignB
-import ponticello.model.registry.NamedObject
+import ponticello.model.obj.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import reaktive.value.now

@@ -10,8 +10,8 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignG
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.live.LiveObjectRegistry
-import ponticello.model.obj.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.actions.ScoreObjectActions

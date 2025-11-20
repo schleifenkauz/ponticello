@@ -2,7 +2,7 @@ package ponticello.ui.registry
 
 import hextant.core.view.EditorControl
 import javafx.scene.Node
-import ponticello.model.obj.CustomizableSynthDefObject
+import ponticello.model.instr.CustomizableSynthDefObject
 import ponticello.ui.misc.CodePane
 
 class SynthDefObjectPane(

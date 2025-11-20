@@ -9,8 +9,8 @@ import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.ClockReference
 import ponticello.model.obj.MeterReference
 import ponticello.model.player.ClockObject
-import ponticello.model.registry.ClockRegistry
-import ponticello.model.registry.MeterRegistry
+import ponticello.model.player.ClockRegistry
+import ponticello.model.player.MeterRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.TimeUnit

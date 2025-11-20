@@ -12,8 +12,8 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
-import ponticello.model.obj.ScriptObject
-import ponticello.model.obj.ScriptRegistry
+import ponticello.model.code.ScriptObject
+import ponticello.model.code.ScriptRegistry
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.SCRIPTS
 import ponticello.model.project.scripts

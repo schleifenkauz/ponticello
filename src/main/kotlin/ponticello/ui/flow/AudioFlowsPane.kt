@@ -28,10 +28,10 @@ import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
-import ponticello.model.obj.BusObject
+import ponticello.model.instr.BusObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.flows
-import ponticello.model.registry.BusRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectBox

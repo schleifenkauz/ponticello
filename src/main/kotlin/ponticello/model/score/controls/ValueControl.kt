@@ -6,8 +6,8 @@ import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.one
-import ponticello.model.obj.ParameterizedObject
-import ponticello.model.obj.SynthDefObject
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveVariable
