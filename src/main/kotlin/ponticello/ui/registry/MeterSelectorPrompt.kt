@@ -18,6 +18,8 @@ import reaktive.value.binding.map
 class MeterSelectorPrompt(
     registry: MeterRegistry, title: String,
 ) : RegistrySelectorPrompt<MeterObject>(registry, title) {
+    override val canCreateItem: Boolean get() = true
+
     override fun createCell(option: MeterObject): Region = HBox(
         label(option.name), infiniteSpace(),
         label(option.beatsPerBar.map(Int::toString)), Label("x"), label(option.ticksPerBeat.map(Int::toString)),

@@ -15,6 +15,8 @@ class ParameterDefSelectorPrompt(
     private val instrumentObject: InstrumentObject? = parentObject?.def,
     private val fixedParameterType: ParameterType? = null,
 ) : SimpleSelectorPrompt<ParameterDefObject>(options, title) {
+    override val canCreateItem: Boolean get() = true
+
     override val windowType: SubWindow.Type
         get() = SubWindow.Type.Prompt
 

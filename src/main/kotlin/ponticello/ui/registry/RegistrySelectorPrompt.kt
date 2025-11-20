@@ -18,19 +18,20 @@ abstract class RegistrySelectorPrompt<O : NamedObject>(
 
     init {
         content.registerShortcuts {
-            val obj = selectedOption
-            if (obj is RenamableObject) {
-                on("F2") {
-                    hide()
-                    runFXWithTimeout {
-                        RenamePrompt(
-                            obj,
-                            "Rename ${registry.objectType} ${obj.name.now}",
-                        ).showDialog(anchorNode = getBox(obj)!!)
+            val option = selectedOption
+            if (option is Option.SelectItem) {
+                val obj = option.obj
+                if (obj is RenamableObject) {
+                    on("F2") {
+                        hide()
+                        runFXWithTimeout {
+                            RenamePrompt(
+                                obj,
+                                "Rename ${registry.objectType} ${obj.name.now}",
+                            ).showDialog(anchorNode = getBox(obj)!!)
+                        }
                     }
                 }
-            }
-            if (obj != null) {
                 on("DELETE") {
                     hide()
                     runFXWithTimeout(25) {

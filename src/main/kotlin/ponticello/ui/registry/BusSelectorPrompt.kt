@@ -12,6 +12,8 @@ class BusSelectorPrompt(
     registry: BusRegistry, title: String,
     private val rate: Rate? = null, private val channels: Int? = null
 ) : RegistrySelectorPrompt<BusObject>(registry, title) {
+    override val canCreateItem: Boolean get() = true
+
     override fun options(): List<BusObject> = super.options()
         .filter { bus ->
             (rate == null || bus.rate == rate) && (channels == null || bus.channels.now == channels)

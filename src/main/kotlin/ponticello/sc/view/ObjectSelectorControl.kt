@@ -54,6 +54,8 @@ class ObjectSelectorControl<O : NamedObject>(
     public override fun showChoicePopup() {
         val registry = selector.getList()
         val view = object : RegistrySelectorPrompt<O>(registry, "Select ${registry.objectType}") {
+            override val canCreateItem: Boolean get() = true
+
             override fun createObject(name: String): O? = selector.createNewObject(name)
 
             override fun displayText(option: O): String = selector.toString(option).now

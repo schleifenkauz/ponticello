@@ -15,6 +15,8 @@ class BufferSelectorPrompt(
     registry: BufferRegistry, title: String,
     private val channels: Int,
 ) : RegistrySelectorPrompt<BufferObject>(registry, title) {
+    override val canCreateItem: Boolean get() = true
+
     override fun extractText(option: BufferObject): String = option.name.now
 
     override fun displayText(option: BufferObject): String = "${option.name.now} [${option.channels()}]"

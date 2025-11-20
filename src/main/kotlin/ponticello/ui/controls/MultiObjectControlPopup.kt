@@ -1,8 +1,10 @@
 package ponticello.ui.controls
 
-import fxutils.*
+import fxutils.SubWindow
+import fxutils.infiniteSpace
 import fxutils.prompt.SelectorPrompt
 import fxutils.prompt.SimpleSelectorPrompt
+import fxutils.styleClass
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.event.Event
@@ -16,6 +18,8 @@ import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 class MultiObjectControlPopup(
     private val selectedObjects: List<ParameterizedObject>,
 ) : SelectorPrompt<MultiObjectControlPopup.Option>("Select control") {
+    override val canCreateItem: Boolean = true
+
     override fun options(): List<Option> = selectedObjects
         .map { obj -> obj.controls.controlMap.keys }
         .reduceOrNull(Set<String>::intersect).orEmpty()

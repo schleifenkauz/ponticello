@@ -1,7 +1,5 @@
 package ponticello.model.registry
 
-import bundles.set
-import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
 import ponticello.model.obj.SuperColliderObject
@@ -17,7 +15,7 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
 
     override fun initialize(context: Context) {
         val myContext = context.extend {
-            set(UndoManager, context[UndoManager]/*.createSubManager()*/)
+            //set(UndoManager, context[UndoManager].createSubManager())
         }
         super.initialize(myContext)
         client = myContext[SuperColliderClient]
@@ -25,6 +23,12 @@ abstract class SuperColliderObjectRegistry<O : SuperColliderObject> : ObjectRegi
             SuperColliderObject.LiveCycleType.InterpreterBoot -> createAll()
             SuperColliderObject.LiveCycleType.ServerBoot -> client.onServerBooted { createAll() }
             SuperColliderObject.LiveCycleType.ServerTree -> client.onTreeCleared { createAll() }
+        }
+    }
+
+    override fun onAdded(obj: O, idx: Int) {
+        client.run {
+            with(obj) { createObject() }
         }
     }
 
