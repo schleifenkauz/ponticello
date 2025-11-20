@@ -3,7 +3,6 @@ package ponticello.ui.record
 import javafx.application.Platform
 import javafx.scene.image.PixelWriter
 import javafx.scene.image.WritableImage
-import javafx.scene.paint.Color.BLACK
 import org.jtransforms.fft.FloatFFT_1D
 import ponticello.impl.*
 import ponticello.model.record.AudioBuffer
@@ -38,7 +37,6 @@ class LiveSpectrogramCanvas(
     private lateinit var configObserver: Observer
 
     fun start() {
-        buffer.addListener(this)
         CleanupThread().start()
         configObserver = config.noiseFloorDb.observe { _, _, _ ->
             synchronized(segments) {
@@ -71,6 +69,10 @@ class LiveSpectrogramCanvas(
         lastAcceptedSamples = samples
     }
 
+    override fun onClear() {
+        TODO("Not yet implemented")
+    }
+
     private fun getSegment(i: Int): SpectrogramSegment = when {
         i < segments.size -> segments[i]
         i >= segments.size -> {
@@ -89,9 +91,9 @@ class LiveSpectrogramCanvas(
 
     override fun repaint() {
         Platform.runLater {
-            graphicsContext2D.fill = BLACK
-            graphicsContext2D.fillRect(0.0, 0.0, width, height)
+            clearCanvas()
         }
+        clearCanvas()
         executor.execute {
             val firstRegion = (displayRange.start * regionDuration).toInt()
             val lastRegion = (displayRange.endInclusive * regionDuration).ceilToInt()

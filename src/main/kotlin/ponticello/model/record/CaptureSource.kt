@@ -15,13 +15,17 @@ sealed class CaptureSource {
 
     abstract val channels: Int
 
-    abstract fun capture(context: Context): MixerAudioCapture?
+    abstract fun capture(context: Context): AudioCapture?
+
+    abstract fun getFormat(sampleRate: Double): AudioFormat?
 
     data object None : CaptureSource() {
         override val bufferSize: Int = 0
         override val channels: Int get() = 0
 
-        override fun capture(context: Context): MixerAudioCapture? = null
+        override fun capture(context: Context): AudioCapture? = null
+
+        override fun getFormat(sampleRate: Double): AudioFormat? = null
     }
 
     @Serializable
@@ -41,6 +45,8 @@ sealed class CaptureSource {
             val mixer = AudioSystem.getMixer(mixerInfo)
             return MixerAudioCapture(format, mixer, bufferSize)
         }
+
+        override fun getFormat(sampleRate: Double): AudioFormat = getFormat(sampleRate, channels)
 
         companion object {
             private const val BUFFER_SIZE = 1024

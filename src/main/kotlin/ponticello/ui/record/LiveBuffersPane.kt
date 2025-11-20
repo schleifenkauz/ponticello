@@ -1,19 +1,25 @@
 package ponticello.ui.record
 
 import fxutils.actions.action
+import fxutils.actions.collectActions
 import fxutils.actions.makeButton
+import fxutils.actions.registerShortcuts
 import fxutils.centerChildren
 import fxutils.label
+import fxutils.menuItem
 import fxutils.prompt.YesNoPrompt
 import fxutils.styleClass
 import javafx.css.PseudoClass
+import javafx.geometry.Side.BOTTOM
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.ContextMenu
+import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.impl.rangeTo
@@ -28,10 +34,12 @@ import ponticello.model.record.LiveBufferRegistry
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.LiveBufferRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
+import reaktive.value.now
 
 class LiveBuffersPane(
     private val buffers: LiveBufferRegistry
@@ -68,6 +76,7 @@ class LiveBuffersPane(
             if (selected != null) select(selected)
             else if (buffers.isNotEmpty()) select(buffers.first())
         }
+        registerShortcuts(actions.withContext(this))
     }
 
     override fun saveState(dest: ToolPaneState) {
@@ -96,11 +105,15 @@ class LiveBuffersPane(
 
     private fun createItemBox(obj: LiveBufferObject): HBox {
         val label = label(obj.name)
-        val deleteBtn = deleteBufferAction.withContext(obj).makeButton("small-icon-button")
         val toggleBtn = LiveBufferObject.toggleEnabledAction.withContext(obj).makeButton("medium-icon-button")
-        val box = HBox(toggleBtn, label, deleteBtn) styleClass "live-buffer-item"
-        label.setOnMouseClicked {
-            select(obj)
+        val box = HBox(toggleBtn, label) styleClass "live-buffer-item"
+        val contextMenuButton = showContextMenu.withContext(Pair(obj, box)).makeButton("medium-icon-button")
+        box.children.add(contextMenuButton)
+        label.setOnMouseClicked { ev ->
+            if (ev.button == MouseButton.PRIMARY) {
+                select(obj)
+                ev.consume()
+            }
         }
         return box
     }
@@ -131,14 +144,10 @@ class LiveBuffersPane(
 
         private val SELECTED = PseudoClass.getPseudoClass("selected")
 
-        private val deleteBufferAction = action<LiveBufferObject>("Delete buffer") {
-            shortcut("Ctrl+Delete")
-            icon(MaterialDesignC.CLOSE)
-            executes { buffer, ev ->
-                val delete = YesNoPrompt("Delete buffer?").showDialog(ev)
-                if (delete == true) {
-                    buffer.registry.remove(buffer)
-                }
+        private val showContextMenu = action<Pair<LiveBufferObject, HBox>>("Options") {
+            icon(MaterialDesignD.DOTS_VERTICAL)
+            executes { (buffer, box), _ ->
+                createContextMenu(buffer, box).show(box, BOTTOM, 0.0, 0.0)
             }
         }
 
@@ -150,5 +159,41 @@ class LiveBuffersPane(
                 pane.select(buffer)
             }
         }
+
+        private val actions = collectActions<LiveBuffersPane> {
+            addAction("Play selected range") {
+                shortcut("Ctrl+SPACE")
+                executes { pane ->
+                    val selected = pane.selectedObject.get() ?: return@executes
+                    val view = pane.getLiveBufferView(selected)
+                    val selectedRange = view.selectedRange ?: return@executes
+                    val format = selected.format ?: return@executes
+                    selected.buffer.playRange(selectedRange, format, context)
+                }
+            }
+        }
+
+        private fun createContextMenu(obj: LiveBufferObject, anchorNode: Region): ContextMenu =
+            ContextMenu(
+                menuItem("Rename") {
+                    val newName = NamePrompt(obj.registry, "New name", obj.name.now)
+                        .showDialog(anchorNode)
+                    if (newName != null) {
+                        obj.rename(newName)
+                    }
+                },
+                menuItem("Clear Buffer") {
+                    val clear = YesNoPrompt("Clear buffer?").showDialog(anchorNode)
+                    if (clear == true) {
+                        obj.buffer.clear()
+                    }
+                },
+                menuItem("Delete") {
+                    val delete = YesNoPrompt("Delete?").showDialog(anchorNode)
+                    if (delete == true) {
+                        obj.registry.remove(obj)
+                    }
+                }
+            )
     }
 }

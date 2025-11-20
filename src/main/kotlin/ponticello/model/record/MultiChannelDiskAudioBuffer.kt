@@ -1,9 +1,11 @@
 package ponticello.model.record
 
+import ponticello.impl.DecimalRange
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import javax.sound.sampled.AudioFormat
 
 class MultiChannelDiskAudioBuffer(
     private val file: File,
@@ -24,6 +26,10 @@ class MultiChannelDiskAudioBuffer(
 
     override fun receive(samples: List<FloatArray>, frames: Int) {
 
+    }
+
+    override fun writeTo(file: File, format: AudioFormat, range: DecimalRange) {
+        TODO("Not yet implemented")
     }
 
     private class ChannelBuffer(

@@ -17,6 +17,7 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.`if`
 import reaktive.value.now
+import javax.sound.sampled.AudioFormat
 
 @Serializable
 class LiveBufferObject(
@@ -39,7 +40,7 @@ class LiveBufferObject(
         private set
 
     @Transient
-    private var capture: MixerAudioCapture? = null
+    private var capture: AudioCapture? = null
 
     var viewConfig
         get() = _viewConfig
@@ -59,6 +60,8 @@ class LiveBufferObject(
             capture?.stop()
         }
     }
+
+    val format: AudioFormat? get() = source.getFormat(buffer.sampleRate)
 
     override fun initialize(context: Context) {
         super.initialize(context)

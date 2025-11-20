@@ -31,6 +31,16 @@ abstract class AbstractAudioBuffer(
         }
     }
 
+    override fun clear() {
+        nSamples = 0L
+        for (listener in listeners) {
+            listener.onClear()
+        }
+        for (listener in listeners) {
+            listener.afterCleared()
+        }
+    }
+
     override fun totalSamples(): Long = nSamples
 
     override fun addListener(listener: AudioBuffer.Listener) {

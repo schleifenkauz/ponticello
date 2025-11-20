@@ -139,6 +139,9 @@ class FlowGroupPane(
         context[ContextualMidiReceiver].registerMidiContext(box) {
             box.obj.midiContext().takeIf { !box.isCollapsed.now }
         }
+        box.setOnMouseClicked {
+            box.requestFocus()
+        }
         if (box.obj is VSTPluginFlow) {
             val tooltip = Tooltip()
             tooltip.textProperty().bind(box.obj.pluginName.asObservableValue())

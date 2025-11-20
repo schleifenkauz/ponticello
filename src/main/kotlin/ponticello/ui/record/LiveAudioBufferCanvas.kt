@@ -1,16 +1,28 @@
 package ponticello.ui.record
 
 import javafx.scene.canvas.Canvas
+import javafx.scene.paint.Color.BLACK
 import ponticello.impl.DecimalRange
 import ponticello.impl.Logger
 import ponticello.impl.minus
 import ponticello.impl.zero
+import ponticello.model.record.AudioBuffer
 
-abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas() {
+abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas(), AudioBuffer.Listener {
     var displayRange: DecimalRange = initialDisplayRange
         private set
 
+    init {
+        widthProperty().addListener { repaint() }
+        heightProperty().addListener { repaint() }
+    }
+
     abstract fun repaint()
+
+    protected fun clearCanvas() {
+        graphicsContext2D.fill = BLACK
+        graphicsContext2D.fillRect(0.0, 0.0, width, height)
+    }
 
     fun display(range: DecimalRange) {
         if (range.isEmpty()) {

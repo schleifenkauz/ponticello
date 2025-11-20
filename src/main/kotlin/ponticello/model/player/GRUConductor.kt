@@ -46,7 +46,7 @@ class GRUConductor private constructor(player: ScorePlayer, options: ConductorOp
                 val predictedTimeToNextBeat = event.message.getArgument<Float>(1, "Time to next beat") ?: return
                 val beatProbability = event.message.getArgument<Float>(2, "Beat probability") ?: return
                 val now = System.currentTimeMillis()
-                val minBeatDurMs = (options.minWarp.now * 1000).toLong()
+                val minBeatDurMs = (options.minBeatDur.now * 1000).toLong()
                 if (beatProbability >= options.beatThreshold.now.value && now > lastBeatMs + minBeatDurMs) {
                     beat(timestamp)
                 } else if (player.isScheduled.now) {

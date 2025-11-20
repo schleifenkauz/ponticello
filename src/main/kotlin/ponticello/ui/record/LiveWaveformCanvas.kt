@@ -16,7 +16,6 @@ class LiveWaveformCanvas(
     private val configObserver: Observer
 
     init {
-        peaks.buffer.addListener(this)
         configObserver = config.yScale.observe { _, _, _ -> repaint() }
     }
 
@@ -41,6 +40,10 @@ class LiveWaveformCanvas(
     }
 
     override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
+        repaint()
+    }
+
+    override fun afterCleared() {
         repaint()
     }
 }

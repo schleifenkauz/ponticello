@@ -45,6 +45,7 @@ class MixerAudioCapture(
     override fun doStop() {
         activeLine?.flush()
         activeLine?.stop()
+        buffer.addSeparatorAtEnd()
     }
 
     override fun doClose() {
@@ -70,11 +71,16 @@ class MixerAudioCapture(
                 val bb = ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN)
                 for (i in 0 until frames) {
                     for (j in 0 until format.channels) {
+                        val value = bb.getShort().toFloat() / Short.MAX_VALUE
                         val outputIdx = channelConfig.map(j)
-                        floatBuffers[outputIdx][i] = bb.getShort().toFloat() / Short.MAX_VALUE
+                        if (outputIdx in floatBuffers.indices) {
+                            floatBuffers[outputIdx][i] = value
+                        }
                     }
                 }
-                buffer.receive(floatBuffers, frames)
+                if (line.isActive) {
+                    buffer.receive(floatBuffers, frames)
+                }
             }
         } catch (e: InterruptedException) {
             return

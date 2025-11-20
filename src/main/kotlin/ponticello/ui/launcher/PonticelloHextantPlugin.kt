@@ -62,6 +62,7 @@ object PonticelloHextantPlugin : PluginInitializer({
     stylesheet("ponticello/ui/style/launcher-grid.css")
     stylesheet("ponticello/ui/style/syntax.css")
     stylesheet("ponticello/ui/style/mixer.css")
+    stylesheet("ponticello/ui/style/live-buffers.css")
 
     stylesheet("fxutils/style.css")
     stylesheet("fxutils/prompts.css")

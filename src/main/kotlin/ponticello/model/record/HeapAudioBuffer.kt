@@ -1,5 +1,7 @@
 package ponticello.model.record
 
+import java.util.*
+
 class HeapAudioBuffer(
     sampleRate: Double, bufferSize: Int, initialCapacity: Int
 ) : AbstractAudioBuffer(sampleRate, bufferSize) {
@@ -14,6 +16,11 @@ class HeapAudioBuffer(
         val offset = totalSamples().toInt()
         System.arraycopy(samples, 0, buffer, offset, samples.size)
         super.append(samples, frames)
+    }
+
+    override fun clear() {
+        super.clear()
+        Arrays.fill(buffer, 0f)
     }
 
     private fun ensureCapacity(additionalSize: Int) {

@@ -49,6 +49,14 @@ class WaveformPeakCache(
         }
     }
 
+    override fun onClear() {
+        min.clear()
+        max.clear()
+        acceptedSamples = 0
+        currentMin = 1.0f
+        currentMax = -1.0f
+    }
+
     @Synchronized
     fun getPeaks(range: DecimalRange): Peaks {
         val from = (buffer.sampleRate * range.start / regionSize).toInt()
