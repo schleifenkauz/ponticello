@@ -4,6 +4,7 @@ import ponticello.impl.Decimal
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.BusReference
+import ponticello.model.obj.superColliderName
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.NumericalControlSpec

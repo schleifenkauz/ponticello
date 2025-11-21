@@ -6,6 +6,7 @@ import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.obj.RenamableObject
+import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.ScWriter
@@ -23,7 +24,7 @@ class AllocatedBufferObject(
     @Transient
     override var _name: ReactiveVariable<String>? = null
 
-    override val superColliderName get() = "~buf_${name.now}"
+    override fun superColliderName(objectName: String) = "~buf_${objectName}"
 
     override val registry: ObjectRegistry<*>
         get() = context[BufferRegistry]

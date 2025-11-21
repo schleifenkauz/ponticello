@@ -8,6 +8,7 @@ import ponticello.impl.superColliderPath
 import ponticello.impl.writeCode
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.project
+import ponticello.model.obj.superColliderName
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get

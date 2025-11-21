@@ -253,7 +253,8 @@ data class CodeBlock(val variables: List<Identifier> = emptyList(), val statemen
         }
         for (expr in statements) {
             expr.code(this, context)
-            appendLine(";")
+            if (expr !is DisabledExpr) appendLine(";")
+            else appendLine()
         }
     }
 }
@@ -396,6 +397,7 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
                         if (arguments.size != 1) return null
                         LFNoise0(freq)
                     }
+
                     "LFNoise1", "LFDNoise1" -> {
                         if (arguments.size != 1) return null
                         LFNoise1(freq)
@@ -438,7 +440,6 @@ data class MessageSend(val receiver: ScExpr, val method: Identifier, val argumen
 data class PropertyAccessExpr(val receiver: ScExpr, val property: Identifier) : ScExpr, AssignableScExpr {
     override val isValid: Boolean
         get() = receiver.isValid && property.isValid
-
 
     override val children: List<ScElement>
         get() = listOf(receiver, property)

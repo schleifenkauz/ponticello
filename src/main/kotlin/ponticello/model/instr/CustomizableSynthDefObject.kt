@@ -30,6 +30,7 @@ import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 @Serializable
+@SerialName("ponticello.model.obj.CustomizableSynthDefObject")
 class CustomizableSynthDefObject(
     override val parameters: ParameterDefList,
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color> = reactiveVariable(Color.WHITE),
@@ -46,7 +47,7 @@ class CustomizableSynthDefObject(
             spec is NumericalControlSpec && spec.attackRelease
         }
         val additionalParameters =
-            if (attackRelease) listOf(ParameterDefObject.Companion.ATTACK_RELEASE) else emptyList()
+            if (attackRelease) listOf(ParameterDefObject.ATTACK_RELEASE) else emptyList()
         return parameters + additionalParameters
     }
 

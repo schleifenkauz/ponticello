@@ -15,6 +15,7 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.obj.AbstractSuperColliderObject
+import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.reference
@@ -41,8 +42,7 @@ class ProcessDefObject(
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
-    override val superColliderName: String
-        get() = "~proc_${name.now}"
+    override fun superColliderName(objectName: String) = "~proc_${objectName}"
 
     override val registry: ObjectRegistry<*>
         get() = context[InstrumentRegistry]
@@ -126,8 +126,7 @@ class ProcessDefObject(
         deltaExpr.initialize(myContext)
     }
 
-    override fun rename(newName: String) {
-        super.rename(newName)
+    override fun onRename(oldName: String, newName: String) {
         sync()
     }
 

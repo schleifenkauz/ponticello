@@ -16,8 +16,7 @@ class NoInstrument : InstrumentObject, AbstractContextualObject() {
 
     override fun copy(): InstrumentObject = NoInstrument()
 
-    override val superColliderName: String
-        get() = "<none>"
+    override fun superColliderName(objectName: String) = "<none>"
 
     override val parameters: ParameterDefList get() = ParameterDefList(Collections.unmodifiableList(emptyList()))
 

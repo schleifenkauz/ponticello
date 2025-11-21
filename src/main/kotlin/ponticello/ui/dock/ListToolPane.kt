@@ -1,6 +1,8 @@
 package ponticello.ui.dock
 
-import fxutils.actions.*
+import fxutils.actions.ActionBar
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.registerActions
 import fxutils.addAfter
 import fxutils.registerShortcuts
 import javafx.scene.Parent
@@ -32,7 +34,8 @@ abstract class ListToolPane<O : ContextualObject>(
         listView = ObjectListView(list, this, scrollable, initialMode)
         if (state is ListToolPaneState) {
             for (idx in state.expandedBoxes) {
-                listView.getBoxes()[idx].toggleExpanded()
+                val box = listView.getBoxes().getOrNull(idx)
+                box?.toggleExpanded()
             }
         }
     }

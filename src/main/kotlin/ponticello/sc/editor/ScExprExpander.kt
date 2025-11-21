@@ -11,8 +11,10 @@ import hextant.serial.parentChain
 import kotlinx.serialization.json.*
 import ponticello.model.ctx.PonticelloContext
 import ponticello.sc.*
-import reaktive.value.*
-import reaktive.value.binding.map
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
     private val disabled: ReactiveVariable<Boolean> = reactiveVariable(false)
@@ -33,8 +35,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     override fun defaultResult(): ScExpr = EmptyExpr
 
-    override fun transform(result: ScExpr): ReactiveValue<ScExpr> =
-        isDisabled.map { value -> if (value) DisabledExpr(result) else result }
+    override fun transform(result: ScExpr): ScExpr = if (isDisabled.now) DisabledExpr(result) else result
 
     override fun autoExpand(text: String): Boolean {
         val editor = when {
@@ -126,14 +127,26 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
 
     private fun enable() {
         VariableEdit.updateVariable(disabled, false, context[UndoManager], "Uncomment expression")
+        toggledDisabled()
     }
 
     private fun disable() {
         VariableEdit.updateVariable(disabled, true, context[UndoManager], "Comment expression")
+        toggledDisabled()
     }
 
     override fun onReset(editor: ScExprEditor<*>) {
         disabled.set(false)
+        toggledDisabled()
+    }
+
+    private fun toggledDisabled() {
+        if (!isInitialized) return
+        val res = result.now
+        when {
+            isDisabled.now && res !is DisabledExpr -> _result.set(DisabledExpr(res))
+            !isDisabled.now && res is DisabledExpr -> _result.set(res.expr)
+        }
     }
 
     override fun compile(token: String): ScExpr {
@@ -157,6 +170,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
         super.deserialize(element)
         if (element is JsonObject) {
             disabled.set(element["disabled"]?.jsonPrimitive?.boolean ?: false)
+            toggledDisabled()
         }
     }
 

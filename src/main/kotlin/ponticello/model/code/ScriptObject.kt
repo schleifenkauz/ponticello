@@ -2,7 +2,6 @@ package ponticello.model.code
 
 import bundles.set
 import fxutils.drag.TypedDataFormat
-import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.SelectionDistributor
 import hextant.context.extend
@@ -37,7 +36,7 @@ class ScriptObject private constructor(
         super.initialize(context)
         root.initialize(context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
-            set(UndoManager, context[UndoManager]/*.createSubManager()*/)
+            //set(UndoManager, context[UndoManager])
         })
     }
 

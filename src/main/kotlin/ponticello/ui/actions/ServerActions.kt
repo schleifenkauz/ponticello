@@ -7,6 +7,7 @@ import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
 import ponticello.model.obj.BusReference
+import ponticello.model.obj.superColliderName
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get

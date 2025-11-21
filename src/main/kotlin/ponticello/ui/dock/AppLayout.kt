@@ -455,6 +455,7 @@ class AppLayout(
             add(GlobalPatternRegistryPane)
             add(LiveObjectRegistryPane)
             add(ScriptRegistryPane)
+            add(OSCHookRegistryPane)
 
             add(HelpBrowser)
 

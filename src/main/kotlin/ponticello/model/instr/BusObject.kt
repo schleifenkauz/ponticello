@@ -12,6 +12,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.BusReference
+import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.server.BusRegistry
@@ -33,11 +34,10 @@ sealed class BusObject : AbstractSuperColliderObject() {
     abstract val channels: ReactiveVariable<Int>
     abstract val busType: Type
 
-    override val superColliderName
-        get() = when (busType) {
+    override fun superColliderName(objectName: String) = when (busType) {
             Type.Input -> "s.inputBus"
             Type.Output -> "s.outputBus"
-            Type.Regular -> "~bus_${name.now}"
+        Type.Regular -> "~bus_${objectName}"
         }
 
     @Transient

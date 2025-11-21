@@ -17,8 +17,8 @@ import ponticello.impl.Logger
 import ponticello.impl.one
 import ponticello.impl.randomColor
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.InstrumentRegistry
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.DecimalLiteral
@@ -63,6 +63,7 @@ object PonticelloHextantPlugin : PluginInitializer({
     stylesheet("ponticello/ui/style/syntax.css")
     stylesheet("ponticello/ui/style/mixer.css")
     stylesheet("ponticello/ui/style/live-buffers.css")
+    stylesheet("ponticello/ui/style/osc-hooks.css")
 
     stylesheet("fxutils/style.css")
     stylesheet("fxutils/prompts.css")

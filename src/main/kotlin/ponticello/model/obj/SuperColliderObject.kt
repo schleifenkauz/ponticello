@@ -2,13 +2,10 @@ package ponticello.model.obj
 
 import fxutils.actions.collectActions
 import org.kordamp.ikonli.material2.Material2MZ
-import ponticello.sc.Identifier
 import ponticello.sc.client.ScWriter
 
 interface SuperColliderObject : NamedObject {
-    val superColliderName: String
-
-    val superColliderExpr get() = Identifier(superColliderName)
+    fun superColliderName(objectName: String): String
 
     fun ScWriter.createObject()
 
@@ -35,3 +32,4 @@ interface SuperColliderObject : NamedObject {
         }
     }
 }
+

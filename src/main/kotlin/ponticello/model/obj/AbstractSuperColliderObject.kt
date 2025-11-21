@@ -3,6 +3,7 @@ package ponticello.model.obj
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
+import reaktive.value.now
 
 abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperColliderObject {
     protected val client get() = context[SuperColliderClient]
@@ -22,8 +23,13 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
     }
 
     override fun rename(newName: String) {
-        val oldVariableName = superColliderName
+        val oldName = name.now
         super.rename(newName)
+        onRename(oldName, newName)
+    }
+
+    protected open fun onRename(oldName: String, newName: String) {
+        val oldVariableName = superColliderName(oldName)
         client.run {
             +"$superColliderName = $oldVariableName"
             +"$oldVariableName = nil"

@@ -3,6 +3,7 @@ package ponticello.sc
 import hextant.context.Context
 import ponticello.impl.div
 import ponticello.model.obj.MeterReference
+import ponticello.model.obj.superColliderName
 import ponticello.model.score.TimeUnit
 import ponticello.sc.MeterExpr.Type.*
 import ponticello.sc.client.ScWriter

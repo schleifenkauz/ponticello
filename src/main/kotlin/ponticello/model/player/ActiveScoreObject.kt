@@ -32,8 +32,7 @@ data class ActiveScoreObject(
     override val uniqueName: String
         get() = ActiveObjectsManager.uniqueName(obj.name.now, suffix)
 
-    override val superColliderName: String
-        get() = obj.superColliderPrefix + uniqueName
+    override val superColliderName get() = obj.superColliderPrefix + uniqueName
 
     override fun toString(): String = "$obj [$suffix] at $absolutePosition"
 }

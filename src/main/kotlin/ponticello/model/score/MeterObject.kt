@@ -9,6 +9,7 @@ import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.live.QuantizationUnit
 import ponticello.model.obj.AbstractSuperColliderObject
+import ponticello.model.obj.superColliderName
 import ponticello.sc.client.ScWriter
 import reaktive.Observer
 import reaktive.Reactive
@@ -31,8 +32,7 @@ class MeterObject private constructor(
     @Transient
     private lateinit var syncObserver: Observer
 
-    override val superColliderName: String
-        get() = "~meter_${name.now}"
+    override fun superColliderName(objectName: String) = "~meter_${objectName}"
 
     private val bpmProperty get() = "$superColliderName[\\bpm]"
     private val bpbProperty get() = "$superColliderName[\\bpb]"

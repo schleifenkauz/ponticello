@@ -248,9 +248,14 @@ class ObjectListView<O : Any>(
             if (prompt.showDialog(ev) != true) return
         }
         source.add(newObj)
+        val box = getBox(newObj)
+        if (mode.now == DisplayMode.Collapsable) {
+            box.toggleExpanded()
+        }
         if (config.enableSelection) {
             runAfterLayout {
                 select(newObj)
+                config.onCreated(newObj, box)
             }
         }
     }

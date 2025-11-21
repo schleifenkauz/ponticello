@@ -27,8 +27,7 @@ class VSTInstrumentObject(val flow: VSTPluginFlow) : InstrumentObject {
     override fun initialize(context: Context) {
     }
 
-    override val superColliderName: String
-        get() = flow.superColliderName
+    override fun superColliderName(objectName: String) = flow.superColliderName
 
     override fun ScWriter.createObject() {
     }

@@ -12,6 +12,7 @@ import ponticello.impl.superColliderPath
 import ponticello.impl.writeCode
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.BusReference
+import ponticello.model.obj.superColliderName
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference

@@ -11,6 +11,7 @@ import kotlinx.serialization.Transient
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import ponticello.impl.*
+import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.score.MeterObject
@@ -34,8 +35,7 @@ class SampleObject(
     @Transient
     override var _name: ReactiveVariable<String>? = null
 
-    override val superColliderName: String
-        get() = "~sample_${name.now}"
+    override fun superColliderName(objectName: String) = "~sample_${objectName}"
 
     override val registry: BufferRegistry
         get() = context[BufferRegistry]

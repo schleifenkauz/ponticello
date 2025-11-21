@@ -278,6 +278,7 @@ internal fun PluginBuilder.registerControlFactories() {
                 operator("'")
                 add(TokenEditorControl(editor, createBundle(), styleClass = "symbol"))
                 operator("'")
+                root.centerChildren()
             }
         }
     }
@@ -287,6 +288,7 @@ internal fun PluginBuilder.registerControlFactories() {
                 operator("\"")
                 add(TokenEditorControl(editor, createBundle(), styleClass = "string"))
                 operator("\"")
+                root.centerChildren()
             }
         }
     }

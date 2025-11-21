@@ -1,0 +1,15 @@
+.event-count-button {
+    -fx-background-radius: 50%;
+    -fx-border-radius: 50%;
+    -fx-padding: 4px;
+    -fx-font-size: 10px;
+    -fx-alignment: center;
+    -fx-border-color: green;
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-min-width: 40px;
+}
+
+.event-count-button:hover {
+    -fx-background-color: rgba(0, 128, 0, 0.3);
+}

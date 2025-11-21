@@ -4,13 +4,10 @@ import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.showAndBringToFront
+import hextant.serial.EditorRoot
 import javafx.event.Event
-import javafx.geometry.Pos
-import javafx.scene.Parent
-import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
 import ponticello.model.code.GlobalPatternObject
@@ -19,19 +16,19 @@ import ponticello.model.project.PATTERNS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.patterns
 import ponticello.model.registry.ObjectRegistry
+import ponticello.sc.editor.ScExprEditor
 import ponticello.ui.dock.ListToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.makeSubWindow
-import ponticello.ui.misc.CodePane
 import ponticello.ui.misc.PatternPlotPane
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.map
 
 class GlobalPatternRegistryPane(
     registry: ObjectRegistry<GlobalPatternObject>,
-) : ObjectRegistryPane<GlobalPatternObject>(registry, PATTERNS.serializer) {
+) : CodeObjectRegistryPane<GlobalPatternObject>(registry, PATTERNS.serializer) {
     override val type: Type
         get() = GlobalPatternRegistryPane
 
@@ -47,25 +44,12 @@ class GlobalPatternRegistryPane(
 
     override fun createNewObject(name: String, ev: Event?): GlobalPatternObject = GlobalPatternObject.create(name)
 
-    override fun getContent(obj: GlobalPatternObject, box: ObjectBox<GlobalPatternObject>): Parent =
-        when (box.currentMode) {
-            DisplayMode.SubWindow -> {
-                val actions = actions.withContext(listView.getBox(obj))
-                CodePane(
-                    obj.patternCode, extraActions = actions,
-                    ownWindow = true, actionBarAlignment = Pos.BOTTOM_RIGHT
-                )
-            }
-
-            else -> ScrollPane(obj.patternCode.control)
-        }
+    override fun getEditorRoot(obj: GlobalPatternObject): EditorRoot<out ScExprEditor<*>> = obj.patternCode
 
     override fun configureSubWindow(window: SubWindow, obj: GlobalPatternObject) {
         window.width = 600.0
         window.height = 400.0
     }
-
-    override fun detailWindowIcon(obj: GlobalPatternObject): Ikon = Material2AL.CODE
 
     override fun getActions(box: ObjectBox<GlobalPatternObject>): List<ContextualizedAction> =
         actions.withContext(box)

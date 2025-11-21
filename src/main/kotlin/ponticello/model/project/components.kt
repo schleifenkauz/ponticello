@@ -5,6 +5,7 @@ import ponticello.model.GlobalSettings
 import ponticello.model.PlaybackSettings
 import ponticello.model.ServerOptions
 import ponticello.model.code.GlobalPatternRegistry
+import ponticello.model.code.OSCHookRegistry
 import ponticello.model.code.ScriptRegistry
 import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.InstrumentRegistry
@@ -78,6 +79,11 @@ val SCORE = Component<Score>("score", "Score", ::Score)
 
 val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", "Launcher Grid", { LauncherGrid.createNByN(4) })
 
+val OSC_HOOKS = Component(
+    "osc_hooks", "OSC Hooks", OSCHookRegistry::createDefault,
+    MultiFileComponentSerializer(::OSCHookRegistry, extension = "osc.json")
+)
+
 val PLAYBACK_SETTINGS = Component<PlaybackSettings>("playback_settings", "Playback Settings", {
     PlaybackSettings.createDefault(
         PonticelloLauncher.rootContext[GlobalSettings]
@@ -89,7 +95,7 @@ val allComponents = listOf<Component<out ContextualObject>>(
     BUSSES, BUFFERS,
     PATTERNS, INSTRUMENTS,
     UI_STATE, FLOWS, SERVER_OPTIONS, PLAYBACK_SETTINGS,
-    OBJECTS, LIVE_OBJECTS, LIVE_BUFFERS, SCORE, SCRIPTS, LAUNCHER_GRID
+    OBJECTS, LIVE_OBJECTS, LIVE_BUFFERS, SCORE, SCRIPTS, LAUNCHER_GRID, OSC_HOOKS
 )
 
 inline operator fun <reified T : ContextualObject> PonticelloProject.get(component: Component<out T>) =

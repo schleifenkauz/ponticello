@@ -119,6 +119,8 @@ interface ListDisplayConfig<O : Any> {
 
     fun createNewObject(name: String, ev: Event?): O? = null
 
+    fun onCreated(obj: O, box: ObjectBox<O>) {}
+
     fun onSelected(obj: O) {}
 
     fun onDeselected(obj: O) {}

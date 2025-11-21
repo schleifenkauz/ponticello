@@ -9,6 +9,7 @@ import ponticello.model.instr.InstrumentReference
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.project
+import ponticello.model.obj.superColliderName
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.model.registry.ScoreObjectRegistry

@@ -25,6 +25,7 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.impl.toDecimal
 import ponticello.model.instr.BusObject
+import ponticello.model.obj.superColliderName
 import ponticello.model.project.BUSSES
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.busses

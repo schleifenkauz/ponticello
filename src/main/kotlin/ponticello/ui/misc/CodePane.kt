@@ -1,32 +1,25 @@
 package ponticello.ui.misc
 
-import fxutils.*
 import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
+import fxutils.registerShortcuts
+import fxutils.styleClass
 import hextant.context.Context
 import hextant.context.EditorControlGroup
 import hextant.context.SelectionDistributor
 import hextant.core.Editor
 import hextant.core.editor.defaultState
-import hextant.fx.initHextantScene
 import hextant.serial.EditorRoot
 import javafx.application.Platform
-import javafx.geometry.Point2D
 import javafx.geometry.Pos
 import javafx.scene.Parent
 import javafx.scene.control.ScrollPane
-import javafx.scene.input.Clipboard
-import javafx.scene.input.DataFormat
-import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
-import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
-import javafx.scene.text.Text
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.impl.writeCode
+import ponticello.sc.DisabledExpr
 import ponticello.sc.ScExpr
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.SuperColliderException
@@ -172,7 +165,8 @@ class CodePane(
             }
             for (statement in statements) {
                 statement.code(writer, context)
-                appendLine("; ")
+                if (statement !is DisabledExpr) appendLine(";")
+                else appendLine()
             }
         }
         resultWaiter.submit {

@@ -18,8 +18,7 @@ sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
     override val registry: ObjectRegistry<*>?
         get() = context[InstrumentRegistry]
 
-    override val superColliderName: String
-        get() = "\\${name.now}"
+    override fun superColliderName(objectName: String) = "\\${name.now}"
 
     override fun onUpdated() {
         ScorePlayer.execute {

@@ -4,12 +4,11 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.setFixedWidth
+import hextant.serial.EditorRoot
 import javafx.event.Event
 import javafx.scene.Node
-import javafx.scene.Parent
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.code.ScriptObject
@@ -18,16 +17,18 @@ import ponticello.model.project.PonticelloProject
 import ponticello.model.project.SCRIPTS
 import ponticello.model.project.scripts
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.editor.ScExprEditor
 import ponticello.ui.dock.ListToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
-import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.map
 import reaktive.value.now
 
-class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptObject>(registry, SCRIPTS.serializer) {
+class ScriptRegistryPane(
+    registry: ScriptRegistry
+) : CodeObjectRegistryPane<ScriptObject>(registry, SCRIPTS.serializer) {
     override val type: Type
         get() = ScriptRegistryPane
 
@@ -46,6 +47,9 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
         return ScriptObject.create(type, name)
     }
 
+    override val dataFormat: DataFormat
+        get() = ScriptObject.DATA_FORMAT
+
     override fun getHeaderContent(obj: ScriptObject): List<Node> {
         val typeSelector = SimpleSelectorPrompt(SCRIPT_TYPE_OPTIONS, "Script type")
             .selectorButton(obj.type).setFixedWidth(120.0)
@@ -53,15 +57,9 @@ class ScriptRegistryPane(registry: ScriptRegistry) : ObjectRegistryPane<ScriptOb
         return listOf(typeSelector)
     }
 
-    override fun detailWindowIcon(obj: ScriptObject): Ikon = Material2AL.CODE
-
-    override val dataFormat: DataFormat
-        get() = ScriptObject.DATA_FORMAT
+    override fun getEditorRoot(obj: ScriptObject): EditorRoot<out ScExprEditor<*>> = obj.root
 
     override fun getActions(box: ObjectBox<ScriptObject>): List<ContextualizedAction> = actions.withContext(box.obj)
-
-    override fun getContent(obj: ScriptObject, box: ObjectBox<ScriptObject>): Parent =
-        CodePane(obj.root, ownWindow = true)
 
     companion object : Type(11, "Scripts") {
         override val icon: Ikon

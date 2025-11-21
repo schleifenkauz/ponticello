@@ -40,6 +40,7 @@ class LiveAudioBufferView(
         children.addAll(canvases)
         children.add(selectedRegionRect)
         selectedRegionRect.heightProperty().bind(heightProperty())
+        selectedRegionRect.isVisible = false
         buffer.addListener(this)
         setupInteraction()
         setupScrollingAndZooming()
@@ -81,7 +82,8 @@ class LiveAudioBufferView(
     }
 
     private fun getTime(x: Double) = displayRange.start + (x / pixelsPerSecond).toDecimal()
-    fun getX(time: Decimal) = ((time - displayRange.start) * pixelsPerSecond).value
+
+    fun getX(time: Decimal) = ((time - displayRange.start) * pixelsPerSecond).toDouble()
 
     private fun display(range: DecimalRange) {
         displayRange = range
@@ -106,8 +108,9 @@ class LiveAudioBufferView(
     private fun displaySelectedRegion() {
         val range = selectedRange
         if (range == null) {
-            selectedRegionRect.width = 0.0
+            selectedRegionRect.isVisible = false
         } else {
+            selectedRegionRect.isVisible = true
             selectedRegionRect.width = (range.dur * pixelsPerSecond).toDouble()
             selectedRegionRect.x = getX(range.start)
         }
