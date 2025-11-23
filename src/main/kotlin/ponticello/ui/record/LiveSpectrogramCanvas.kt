@@ -44,7 +44,7 @@ class LiveSpectrogramCanvas(
                     seg.invalidate()
                 }
             }
-            repaint()
+            Platform.runLater { repaint() }
         }
     }
 
@@ -90,9 +90,6 @@ class LiveSpectrogramCanvas(
     }
 
     override fun repaint() {
-        Platform.runLater {
-            clearCanvas()
-        }
         clearCanvas()
         executor.execute {
             val firstRegion = (displayRange.start * regionDuration).toInt()

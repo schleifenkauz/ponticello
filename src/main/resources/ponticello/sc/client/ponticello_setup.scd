@@ -152,7 +152,7 @@ OSCdef(\set_time_warp, { |msg|
     };
     if (tempo > 0) {
         TempoClock.tempo = tempo;
-        ~time_warp_bus.set(tempo);
+        ~time_warp_bus.set(max(tempo, 0.1));
         ~time_warp = tempo;
         "ok"
     } { "non-positive tempo" }

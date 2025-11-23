@@ -29,10 +29,7 @@ class MixerAudioCapture(
         activeLine = line
         line.open(format)
 
-        val thread = thread {
-            run()
-        }
-        activeThread = thread
+        activeThread = thread { run() }
 
         return true
     }

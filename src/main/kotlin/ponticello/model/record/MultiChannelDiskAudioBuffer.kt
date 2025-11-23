@@ -1,6 +1,13 @@
 package ponticello.model.record
 
+import hextant.context.Context
 import ponticello.impl.DecimalRange
+import ponticello.impl.dur
+import ponticello.impl.superColliderPath
+import ponticello.impl.times
+import ponticello.sc.client.ScWriter
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
@@ -13,23 +20,44 @@ class MultiChannelDiskAudioBuffer(
 ) : MultiChannelAudioBuffer(sampleRate, nChannels, bufferSize) {
     private val raf = RandomAccessFile(file, "rw")
     private val channel = raf.channel
-    private val floatBuffers = List(nChannels) { FloatArray(bufferSize) }
     override val channels: List<AudioBuffer> = List(nChannels) { ch -> ChannelBuffer(this, ch) }
 
-//    private var currentRangeBuffer: FloatArray = FloatArray(0)
-//    private var currentRange: DecimalRange? = null
-//
-//    private fun read(range: DecimalRange) {
-//        currentRange = range
-//        currentRangeBuffer = FloatArray(bufferSize)
-//    }
-
     override fun receive(samples: List<FloatArray>, frames: Int) {
-
+        val buf = ByteBuffer.allocate(frames * nChannels * 2).order(ByteOrder.LITTLE_ENDIAN)
+        for (i in 0 until frames) {
+            for (ch in 0 until nChannels) {
+                val v = samples[ch][i]
+                val asShort = (v * Short.MAX_VALUE).toInt().toShort()
+                buf.putShort(asShort)
+            }
+        }
+        channel.write(buf)
+        for (ch in 0 until nChannels) {
+            channels[ch].append(samples[ch], frames)
+        }
     }
 
     override fun writeTo(file: File, format: AudioFormat, range: DecimalRange) {
-        TODO("Not yet implemented")
+        val position = (range.start * sampleRate * 2).toLong()
+        val count = (range.dur * sampleRate * 2).toLong()
+        val output = file.outputStream().channel
+        raf.channel.transferTo(position, count, output)
+    }
+
+    override fun loadBuffer(
+        range: DecimalRange, format: AudioFormat, context: Context,
+        action: ScWriter.(bufName: String) -> Unit
+    ) {
+        val frameOffset = (range.start * sampleRate).toLong()
+        val numFrames = (range.dur * sampleRate).toLong()
+        val path = file.superColliderPath
+        context[SuperColliderClient].run {
+            appendBlock("Buffer.read(s, $path, $frameOffset, $numFrames, action: ", endLine = false) {
+                +"arg b"
+                action("b")
+            }
+            appendLine(";")
+        }
     }
 
     private class ChannelBuffer(

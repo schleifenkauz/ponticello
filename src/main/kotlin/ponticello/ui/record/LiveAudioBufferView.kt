@@ -1,8 +1,10 @@
 package ponticello.ui.record
 
 import fxutils.styleClass
+import javafx.application.Platform
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Pane
+import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
 import ponticello.model.record.LiveBufferObject
@@ -19,6 +21,7 @@ class LiveAudioBufferView(
 
     private val pixelsPerSecond get() = width / displayRange.dur.toDouble()
     private val separators = mutableListOf<BufferSeparator>()
+    private val recordCursor = Line() styleClass "record-cursor"
 
     private val selectedRegionRect = Rectangle() styleClass "buffer-selection"
 
@@ -41,6 +44,8 @@ class LiveAudioBufferView(
         children.add(selectedRegionRect)
         selectedRegionRect.heightProperty().bind(heightProperty())
         selectedRegionRect.isVisible = false
+        children.add(recordCursor)
+        recordCursor.endYProperty().bind(heightProperty())
         buffer.addListener(this)
         setupInteraction()
         setupScrollingAndZooming()
@@ -83,7 +88,7 @@ class LiveAudioBufferView(
 
     private fun getTime(x: Double) = displayRange.start + (x / pixelsPerSecond).toDecimal()
 
-    fun getX(time: Decimal) = ((time - displayRange.start) * pixelsPerSecond).toDouble()
+    fun getX(time: Decimal) = ((time - displayRange.start).toDouble() * pixelsPerSecond)
 
     private fun display(range: DecimalRange) {
         displayRange = range
@@ -100,9 +105,11 @@ class LiveAudioBufferView(
     }
 
     override fun addedSeparator(position: Decimal) {
-        val sep = BufferSeparator(this, position)
-        children.add(sep)
-        separators.add(sep)
+        Platform.runLater {
+            val sep = BufferSeparator(this, position)
+            children.add(sep)
+            separators.add(sep)
+        }
     }
 
     private fun displaySelectedRegion() {
@@ -119,6 +126,11 @@ class LiveAudioBufferView(
     override fun accept(sampleOffset: Long, samples: List<FloatArray>, frames: Int) {
         for ((arr, canvas) in samples.zip(canvases)) {
             canvas.accept(sampleOffset, arr, frames)
+        }
+        val position = buffer.duration
+        Platform.runLater {
+            recordCursor.startX = getX(position)
+            recordCursor.endX = recordCursor.startX
         }
     }
 

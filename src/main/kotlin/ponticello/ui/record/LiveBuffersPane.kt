@@ -168,7 +168,9 @@ class LiveBuffersPane(
                     val view = pane.getLiveBufferView(selected)
                     val selectedRange = view.selectedRange ?: return@executes
                     val format = selected.format ?: return@executes
-                    selected.buffer.playRange(selectedRange, format, context)
+                    selected.buffer.loadBuffer(selectedRange, format, context) { buf ->
+                        +"$buf.play"
+                    }
                 }
             }
         }

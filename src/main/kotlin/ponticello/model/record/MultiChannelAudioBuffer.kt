@@ -3,6 +3,7 @@ package ponticello.model.record
 import hextant.context.Context
 import ponticello.impl.*
 import ponticello.model.obj.project
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import java.io.File
@@ -14,7 +15,7 @@ abstract class MultiChannelAudioBuffer(
     val bufferSize: Int
 ) {
     private var receivedFrames = 0L
-    private val duration get() = (receivedFrames / sampleRate).toDecimal()
+    val duration get() = (receivedFrames / sampleRate).toDecimal()
     private val listeners = mutableListOf<Listener>()
     private val channelListeners = Array<MutableList<AudioBuffer.Listener>>(nChannels) { mutableListOf() }
 
@@ -88,7 +89,10 @@ abstract class MultiChannelAudioBuffer(
 
     abstract fun writeTo(file: File, format: AudioFormat, range: DecimalRange)
 
-    fun playRange(range: DecimalRange, format: AudioFormat, context: Context) {
+    open fun loadBuffer(
+        range: DecimalRange, format: AudioFormat, context: Context,
+        action: ScWriter.(bufName: String) -> Unit
+    ) {
         val tmpDir = context.project.projectDirectory.resolve("tmp")
         tmpDir.mkdirs()
         val tmpFile = tmpDir.resolve("tmp.wav")
@@ -96,7 +100,7 @@ abstract class MultiChannelAudioBuffer(
         context[SuperColliderClient].run {
             appendBlock("Buffer.read(s, ${tmpFile.superColliderPath}, action: ", endLine = false) {
                 +"arg b"
-                +"b.play"
+                action("b")
             }
             appendLine(");")
         }

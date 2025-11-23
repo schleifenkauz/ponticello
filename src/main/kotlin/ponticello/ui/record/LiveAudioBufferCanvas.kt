@@ -1,5 +1,6 @@
 package ponticello.ui.record
 
+import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color.BLACK
 import ponticello.impl.DecimalRange
@@ -33,5 +34,17 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
             if (displayRange.start >= zero) range
             else range - range.start
         repaint()
+    }
+
+    override fun afterCleared() {
+        Platform.runLater {
+            repaint()
+        }
+    }
+
+    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
+        Platform.runLater {
+            repaint()
+        }
     }
 }
