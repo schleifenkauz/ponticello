@@ -2,6 +2,8 @@ package ponticello.ui.record
 
 import javafx.scene.paint.Color
 import ponticello.impl.DecimalRange
+import ponticello.impl.dur
+import ponticello.impl.zero
 import ponticello.model.record.AudioBuffer
 
 class SimpleLiveWaveformCanvas(
@@ -10,14 +12,17 @@ class SimpleLiveWaveformCanvas(
     override fun repaint() {
         if (width == 0.0 || height == 0.0) return
         clearCanvas()
+        check(displayRange.start >= zero)
         val samples = buffer.read(displayRange)
         with(graphicsContext2D) {
             stroke = Color.LIMEGREEN
-            for (i in samples.indices) {
-                val x = (width * i) / samples.size
+            for (x in 0 until width.toInt()) {
+                val dt = (x * displayRange.dur.toDouble()) / width
+                val i = (dt * buffer.sampleRate).toInt()
+                if (i >= samples.size) break
                 val h = height / 2
                 val v = samples[i]
-                strokeLine(x, v * h, x, v * -h)
+                strokeLine(x.toDouble(), h - v * h, x.toDouble(), h + v * h)
             }
         }
     }

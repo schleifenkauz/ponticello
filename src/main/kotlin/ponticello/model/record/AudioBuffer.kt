@@ -9,7 +9,7 @@ interface AudioBuffer {
 
     val currentPosition: Decimal
 
-    fun read(range: DecimalRange): FloatArray
+    fun read(range: DecimalRange): List<Float>
 
     fun append(samples: FloatArray, frames: Int)
 

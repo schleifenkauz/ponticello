@@ -12,15 +12,15 @@ abstract class AbstractAudioBuffer(
     override val currentPosition: Decimal
         get() = (nSamples / sampleRate).withPrecision(4)
 
-    override fun read(range: DecimalRange): FloatArray {
+    override fun read(range: DecimalRange): List<Float> {
         val sampleOffset = (range.start * sampleRate).toLong()
         val availableSamples = (nSamples - sampleOffset).toInt()
-        if (availableSamples <= 0) return FloatArray(0)
+        if (availableSamples <= 0) return emptyList()
         val samples = (range.dur * sampleRate).toInt().coerceAtMost(availableSamples)
         return read(sampleOffset, samples)
     }
 
-    protected abstract fun read(offset: Long, len: Int): FloatArray
+    protected abstract fun read(offset: Long, len: Int): List<Float>
 
     override fun append(samples: FloatArray, frames: Int) {
 //        require(frames == bufferSize) { "Invalid buffer size: ${samples.size}" }

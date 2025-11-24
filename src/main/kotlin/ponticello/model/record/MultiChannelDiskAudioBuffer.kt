@@ -66,7 +66,7 @@ class MultiChannelDiskAudioBuffer(
     ) : AbstractAudioBuffer(fileBuffer.sampleRate, fileBuffer.bufferSize) {
         val listeners = mutableListOf<AudioBuffer.Listener>()
 
-        override fun read(offset: Long, len: Int): FloatArray {
+        override fun read(offset: Long, len: Int): List<Float> {
             fileBuffer.raf.seek(offset * fileBuffer.nChannels)
             val bytes = ByteArray(len * channel)
             fileBuffer.raf.read(bytes)
@@ -79,7 +79,7 @@ class MultiChannelDiskAudioBuffer(
                     }
                 }
             }
-            return dest
+            return dest.asList()
         }
 
         override fun addListener(listener: AudioBuffer.Listener) {

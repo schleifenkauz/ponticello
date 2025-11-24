@@ -7,8 +7,8 @@ class HeapAudioBuffer(
 ) : AbstractAudioBuffer(sampleRate, bufferSize) {
     private var buffer = FloatArray(initialCapacity)
 
-    override fun read(offset: Long, len: Int): FloatArray {
-        return buffer.copyOfRange(offset.toInt(), offset.toInt() + len)
+    override fun read(offset: Long, len: Int): List<Float> {
+        return buffer.asList().subList(offset.toInt(), offset.toInt() + len)
     }
 
     override fun append(samples: FloatArray, frames: Int) {

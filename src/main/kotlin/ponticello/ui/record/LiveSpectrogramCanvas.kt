@@ -56,12 +56,12 @@ class LiveSpectrogramCanvas(
         if (!affectedSegment.isInDisplayRange()) return@execute
         val img = affectedSegment.getImage()
 
-        fftBuf.prepareBufForFFT(lastAcceptedSamples, srcOffset = hopSize, dstOffset = 0, len = hopSize)
-        fftBuf.prepareBufForFFT(samples, srcOffset = 0, dstOffset = hopSize, len = hopSize)
+        fftBuf.prepareBufForFFT(lastAcceptedSamples.asList(), srcOffset = hopSize, dstOffset = 0, len = hopSize)
+        fftBuf.prepareBufForFFT(samples.asList(), srcOffset = 0, dstOffset = hopSize, len = hopSize)
         fft.complexForward(fftBuf)
         img.pixelWriter.writeFrame(fftBuf, frameIndex)
 
-        fftBuf.prepareBufForFFT(samples, srcOffset = 0, len = fftSize)
+        fftBuf.prepareBufForFFT(samples.asList(), srcOffset = 0, len = fftSize)
         fft.complexForward(fftBuf)
         img.pixelWriter.writeFrame(fftBuf, frameIndex + 1)
 
@@ -70,7 +70,8 @@ class LiveSpectrogramCanvas(
     }
 
     override fun onClear() {
-        TODO("Not yet implemented")
+        segments.clear()
+        lastAcceptedSamples.fill(0f)
     }
 
     private fun getSegment(i: Int): SpectrogramSegment = when {
@@ -112,7 +113,7 @@ class LiveSpectrogramCanvas(
     }
 
     private fun FloatArray.prepareBufForFFT(
-        src: FloatArray, srcOffset: Int = 0,
+        src: List<Float>, srcOffset: Int = 0,
         dstOffset: Int = 0, len: Int = src.size
     ) {
         for (i in 0 until len) {

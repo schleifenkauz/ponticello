@@ -5,13 +5,17 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color.BLACK
 import ponticello.impl.DecimalRange
 import ponticello.impl.Logger
-import ponticello.impl.minus
+import ponticello.impl.rangeTo
 import ponticello.impl.zero
 import ponticello.model.record.AudioBuffer
 
 abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas(), AudioBuffer.Listener {
     var displayRange: DecimalRange = initialDisplayRange
-        private set
+        private set(value) {
+            require(value.start >= zero)
+            require(value.endInclusive > value.start)
+            field = value
+        }
 
     init {
         widthProperty().addListener { repaint() }
@@ -30,10 +34,12 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
             Logger.severe("Attempt to display empty time range: $range", Logger.Category.Score)
             return
         }
-        displayRange =
-            if (displayRange.start >= zero) range
-            else range - range.start
-        repaint()
+        Platform.runLater {
+            displayRange =
+                if (range.start >= zero) range
+                else zero..(range.endInclusive + range.start)
+            repaint()
+        }
     }
 
     override fun afterCleared() {
