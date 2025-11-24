@@ -15,9 +15,8 @@ import java.nio.ByteOrder
 import javax.sound.sampled.AudioFormat
 
 class MultiChannelDiskAudioBuffer(
-    private val file: File,
-    sampleRate: Double, nChannels: Int, bufferSize: Int
-) : MultiChannelAudioBuffer(sampleRate, nChannels, bufferSize) {
+    private val file: File, sampleRate: Double, nChannels: Int
+) : MultiChannelAudioBuffer(sampleRate, nChannels) {
     private val raf = RandomAccessFile(file, "rw")
     private val channel = raf.channel
     override val channels: List<AudioBuffer> = List(nChannels) { ch -> ChannelBuffer(this, ch) }
@@ -32,9 +31,7 @@ class MultiChannelDiskAudioBuffer(
             }
         }
         channel.write(buf)
-        for (ch in 0 until nChannels) {
-            channels[ch].append(samples[ch], frames)
-        }
+        super.receive(samples, frames)
     }
 
     override fun writeTo(file: File, format: AudioFormat, range: DecimalRange) {
@@ -63,9 +60,7 @@ class MultiChannelDiskAudioBuffer(
     private class ChannelBuffer(
         private val fileBuffer: MultiChannelDiskAudioBuffer,
         private val channel: Int
-    ) : AbstractAudioBuffer(fileBuffer.sampleRate, fileBuffer.bufferSize) {
-        val listeners = mutableListOf<AudioBuffer.Listener>()
-
+    ) : AbstractAudioBuffer(fileBuffer.sampleRate) {
         override fun read(offset: Long, len: Int): List<Float> {
             fileBuffer.raf.seek(offset * fileBuffer.nChannels)
             val bytes = ByteArray(len * channel)
@@ -80,10 +75,6 @@ class MultiChannelDiskAudioBuffer(
                 }
             }
             return dest.asList()
-        }
-
-        override fun addListener(listener: AudioBuffer.Listener) {
-            listeners.add(listener)
         }
     }
 }

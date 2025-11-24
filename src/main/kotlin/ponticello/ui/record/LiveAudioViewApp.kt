@@ -27,8 +27,7 @@ class LiveAudioViewApp : Application() {
 //        val tmpFile = File("tmp.bin")
 //        val buffer = AudioFileBuffer(tmpFile, sampleRate, bufferSize)
         val buffer = MultiChannelHeapAudioBuffer(
-            1, sampleRate, bufferSize,
-            initialCapacity = (sampleRate * 20).toInt()
+            1, sampleRate, initialCapacity = (sampleRate * 20).toInt()
         )
         val format = AudioFormat(
             sampleRate.toFloat(), /*sampleSizeInBits*/16, /*channels*/1,

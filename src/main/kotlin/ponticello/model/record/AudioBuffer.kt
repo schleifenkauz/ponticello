@@ -5,7 +5,6 @@ import ponticello.impl.DecimalRange
 
 interface AudioBuffer {
     val sampleRate: Double
-    val bufferSize: Int
 
     val currentPosition: Decimal
 
@@ -23,7 +22,5 @@ interface AudioBuffer {
         fun accept(sampleOffset: Long, samples: FloatArray, frames: Int)
 
         fun onClear() {}
-
-        fun afterCleared() {}
     }
 }

@@ -11,18 +11,10 @@ import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
 
 class MultiChannelHeapAudioBuffer(
-    nChannels: Int, sampleRate: Double, bufferSize: Int,
-    initialCapacity: Int,
-) : MultiChannelAudioBuffer(sampleRate, nChannels, bufferSize) {
+    nChannels: Int, sampleRate: Double, initialCapacity: Int,
+) : MultiChannelAudioBuffer(sampleRate, nChannels) {
     override val channels: List<AudioBuffer> = List(nChannels) {
-        HeapAudioBuffer(sampleRate, bufferSize, initialCapacity)
-    }
-
-    override fun receive(samples: List<FloatArray>, frames: Int) {
-        super.receive(samples, frames)
-        for ((ch, arr) in samples.withIndex()) {
-            channels[ch].append(arr, frames)
-        }
+        HeapAudioBuffer(sampleRate, initialCapacity)
     }
 
     override fun writeTo(file: File, format: AudioFormat, range: DecimalRange) {

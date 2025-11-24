@@ -162,5 +162,8 @@ class LiveAudioBufferView(
     override fun cleared() {
         children.removeAll(separators)
         separators.clear()
+        for (canvas in canvases) {
+            canvas.clear()
+        }
     }
 }

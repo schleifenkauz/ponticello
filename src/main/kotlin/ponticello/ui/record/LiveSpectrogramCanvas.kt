@@ -17,12 +17,12 @@ import kotlin.math.sqrt
 class LiveSpectrogramCanvas(
     private val buffer: AudioBuffer,
     private val framesPerImage: Int,
+    private val fftSize: Int,
     initialDisplayRange: DecimalRange,
     private val config: LiveBufferViewConfig.Spectrogram
 ) : AudioBuffer.Listener, LiveAudioBufferCanvas(initialDisplayRange) {
     private val segments = mutableListOf<SpectrogramSegment>()
 
-    private val fftSize = buffer.bufferSize
     private val hopSize = fftSize / 2
     private val freqBins = fftSize / 2
     private val fft = FloatFFT_1D(fftSize.toLong())
@@ -99,6 +99,11 @@ class LiveSpectrogramCanvas(
                 drawSegment(i)
             }
         }
+    }
+
+    override fun clear() {
+        segments.clear()
+        super.clear()
     }
 
     private fun drawSegment(i: Int) {

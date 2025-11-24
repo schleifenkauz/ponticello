@@ -3,10 +3,7 @@ package ponticello.ui.record
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color.BLACK
-import ponticello.impl.DecimalRange
-import ponticello.impl.Logger
-import ponticello.impl.rangeTo
-import ponticello.impl.zero
+import ponticello.impl.*
 import ponticello.model.record.AudioBuffer
 
 abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas(), AudioBuffer.Listener {
@@ -16,6 +13,8 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
             require(value.endInclusive > value.start)
             field = value
         }
+
+    protected val pixelsPerSecond get() = width / displayRange.dur.toDouble()
 
     init {
         widthProperty().addListener { repaint() }
@@ -42,13 +41,13 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
         }
     }
 
-    override fun afterCleared() {
+    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
         Platform.runLater {
             repaint()
         }
     }
 
-    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
+    open fun clear() {
         Platform.runLater {
             repaint()
         }

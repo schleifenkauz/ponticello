@@ -67,8 +67,7 @@ class LiveBufferObject(
         super.initialize(context)
         val sampleRate = context[SuperColliderClient].sampleRate
         buffer = MultiChannelHeapAudioBuffer(
-            channelConfig.outputChannels, sampleRate,
-            source.bufferSize, INITIAL_CAPACITY
+            channelConfig.outputChannels, sampleRate, source.bufferSize
         )
         val capture = source.capture(context)
         if (capture != null) {

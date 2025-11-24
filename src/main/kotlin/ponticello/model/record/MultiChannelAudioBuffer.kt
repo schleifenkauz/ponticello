@@ -9,11 +9,7 @@ import ponticello.sc.client.run
 import java.io.File
 import javax.sound.sampled.AudioFormat
 
-abstract class MultiChannelAudioBuffer(
-    val sampleRate: Double,
-    val nChannels: Int,
-    val bufferSize: Int
-) {
+abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: Int) {
     private var receivedFrames = 0L
     val duration get() = (receivedFrames / sampleRate).toDecimal()
     private val listeners = mutableListOf<Listener>()
@@ -26,6 +22,9 @@ abstract class MultiChannelAudioBuffer(
     open fun receive(samples: List<FloatArray>, frames: Int) {
         val frameOffset = receivedFrames
         receivedFrames += frames
+        for ((idx, ch) in channels.withIndex()) {
+            ch.append(samples[idx], frames)
+        }
         for (listener in listeners) {
             listener.accept(frameOffset, samples, frames)
         }
@@ -39,11 +38,11 @@ abstract class MultiChannelAudioBuffer(
     fun clear() {
         receivedFrames = 0
         separators.clear()
-        for (listener in listeners) {
-            listener.cleared()
-        }
         for (ch in channels) {
             ch.clear()
+        }
+        for (listener in listeners) {
+            listener.cleared()
         }
     }
 

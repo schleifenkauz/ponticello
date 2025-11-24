@@ -2,10 +2,7 @@ package ponticello.model.record
 
 import ponticello.impl.*
 
-abstract class AbstractAudioBuffer(
-    final override val sampleRate: Double,
-    final override val bufferSize: Int
-) : AudioBuffer {
+abstract class AbstractAudioBuffer(final override val sampleRate: Double) : AudioBuffer {
     private val listeners = mutableListOf<AudioBuffer.Listener>()
     private var nSamples = 0L
 
@@ -23,9 +20,8 @@ abstract class AbstractAudioBuffer(
     protected abstract fun read(offset: Long, len: Int): List<Float>
 
     override fun append(samples: FloatArray, frames: Int) {
-//        require(frames == bufferSize) { "Invalid buffer size: ${samples.size}" }
         val sampleOffset = nSamples
-        nSamples += samples.size
+        nSamples += frames
         for (listener in listeners) {
             listener.accept(sampleOffset, samples, frames)
         }
@@ -35,9 +31,6 @@ abstract class AbstractAudioBuffer(
         nSamples = 0L
         for (listener in listeners) {
             listener.onClear()
-        }
-        for (listener in listeners) {
-            listener.afterCleared()
         }
     }
 

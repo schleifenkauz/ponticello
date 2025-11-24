@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
 import ponticello.model.record.AudioBuffer
+import ponticello.model.record.WaveformPeaks
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
 
@@ -14,8 +15,8 @@ sealed class LiveBufferViewConfig {
     @Serializable
     data class Waveform(val yScale: ReactiveVariable<Double>) : LiveBufferViewConfig() {
         override fun createBufferCanvas(buffer: AudioBuffer, displayRange: DecimalRange): LiveAudioBufferCanvas =
-//            LiveWaveformCanvas(WaveformPeaks.get(buffer), displayRange, this)
-            SimpleLiveWaveformCanvas(buffer, displayRange)
+            LiveWaveformCanvas(WaveformPeaks.get(buffer), displayRange, this)
+        //            SimpleLiveWaveformCanvas(buffer, displayRange)
 
         companion object {
             fun default() = Waveform(yScale = reactiveVariable(1.0))
@@ -26,10 +27,11 @@ sealed class LiveBufferViewConfig {
     data class Spectrogram(
         val noiseFloorDb: ReactiveVariable<Double>,
         val cleanupPeriod: ReactiveVariable<Decimal>,
-        val cleanupThreshold: ReactiveVariable<Decimal>
+        val cleanupThreshold: ReactiveVariable<Decimal>,
+        val fftSize: Int
     ) : LiveBufferViewConfig() {
         override fun createBufferCanvas(buffer: AudioBuffer, displayRange: DecimalRange): LiveAudioBufferCanvas {
-            val view = LiveSpectrogramCanvas(buffer, framesPerImage = 100, displayRange, this)
+            val view = LiveSpectrogramCanvas(buffer, framesPerImage = 100, fftSize, displayRange, this)
             view.start()
             return view
         }
