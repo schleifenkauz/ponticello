@@ -33,12 +33,10 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
             Logger.severe("Attempt to display empty time range: $range", Logger.Category.Score)
             return
         }
-        Platform.runLater {
-            displayRange =
-                if (range.start >= zero) range
-                else zero..(range.endInclusive + range.start)
-            repaint()
-        }
+        displayRange =
+            if (range.start >= zero) range
+            else zero..(range.endInclusive + range.start)
+        repaint()
     }
 
     override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {

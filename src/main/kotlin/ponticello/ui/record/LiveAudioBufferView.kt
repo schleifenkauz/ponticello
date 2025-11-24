@@ -91,16 +91,15 @@ class LiveAudioBufferView(
     fun getX(time: Decimal) = ((time - displayRange.start).toDouble() * pixelsPerSecond)
 
     private fun display(range: DecimalRange) {
-        displayRange = range
-        if (displayRange.start < zero) {
-            displayRange -= displayRange.start
-        }
+        displayRange = if (range.start < zero) displayRange - range.start else range
         for (canvas in canvases) {
-            canvas.display(range)
+            canvas.display(displayRange)
         }
         for (sep in separators) {
             sep.reposition()
         }
+        recordCursor.startX = getX(buffer.duration)
+        recordCursor.endX = recordCursor.startX
         displaySelectedRegion()
     }
 
@@ -118,7 +117,7 @@ class LiveAudioBufferView(
             selectedRegionRect.isVisible = false
         } else {
             selectedRegionRect.isVisible = true
-            selectedRegionRect.width = (range.dur * pixelsPerSecond).toDouble()
+            selectedRegionRect.width = (range.dur * pixelsPerSecond).value
             selectedRegionRect.x = getX(range.start)
         }
     }
