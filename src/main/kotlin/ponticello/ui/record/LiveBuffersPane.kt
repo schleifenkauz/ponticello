@@ -32,6 +32,7 @@ import ponticello.model.record.LoudnessThreshold
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import ponticello.model.server.BusRegistry
 import ponticello.ui.controls.Knob
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.LiveBufferRegistryPaneState
@@ -178,9 +179,8 @@ class LiveBuffersPane(
                     val view = pane.getLiveBufferView(selected)
                     val selectedRange = view.selectedRange
                     if (selectedRange.isEmpty()) return@executes
-                    selected.buffer.loadBuffer(selectedRange, selected.format, context) { buf ->
-                        +"$buf.play"
-                    }
+                    val out = context[BusRegistry].getDefault()
+                    selected.buffer.playBuffer(selectedRange, out, selected.format, context)
                 }
             }
         }

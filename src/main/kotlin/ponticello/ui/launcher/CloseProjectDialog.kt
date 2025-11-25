@@ -62,10 +62,10 @@ class CloseProjectDialog(project: PonticelloProject) : CompoundPrompt<CloseProje
 
     override fun confirm(): Result {
         val action = when {
-            commitChangesOption.isSelected -> Action.Save
+            commitChangesOption.isSelected -> Action.Commit(commitMessageArea.text, push = false)
             commitBtn.isSelected -> Action.Commit(commitMessageArea.text, push = false)
             pushBtn.isSelected -> Action.Commit(commitMessageArea.text, push = true)
-            else -> Action.None
+            else -> Action.Save
         }
         return Result(cleanupObjectsOption.isSelected, action)
     }

@@ -49,7 +49,7 @@ class MultiChannelDiskAudioBuffer(
     }
 
     override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context) {
-
+        playBuffer(file, range, outBus, context)
     }
 
     private class ChannelBuffer(

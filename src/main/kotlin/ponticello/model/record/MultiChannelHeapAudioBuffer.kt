@@ -1,8 +1,7 @@
 package ponticello.model.record
 
 import hextant.context.Context
-import ponticello.impl.DecimalRange
-import ponticello.impl.times
+import ponticello.impl.*
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.project
 import ponticello.sc.client.ScWriter
@@ -14,6 +13,7 @@ import javax.sound.sampled.AudioFileFormat
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioInputStream
 import javax.sound.sampled.AudioSystem
+import ponticello.impl.rangeTo
 
 class MultiChannelHeapAudioBuffer(
     nChannels: Int, sampleRate: Double, initialCapacity: Int,
@@ -58,7 +58,7 @@ class MultiChannelHeapAudioBuffer(
     override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context) {
         val tmpFile = createTempFile(context)
         writeTo(tmpFile, format, range)
-        playBuffer(tmpFile, 0, outBus, context)
+        playBuffer(tmpFile, zero.rangeTo(range.duration), outBus, context)
     }
 
     companion object {

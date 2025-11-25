@@ -43,7 +43,6 @@ class MixerAudioCapture(
     override fun doStop() {
         activeLine?.flush()
         activeLine?.stop()
-        buffer.addSeparatorAtEnd()
     }
 
     override fun doClose() {

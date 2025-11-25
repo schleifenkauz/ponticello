@@ -65,6 +65,7 @@ abstract class AbstractAudioCapture : AudioCapture {
     final override fun stop() {
         checkStatus(AudioCapture.Status.RUNNING)
         doStop()
+        buffer.addSeparatorAtEnd()
         _status.now = AudioCapture.Status.PREPARED
     }
 

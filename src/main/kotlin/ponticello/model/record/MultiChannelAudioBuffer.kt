@@ -106,14 +106,19 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         }
     }
 
-    protected fun playBuffer(audioFile: File, frameOffset: Long, outBus: BusObject, context: Context) {
+    protected fun playBuffer(audioFile: File, range: DecimalRange, outBus: BusObject, context: Context) {
         val path = audioFile.superColliderPath
+        val frameOffset = (range.start * sampleRate).toLong()
         context[SuperColliderClient].run {
-            appendBlock("Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)", endLine = false) {
-                +"arg b"
-                 +"{ DiskIn.ar($nChannels, b) }.play(s, ${outBus.superColliderName})"
+            +"var buf, player"
+            +"buf = Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)"
+            appendBlock("player = ", endLine = false) {
+                +"var snd = DiskIn.ar($nChannels, buf), env"
+                +"env = Env.linen(0.01, ${range.duration - 0.02}, 0.01)"
+                +"snd * env.kr(Done.freeSelf)"
             }
-            appendLine(";")
+            +".play(s, ${outBus.superColliderName})"
+            +"player.onFree { buf.free }"
         }
     }
 
