@@ -38,7 +38,7 @@ class MultiChannelHeapAudioBuffer(
         AudioSystem.write(audioStream, AudioFileFormat.Type.WAVE, file)
     }
 
-    private fun createTempFile(context: Context): File {
+    private fun getTempFile(context: Context): File {
         val tmpDir = context.project.projectDirectory.resolve("tmp")
         tmpDir.mkdirs()
         val idx = tmpFileCounter++
@@ -50,13 +50,13 @@ class MultiChannelHeapAudioBuffer(
         range: DecimalRange, format: AudioFormat, context: Context,
         action: ScWriter.(bufName: String) -> Unit
     ) {
-        val tmpFile = createTempFile(context)
+        val tmpFile = getTempFile(context)
         writeTo(tmpFile, format, range)
         loadBuffer(tmpFile, frameOffset = 0, numFrames = -1, context, action)
     }
 
     override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context) {
-        val tmpFile = createTempFile(context)
+        val tmpFile = getTempFile(context)
         writeTo(tmpFile, format, range)
         playBuffer(tmpFile, zero.rangeTo(range.duration), outBus, context)
     }
