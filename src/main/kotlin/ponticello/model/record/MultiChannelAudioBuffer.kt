@@ -20,7 +20,10 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
 
     abstract val channels: List<AudioBuffer>
 
-    open fun receive(samples: List<FloatBuffer>, frames: Int) {
+    protected open fun write(samples: List<FloatBuffer>, frames: Int) {}
+
+    fun receive(samples: List<FloatBuffer>, frames: Int) {
+        write(samples, frames)
         val frameOffset = receivedFrames
         receivedFrames += frames
         for ((idx, ch) in channels.withIndex()) {

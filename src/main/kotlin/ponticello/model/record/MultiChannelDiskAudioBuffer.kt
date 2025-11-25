@@ -22,7 +22,7 @@ class MultiChannelDiskAudioBuffer(
     private val channel = raf.channel
     override val channels: List<AudioBuffer> = List(nChannels) { ch -> ChannelBuffer(this, ch) }
 
-    override fun receive(samples: List<FloatBuffer>, frames: Int) {
+    override fun write(samples: List<FloatBuffer>, frames: Int) {
         val buf = ByteBuffer.allocate(frames * nChannels * 2).order(ByteOrder.LITTLE_ENDIAN)
         for (i in 0 until frames) {
             for (ch in 0 until nChannels) {
@@ -32,7 +32,6 @@ class MultiChannelDiskAudioBuffer(
             }
         }
         channel.write(buf)
-        super.receive(samples, frames)
     }
 
     override fun writeTo(file: File, format: AudioFormat, range: DecimalRange) {

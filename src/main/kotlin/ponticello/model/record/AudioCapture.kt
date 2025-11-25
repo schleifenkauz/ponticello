@@ -5,7 +5,7 @@ import reaktive.value.ReactiveValue
 interface AudioCapture {
     val status: ReactiveValue<Status>
 
-    fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration): Boolean
+    fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration, threshold: LoudnessThreshold): Boolean
 
     fun start()
 
@@ -14,6 +14,6 @@ interface AudioCapture {
     fun close()
 
     enum class Status {
-        UNPREPARED, PREPARED, RUNNING, CLOSED;
+        INVALID, UNPREPARED, PREPARED, RUNNING, CLOSED;
     }
 }

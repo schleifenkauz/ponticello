@@ -1,14 +1,12 @@
 package ponticello.ui.record
 
+import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.collectActions
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
-import fxutils.centerChildren
-import fxutils.label
-import fxutils.menuItem
+import fxutils.controls.CheckBox
 import fxutils.prompt.YesNoPrompt
-import fxutils.styleClass
 import javafx.css.PseudoClass
 import javafx.geometry.Side.BOTTOM
 import javafx.scene.Node
@@ -31,9 +29,11 @@ import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
 import ponticello.model.record.LiveBufferObject
 import ponticello.model.record.LiveBufferRegistry
+import ponticello.model.record.LoudnessThreshold
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import ponticello.ui.controls.Knob
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.dock.LiveBufferRegistryPaneState
 import ponticello.ui.dock.Side
@@ -62,8 +62,12 @@ class LiveBuffersPane(
 
     private val addBufferButton = addItemButton.withContext(this).makeButton("medium-icon-button")
 
-    override val headerContent: Node
-        get() = HBox(5.0, itemsLayout, addBufferButton).centerChildren()
+    private val thresholdControl = HBox()
+
+    override val headerContent = HBox(
+        5.0, itemsLayout, addBufferButton,
+        infiniteSpace(), thresholdControl
+    ).centerChildren()
 
     override fun defaultState(): ToolPaneState = LiveBufferRegistryPaneState.default()
 
@@ -120,6 +124,13 @@ class LiveBuffersPane(
 
     private fun select(obj: LiveBufferObject?) {
         content = if (obj != null) getLiveBufferView(obj) else Region()
+        thresholdControl.children.clear()
+        if (obj != null) {
+            thresholdControl.children.addAll(
+                CheckBox(obj.threshold.isEnabled, "Threshold"),
+                Knob("Threshold", obj.threshold.db, LoudnessThreshold.SPEC)
+            )
+        }
         val previouslySelectedBox = itemBoxes[selectedObject.get()]
         previouslySelectedBox?.pseudoClassStateChanged(SELECTED, false)
         val selectedBox = itemBoxes[obj]
@@ -167,8 +178,7 @@ class LiveBuffersPane(
                     val selected = pane.selectedObject.get() ?: return@executes
                     val view = pane.getLiveBufferView(selected)
                     val selectedRange = view.selectedRange ?: return@executes
-                    val format = selected.format ?: return@executes
-                    selected.buffer.loadBuffer(selectedRange, format, context) { buf ->
+                    selected.buffer.loadBuffer(selectedRange, selected.format, context) { buf ->
                         +"$buf.play"
                     }
                 }

@@ -24,7 +24,8 @@ class LiveBufferObject(
     private val source: CaptureSource,
     private val channelConfig: ChannelConfiguration,
     @SerialName("viewConfig") private var _viewConfig: LiveBufferViewConfig,
-    @SerialName("enabled") private val _enabled: ReactiveVariable<Boolean>
+    @SerialName("enabled") private val _enabled: ReactiveVariable<Boolean>,
+    val threshold: LoudnessThreshold = LoudnessThreshold.default()
 ) : AbstractRenamableObject() {
     @Transient
     private val listeners = ListenerManager.createWeakListenerManager<Listener>()
@@ -40,7 +41,8 @@ class LiveBufferObject(
         private set
 
     @Transient
-    private var capture: AudioCapture? = null
+    lateinit var capture: AudioCapture
+        private set
 
     var viewConfig
         get() = _viewConfig
@@ -55,9 +57,9 @@ class LiveBufferObject(
     fun setEnabled(enabled: Boolean) {
         _enabled.set(enabled)
         if (enabled) {
-            capture?.start()
+            capture.start()
         } else {
-            capture?.stop()
+            capture.stop()
         }
     }
 
@@ -70,18 +72,17 @@ class LiveBufferObject(
         buffer = MultiChannelHeapAudioBuffer(
             channelConfig.outputChannels, sampleRate, INITIAL_CAPACITY
         )
-        val capture = source.capture(context)
-        if (capture != null) {
-            capture.prepare(buffer, channelConfig)
+        capture = source.capture(context)
+        if (capture !is NoAudioCapture) {
+            capture.prepare(buffer, channelConfig, threshold)
             if (capture.status.now == AudioCapture.Status.PREPARED && enabled.now) {
                 capture.start()
             }
-            this.capture = capture
         }
     }
 
     override fun onRemoved() {
-        capture?.close()
+        capture.close()
     }
 
     fun addListener(listener: Listener) {

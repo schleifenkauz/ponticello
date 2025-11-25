@@ -15,7 +15,7 @@ sealed class CaptureSource {
 
     abstract val channels: Int
 
-    abstract fun capture(context: Context): AudioCapture?
+    abstract fun capture(context: Context): AudioCapture
 
     data object None : CaptureSource() {
         override val name: String
@@ -23,7 +23,7 @@ sealed class CaptureSource {
 
         override val channels: Int get() = 0
 
-        override fun capture(context: Context): AudioCapture? = null
+        override fun capture(context: Context): AudioCapture = NoAudioCapture
     }
 
     @Serializable
@@ -32,13 +32,13 @@ sealed class CaptureSource {
         val bufferSize: Int,
         override val channels: Int,
     ) : CaptureSource() {
-        override fun capture(context: Context): MixerAudioCapture? {
+        override fun capture(context: Context): AudioCapture {
             val sampleRate = context[SuperColliderClient].sampleRate
             val format = getFormat(sampleRate, channels)
             val mixerInfo = AudioSystem.getMixerInfo().find { info -> info.name == name }
             if (mixerInfo == null) {
-                Logger.error("Invalid mixer name: $name")
-                return null
+                Logger.error("Cannot find mixer info for input device $name")
+                return NoAudioCapture
             }
             val mixer = AudioSystem.getMixer(mixerInfo)
             return MixerAudioCapture(format, mixer, bufferSize)

@@ -7,8 +7,11 @@ import javafx.scene.layout.Pane
 import javafx.scene.shape.Line
 import javafx.scene.shape.Rectangle
 import ponticello.impl.*
+import ponticello.model.record.AudioCapture
 import ponticello.model.record.LiveBufferObject
 import ponticello.model.record.MultiChannelAudioBuffer
+import reaktive.Observer
+import reaktive.value.fx.asObservableValue
 import java.nio.FloatBuffer
 
 class LiveAudioBufferView(
@@ -47,6 +50,7 @@ class LiveAudioBufferView(
         selectedRegionRect.isVisible = false
         children.add(recordCursor)
         recordCursor.endYProperty().bind(heightProperty())
+        recordCursor.visibleProperty().bind(obj.enabled.asObservableValue())
         buffer.addListener(this)
         setupInteraction()
         setupScrollingAndZooming()
@@ -166,5 +170,6 @@ class LiveAudioBufferView(
         for (canvas in canvases) {
             canvas.clear()
         }
+        displayRange -= displayRange.start
     }
 }

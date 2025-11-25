@@ -9,10 +9,7 @@ import javafx.stage.Stage
 import ponticello.impl.rangeTo
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import ponticello.model.record.ChannelConfiguration
-import ponticello.model.record.MixerAudioCapture
-import ponticello.model.record.MultiChannelHeapAudioBuffer
-import ponticello.model.record.WaveformPeaks
+import ponticello.model.record.*
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
@@ -57,7 +54,7 @@ class LiveAudioViewApp : Application() {
         canvas.height = 500.0
 
         capture = MixerAudioCapture(format, mixer, bufferSize)
-        capture.prepare(buffer, ChannelConfiguration.mono())
+        capture.prepare(buffer, ChannelConfiguration.mono(), LoudnessThreshold.default())
 
         val controls = HBox()
         primaryStage.scene = Scene(VBox(controls, canvas))

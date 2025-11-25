@@ -2,6 +2,7 @@ package ponticello.model.record
 
 import org.jaudiolibs.jnajack.*
 import ponticello.impl.Logger
+import java.nio.FloatBuffer
 import java.util.*
 
 class JackAudioCapture(private val sourceDevice: String) : AbstractAudioCapture() {
@@ -61,7 +62,8 @@ class JackAudioCapture(private val sourceDevice: String) : AbstractAudioCapture(
 
     private fun process(frames: Int) {
         if (!running) return
-        buffer.receive(ports.map { p -> p.floatBuffer }, frames)
+        val samples = ports.map { p -> p.floatBuffer }
+        process(samples, frames)
     }
 
     companion object {
