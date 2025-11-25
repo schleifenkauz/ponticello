@@ -1,44 +1,54 @@
 package ponticello.ui.record
 
+import fxutils.actions.registerShortcuts
+import fxutils.registerShortcut
+import fxutils.registerShortcuts
 import fxutils.styleClass
+import fxutils.undo.AbstractEdit
+import fxutils.undo.UndoManager
 import javafx.application.Platform
+import javafx.event.Event
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Pane
+import javafx.scene.robot.Robot
 import javafx.scene.shape.Line
-import javafx.scene.shape.Rectangle
 import ponticello.impl.*
-import ponticello.model.record.AudioCapture
+import ponticello.model.obj.project
 import ponticello.model.record.LiveBufferObject
 import ponticello.model.record.MultiChannelAudioBuffer
-import reaktive.Observer
+import ponticello.model.server.BufferRegistry
+import ponticello.model.server.SampleObject
+import ponticello.ui.actions.UndoRedoActions
+import ponticello.ui.controls.NamePrompt
+import ponticello.ui.score.ScoreObjectDuplicator
 import reaktive.value.fx.asObservableValue
 import java.nio.FloatBuffer
 
 class LiveAudioBufferView(
-    private val obj: LiveBufferObject,
+    val bufferObject: LiveBufferObject,
     initialDisplayRange: DecimalRange
 ) : Pane(), MultiChannelAudioBuffer.Listener {
-    val buffer get() = obj.buffer
+    val buffer get() = bufferObject.buffer
+
+    val context get() = bufferObject.context
+    private val undoManager = UndoManager.newInstance()
 
     private var displayRange = initialDisplayRange
     private val canvases = mutableListOf<LiveAudioBufferCanvas>()
 
-    private val pixelsPerSecond get() = width / displayRange.dur.toDouble()
+    private val pixelsPerSecond get() = width / displayRange.duration.toDouble()
     private val separators = mutableListOf<BufferSeparator>()
     private val recordCursor = Line() styleClass "record-cursor"
 
-    private val selectedRegionRect = Rectangle() styleClass "buffer-selection"
-
-    var selectedRange: DecimalRange? = null
-        private set(value) {
-            field = value
-            displaySelectedRegion()
-        }
+    private val selectedRegionRect = SelectedBufferRegion(this)
+    private val hoveredRegionRect = BufferRegion(this) styleClass "hovered-buffer-region"
+    val selectedRange get() = selectedRegionRect.bufferRange
+    private val associatedSampleObjects = mutableMapOf<DecimalRange, SampleObject>()
 
     init {
         val channelHeight = heightProperty().divide(buffer.nChannels)
         for ((ch, buf) in buffer.channels.withIndex()) {
-            val canvas = obj.viewConfig.createBufferCanvas(buf, displayRange)
+            val canvas = bufferObject.viewConfig.createBufferCanvas(buf, displayRange)
             canvases.add(canvas)
             canvas.widthProperty().bind(widthProperty())
             canvas.heightProperty().bind(channelHeight)
@@ -46,14 +56,15 @@ class LiveAudioBufferView(
         }
         children.addAll(canvases)
         children.add(selectedRegionRect)
-        selectedRegionRect.heightProperty().bind(heightProperty())
-        selectedRegionRect.isVisible = false
+        children.add(hoveredRegionRect)
         children.add(recordCursor)
         recordCursor.endYProperty().bind(heightProperty())
-        recordCursor.visibleProperty().bind(obj.enabled.asObservableValue())
+        recordCursor.endXProperty().bind(recordCursor.startXProperty())
+        recordCursor.visibleProperty().bind(bufferObject.enabled.asObservableValue())
         buffer.addListener(this)
         setupInteraction()
         setupScrollingAndZooming()
+        registerShortcuts(UndoRedoActions.withContext(undoManager))
     }
 
     private fun setupScrollingAndZooming() {
@@ -78,22 +89,57 @@ class LiveAudioBufferView(
                 MouseButton.PRIMARY -> {
                     val t = getTime(ev.x)
                     val range = buffer.getSnippet(t)
-                    selectRegion(range)
+                    if (range != null && ev.isShiftDown && !selectedRange.isEmpty() && range != selectedRange) {
+                        val start = minOf(selectedRange.start, range.start)
+                        val end = maxOf(selectedRange.endInclusive, range.endInclusive)
+                        selectRegion(start..end)
+                    } else {
+                        selectRegion(range)
+                    }
                 }
 
                 MouseButton.SECONDARY -> {
                     val t = getTime(ev.x)
                     buffer.addSeparator(t)
+                    undoManager.record(AddSeparator(buffer, t))
+                    hoveredRegionRect.clear()
+                    selectRegion(null)
                 }
 
-                else -> {}
+                else -> return@setOnMouseClicked
+            }
+            ev.consume()
+        }
+        setOnMouseMoved { ev ->
+            mouseMoved(ev.x)
+            ev.consume()
+        }
+        registerShortcuts {
+            on("Ctrl+J") {
+                val removedSeparators = mutableListOf<Decimal>()
+                for (sep in separators.toList()) {
+                    if (sep.position > selectedRange.start && sep.position < selectedRange.endInclusive) {
+                        buffer.removeSeparator(sep.position)
+                        removedSeparators.add(sep.position)
+                    }
+                }
+                hoveredRegionRect.clear()
+                undoManager.record(JoinBufferRegions(buffer, removedSeparators))
             }
         }
+        setOnMouseExited { hoveredRegionRect.clear() }
+    }
+
+    private fun mouseMoved(x: Double) {
+        val t = getTime(x)
+        val range = buffer.getSnippet(t)
+        if (range == null || range.start !in selectedRange) hoveredRegionRect.clear()
+        else hoveredRegionRect.bufferRange = range
     }
 
     private fun getTime(x: Double) = displayRange.start + (x / pixelsPerSecond).toDecimal()
-
     fun getX(time: Decimal) = ((time - displayRange.start).toDouble() * pixelsPerSecond)
+    fun getWidth(duration: Decimal) = duration.toDouble() * pixelsPerSecond
 
     private fun display(range: DecimalRange) {
         displayRange = if (range.start < zero) displayRange - range.start else range
@@ -104,27 +150,24 @@ class LiveAudioBufferView(
             sep.reposition()
         }
         recordCursor.startX = getX(buffer.duration)
-        recordCursor.endX = recordCursor.startX
-        displaySelectedRegion()
+        selectedRegionRect.rescale()
+        val p = screenToLocal(Robot().mousePosition)
+        mouseMoved(p.x)
     }
 
-    override fun addedSeparator(position: Decimal) {
-        Platform.runLater {
-            val sep = BufferSeparator(this, position)
-            children.add(sep)
-            separators.add(sep)
-        }
+    override fun addedSeparator(position: Decimal) = Platform.runLater {
+        val sep = BufferSeparator(this, position)
+        var idx = separators.binarySearchBy(position, selector = BufferSeparator::position)
+        if (idx >= 0) return@runLater
+        idx = -(idx + 1)
+        separators.add(idx, sep)
+        children.add(sep)
     }
 
-    private fun displaySelectedRegion() {
-        val range = selectedRange
-        if (range == null) {
-            selectedRegionRect.isVisible = false
-        } else {
-            selectedRegionRect.isVisible = true
-            selectedRegionRect.width = (range.dur * pixelsPerSecond).value
-            selectedRegionRect.x = getX(range.start)
-        }
+    override fun removedSeparator(position: Decimal) = Platform.runLater {
+        val sep = separators.find { it.position == position } ?: return@runLater
+        separators.remove(sep)
+        children.remove(sep)
     }
 
     override fun accept(sampleOffset: Long, samples: List<FloatBuffer>, frames: Int) {
@@ -134,18 +177,34 @@ class LiveAudioBufferView(
         val position = buffer.duration
         Platform.runLater {
             recordCursor.startX = getX(position)
-            recordCursor.endX = recordCursor.startX
         }
     }
 
-    private fun selectRegion(range: DecimalRange) {
-        selectedRange = range
-        displaySelectedRegion()
-        selectedRegionRect.requestFocus()
+    private fun selectRegion(range: DecimalRange?) {
+        if (range == null) selectedRegionRect.clear()
+        else {
+            selectedRegionRect.bufferRange = range
+            hoveredRegionRect.clear()
+            selectedRegionRect.requestFocus()
+        }
     }
 
-    fun zoom(amount: Double, evX: Double) {
-        val newIntervalSize = (displayRange.dur) * amount
+    fun createSoundProcess(range: DecimalRange, ev: Event?) {
+        val sample = associatedSampleObjects.getOrPut(range) {
+            val name = NamePrompt(context[BufferRegistry], "Sample name", "").showDialog(ev) ?: return
+            val samplesDir = context.project.projectDirectory.resolve("samples")
+            samplesDir.mkdirs()
+            val sampleFile = samplesDir.resolve("$name.wav")
+            buffer.writeTo(sampleFile, bufferObject.format, range)
+            val sample = SampleObject.create(name, sampleFile)
+            context[BufferRegistry].add(sample)
+            sample
+        }
+        context[ScoreObjectDuplicator].enterDuplicateMode(sample, ev)
+    }
+
+    private fun zoom(amount: Double, evX: Double) {
+        val newIntervalSize = (displayRange.duration) * amount
         val oldIntervalCenter = (displayRange.endInclusive + displayRange.start) / 2
         val newIntervalCenter = (getTime(evX) + oldIntervalCenter * 3) / 4
         val newStart = newIntervalCenter - (newIntervalSize / 2)
@@ -153,23 +212,54 @@ class LiveAudioBufferView(
         display(newStart..newEnd)
     }
 
-    fun scroll(amount: Double) {
+    private fun scroll(amount: Double) {
         display(displayRange + amount.toDecimal())
-    }
-
-    override fun removedSeparator(position: Decimal) {
-        val sep = separators.find { it.position == position } ?: return
-        separators.remove(sep)
-        children.remove(sep)
     }
 
     override fun cleared() {
         children.removeAll(separators)
         separators.clear()
-        selectedRange = null
+        selectedRegionRect.bufferRange = zero..zero
         for (canvas in canvases) {
             canvas.clear()
         }
+        recordCursor.startX = 0.0
         displayRange -= displayRange.start
+    }
+
+    private class AddSeparator(
+        private val buffer: MultiChannelAudioBuffer,
+        private val position: Decimal
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Add buffer separator"
+
+        override fun doRedo() {
+            buffer.addSeparator(position)
+        }
+
+        override fun doUndo() {
+            buffer.removeSeparator(position)
+        }
+    }
+
+    private class JoinBufferRegions(
+        private val buffer: MultiChannelAudioBuffer,
+        private val separators: List<Decimal>
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Join buffer regions"
+
+        override fun doUndo() {
+            for (pos in separators) {
+                buffer.addSeparator(pos)
+            }
+        }
+
+        override fun doRedo() {
+            for (pos in separators) {
+                buffer.removeSeparator(pos)
+            }
+        }
     }
 }

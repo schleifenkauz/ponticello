@@ -2,7 +2,7 @@ package ponticello.model.record
 
 import hextant.context.Context
 import ponticello.impl.DecimalRange
-import ponticello.impl.dur
+import ponticello.impl.duration
 import ponticello.impl.times
 import ponticello.model.instr.BusObject
 import ponticello.sc.client.ScWriter
@@ -34,7 +34,7 @@ class MultiChannelDiskAudioBuffer(
 
     override fun writeTo(file: File, format: AudioFormat, range: DecimalRange) {
         val position = (range.start * sampleRate * 2).toLong()
-        val count = (range.dur * sampleRate * 2).toLong()
+        val count = (range.duration * sampleRate * 2).toLong()
         val output = file.outputStream().channel
         raf.channel.transferTo(position, count, output)
     }
@@ -44,7 +44,7 @@ class MultiChannelDiskAudioBuffer(
         action: ScWriter.(bufName: String) -> Unit
     ) {
         val frameOffset = (range.start * sampleRate).toLong()
-        val numFrames = (range.dur * sampleRate).toLong()
+        val numFrames = (range.duration * sampleRate).toLong()
         loadBuffer(file, frameOffset, numFrames, context, action)
     }
 

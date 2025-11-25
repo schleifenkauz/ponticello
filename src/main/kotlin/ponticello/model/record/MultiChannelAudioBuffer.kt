@@ -72,11 +72,12 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         }
     }
 
-    fun getSnippet(position: Decimal): DecimalRange {
+    fun getSnippet(position: Decimal): DecimalRange? {
         var idx = separators.binarySearch(position)
         if (idx < 0) idx = -(idx + 1)
+        if (idx == separators.size) return null
         val start = if (idx == 0) zero else separators[idx - 1]
-        val end = if (idx == separators.size) duration else separators[idx]
+        val end = separators[idx]
         return DecimalRange(start, end)
     }
 
@@ -101,7 +102,7 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
                 +"arg b"
                 action("b")
             }
-            appendLine(";")
+            appendLine(");")
         }
     }
 
@@ -110,7 +111,7 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         context[SuperColliderClient].run {
             appendBlock("Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)", endLine = false) {
                 +"arg b"
-                 +"{ DiskIn.ar($nChannels, b) }.play(s, ${outBus.superColliderName});"
+                 +"{ DiskIn.ar($nChannels, b) }.play(s, ${outBus.superColliderName})"
             }
             appendLine(";")
         }

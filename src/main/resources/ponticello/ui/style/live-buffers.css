@@ -1,5 +1,5 @@
 .buffer-separator {
-    -fx-stroke: white;
+    -fx-stroke: grey;
     -fx-stroke-width: 1px;
 }
 
@@ -7,19 +7,36 @@
     -fx-stroke-width: 5px;
 }
 
+.hovered-buffer-region {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+}
+
+.selected-buffer-region {
+    -fx-background-color: rgba(255, 0, 0, 0.2);
+}
+
+.selected-buffer-region:focused {
+    -fx-background-color: rgba(255, 0, 0, 0.3);
+}
+
+.buffer-play-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.buffer-play-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 50%;
+}
+
+.buffer-play-button FontIcon {
+    -fx-icon-size: 30px;
+}
+
 .record-cursor {
     -fx-stroke: white;
     -fx-stroke-dash-array: 10 10;
     -fx-stroke-width: 1px;
-}
-
-.buffer-selection {
-    -fx-stroke: red;
-    -fx-fill: rgba(255, 0, 0, 0.2);
-}
-
-.buffer-selection:hover {
-    -fx-fill: rgba(255, 0, 0, 0.3);
 }
 
 .live-buffer-item {

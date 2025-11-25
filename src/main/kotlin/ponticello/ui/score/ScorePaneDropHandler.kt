@@ -62,7 +62,7 @@ class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHan
             buffer: BufferObject, position: ObjectPosition, ev: Event?, scorePane: ScorePane,
         ) {
             val instrument = scorePane.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
-            val obj = buffer.createSynthObject(instrument) ?: return
+            val obj = buffer.createSoundProcess(instrument) ?: return
             val inst = ScoreObjectInstance(obj, position)
             scorePane.context.compoundEdit("Add sample to score") {
                 scorePane.score.addObject(inst, autoSelect = true)

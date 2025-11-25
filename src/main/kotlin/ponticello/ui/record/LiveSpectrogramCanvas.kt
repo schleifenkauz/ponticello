@@ -31,7 +31,7 @@ class LiveSpectrogramCanvas(
     private val fftBuf = FloatArray(fftSize * 2)
 
     private val regionDuration = ((hopSize * framesPerImage) / buffer.sampleRate).toDecimal()
-    private val regionWidth get() = (regionDuration * (width / displayRange.dur)).toDouble()
+    private val regionWidth get() = (regionDuration * (width / displayRange.duration)).toDouble()
 
     private var lastAcceptedSamples = FloatArray(fftSize)
 

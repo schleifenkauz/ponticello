@@ -70,7 +70,7 @@ class ScoreObjectDuplicator {
     fun enterDuplicateMode(sample: SampleObject, ev: Event?) {
         val image = Image(sample.spectrogramFile.inputStream())
         val instrument = sample.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
-        val obj = sample.createSynthObject(instrument) ?: return
+        val obj = sample.createSoundProcess(instrument) ?: return
         enterDuplicateMode(obj, image, null, clone = false)
     }
 

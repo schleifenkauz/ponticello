@@ -68,7 +68,7 @@ class LauncherGridItemDropHandler(
 
     private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: LauncherGrid.GridItem) {
         val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
-        val obj = buffer.createSynthObject(synthDef) ?: return
+        val obj = buffer.createSoundProcess(synthDef) ?: return
         grid.context[ScoreObjectRegistry].add(obj)
         item.target = ItemTarget.Object(obj.reference(), yPosition = reactiveVariable(zero))
     }

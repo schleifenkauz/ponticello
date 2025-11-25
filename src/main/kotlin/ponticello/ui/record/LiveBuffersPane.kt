@@ -127,7 +127,7 @@ class LiveBuffersPane(
         if (obj != null) {
             thresholdControl.children.addAll(
                 CheckBox(obj.threshold.isEnabled, "Threshold"),
-                Knob("Threshold", obj.threshold.db, LoudnessThreshold.SPEC)
+                Knob("Threshold", obj.threshold.db, LoudnessThreshold.SPEC, 12.0)
             )
         }
         val previouslySelectedBox = itemBoxes[selectedObject.get()]
@@ -164,7 +164,7 @@ class LiveBuffersPane(
         private val addItemButton = action<LiveBuffersPane>("Add buffer") {
             icon(MaterialDesignP.PLUS_CIRCLE)
             executes { pane, ev ->
-                val buffer = NewLiveBufferPrompt(context).showDialog(ev) ?: return@executes
+                val buffer = NewLiveBufferPrompt(pane.buffers).showDialog(ev) ?: return@executes
                 pane.buffers.add(buffer)
                 pane.select(buffer)
             }
@@ -176,7 +176,8 @@ class LiveBuffersPane(
                 executes { pane ->
                     val selected = pane.selectedObject.get() ?: return@executes
                     val view = pane.getLiveBufferView(selected)
-                    val selectedRange = view.selectedRange ?: return@executes
+                    val selectedRange = view.selectedRange
+                    if (selectedRange.isEmpty()) return@executes
                     selected.buffer.loadBuffer(selectedRange, selected.format, context) { buf ->
                         +"$buf.play"
                     }

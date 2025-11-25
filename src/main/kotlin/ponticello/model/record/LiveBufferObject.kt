@@ -21,7 +21,7 @@ import javax.sound.sampled.AudioFormat
 
 @Serializable
 class LiveBufferObject(
-    private val source: CaptureSource,
+    val source: CaptureSource,
     private val channelConfig: ChannelConfiguration,
     @SerialName("viewConfig") private var _viewConfig: LiveBufferViewConfig,
     @SerialName("enabled") private val _enabled: ReactiveVariable<Boolean>,

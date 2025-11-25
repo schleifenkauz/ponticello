@@ -35,7 +35,7 @@ sealed class BufferObject : AbstractSuperColliderObject() {
 
     protected open fun waitForInfos() {}
 
-    fun createSynthObject(synthDef: InstrumentObject): SoundProcess? {
+    fun createSoundProcess(synthDef: InstrumentObject): SoundProcess? {
         waitForInfos()
         val controls = synthDef.getDefaultControls(null)
         val buf = controls["buf"] as? BufferControl ?: return null

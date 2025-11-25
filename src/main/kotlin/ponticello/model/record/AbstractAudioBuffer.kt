@@ -14,7 +14,7 @@ abstract class AbstractAudioBuffer(final override val sampleRate: Double) : Audi
         val sampleOffset = (range.start * sampleRate).toLong()
         val availableSamples = (nSamples - sampleOffset).toInt()
         if (availableSamples <= 0) return emptyList()
-        val samples = (range.dur * sampleRate).toInt().coerceAtMost(availableSamples)
+        val samples = (range.duration * sampleRate).toInt().coerceAtMost(availableSamples)
         return read(sampleOffset, samples)
     }
 

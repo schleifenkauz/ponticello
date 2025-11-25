@@ -6,7 +6,6 @@ import fxutils.prompt.CompoundPrompt
 import fxutils.removeColumn
 import fxutils.removeRow
 import fxutils.styleClass
-import hextant.context.Context
 import javafx.scene.control.Button
 import javafx.scene.control.TextField
 import javafx.scene.layout.GridPane
@@ -14,6 +13,7 @@ import ponticello.model.obj.withName
 import ponticello.model.record.CaptureSource
 import ponticello.model.record.ChannelConfiguration
 import ponticello.model.record.LiveBufferObject
+import ponticello.model.record.LiveBufferRegistry
 import ponticello.sc.Identifier
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
@@ -25,12 +25,12 @@ import reaktive.value.fx.asReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-class NewLiveBufferPrompt(context: Context) : CompoundPrompt<LiveBufferObject>("Add LiveBuffer") {
+class NewLiveBufferPrompt(registry: LiveBufferRegistry) : CompoundPrompt<LiveBufferObject>("Add LiveBuffer") {
     private val nameField = TextField() styleClass "sleek-text-field"
     private val source: ReactiveVariable<CaptureSource> = reactiveVariable(CaptureSource.None)
     private val channels = reactiveVariable(0)
     private val channelsSpinner = IntSpinner(channels, 0..0)
-    private val sourceSelector = AudioSourceSelectorPrompt(context).selectorButton(source)
+    private val sourceSelector = AudioSourceSelectorPrompt(registry).selectorButton(source)
 
     private val mapping = mutableListOf<ReactiveVariable<Int>>()
     private val mappingGrid = GridPane()

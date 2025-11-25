@@ -14,7 +14,7 @@ class WaveformPeaks private constructor(
 
     fun getPeaks(range: DecimalRange, zoomFactor: Int): Peaks {
         val regionSize = zoomFactor.pow2()
-        val nSamples = range.dur * buffer.sampleRate
+        val nSamples = range.duration * buffer.sampleRate
         val pixels = (nSamples / regionSize).toInt()
         return when {
             zoomFactor < minZoom -> {
@@ -53,7 +53,7 @@ class WaveformPeaks private constructor(
     }
 
     fun getPeaks(range: DecimalRange, width: Double): Peaks {
-        val samplesPerPixel = (range.dur * buffer.sampleRate) / width
+        val samplesPerPixel = (range.duration * buffer.sampleRate) / width
         val regionSize = samplesPerPixel.toInt()
         val zoomFactor = (0..31).first { z -> z.pow2() >= regionSize }
         return getPeaks(range, zoomFactor)

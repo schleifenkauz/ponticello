@@ -58,8 +58,7 @@ class MultiChannelHeapAudioBuffer(
     override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context) {
         val tmpFile = createTempFile(context)
         writeTo(tmpFile, format, range)
-        val offset = (range.start * sampleRate).toLong()
-        playBuffer(tmpFile, offset, outBus, context)
+        playBuffer(tmpFile, 0, outBus, context)
     }
 
     companion object {

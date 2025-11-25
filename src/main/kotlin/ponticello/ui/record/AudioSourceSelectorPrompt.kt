@@ -4,10 +4,14 @@ import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
 import javafx.scene.control.Label
 import javafx.scene.layout.Region
+import ponticello.model.obj.project
+import ponticello.model.project.LIVE_BUFFERS
+import ponticello.model.project.get
 import ponticello.model.record.CaptureSource
+import ponticello.model.record.LiveBufferRegistry
 
-class AudioSourceSelectorPrompt(context: Context) : SimpleSelectorPrompt<CaptureSource>(
-    getOptions(context), "Select audio input device"
+class AudioSourceSelectorPrompt(registry: LiveBufferRegistry) : SimpleSelectorPrompt<CaptureSource>(
+    getOptions(registry), "Select audio input device"
 ) {
     override fun createCell(option: CaptureSource): Region =
         when (option) {
@@ -23,10 +27,11 @@ class AudioSourceSelectorPrompt(context: Context) : SimpleSelectorPrompt<Capture
     }
 
     companion object {
-        private fun getOptions(context: Context): List<CaptureSource> {
+        private fun getOptions(registry: LiveBufferRegistry): List<CaptureSource> {
 //            val sampleRate = context[SuperColliderClient].sampleRate
 //            return CaptureSource.Mixer.getAvailableSources(sampleRate)
-            return CaptureSource.Jack.getAvailableSources()
+            val takenSources = registry.map { obj -> obj.source }.toSet()
+            return CaptureSource.Jack.getAvailableSources() - takenSources
         }
     }
 }
