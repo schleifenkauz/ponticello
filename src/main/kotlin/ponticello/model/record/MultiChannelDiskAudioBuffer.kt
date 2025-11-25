@@ -3,11 +3,9 @@ package ponticello.model.record
 import hextant.context.Context
 import ponticello.impl.DecimalRange
 import ponticello.impl.dur
-import ponticello.impl.superColliderPath
 import ponticello.impl.times
+import ponticello.model.instr.BusObject
 import ponticello.sc.client.ScWriter
-import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.run
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
@@ -47,14 +45,11 @@ class MultiChannelDiskAudioBuffer(
     ) {
         val frameOffset = (range.start * sampleRate).toLong()
         val numFrames = (range.dur * sampleRate).toLong()
-        val path = file.superColliderPath
-        context[SuperColliderClient].run {
-            appendBlock("Buffer.read(s, $path, $frameOffset, $numFrames, action: ", endLine = false) {
-                +"arg b"
-                action("b")
-            }
-            appendLine(";")
-        }
+        loadBuffer(file, frameOffset, numFrames, context, action)
+    }
+
+    override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context) {
+
     }
 
     private class ChannelBuffer(

@@ -1,6 +1,11 @@
 package ponticello.model.record
 
+import hextant.context.Context
 import ponticello.impl.DecimalRange
+import ponticello.impl.times
+import ponticello.model.instr.BusObject
+import ponticello.model.obj.project
+import ponticello.sc.client.ScWriter
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.ByteBuffer
@@ -31,5 +36,33 @@ class MultiChannelHeapAudioBuffer(
         }
         val audioStream = AudioInputStream(ByteArrayInputStream(bytes), format, bytes.size.toLong())
         AudioSystem.write(audioStream, AudioFileFormat.Type.WAVE, file)
+    }
+
+    private fun createTempFile(context: Context): File {
+        val tmpDir = context.project.projectDirectory.resolve("tmp")
+        tmpDir.mkdirs()
+        val idx = tmpFileCounter++
+        val tmpFile = tmpDir.resolve("tmp$idx.wav")
+        return tmpFile
+    }
+
+    override fun loadBuffer(
+        range: DecimalRange, format: AudioFormat, context: Context,
+        action: ScWriter.(bufName: String) -> Unit
+    ) {
+        val tmpFile = createTempFile(context)
+        writeTo(tmpFile, format, range)
+        loadBuffer(tmpFile, frameOffset = 0, numFrames = -1, context, action)
+    }
+
+    override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context) {
+        val tmpFile = createTempFile(context)
+        writeTo(tmpFile, format, range)
+        val offset = (range.start * sampleRate).toLong()
+        playBuffer(tmpFile, offset, outBus, context)
+    }
+
+    companion object {
+        private var tmpFileCounter = 0
     }
 }

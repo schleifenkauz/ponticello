@@ -2,7 +2,8 @@ package ponticello.model.record
 
 import hextant.context.Context
 import ponticello.impl.*
-import ponticello.model.obj.project
+import ponticello.model.instr.BusObject
+import ponticello.model.obj.superColliderName
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
@@ -90,24 +91,38 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         channelListeners[idx].add(listener)
     }
 
-    abstract fun writeTo(file: File, format: AudioFormat, range: DecimalRange)
-
-    open fun loadBuffer(
-        range: DecimalRange, format: AudioFormat, context: Context,
+    protected fun loadBuffer(
+        audioFile: File, frameOffset: Long, numFrames: Long, context: Context,
         action: ScWriter.(bufName: String) -> Unit
     ) {
-        val tmpDir = context.project.projectDirectory.resolve("tmp")
-        tmpDir.mkdirs()
-        val tmpFile = tmpDir.resolve("tmp.wav")
-        writeTo(tmpFile, format, range)
+        val path = audioFile.superColliderPath
         context[SuperColliderClient].run {
-            appendBlock("Buffer.read(s, ${tmpFile.superColliderPath}, action: ", endLine = false) {
+            appendBlock("Buffer.read(s, $path, $frameOffset, $numFrames, action: ", endLine = false) {
                 +"arg b"
                 action("b")
             }
-            appendLine(");")
+            appendLine(";")
         }
     }
+
+    protected fun playBuffer(audioFile: File, frameOffset: Long, outBus: BusObject, context: Context) {
+        val path = audioFile.superColliderPath
+        context[SuperColliderClient].run {
+            appendBlock("Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)", endLine = false) {
+                +"arg b"
+                 +"{ DiskIn.ar($nChannels, b) }.play(s, ${outBus.superColliderName});"
+            }
+            appendLine(";")
+        }
+    }
+
+    abstract fun writeTo(file: File, format: AudioFormat, range: DecimalRange)
+
+    abstract fun loadBuffer(
+        range: DecimalRange, format: AudioFormat, context: Context, action: ScWriter.(bufName: String) -> Unit
+    )
+
+    abstract fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context)
 
     interface Listener {
         fun accept(sampleOffset: Long, samples: List<FloatBuffer>, frames: Int)

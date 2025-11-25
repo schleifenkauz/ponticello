@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.registry.ObjectRegistry
 
-@Serializable
+@Serializable(with = LiveBufferRegistry.Serializer::class)
 class LiveBufferRegistry(override val objects: MutableList<LiveBufferObject>) : ObjectRegistry<LiveBufferObject>() {
     override val objectType: String get() = "LiveBuffer"
 

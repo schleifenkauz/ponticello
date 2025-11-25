@@ -9,7 +9,6 @@ import fxutils.controls.CheckBox
 import fxutils.prompt.YesNoPrompt
 import javafx.css.PseudoClass
 import javafx.geometry.Side.BOTTOM
-import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.ContextMenu
 import javafx.scene.input.MouseButton
