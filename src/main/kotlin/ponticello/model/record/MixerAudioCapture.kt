@@ -2,6 +2,7 @@ package ponticello.model.record
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import javax.sound.sampled.*
 import kotlin.concurrent.thread
 
@@ -13,10 +14,10 @@ class MixerAudioCapture(
     private val buf = ByteArray(bufferSize * 2 * format.channels)
     private var activeThread: Thread? = null
     private var activeLine: TargetDataLine? = null
-    private lateinit var floatBuffers: List<FloatArray>
+    private lateinit var floatBuffers: List<FloatBuffer>
 
     override fun doPrepare(): Boolean {
-        floatBuffers = List(channelConfig.outputChannels) { FloatArray(bufferSize) }
+        floatBuffers = List(channelConfig.outputChannels) { FloatBuffer.allocate(bufferSize) }
 
         val info = DataLine.Info(TargetDataLine::class.java, format)
         val line = try {
@@ -66,12 +67,13 @@ class MixerAudioCapture(
 //                require(bytesRead == bufferSize * format.channels * 2) { "Invalid buffer size: $bytesRead" }
 
                 val bb = ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN)
+                for (buf in floatBuffers) buf.position(0)
                 for (i in 0 until frames) {
                     for (j in 0 until format.channels) {
                         val value = bb.getShort().toFloat() / Short.MAX_VALUE
                         val outputIdx = channelConfig.map(j)
                         if (outputIdx in floatBuffers.indices) {
-                            floatBuffers[outputIdx][i] = value
+                            floatBuffers[outputIdx].put(value)
                         }
                     }
                 }

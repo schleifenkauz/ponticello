@@ -9,6 +9,7 @@ import javafx.scene.shape.Rectangle
 import ponticello.impl.*
 import ponticello.model.record.LiveBufferObject
 import ponticello.model.record.MultiChannelAudioBuffer
+import java.nio.FloatBuffer
 
 class LiveAudioBufferView(
     private val obj: LiveBufferObject,
@@ -122,9 +123,9 @@ class LiveAudioBufferView(
         }
     }
 
-    override fun accept(sampleOffset: Long, samples: List<FloatArray>, frames: Int) {
-        for ((arr, canvas) in samples.zip(canvases)) {
-            canvas.accept(sampleOffset, arr, frames)
+    override fun accept(sampleOffset: Long, samples: List<FloatBuffer>, frames: Int) {
+        for ((buf, canvas) in samples.zip(canvases)) {
+            canvas.accept(sampleOffset, buf.position(0), frames)
         }
         val position = buffer.duration
         Platform.runLater {
@@ -161,6 +162,7 @@ class LiveAudioBufferView(
     override fun cleared() {
         children.removeAll(separators)
         separators.clear()
+        selectedRange = null
         for (canvas in canvases) {
             canvas.clear()
         }

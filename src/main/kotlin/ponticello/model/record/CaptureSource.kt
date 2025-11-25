@@ -11,32 +11,30 @@ import javax.sound.sampled.TargetDataLine
 
 @Serializable
 sealed class CaptureSource {
-    abstract val bufferSize: Int
+    abstract val name: String
 
     abstract val channels: Int
 
     abstract fun capture(context: Context): AudioCapture?
 
-    abstract fun getFormat(sampleRate: Double): AudioFormat?
-
     data object None : CaptureSource() {
-        override val bufferSize: Int = 0
+        override val name: String
+            get() = "<none>"
+
         override val channels: Int get() = 0
 
         override fun capture(context: Context): AudioCapture? = null
-
-        override fun getFormat(sampleRate: Double): AudioFormat? = null
     }
 
     @Serializable
     data class Mixer(
-        val name: String,
-        override val bufferSize: Int,
+        override val name: String,
+        val bufferSize: Int,
         override val channels: Int,
     ) : CaptureSource() {
         override fun capture(context: Context): MixerAudioCapture? {
-            val sampleRate = context[SuperColliderClient].sampleRate.toFloat()
-            val format = getFormat(sampleRate.toDouble(), channels)
+            val sampleRate = context[SuperColliderClient].sampleRate
+            val format = getFormat(sampleRate, channels)
             val mixerInfo = AudioSystem.getMixerInfo().find { info -> info.name == name }
             if (mixerInfo == null) {
                 Logger.error("Invalid mixer name: $name")
@@ -46,8 +44,6 @@ sealed class CaptureSource {
             return MixerAudioCapture(format, mixer, bufferSize)
         }
 
-        override fun getFormat(sampleRate: Double): AudioFormat = getFormat(sampleRate, channels)
-
         companion object {
             private const val BUFFER_SIZE = 1024
             private const val SAMPLE_SIZE = 16
@@ -55,7 +51,7 @@ sealed class CaptureSource {
             private fun getFormat(sampleRate: Double, channels: Int) =
                 AudioFormat(sampleRate.toFloat(), SAMPLE_SIZE, channels, true, false)
 
-            fun getAvailable(sampleRate: Double) = AudioSystem.getMixerInfo().filter { info ->
+            fun getAvailableSources(sampleRate: Double) = AudioSystem.getMixerInfo().filter { info ->
                 val mixer = AudioSystem.getMixer(info) ?: return@filter false
                 val channels = getChannels(mixer) ?: return@filter false
                 val format = getFormat(sampleRate, channels)
@@ -69,6 +65,18 @@ sealed class CaptureSource {
                 mixer.targetLineInfo.filterIsInstance<DataLine.Info>()
                     .maxOfOrNull { lineInfo -> lineInfo.formats.maxOf { f -> f.channels } }
 
+        }
+    }
+
+    @Serializable
+    data class Jack(override val name: String) : CaptureSource() {
+        override fun capture(context: Context): JackAudioCapture = JackAudioCapture(name)
+
+        override val channels: Int
+            get() = JackAudioCapture.getOutputChannels(name)
+
+        companion object {
+            fun getAvailableSources() = JackAudioCapture.getSources().map(::Jack)
         }
     }
 }

@@ -9,6 +9,7 @@ import ponticello.model.record.AudioBuffer
 import reaktive.Observer
 import reaktive.value.now
 import java.awt.Color
+import java.nio.FloatBuffer
 import java.util.concurrent.Executors
 import kotlin.math.cos
 import kotlin.math.log10
@@ -48,7 +49,7 @@ class LiveSpectrogramCanvas(
         }
     }
 
-    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) = executor.execute {
+    override fun accept(sampleOffset: Long, samples: FloatBuffer, frames: Int) = executor.execute {
         var frameIndex = (sampleOffset / hopSize).toInt()
         val segmentIdx = frameIndex / framesPerImage
         frameIndex %= framesPerImage
@@ -56,17 +57,17 @@ class LiveSpectrogramCanvas(
         if (!affectedSegment.isInDisplayRange()) return@execute
         val img = affectedSegment.getImage()
 
-        fftBuf.prepareBufForFFT(lastAcceptedSamples.asList(), srcOffset = hopSize, dstOffset = 0, len = hopSize)
-        fftBuf.prepareBufForFFT(samples.asList(), srcOffset = 0, dstOffset = hopSize, len = hopSize)
+//        fftBuf.prepareBufForFFT(lastAcceptedSamples, srcOffset = hopSize, dstOffset = 0, len = hopSize)
+//        fftBuf.prepareBufForFFT(samples, srcOffset = 0, dstOffset = hopSize, len = hopSize)
         fft.complexForward(fftBuf)
         img.pixelWriter.writeFrame(fftBuf, frameIndex)
 
-        fftBuf.prepareBufForFFT(samples.asList(), srcOffset = 0, len = fftSize)
+//        fftBuf.prepareBufForFFT(samples, srcOffset = 0, len = fftSize)
         fft.complexForward(fftBuf)
         img.pixelWriter.writeFrame(fftBuf, frameIndex + 1)
 
         drawSegment(segmentIdx)
-        lastAcceptedSamples = samples
+        samples.get(lastAcceptedSamples)
     }
 
     override fun onClear() {

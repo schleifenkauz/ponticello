@@ -5,6 +5,7 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color.BLACK
 import ponticello.impl.*
 import ponticello.model.record.AudioBuffer
+import java.nio.FloatBuffer
 
 abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas(), AudioBuffer.Listener {
     var displayRange: DecimalRange = initialDisplayRange
@@ -17,8 +18,8 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
     protected val pixelsPerSecond get() = width / displayRange.dur.toDouble()
 
     init {
-        widthProperty().addListener { repaint() }
-        heightProperty().addListener { repaint() }
+        widthProperty().addListener { _ -> repaint() }
+        heightProperty().addListener { _ -> repaint() }
     }
 
     abstract fun repaint()
@@ -39,7 +40,7 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
         repaint()
     }
 
-    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
+    override fun accept(sampleOffset: Long, samples: FloatBuffer, frames: Int) {
         Platform.runLater {
             repaint()
         }

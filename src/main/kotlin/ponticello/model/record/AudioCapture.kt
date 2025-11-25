@@ -1,9 +1,11 @@
 package ponticello.model.record
 
-interface AudioCapture {
-    val status: Status
+import reaktive.value.ReactiveValue
 
-    fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration)
+interface AudioCapture {
+    val status: ReactiveValue<Status>
+
+    fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration): Boolean
 
     fun start()
 

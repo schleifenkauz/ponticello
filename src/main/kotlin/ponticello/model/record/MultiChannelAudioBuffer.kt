@@ -7,6 +7,7 @@ import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import java.io.File
+import java.nio.FloatBuffer
 import javax.sound.sampled.AudioFormat
 
 abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: Int) {
@@ -19,18 +20,18 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
 
     abstract val channels: List<AudioBuffer>
 
-    open fun receive(samples: List<FloatArray>, frames: Int) {
+    open fun receive(samples: List<FloatBuffer>, frames: Int) {
         val frameOffset = receivedFrames
         receivedFrames += frames
         for ((idx, ch) in channels.withIndex()) {
-            ch.append(samples[idx], frames)
+            ch.append(samples[idx].position(0), frames)
         }
         for (listener in listeners) {
             listener.accept(frameOffset, samples, frames)
         }
-        for ((arr, listeners) in samples.zip(channelListeners)) {
+        for ((buf, listeners) in samples.zip(channelListeners)) {
             for (listener in listeners) {
-                listener.accept(frameOffset, arr, frames)
+                listener.accept(frameOffset, buf.position(0), frames)
             }
         }
     }
@@ -106,7 +107,7 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
     }
 
     interface Listener {
-        fun accept(sampleOffset: Long, samples: List<FloatArray>, frames: Int)
+        fun accept(sampleOffset: Long, samples: List<FloatBuffer>, frames: Int)
 
         fun addedSeparator(position: Decimal)
 

@@ -61,18 +61,19 @@ class LiveBufferObject(
         }
     }
 
-    val format: AudioFormat? get() = source.getFormat(buffer.sampleRate)
+    val format: AudioFormat
+        get() = AudioFormat(buffer.sampleRate.toFloat(), 16, channelConfig.outputChannels, true, false)
 
     override fun initialize(context: Context) {
         super.initialize(context)
         val sampleRate = context[SuperColliderClient].sampleRate
         buffer = MultiChannelHeapAudioBuffer(
-            channelConfig.outputChannels, sampleRate, source.bufferSize
+            channelConfig.outputChannels, sampleRate, INITIAL_CAPACITY
         )
         val capture = source.capture(context)
         if (capture != null) {
             capture.prepare(buffer, channelConfig)
-            if (enabled.now) {
+            if (capture.status.now == AudioCapture.Status.PREPARED && enabled.now) {
                 capture.start()
             }
             this.capture = capture

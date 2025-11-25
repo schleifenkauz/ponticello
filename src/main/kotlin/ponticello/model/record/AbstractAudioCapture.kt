@@ -1,12 +1,16 @@
 package ponticello.model.record
 
+import reaktive.value.ReactiveValue
+import reaktive.value.now
+import reaktive.value.reactiveVariable
+
 abstract class AbstractAudioCapture : AudioCapture {
     protected lateinit var buffer: MultiChannelAudioBuffer
         private set
     lateinit var channelConfig: ChannelConfiguration
         private set
-    final override var status: AudioCapture.Status = AudioCapture.Status.UNPREPARED
-        private set
+    private var _status = reactiveVariable(AudioCapture.Status.UNPREPARED)
+    override val status: ReactiveValue<AudioCapture.Status> get() = _status
 
     protected abstract fun doPrepare(): Boolean
 
@@ -16,32 +20,38 @@ abstract class AbstractAudioCapture : AudioCapture {
 
     protected abstract fun doClose()
 
-    final override fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration) {
-        check(status == AudioCapture.Status.UNPREPARED) { "Illegal status: $status" }
+    private fun checkStatus(vararg expected: AudioCapture.Status) {
+        check(status.now in expected) { "Illegal status: $status. Expected $expected" }
+    }
+
+    final override fun prepare(dest: MultiChannelAudioBuffer, config: ChannelConfiguration): Boolean {
+        checkStatus(AudioCapture.Status.UNPREPARED)
         require(dest.nChannels == config.outputChannels) {
             "Invalid number of destination channels: ${dest.channels}. Expected: ${config.outputChannels}."
         }
         this.channelConfig = config
         buffer = dest
-        doPrepare()
-        status = AudioCapture.Status.PREPARED
+        if (doPrepare()) {
+            _status.now = AudioCapture.Status.PREPARED
+            return true
+        } else return false
     }
 
     final override fun start() {
-        check(status == AudioCapture.Status.PREPARED) { "Illegal status: $status" }
+        checkStatus(AudioCapture.Status.PREPARED)
         doStart()
-        status = AudioCapture.Status.RUNNING
+        _status.now = AudioCapture.Status.RUNNING
     }
 
     final override fun stop() {
-        check(status == AudioCapture.Status.RUNNING) { "Illegal status: $status" }
+        checkStatus(AudioCapture.Status.RUNNING)
         doStop()
-        status = AudioCapture.Status.PREPARED
+        _status.now = AudioCapture.Status.PREPARED
     }
 
     final override fun close() {
-        check(status in setOf(AudioCapture.Status.PREPARED, AudioCapture.Status.RUNNING)) { "Illegal status: $status" }
+        checkStatus(AudioCapture.Status.RUNNING, AudioCapture.Status.PREPARED)
         doClose()
-        status = AudioCapture.Status.CLOSED
+        _status.now = AudioCapture.Status.CLOSED
     }
 }

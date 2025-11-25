@@ -1,5 +1,6 @@
 package ponticello.model.record
 
+import java.nio.FloatBuffer
 import java.util.*
 
 class HeapAudioBuffer(sampleRate: Double, initialCapacity: Int) : AbstractAudioBuffer(sampleRate) {
@@ -9,10 +10,10 @@ class HeapAudioBuffer(sampleRate: Double, initialCapacity: Int) : AbstractAudioB
         return buffer.asList().subList(offset.toInt(), offset.toInt() + len)
     }
 
-    override fun append(samples: FloatArray, frames: Int) {
-        ensureCapacity(additionalSize = samples.size)
+    override fun append(samples: FloatBuffer, frames: Int) {
+        ensureCapacity(additionalSize = samples.remaining())
         val offset = totalSamples().toInt()
-        System.arraycopy(samples, 0, buffer, offset, frames)
+        samples.position(0).get(buffer, offset, frames)
         super.append(samples, frames)
     }
 

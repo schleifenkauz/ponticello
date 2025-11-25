@@ -3,6 +3,7 @@ package ponticello.model.record
 import ponticello.impl.DecimalRange
 import ponticello.impl.div
 import ponticello.impl.times
+import java.nio.FloatBuffer
 
 class WaveformPeakCache(
     private val buffer: AudioBuffer,
@@ -19,9 +20,9 @@ class WaveformPeakCache(
     }
 
     @Synchronized
-    override fun accept(sampleOffset: Long, samples: FloatArray, frames: Int) {
+    override fun accept(sampleOffset: Long, samples: FloatBuffer, frames: Int) {
         for (i in 0 until frames) {
-            val v = samples[i]
+            val v = samples.get()
             if (v > currentMax) currentMax = v
             if (v < currentMin) currentMin = v
             if (++acceptedSamples == regionSize) {

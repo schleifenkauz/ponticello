@@ -111,6 +111,7 @@ object Logger {
         object Memory: Category()
         object VersionControl: Category()
         object OSC : Category()
+        object Recording: Category()
 
         fun filter(category: Category?): Boolean = when {
             this == All -> true

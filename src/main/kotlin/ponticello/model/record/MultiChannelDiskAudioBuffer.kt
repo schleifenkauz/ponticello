@@ -12,6 +12,7 @@ import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import javax.sound.sampled.AudioFormat
 
 class MultiChannelDiskAudioBuffer(
@@ -21,7 +22,7 @@ class MultiChannelDiskAudioBuffer(
     private val channel = raf.channel
     override val channels: List<AudioBuffer> = List(nChannels) { ch -> ChannelBuffer(this, ch) }
 
-    override fun receive(samples: List<FloatArray>, frames: Int) {
+    override fun receive(samples: List<FloatBuffer>, frames: Int) {
         val buf = ByteBuffer.allocate(frames * nChannels * 2).order(ByteOrder.LITTLE_ENDIAN)
         for (i in 0 until frames) {
             for (ch in 0 until nChannels) {

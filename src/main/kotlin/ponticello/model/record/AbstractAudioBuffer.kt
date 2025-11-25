@@ -1,6 +1,7 @@
 package ponticello.model.record
 
 import ponticello.impl.*
+import java.nio.FloatBuffer
 
 abstract class AbstractAudioBuffer(final override val sampleRate: Double) : AudioBuffer {
     private val listeners = mutableListOf<AudioBuffer.Listener>()
@@ -19,11 +20,11 @@ abstract class AbstractAudioBuffer(final override val sampleRate: Double) : Audi
 
     protected abstract fun read(offset: Long, len: Int): List<Float>
 
-    override fun append(samples: FloatArray, frames: Int) {
+    override fun append(samples: FloatBuffer, frames: Int) {
         val sampleOffset = nSamples
         nSamples += frames
         for (listener in listeners) {
-            listener.accept(sampleOffset, samples, frames)
+            listener.accept(sampleOffset, samples.position(0), frames)
         }
     }
 

@@ -52,7 +52,12 @@ class NewLiveBufferPrompt(context: Context) : CompoundPrompt<LiveBufferObject>("
 
         sourceObserver = source.observe { _, old, new ->
             when (new) {
-                is CaptureSource.Mixer -> {
+                CaptureSource.None -> {
+                    channelsSpinner.isDisable = true
+                    mappingGrid.isManaged = false
+                }
+
+                else -> {
                     channelsSpinner.isDisable = false
                     if (channels.now == 0) {
                         channels.set(new.channels)
@@ -60,11 +65,6 @@ class NewLiveBufferPrompt(context: Context) : CompoundPrompt<LiveBufferObject>("
                     channelsSpinner.setRange(1..new.channels)
                     mappingGrid.isManaged = true
                     nameField.text = Identifier.truncate(new.name)
-                }
-
-                CaptureSource.None -> {
-                    channelsSpinner.isDisable = true
-                    mappingGrid.isManaged = false
                 }
             }
             if (new.channels > old.channels) {

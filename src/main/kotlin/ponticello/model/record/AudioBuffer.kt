@@ -2,6 +2,7 @@ package ponticello.model.record
 
 import ponticello.impl.Decimal
 import ponticello.impl.DecimalRange
+import java.nio.FloatBuffer
 
 interface AudioBuffer {
     val sampleRate: Double
@@ -10,7 +11,7 @@ interface AudioBuffer {
 
     fun read(range: DecimalRange): List<Float>
 
-    fun append(samples: FloatArray, frames: Int)
+    fun append(samples: FloatBuffer, frames: Int)
 
     fun clear()
 
@@ -19,7 +20,7 @@ interface AudioBuffer {
     fun addListener(listener: Listener)
 
     interface Listener {
-        fun accept(sampleOffset: Long, samples: FloatArray, frames: Int)
+        fun accept(sampleOffset: Long, samples: FloatBuffer, frames: Int)
 
         fun onClear() {}
     }
