@@ -323,12 +323,6 @@ class AppLayout(
             toolbarPart(UndoRedoActions.withContext(scoreView.context[UndoManager])),
         ).centerChildren()
         val playerBar = toolbarPart(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))
-        val recordBtn = playerBar.getButton(PlaybackActions.toggleRecording)
-        recordBtn.setOnDragDetected { ev ->
-            val db = recordBtn.startDragAndDrop(TransferMode.COPY)
-            db.setContent(mapOf(PlaybackActions.RECORD_BUTTON to "<record>"))
-            ev.consume()
-        }
         center = VBox(
             HBox(
                 infiniteSpace(),

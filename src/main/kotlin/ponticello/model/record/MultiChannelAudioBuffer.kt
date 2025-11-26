@@ -108,20 +108,21 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         }
     }
 
-    protected fun playBuffer(audioFile: File, range: DecimalRange, outBus: BusObject, context: Context) {
+    protected fun playBuffer(audioFile: File, range: DecimalRange, outBus: BusObject, context: Context): String {
         val path = audioFile.superColliderPath
         val frameOffset = (range.start * sampleRate).toLong()
+        val synthName = "~play_buf_${playbackSynthsCounter++}"
         context[SuperColliderClient].run {
-            +"var buf, player"
+            +"var buf"
             +"buf = Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)"
-            appendBlock("player = ", endLine = false) {
+            appendBlock("$synthName = ", endLine = false) {
                 +"var snd = DiskIn.ar($nChannels, buf), env"
                 +"env = Env.linen(0.01, ${range.duration - 0.02}, 0.01)"
                 +"snd * env.kr(Done.freeSelf)"
             }
-            +".play(s, ${outBus.superColliderName})"
-            +"player.onFree { buf.free }"
+            +".play(s, ${outBus.superColliderName}).onFree { buf.free }"
         }
+        return synthName
     }
 
     abstract fun writeTo(file: File, format: AudioFormat, range: DecimalRange)
@@ -130,7 +131,7 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         range: DecimalRange, format: AudioFormat, context: Context, action: ScWriter.(bufName: String) -> Unit
     )
 
-    abstract fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context)
+    abstract fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context): String
 
     interface Listener {
         fun accept(sampleOffset: Long, samples: List<FloatBuffer>, frames: Int)
@@ -140,5 +141,9 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         fun removedSeparator(position: Decimal)
 
         fun cleared()
+    }
+
+    companion object {
+        private var playbackSynthsCounter = 0
     }
 }

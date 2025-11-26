@@ -50,8 +50,8 @@ class MultiChannelDiskAudioBuffer(
         loadBuffer(file, frameOffset, numFrames, context, action)
     }
 
-    override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context) {
-        playBuffer(file, range, outBus, context)
+    override fun playBuffer(range: DecimalRange, outBus: BusObject, format: AudioFormat, context: Context): String {
+        return playBuffer(file, range, outBus, context)
     }
 
     private class ChannelBuffer(

@@ -20,7 +20,7 @@ import ponticello.model.score.ScoreObject
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry
 import ponticello.model.server.SampleObject
-import ponticello.ui.actions.PlaybackActions
+import ponticello.ui.record.LiveBuffersPane
 import reaktive.value.reactiveVariable
 
 class LauncherGridItemDropHandler(
@@ -32,8 +32,8 @@ class LauncherGridItemDropHandler(
             grid.swap(item, droppedItem)
             true
         }
-        handleFormat(PlaybackActions.RECORD_BUTTON, TransferMode.LINK) { _, _ ->
-            item.target = ItemTarget.ToggleRecording
+        handleTypedFormat(LiveBuffersPane.TOGGLE_RECORD, TransferMode.LINK) { _, ref ->
+            item.target = ItemTarget.ToggleRecording(ref)
             true
         }
         handleTypedFormat(AudioFlow.DATA_FORMAT, TransferMode.LINK) { _, ref ->

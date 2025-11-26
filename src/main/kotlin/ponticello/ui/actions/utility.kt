@@ -14,7 +14,9 @@ import ponticello.model.obj.ContextualObject
 import ponticello.model.obj.project
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.ScoreObjectInstance
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloLauncher
+import ponticello.ui.record.LiveBuffersPane
 import ponticello.ui.score.RectangleSelection
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
@@ -62,6 +64,13 @@ fun Action.Builder<ObjectActionContext>.executeSingle(action: (ScoreObjectView, 
 fun Scene.registerGlobalShortcuts(context: Context) {
     registerShortcuts {
         registerActions(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))
+        registerActions(
+            listOf(
+                LiveBuffersPane.toggleRecording.withContext(
+                    context[AppLayout].get<LiveBuffersPane>(setup = false)
+                )
+            )
+        )
         registerActions(ServerActions.withContext(context.project))
         registerActions(ProjectActions.projectUtilityActions.withContext(context.project))
         registerActions(UndoRedoActions.withContext(context[UndoManager]))

@@ -7,7 +7,6 @@ import ponticello.impl.DecimalRange
 import ponticello.impl.duration
 import ponticello.impl.rangeTo
 import ponticello.impl.zero
-import ponticello.model.server.BusRegistry
 
 open class BufferRegion(
     protected val parent: LiveAudioBufferView,
@@ -20,13 +19,8 @@ open class BufferRegion(
         }
 
     private val playBtn = MaterialDesignP.PLAY.button("Play region", style = "buffer-play-button") { ev ->
-        play()
+        parent.playBufferRange(bufferRange)
         ev.consume()
-    }
-
-    private fun play() {
-        val out = parent.context[BusRegistry].getDefault()
-        parent.buffer.playBuffer(bufferRange, out, parent.bufferObject.format, parent.context)
     }
 
     fun clear() {

@@ -1,17 +1,21 @@
 package ponticello.model.record
 
 import fxutils.actions.action
+import fxutils.actions.collectActions
+import fxutils.prompt.YesNoPrompt
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.project
 import ponticello.model.project.LIVE_BUFFERS
 import ponticello.model.project.get
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.controls.NamePrompt
 import ponticello.ui.record.LiveBufferViewConfig
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
@@ -63,6 +67,10 @@ class LiveBufferObject(
         }
     }
 
+    fun toggleEnabled() {
+        setEnabled(!enabled.now)
+    }
+
     val format: AudioFormat
         get() = AudioFormat(buffer.sampleRate.toFloat(), 16, channelConfig.outputChannels, true, false)
 
@@ -103,7 +111,40 @@ class LiveBufferObject(
                     otherwise = { MaterialDesignR.RECORD_CIRCLE_OUTLINE })
             }
             description { b -> `if`(b.enabled, then = { "Disable" }, otherwise = { "Enable" }) }
-            executes { b -> b.setEnabled(!b.enabled.now) }
+            executes { b -> b.toggleEnabled() }
+        }
+
+        val actions = collectActions<LiveBufferObject> {
+            addAction("Clear buffer") {
+                shortcut("Alt+DELETE")
+                executes { obj, ev ->
+                    val clear = YesNoPrompt("Clear buffer?").showDialog(ev)
+                    if (clear == true) {
+                        obj.buffer.clear()
+                    }
+                }
+            }
+            addAction("Delete buffer") {
+                shortcut("Ctrl+DELETE")
+                icon(MaterialDesignD.DELETE)
+                executes { obj, ev ->
+                    val delete = YesNoPrompt("Delete buffer?").showDialog(ev)
+                    if (delete == true) {
+                        obj.registry.remove(obj)
+                    }
+                }
+            }
+            addAction("Rename") {
+                shortcut("F2")
+                icon(MaterialDesignR.RENAME_BOX)
+                executes { obj, ev ->
+                    val newName = NamePrompt(obj.registry, "New name", obj.name.now)
+                        .showDialog(ev)
+                    if (newName != null) {
+                        obj.rename(newName)
+                    }
+                }
+            }
         }
 
         private const val INITIAL_CAPACITY = 1024 * 1024

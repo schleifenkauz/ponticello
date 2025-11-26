@@ -26,8 +26,10 @@ import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.misc.PlaybackSettingsPrompt
+import ponticello.ui.record.LiveBuffersPane
 import ponticello.ui.registry.BusSelectorPrompt
 import reaktive.value.binding.and
 import reaktive.value.binding.map
@@ -68,7 +70,7 @@ object PlaybackActions {
     }
 
     val toggleRecording: Action<ScorePlayer> = action("Toggle Recording") {
-        shortcut("Ctrl+Alt+Shift?+R")
+//        shortcut("Ctrl+Alt+Shift?+R")
         icon { player ->
             player.context[Recorder].isRecording.map { recording ->
                 if (recording) MaterialDesignM.MICROPHONE
@@ -85,8 +87,6 @@ object PlaybackActions {
             } else player.context[Recorder].toggle()
         }
     }
-
-    val RECORD_BUTTON = DataFormat("record-button")
 
     fun selectRecordedBus(player: ScorePlayer, ev: Event?) {
         val context = player.context
@@ -119,7 +119,6 @@ object PlaybackActions {
                 p.pause()
             }
         }
-        add(toggleRecording)
         addAction("Recompute score object intervals") {
             shortcut("Shift+F5")
             executes { p ->

@@ -10,8 +10,9 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.*
-import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
+import ponticello.model.project.LIVE_BUFFERS
+import ponticello.model.project.get
 import ponticello.model.project.scripts
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
@@ -76,9 +77,9 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     @Serializable
     @SerialName("ToggleRecording")
-    data object ToggleRecording : ItemTarget() {
+    data class ToggleRecording(private val liveBuffer: LiveBufferReference) : ItemTarget() {
         override val canView: Boolean
-            get() = false
+            get() = true
         override lateinit var isActive: ReactiveBoolean
             private set
 
@@ -88,17 +89,20 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            isActive = context[Recorder].isActive
+            liveBuffer.resolve(context.project[LIVE_BUFFERS])
+            isActive = liveBuffer.get()?.enabled ?: reactiveValue(false)
         }
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
-            context[Recorder].toggle()
+            val buf = liveBuffer.get() ?: return
+            if (item.stopOnRelease.now && buf.enabled.now) return
+            buf.toggleEnabled()
         }
 
         override fun released(item: LauncherGrid.GridItem) {
-            val recorder = context[Recorder]
-            if (item.stopOnRelease.now && recorder.isActive.now) {
-                recorder.stopRecording()
+            val buf = liveBuffer.get() ?: return
+            if (item.stopOnRelease.now && buf.enabled.now) {
+                buf.setEnabled(false)
             }
         }
     }
@@ -300,8 +304,8 @@ sealed class ItemTarget : AbstractContextualObject() {
                 group.flows.all().map { flow -> Flow(flow.reference()) }
             }
             val scriptTargets = context.project.scripts.map { script -> Script(script.reference()) }
-            val defaultOptions = listOf(None(), ToggleRecording)
-            return defaultOptions + objectTargets + liveObjectTargets + flowTargets + scriptTargets
+            val toggleRecording = context.project[LIVE_BUFFERS].map { buf -> ToggleRecording(buf.reference()) }
+            return listOf(None()) + objectTargets + liveObjectTargets + flowTargets + scriptTargets + toggleRecording
         }
     }
 }

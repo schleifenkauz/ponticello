@@ -1,26 +1,32 @@
 package ponticello.ui.record
 
 import fxutils.actions.registerShortcuts
-import fxutils.registerShortcut
 import fxutils.registerShortcuts
 import fxutils.styleClass
 import fxutils.undo.AbstractEdit
 import fxutils.undo.UndoManager
+import javafx.animation.Interpolator
+import javafx.animation.Transition
 import javafx.application.Platform
 import javafx.event.Event
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Pane
 import javafx.scene.robot.Robot
 import javafx.scene.shape.Line
+import javafx.util.Duration
 import ponticello.impl.*
 import ponticello.model.obj.project
 import ponticello.model.record.LiveBufferObject
 import ponticello.model.record.MultiChannelAudioBuffer
 import ponticello.model.server.BufferRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.model.server.SampleObject
+import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.UndoRedoActions
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.score.ScoreObjectDuplicator
+import reaktive.collection.binding.size
+import reaktive.list.reactiveList
 import reaktive.value.fx.asObservableValue
 import java.nio.FloatBuffer
 
@@ -39,6 +45,9 @@ class LiveAudioBufferView(
     private val pixelsPerSecond get() = width / displayRange.duration.toDouble()
     private val separators = mutableListOf<BufferSeparator>()
     private val recordCursor = Line() styleClass "record-cursor"
+    private val playbackCursors = reactiveList<PlaybackCursor>()
+
+    val cursorCount = playbackCursors.size
 
     private val selectedRegionRect = SelectedBufferRegion(this)
     private val hoveredRegionRect = BufferRegion(this) styleClass "hovered-buffer-region"
@@ -226,6 +235,58 @@ class LiveAudioBufferView(
         }
         recordCursor.startX = 0.0
         displayRange -= displayRange.start
+    }
+
+    fun playBufferRange(range: DecimalRange) {
+        val out = context[BusRegistry].getDefault()
+        val synthName = buffer.playBuffer(range, out, bufferObject.format, context)
+        val cursor = PlaybackCursor(this, range, synthName)
+        playbackCursors.now.add(cursor)
+        cursor.playFromStart()
+    }
+
+    fun stopPlayback() {
+        for (cursor in playbackCursors.now.toList()) {
+            cursor.stop()
+        }
+    }
+
+    private class PlaybackCursor(
+        private val parent: LiveAudioBufferView,
+        private val range: DecimalRange,
+        private val synthName: String
+    ) : Transition() {
+        private val line = Line() styleClass "play-head"
+
+        init {
+            line.endYProperty().bind(parent.heightProperty())
+            line.endXProperty().bind(line.startXProperty())
+            cycleDuration = Duration.seconds(range.duration.toDouble())
+            interpolator = Interpolator.LINEAR
+            setOnFinished {
+                finished()
+            }
+        }
+
+        private fun finished() {
+            parent.children.remove(line)
+            parent.playbackCursors.now.remove(this)
+        }
+
+        override fun interpolate(frac: Double) {
+            line.startX = parent.getX(range.start + frac * range.duration)
+        }
+
+        override fun playFromStart() {
+            parent.children.add(line)
+            super.play()
+        }
+
+        override fun stop() {
+            super.stop()
+            finished()
+            parent.context[SuperColliderClient].run("$synthName.free")
+        }
     }
 
     private class AddSeparator(
