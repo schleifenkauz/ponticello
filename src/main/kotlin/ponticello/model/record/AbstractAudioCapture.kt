@@ -53,7 +53,7 @@ abstract class AbstractAudioCapture : AudioCapture {
     }
 
     protected fun process(samples: List<FloatBuffer>, frames: Int) {
-        val passes = threshold.passes(samples, frames)
+        val passes = threshold.process(samples, frames)
         if (passes) {
             buffer.receive(samples, frames)
         } else if (lastBufferPassedThreshold) {

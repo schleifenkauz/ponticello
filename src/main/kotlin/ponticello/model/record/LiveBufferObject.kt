@@ -69,9 +69,10 @@ class LiveBufferObject(
     override fun initialize(context: Context) {
         super.initialize(context)
         val sampleRate = context[SuperColliderClient].sampleRate
-        buffer = MultiChannelHeapAudioBuffer(
-            channelConfig.outputChannels, sampleRate, INITIAL_CAPACITY
-        )
+        buffer = MultiChannelHeapAudioBuffer(channelConfig.outputChannels, sampleRate, INITIAL_CAPACITY)
+//        val file = context.project.projectDirectory.resolve("live_buffers/${name.now}.wav")
+//        file.parentFile.mkdirs()
+//        buffer = MultiChannelDiskAudioBuffer(file, sampleRate, channelConfig.outputChannels)
         capture = source.capture(context)
         if (capture !is NoAudioCapture) {
             capture.prepare(buffer, channelConfig, threshold)

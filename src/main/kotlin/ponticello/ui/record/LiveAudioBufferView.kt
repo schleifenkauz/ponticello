@@ -133,8 +133,9 @@ class LiveAudioBufferView(
     private fun mouseMoved(x: Double) {
         val t = getTime(x)
         val range = buffer.getSnippet(t)
-        if (range == null || range.start in selectedRange) hoveredRegionRect.clear()
-        else hoveredRegionRect.bufferRange = range
+        if (range == null || (range.start in selectedRange && range.endInclusive in selectedRange)) {
+            hoveredRegionRect.clear()
+        } else hoveredRegionRect.bufferRange = range
     }
 
     private fun getTime(x: Double) = displayRange.start + (x / pixelsPerSecond).toDecimal()

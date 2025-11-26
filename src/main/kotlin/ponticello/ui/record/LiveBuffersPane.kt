@@ -6,11 +6,13 @@ import fxutils.actions.collectActions
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
 import fxutils.controls.CheckBox
+import fxutils.controls.IntSpinner
 import fxutils.prompt.YesNoPrompt
 import javafx.css.PseudoClass
 import javafx.geometry.Side.BOTTOM
 import javafx.scene.Parent
 import javafx.scene.control.ContextMenu
+import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -62,7 +64,7 @@ class LiveBuffersPane(
 
     private val addBufferButton = addItemButton.withContext(this).makeButton("medium-icon-button")
 
-    private val thresholdControl = HBox()
+    private val thresholdControl = HBox(5.0).centerChildren()
 
     override val headerContent = HBox(
         5.0, itemsLayout, addBufferButton,
@@ -127,8 +129,10 @@ class LiveBuffersPane(
         thresholdControl.children.clear()
         if (obj != null) {
             thresholdControl.children.addAll(
-                CheckBox(obj.threshold.isEnabled, "Threshold"),
-                Knob("Threshold", obj.threshold.db, LoudnessThreshold.SPEC, 12.0)
+                CheckBox(obj.threshold.isEnabled, "Threshold: "),
+                Knob("Threshold", obj.threshold.db, LoudnessThreshold.SPEC, 12.0),
+                Label("Block size"),
+                IntSpinner(obj.threshold.blockSize, 1024..1024 * 8, 1024)
             )
         }
         val previouslySelectedBox = itemBoxes[selectedObject.get()]
