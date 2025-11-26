@@ -28,8 +28,8 @@ import java.util.concurrent.CompletableFuture
 @SerialName("SoundFile")
 class SampleObject(
     @SerialName("path") private val referencedFile: ReactiveVariable<String>,
-    private var channelMapping: List<Int> = emptyList(),
-    val meter: MeterObject = MeterObject.Companion.none(),
+    @SerialName("channelMapping") private var _channelMapping: List<Int> = emptyList(),
+    val meter: MeterObject = MeterObject.none(),
     val firstBeat: ReactiveVariable<Decimal> = reactiveVariable(zero),
 ) : BufferObject() {
     @Transient
@@ -67,19 +67,27 @@ class SampleObject(
     val duration: ReactiveValue<Decimal> get() = _duration
 
     @Transient
-    var channels: Int = 0
+    var sampleRate = 0.0
         private set
 
     @Transient
-    var sampleRate = 0.0
-        private set
+    private val _sourceChannels = reactiveVariable(0)
+
+    val sourceChannels: ReactiveInt get() = _sourceChannels
+
+    var channelMapping: List<Int>
+        get() = _channelMapping.ifEmpty { (0 until sourceChannels.now).toList() }
+        set(value) {
+            _channelMapping = value
+            sync()
+        }
 
     @Transient
     private var infoUpdateJob: CompletableFuture<Unit>? = null
 
     val infosUpdated get() = infoUpdateJob?.isDone ?: false
 
-    override fun channels(): Int = channels
+    override fun channels(): Int = if (_channelMapping.isNotEmpty()) _channelMapping.size else sourceChannels.now
 
     override fun frames(): Int = (duration.now * sampleRate).toInt()
 
@@ -94,13 +102,14 @@ class SampleObject(
 
     val contentsChanged get() = contentChange.stream
 
-    fun updateInfos(duration: Decimal, channels: Int, sampleRate: Double) {
+    fun updateInfos(duration: Decimal, nChannels: Int, sampleRate: Double) {
         this._duration.now = duration
-        this.channels = channels
+        this._sourceChannels.now = nChannels
         this.sampleRate = sampleRate
         infoUpdateJob!!.complete(Unit)
         contentChange.fire()
         Logger.fine("Updated infos for sample '${name.now}' [$audioFile]", Logger.Category.Buffers)
+        println("Updated infos for sample '${name.now}' ($nChannels source channels)")
     }
 
     override fun onAdded() {
@@ -204,40 +213,40 @@ class SampleObject(
     override fun ScWriter.createObject() {
         infoUpdateJob?.join()
         infoUpdateJob = CompletableFuture<Unit>()
-        appendBlock("$superColliderName = Buffer.read(s, ${audioFile.superColliderPath}, action: ", endLine = false) {
-            +"arg b"
-            +"~ponticello_addr.sendMsg('/buffer_info', '${name.now}', b.duration, b.numChannels, b.sampleRate)"
+        val path = audioFile.superColliderPath
+        +"var path = $path, snd_file = SoundFile.openRead(path)"
+        if (_channelMapping.isEmpty()) {
+            +"$superColliderName = Buffer.read(s, path)"
+        } else {
+            val channelList = _channelMapping.joinToString(", ", "[", "]")
+            +"$superColliderName = Buffer.readChannel(s, path, channels: $channelList)"
         }
-        appendLine(");")
+        +"postf(\"Sending buffer_info message for ${name.now}\\n\")" //TODO why doesn't this work???
+        +"~ponticello_addr.sendMsg('/buffer_info', '${name.now}', snd_file.duration, snd_file.numChannels, snd_file.sampleRate)"
+        +"snd_file.close"
     }
 
-    private fun createSpectrogram(): CompletableFuture<Unit> {
-        val soxCommand = System.getenv().getOrDefault("sox_path", "sox")
-        val command = arrayOf(
-            soxCommand, audioFile.absolutePath,
-            "-n", "spectrogram", "-r",
-            "-o", spectrogramFile.absolutePath
-        )
-        return Runtime.getRuntime()
-            .exec(command)
-            .onExit().thenApply { proc ->
-                val exitCode = proc.exitValue()
-                if (exitCode == 0) Logger.fine("Created spectrogram for sample ${name.now}", Logger.Category.Samples)
-                else Logger.severe("Non zero exit code $exitCode creating spectrogram for sample ${name.now}")
-            }
-    }
-
-    override fun ScWriter.sync() {
+    override fun sync() {
         updateSpectrogram()
         copyReferencedFileToSamplesDir()
         super.sync()
     }
 
     private fun updateSpectrogram() {
-        if (audioFile.isFile) {
-            createSpectrogram().join()
-            Thread.sleep(10)
-        }
+        if (!audioFile.isFile) return
+        val soxCommand = System.getenv().getOrDefault("sox_path", "sox")
+        val command = arrayOf(
+            soxCommand, audioFile.absolutePath,
+            "-n", "remix", *channelMapping.map { i -> (i + 1).toString() }.toTypedArray(),
+            "spectrogram", "-o", spectrogramFile.absolutePath
+        )
+        Runtime.getRuntime()
+            .exec(command)
+            .onExit().thenApply { proc ->
+                val exitCode = proc.exitValue()
+                if (exitCode == 0) Logger.fine("Created spectrogram for sample ${name.now}", Logger.Category.Samples)
+                else Logger.severe("Non zero exit code $exitCode creating spectrogram for sample ${name.now}")
+            }.join()
     }
 
     fun showSpectrogram() {

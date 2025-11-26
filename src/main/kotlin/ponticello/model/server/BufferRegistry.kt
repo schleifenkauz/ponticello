@@ -71,7 +71,7 @@ class BufferRegistry(
             val name = event.message.getArgument<String>(0, "buffer_name") ?: return
             val duration = event.message.getArgument<Float>(1, "duration")?.toDouble()?.toDecimal() ?: return
             val channels = event.message.getArgument<Int>(2, "channels") ?: return
-            val sampleRate = event.message.getArgument<Float>(3, "sampleRate")?.toDouble() ?: return
+            val sampleRate = event.message.getArgument<Int>(3, "sampleRate")?.toDouble() ?: return
             val buf = getOrNull(name)
             if (buf == null) {
                 Logger.warn("Received buffer_info message: Buffer '$name' not found.", Logger.Category.Buffers)

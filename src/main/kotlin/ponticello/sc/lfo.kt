@@ -178,10 +178,8 @@ data class Pulse(val frequency: LFO, val width: LFO, val initialPhase: Double) :
     override val children: List<LFO>
         get() = listOf(frequency)
 
-    override val min: Double
-        get() = -1.0
-    override val max: Double
-        get() = 1.0
+    override val min: Double get() = -1.0
+    override val max: Double get() = 1.0
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         val widths = DoubleArray(dest.size)
@@ -193,10 +191,8 @@ data class Pulse(val frequency: LFO, val width: LFO, val initialPhase: Double) :
 }
 
 data class Sine(val frequency: LFO, val initialPhase: Double) : LFO() {
-    override val min: Double
-        get() = -1.0
-    override val max: Double
-        get() = 1.0
+    override val min: Double get() = -1.0
+    override val max: Double get() = 1.0
 
     override val children: List<LFO>
         get() = listOf(frequency)
@@ -207,10 +203,11 @@ data class Sine(val frequency: LFO, val initialPhase: Double) : LFO() {
 }
 
 data class Tri(val frequency: LFO, val initialPhase: Double) : LFO() {
-    override val min: Double
-        get() = -1.0
-    override val max: Double
-        get() = 1.0
+    override val min: Double get() = -1.0
+    override val max: Double get() = 1.0
+
+    override val children: List<LFO>
+        get() = listOf(frequency)
 
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         generatePhaseSignal(frequency, initialPhase, duration, sampleRate, dest) { _, phase ->
@@ -240,6 +237,9 @@ data class LFNoise0(val frequency: LFO): LFO() {
     override val min: Double get() = -1.0
     override val max: Double get() = 1.0
 
+    override val children: List<LFO>
+        get() = listOf(frequency)
+
     override fun generateValues(duration: Double, sampleRate: Int, dest: DoubleArray) {
         var value = random.nextDouble(-1.0, 1.0)
         frequency.generateValues(duration, sampleRate, dest)
@@ -259,6 +259,9 @@ data class LFNoise0(val frequency: LFO): LFO() {
 
 data class LFNoise1(val frequency: LFO): LFO() {
     private val random = Random()
+
+    override val children: List<LFO>
+        get() = listOf(frequency)
 
     override val min: Double get() = -1.0
     override val max: Double get() = 1.0

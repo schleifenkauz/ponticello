@@ -114,7 +114,7 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         val synthName = "~play_buf_${playbackSynthsCounter++}"
         context[SuperColliderClient].run {
             +"var buf"
-            +"buf = Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)"
+            +"buf = Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)" //TODO maybe use SoundFile.cue instead
             appendBlock("$synthName = ", endLine = false) {
                 +"var snd = DiskIn.ar($nChannels, buf), env"
                 +"env = Env.linen(0.01, ${range.duration - 0.02}, 0.01)"

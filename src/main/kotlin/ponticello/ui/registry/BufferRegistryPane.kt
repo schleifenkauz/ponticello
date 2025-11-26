@@ -32,10 +32,7 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignF
-import org.kordamp.ikonli.materialdesign2.MaterialDesignM
-import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.Logger
 import ponticello.impl.parseDecimal
 import ponticello.impl.zero
@@ -57,9 +54,11 @@ import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.value.binding.binding
+import reaktive.value.binding.greaterThanOrEqualTo
 import reaktive.value.binding.notEqualTo
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPane<BufferObject>(buffers) {
     override val type: Type
@@ -284,6 +283,16 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         }
 
         private val sampleActions = collectActions<BufferObject> {
+            addAction("Channel mapping") {
+                icon(MaterialDesignS.SWAP_HORIZONTAL_VARIANT)
+                enableWhen { obj ->
+                    if (obj !is SampleObject) reactiveValue(false)
+                    else obj.sourceChannels.greaterThanOrEqualTo(2)
+                }
+                executesOn { obj: SampleObject, ev ->
+                    SampleChannelMappingPrompt(obj).showDialog(ev)
+                }
+            }
             addAction("Configure meter") {
                 icon(MaterialDesignM.METRONOME)
                 executesOn { obj: SampleObject, ev ->
