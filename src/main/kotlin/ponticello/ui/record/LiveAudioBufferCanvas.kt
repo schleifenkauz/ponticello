@@ -17,11 +17,6 @@ abstract class LiveAudioBufferCanvas(initialDisplayRange: DecimalRange) : Canvas
 
     protected val pixelsPerSecond get() = width / displayRange.duration.toDouble()
 
-    init {
-        widthProperty().addListener { _ -> repaint() }
-        heightProperty().addListener { _ -> repaint() }
-    }
-
     abstract fun repaint()
 
     protected fun clearCanvas() {

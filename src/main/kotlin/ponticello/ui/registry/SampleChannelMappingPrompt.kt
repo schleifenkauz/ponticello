@@ -12,7 +12,7 @@ import reaktive.value.reactiveVariable
 class SampleChannelMappingPrompt(
     private val sample: SampleObject
 ) : CompoundPrompt<Unit>("Channel Mapping", labelWidth = 80.0) {
-    private val outputChannels = reactiveVariable(sample.sourceChannels.now)
+    private val outputChannels = reactiveVariable(sample.channelMapping.size)
     private val channelsSpinner = IntSpinner(outputChannels, 1..sample.sourceChannels.now)
 
     private val mappingGrid = ChannelMappingGrid(sample.sourceChannels, outputChannels)
@@ -21,7 +21,7 @@ class SampleChannelMappingPrompt(
 
     init {
         addItem("Channels: ", channelsSpinner)
-        mappingGrid.initializeDefault()
+        mappingGrid.initialize(sample.channelMapping)
         content.children.add(mappingGrid)
         observer = sample.sourceChannels.observe { _, _, new ->
             if (outputChannels.now == 0) {

@@ -1,6 +1,8 @@
 package ponticello.model.server
 
 import fxutils.SubWindow
+import fxutils.undo.PropertyEdit
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.scene.control.ScrollPane
 import javafx.scene.image.Image
@@ -50,16 +52,18 @@ class SampleObject(
 
     fun filePath(): ReactiveString = referencedFile
 
-    val spectrogramFile get() = samplesDir.resolve("${name.now}_spectrogram.png")
-
-    val spectrogramImage by lazy {
-        try {
-            Image(spectrogramFile.inputStream())
-        } catch (e: IOException) {
-            Logger.error("Error while loading spectrogram for sample '${name.now}' [$audioFile]", e)
-            null
+    val spectrogramFile: File
+        get() {
+            val suffix =
+                if (_channelMapping.isEmpty()) ""
+                else "_${_channelMapping.joinToString("_")}"
+            return samplesDir.resolve("${name.now}_spectrogram$suffix.png")
         }
-    }
+
+    @Transient
+    private val _spectrogramImage: ReactiveVariable<Image?> = reactiveVariable(null)
+
+    val spectrogramImage: ReactiveValue<Image?> get() = _spectrogramImage
 
     @Transient
     private var _duration: ReactiveVariable<Decimal> = reactiveVariable(-one(ObjectPosition.TIME_PRECISION))
@@ -78,7 +82,9 @@ class SampleObject(
     var channelMapping: List<Int>
         get() = _channelMapping.ifEmpty { (0 until sourceChannels.now).toList() }
         set(value) {
+            val before = _channelMapping
             _channelMapping = value
+            context[UndoManager].record(PropertyEdit(::_channelMapping, before, value, "Update channel mapping"))
             sync()
         }
 
@@ -117,7 +123,6 @@ class SampleObject(
         if (registry.copyAudioFiles.now) {
             copyReferencedFileToSamplesDir()
         }
-        updateSpectrogram()
     }
 
     override fun onLoadedIntoRegistry() {
@@ -125,9 +130,7 @@ class SampleObject(
         if (registry.copyAudioFiles.now && !audioFile.isFile) {
             copyReferencedFileToSamplesDir()
         }
-        if (!spectrogramFile.isFile || audioFile.lastModified() > spectrogramFile.lastModified()) {
-            updateSpectrogram()
-        }
+        updateSpectrogram()
     }
 
     private fun copyReferencedFileToSamplesDir() {
@@ -214,14 +217,13 @@ class SampleObject(
         infoUpdateJob?.join()
         infoUpdateJob = CompletableFuture<Unit>()
         val path = audioFile.superColliderPath
-        +"var path = $path, snd_file"
         if (_channelMapping.isEmpty()) {
-            +"$superColliderName = Buffer.read(s, path)"
+            +"$superColliderName = Buffer.read(s, $path)"
         } else {
             val channelList = _channelMapping.joinToString(", ", "[", "]")
-            +"$superColliderName = Buffer.readChannel(s, path, channels: $channelList)"
+            +"$superColliderName = Buffer.readChannel(s, $path, channels: $channelList)"
         }
-        appendBlock("SoundFile.use(path)") {
+        appendBlock("SoundFile.use($path)") {
             +"arg f"
             +"~ponticello_addr.sendMsg('/buffer_info', '${name.now}', f.duration, f.numChannels, f.sampleRate)"
         }
@@ -235,28 +237,44 @@ class SampleObject(
 
     private fun updateSpectrogram() {
         if (!audioFile.isFile) return
-        val soxCommand = System.getenv().getOrDefault("sox_path", "sox")
-        val command = arrayOf(
-            soxCommand, audioFile.absolutePath,
-            "-n", "remix", *channelMapping.map { i -> (i + 1).toString() }.toTypedArray(),
-            "spectrogram", "-o", spectrogramFile.absolutePath
-        )
-        Runtime.getRuntime()
-            .exec(command)
-            .onExit().thenApply { proc ->
-                val exitCode = proc.exitValue()
-                if (exitCode == 0) Logger.fine("Created spectrogram for sample ${name.now}", Logger.Category.Samples)
-                else Logger.severe("Non zero exit code $exitCode creating spectrogram for sample ${name.now}")
-            }.join()
+        if (!spectrogramFile.isFile || spectrogramFile.lastModified() < audioFile.lastModified()) {
+            val soxCommand = System.getenv().getOrDefault("sox_path", "sox")
+            val command =
+                if (_channelMapping.isEmpty()) arrayOf(
+                    soxCommand, audioFile.absolutePath,
+                    "-n", "spectrogram", "-r",
+                    "-o", spectrogramFile.absolutePath,
+                )
+                else arrayOf(
+                    soxCommand, audioFile.absolutePath,
+                    "-n", "remix", *channelMapping.map { i -> (i + 1).toString() }.toTypedArray(),
+                    "spectrogram", "-r", "-o", spectrogramFile.absolutePath,
+                )
+            Runtime.getRuntime()
+                .exec(command)
+                .onExit().thenApply { proc ->
+                    val exitCode = proc.exitValue()
+                    if (exitCode == 0) Logger.fine(
+                        "Created spectrogram for sample ${name.now}",
+                        Logger.Category.Samples
+                    )
+                    else Logger.severe("Non zero exit code $exitCode creating spectrogram for sample ${name.now}")
+                }.join()
+        }
+        try {
+            _spectrogramImage.now = Image(spectrogramFile.inputStream())
+        } catch (e: IOException) {
+            Logger.error("Error while loading spectrogram for sample '${name.now}'", e)
+        }
     }
 
     fun showSpectrogram() {
-        if (spectrogramImage == null) {
+        if (spectrogramImage.now == null) {
             Logger.warn("No spectrogram file available for buffer '${name.now}'", Logger.Category.Buffers)
             return
 
         }
-        val image = ImageView(spectrogramImage)
+        val image = ImageView(spectrogramImage.now)
         val scrollPane = ScrollPane(image)
         val window = SubWindow(scrollPane, "Spectrogram of sample '${name.now}'")
         window.show()

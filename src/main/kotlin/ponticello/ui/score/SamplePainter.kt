@@ -153,7 +153,7 @@ class SamplePainter(
             if (obj.displaySample?.now != true) return@runLater
             val sample = obj.sample.now?.get()
             if (sample !is SampleObject || !sample.infosUpdated) return@runLater
-            spectrogramImage = sample.spectrogramImage
+            spectrogramImage = sample.spectrogramImage.now
             displaySpectrogram()
         }
     }

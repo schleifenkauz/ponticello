@@ -60,7 +60,7 @@ class ChannelMappingGrid(
         }
     }
 
-    fun initializeDefault() {
+    fun initialize() {
         addCells(0, sourceChannels.now)
     }
 
@@ -73,4 +73,8 @@ class ChannelMappingGrid(
         return btn
     }
 
+    fun initialize(channelMapping: List<Int>) {
+        mapping.zip(channelMapping).forEach { (variable, ch) -> variable.set(ch) }
+        initialize()
+    }
 }

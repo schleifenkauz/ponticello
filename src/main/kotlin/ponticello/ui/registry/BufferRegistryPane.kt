@@ -27,7 +27,7 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.BorderPane
+import javafx.scene.layout.StackPane
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
@@ -172,13 +172,15 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         return when (obj) {
             is AllocatedBufferObject -> null
             is SampleObject -> {
-                val image = obj.spectrogramImage ?: return Label("Spectrogram file not found...")
-                val view = ImageView(image)
+                val view = ImageView()
+                view.imageProperty().bind(obj.spectrogramImage.asObservableValue())
                 view.fitHeight = SPECTROGRAM_HEIGHT
                 view.fitWidthProperty().bind(box.widthProperty().subtract(10.0))
                 view.isPreserveRatio = false
-                val pane = BorderPane(view)
-                pane
+                view.managedProperty().bind(view.imageProperty().isNotNull)
+                val notFoundLabel = Label("Spectrogram file not found...")
+                notFoundLabel.managedProperty().bind(view.imageProperty().isNull)
+                StackPane(view, notFoundLabel)
             }
         }
     }
@@ -289,7 +291,8 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
                     if (obj !is SampleObject) reactiveValue(false)
                     else obj.sourceChannels.greaterThanOrEqualTo(2)
                 }
-                executesOn { obj: SampleObject, ev ->
+                executes { obj: BufferObject, ev ->
+                    if (obj !is SampleObject) return@executes
                     SampleChannelMappingPrompt(obj).showDialog(ev)
                 }
             }

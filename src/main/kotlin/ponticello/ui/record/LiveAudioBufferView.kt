@@ -58,6 +58,8 @@ class LiveAudioBufferView(
     private val associatedSampleObjects = mutableMapOf<DecimalRange, SampleObject>()
 
     init {
+        widthProperty().addListener { _ -> repaint() }
+        heightProperty().addListener { _ -> repaint() }
         val channelHeight = heightProperty().divide(buffer.nChannels)
         for ((ch, buf) in buffer.channels.withIndex()) {
             val canvas = bufferObject.viewConfig.createBufferCanvas(buf, displayRange)
@@ -156,6 +158,10 @@ class LiveAudioBufferView(
 
     private fun display(range: DecimalRange) {
         displayRange = if (range.start < zero) displayRange - range.start else range
+        repaint()
+    }
+
+    private fun repaint() {
         for (canvas in canvases) {
             canvas.display(displayRange)
         }
