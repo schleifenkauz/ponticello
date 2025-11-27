@@ -214,16 +214,17 @@ class SampleObject(
         infoUpdateJob?.join()
         infoUpdateJob = CompletableFuture<Unit>()
         val path = audioFile.superColliderPath
-        +"var path = $path, snd_file = SoundFile.openRead(path)"
+        +"var path = $path, snd_file"
         if (_channelMapping.isEmpty()) {
             +"$superColliderName = Buffer.read(s, path)"
         } else {
             val channelList = _channelMapping.joinToString(", ", "[", "]")
             +"$superColliderName = Buffer.readChannel(s, path, channels: $channelList)"
         }
-        +"postf(\"Sending buffer_info message for ${name.now}\\n\")" //TODO why doesn't this work???
-        +"~ponticello_addr.sendMsg('/buffer_info', '${name.now}', snd_file.duration, snd_file.numChannels, snd_file.sampleRate)"
-        +"snd_file.close"
+        appendBlock("SoundFile.use(path)") {
+            +"arg f"
+            +"~ponticello_addr.sendMsg('/buffer_info', '${name.now}', f.duration, f.numChannels, f.sampleRate)"
+        }
     }
 
     override fun sync() {

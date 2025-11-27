@@ -51,8 +51,8 @@ class BufferRegistry(
 
     override fun initialize(context: Context) {
         context[BufferRegistry] = this
-        super.initialize(context)
         context[SuperColliderClient].addListener(this)
+        super.initialize(context)
     }
 
     fun getSample(file: File): SampleObject? = filterIsInstance<SampleObject>().find { o ->

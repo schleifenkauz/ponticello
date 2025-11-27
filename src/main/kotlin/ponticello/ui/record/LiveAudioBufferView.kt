@@ -16,6 +16,8 @@ import javafx.scene.shape.Line
 import javafx.util.Duration
 import ponticello.impl.*
 import ponticello.model.obj.project
+import ponticello.model.project.PLAYBACK_SETTINGS
+import ponticello.model.project.get
 import ponticello.model.record.LiveBufferObject
 import ponticello.model.record.MultiChannelAudioBuffer
 import ponticello.model.server.BufferRegistry
@@ -28,6 +30,7 @@ import ponticello.ui.score.ScoreObjectDuplicator
 import reaktive.collection.binding.size
 import reaktive.list.reactiveList
 import reaktive.value.fx.asObservableValue
+import reaktive.value.now
 import java.nio.FloatBuffer
 
 class LiveAudioBufferView(
@@ -242,6 +245,7 @@ class LiveAudioBufferView(
         val synthName = buffer.playBuffer(range, out, bufferObject.format, context)
         val cursor = PlaybackCursor(this, range, synthName)
         playbackCursors.now.add(cursor)
+
         cursor.playFromStart()
     }
 
@@ -262,10 +266,9 @@ class LiveAudioBufferView(
             line.endYProperty().bind(parent.heightProperty())
             line.endXProperty().bind(line.startXProperty())
             cycleDuration = Duration.seconds(range.duration.toDouble())
+            delay = Duration.seconds(parent.context.project[PLAYBACK_SETTINGS].serverLatency.now.toDouble())
             interpolator = Interpolator.LINEAR
-            setOnFinished {
-                finished()
-            }
+            setOnFinished { finished() }
         }
 
         private fun finished() {
@@ -285,7 +288,7 @@ class LiveAudioBufferView(
         override fun stop() {
             super.stop()
             finished()
-            parent.context[SuperColliderClient].run("$synthName.free")
+            parent.context[SuperColliderClient].run("$synthName.stop; $synthName.close")
         }
     }
 

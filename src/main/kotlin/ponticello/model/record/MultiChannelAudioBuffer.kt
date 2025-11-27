@@ -111,16 +111,13 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
     protected fun playBuffer(audioFile: File, range: DecimalRange, outBus: BusObject, context: Context): String {
         val path = audioFile.superColliderPath
         val frameOffset = (range.start * sampleRate).toLong()
+        val lastFrame = (range.endInclusive * sampleRate).toLong()
         val synthName = "~play_buf_${playbackSynthsCounter++}"
         context[SuperColliderClient].run {
-            +"var buf"
-            +"buf = Buffer.cueSoundFile(s, $path, $frameOffset, $nChannels)" //TODO maybe use SoundFile.cue instead
-            appendBlock("$synthName = ", endLine = false) {
-                +"var snd = DiskIn.ar($nChannels, buf), env"
-                +"env = Env.linen(0.01, ${range.duration - 0.02}, 0.01)"
-                +"snd * env.kr(Done.freeSelf)"
-            }
-            +".play(s, ${outBus.superColliderName}).onFree { buf.free }"
+            +"""$synthName = SoundFile.new($path).cue(
+                |(firstFrame: $frameOffset, lastFrame: $lastFrame, 
+                |out: ${outBus.superColliderName}, 
+                |atk: 0.02, rel: 0.02), playNow: true)""".trimMargin()
         }
         return synthName
     }

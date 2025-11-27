@@ -3,33 +3,25 @@ package ponticello.ui.actions
 import fxutils.actions.*
 import fxutils.sourceWindow
 import javafx.event.Event
-import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
-import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.NodeTree
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.project
 import ponticello.model.player.ActiveObjectsManager
-import ponticello.model.player.CircularBufferRecorder
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
-import ponticello.model.server.BufferRegistry
-import ponticello.model.server.BusRegistry
 import ponticello.model.registry.reference
+import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
-import ponticello.ui.controls.DecimalPrompt
-import ponticello.ui.controls.NamePrompt
-import ponticello.ui.dock.AppLayout
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.misc.PlaybackSettingsPrompt
-import ponticello.ui.record.LiveBuffersPane
 import ponticello.ui.registry.BusSelectorPrompt
 import reaktive.value.binding.and
 import reaktive.value.binding.map
@@ -123,35 +115,6 @@ object PlaybackActions {
             shortcut("Shift+F5")
             executes { p ->
                 p.score.recomputeIntervals()
-            }
-        }
-        addAction("Start recording to circular buffer") {
-            shortcut("Ctrl+Shift+R")
-            executes { player, _ ->
-                val recorder = player.context[CircularBufferRecorder]
-                val duration = DecimalPrompt(
-                    "Circular Buffer Duration", precision = 2,
-                    initialValue = 60.0, range = 5.0..600.0
-                ).showDialog() ?: return@executes
-                recorder.startRecording(duration)
-            }
-        }
-        addAction("Export recorded audio to sample") {
-            shortcut("Ctrl+Shift+E")
-            executes { player, _ ->
-                val recorder = player.context[CircularBufferRecorder]
-                if (!recorder.isRecording) {
-                    Logger.warn("Circular buffer not initialized", Logger.Category.Buffers)
-                    return@executes
-                }
-                recorder.markSegmentEnd()
-                val duration = DecimalPrompt(
-                    "Duration", precision = 2,
-                    initialValue = 5.0, range = 0.1..recorder.bufferDuration.value
-                ).showDialog() ?: return@executes
-                val name = NamePrompt(player.context[BufferRegistry], "Sample Name", "")
-                    .showDialog() ?: return@executes
-                recorder.exportSegment(duration, name)
             }
         }
         addAction("Open playback settings") {
