@@ -90,6 +90,26 @@ object ScoreObjectActions {
                 instance.hideInlineControls.toggle()
             }
         }
+        addObjectAction("Quantize objects") {
+            shortcut("Alt+Q")
+            executes { ctx, _ ->
+                val instances = ctx.selectedViews.groupingBy { view -> view.instance }.eachCount()
+                if (instances.any { (_, count) -> count > 1 }) {
+                    Logger.warn("Multiple views of the same instance are selected", Logger.Category.Score)
+                    return@executes
+                }
+                val uiState = ctx.context[UIState]
+                val snapEnabled = uiState.snapEnabled.now
+                uiState.snapEnabled.set(true)
+                ctx.context.compoundEdit("Quantize objects") {
+                    for (view in ctx.selectedViews) {
+                        val pos = view.parentPane.snapToGrid(view.instance.position)
+                        view.instance.moveTo(pos)
+                    }
+                }
+                uiState.snapEnabled.set(snapEnabled)
+            }
+        }
         addObjectAction("Copy selected objects to clipboard") {
             shortcut("Ctrl+C")
             executes { ctx, _ ->

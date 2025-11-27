@@ -173,11 +173,7 @@ abstract class RootScorePane(
         when (val option = settings.snapOption.now) {
             TimeUnit.Seconds -> return ObjectPosition(t.round(0), y)
             else -> {
-                val grid = getNearestGrid(position)
-                for (g in getAllGrids()) { //TODO needed?
-                    if (g.marker != grid?.marker) g.unmark()
-                }
-                if (grid == null) return position
+                val grid = getNearestGrid(position) ?: return position
                 val snapped = grid.snapToGrid(t, option)
                 return ObjectPosition(snapped, y)
             }
