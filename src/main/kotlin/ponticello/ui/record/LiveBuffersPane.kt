@@ -144,9 +144,10 @@ class LiveBuffersPane(
                 infiniteSpace(),
                 ActionBar(playbackActions.withContext(view), "medium-icon-button"),
                 hspace(15.0),
-                CheckBox(obj.threshold.isEnabled, "Threshold: "),
+                CheckBox(obj.threshold.isEnabled, "Threshold:"),
                 Knob("Threshold", obj.threshold.db, LoudnessThreshold.SPEC, 12.0),
-                Label("Block size"),
+                hspace(15.0),
+                Label("Block size:"),
                 IntSpinner(obj.threshold.blockSize, 1024..1024 * 8, 1024)
             )
         }

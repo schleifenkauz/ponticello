@@ -21,18 +21,15 @@ import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
-import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.*
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
-import ponticello.model.score.controls.ExprControl
-import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.UGenControl
-import ponticello.model.score.controls.ValueControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.defaultControlType
 import ponticello.ui.controls.ControlAssignmentEditor
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.dock.ListToolPane
+import ponticello.ui.midi.MidiContext
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
@@ -44,6 +41,7 @@ import reaktive.value.reactiveValue
 
 class ParameterControlsPane(
     val obj: ParameterizedObject, private val view: ScoreObjectView? = null,
+    private val midiContext: MidiContext? = null,
 ) : ListToolPane<NamedParameterControl>(obj.controls, scrollable = false), ParameterControlList.Listener {
     private val editors = mutableMapOf<NamedParameterControl, ControlAssignmentEditor>()
 
@@ -157,7 +155,7 @@ class ParameterControlsPane(
     }
 
     override fun getHeaderContent(obj: NamedParameterControl): List<Node> {
-            val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
+        val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
         editor.setControl(obj.now)
         return listOf(editor)
     }
@@ -171,6 +169,10 @@ class ParameterControlsPane(
 
     override fun getActions(box: ObjectBox<NamedParameterControl>): List<ContextualizedAction> =
         actions.withContext(box)
+
+    override fun extraHeaderActions(): List<ContextualizedAction> =
+        if (midiContext != null) listOf(MidiContext.toggleActiveAction.withContext(midiContext))
+        else emptyList()
 
     companion object {
         private val actions = collectActions<ObjectBox<NamedParameterControl>> {

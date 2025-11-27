@@ -10,6 +10,7 @@ import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.UnresolvedScoreObject
+import ponticello.ui.midi.MidiContext
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import reaktive.value.now
 
@@ -17,7 +18,7 @@ class UnresolvedScoreObjectView(private val inst: ScoreObjectInstance) : ScoreOb
     override val obj: ScoreObject
         get() = UnresolvedScoreObject()
 
-    override fun setupDetailPane(pane: DetailPane) {
+    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         val btn = button("Select object reference")
         btn.setOnMouseClicked {
             val obj = SimpleRegistrySelectorPrompt(context[ScoreObjectRegistry], "Resolve object")

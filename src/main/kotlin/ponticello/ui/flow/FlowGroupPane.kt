@@ -35,7 +35,7 @@ import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.impl.getFrom
-import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.midi.MidiContext
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
@@ -49,12 +49,14 @@ import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
+import java.util.*
 
 class FlowGroupPane(
     private val group: AudioFlowGroup,
     private val parent: AudioFlowsPane?,
 ) : VBox(), ListDisplayConfig<AudioFlow> {
     val flowsView = ObjectListView(group.flows, this, scrollable = true)
+    private var midiContexts: MutableMap<AudioFlow, MidiContext?>? = null
 
     init {
         flowsView.itemsScrollPane.neverSquishHorizontally()
@@ -129,19 +131,30 @@ class FlowGroupPane(
     override fun getContent(obj: AudioFlow, box: ObjectBox<AudioFlow>): Parent = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
-        is InstrumentFlow -> ParameterControlsPane(obj).pad(5.0)
+        is InstrumentFlow -> ParameterControlsPane(obj, midiContext = midiContext(obj)).pad(5.0)
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView.create(obj)
         is VSTPluginFlow -> VSTPluginFlowView(obj)
     }
 
+    private fun midiContext(obj: AudioFlow): MidiContext? {
+        if (midiContexts == null) midiContexts = WeakHashMap()
+        return midiContexts!!.getOrPut(obj) { obj.midiContext() }
+    }
+
     override fun configureBox(box: ObjectBox<AudioFlow>, currentMode: DisplayMode) {
-        context[ContextualMidiReceiver].registerMidiContext(box) {
-            box.obj.midiContext().takeIf { !box.isCollapsed.now }
+        val midiContext = midiContext(box.obj)
+        if (midiContext != null) {
+            midiContext.setCondition {
+                val showing = context[AppLayout].get<AudioFlowsPane>().isShowing.now
+                val groupExpanded = parent == null || parent.listView.getBox(group).isExpanded
+                showing && groupExpanded && box.isExpanded
+            }
+            box.registerShortcuts(
+                listOf(MidiContext.toggleActiveAction.withContext(midiContext))
+            )
         }
-        box.setOnMouseClicked {
-            box.requestFocus()
-        }
+        box.setOnMouseClicked { box.requestFocus() }
         if (box.obj is VSTPluginFlow) {
             val tooltip = Tooltip()
             tooltip.textProperty().bind(box.obj.pluginName.asObservableValue())

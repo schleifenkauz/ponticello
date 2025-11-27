@@ -36,11 +36,14 @@ import ponticello.model.score.*
 import ponticello.ui.actions.ObjectActionContext
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
-import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.Cursors
+import ponticello.ui.midi.MidiContext
 import reaktive.value.ReactiveVariable
-import reaktive.value.binding.*
+import reaktive.value.binding.and
+import reaktive.value.binding.not
+import reaktive.value.binding.notEqualTo
+import reaktive.value.binding.orElse
 import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asReactiveValue
@@ -69,7 +72,8 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
-    private lateinit var memoTextArea: TextArea
+    lateinit var memoTextArea: TextArea
+        private set
 
     protected var _inlineControls: HBox? = null
         private set
@@ -88,8 +92,6 @@ abstract class ScoreObjectView(
     override val timeRange: DecimalRange
         get() = zero..obj.duration
 
-    val actionContext = ObjectActionContext.SingleObjectContext(this)
-
     open val tempoGrid: TempoGrid? get() = null
 
     init {
@@ -107,46 +109,7 @@ abstract class ScoreObjectView(
 
     override fun getX(time: Decimal): Double = getWidth(time)
 
-    val detailPane: DetailPane by lazy {
-        val detailPane = DetailPane(labelWidth = 120.0)
-        if (obj is UnresolvedScoreObject) {
-            return@lazy detailPane
-        } else {
-            val instanceCountLabel = label(obj.numberOfInstances.map { instances ->
-                when (instances) {
-                    0 -> "no instances"
-                    1 -> "1 instance"
-                    else -> "$instances instances"
-                }
-            })
-            val headerBox = HBox(
-                5.0,
-                NameControl(obj).setFixedWidth(200.0),
-                instanceCountLabel,
-                infiniteSpace(),
-                ActionBar(
-                    ScoreObjectActions.singleObjectActions.withContext(actionContext),
-                    buttonStyle = "medium-icon-button"
-                ),
-            ).centerChildren().pad(8.0)
-            detailPane.children.add(headerBox)
-            if (obj.canResizeHorizontally) {
-                val durationLabel = label(obj.duration().map { dur ->
-                    "${dur.round(2).toCanonicalString()} seconds"
-                }).pad(5.0)
-                detailPane.addItem("Duration", durationLabel)
-            }
-            setupDetailPane(detailPane)
-            detailPane.children.addAll(
-                vspace(8.0),
-                Label("Notes: "),
-                memoTextArea
-            )
-            detailPane
-        }
-    }
-
-    protected open fun setupDetailPane(pane: DetailPane) {}
+    open fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {}
 
     override fun updatedMemoText(text: String) {
         memoTextArea.text = text

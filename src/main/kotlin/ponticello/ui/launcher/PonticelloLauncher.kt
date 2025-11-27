@@ -29,9 +29,10 @@ import ponticello.impl.json
 import ponticello.impl.registerImplementationsFromClasspath
 import ponticello.model.GlobalSettings
 import ponticello.model.ServerOptions
+import ponticello.model.code.ScriptObject
 import ponticello.model.flow.NodeTree
 import ponticello.model.git.ProjectGitRepository
-import ponticello.model.code.ScriptObject
+import ponticello.model.instr.GlobalDefinitionLibrary
 import ponticello.model.obj.project
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.Recorder
@@ -39,7 +40,6 @@ import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.*
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
-import ponticello.model.instr.GlobalDefinitionLibrary
 import ponticello.sc.client.ConsoleMonitor
 import ponticello.sc.client.DummySuperColliderClient
 import ponticello.sc.client.OSCSuperColliderClient
@@ -186,7 +186,6 @@ class PonticelloLauncher {
 
     private fun openProject(project: PonticelloProject) {
         ScorePlayer.clearInstances()
-        rootContext[ContextualMidiReceiver].clearMidiContext()
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
         getOrLaunchLoadingScreen().displayProgress(0.98, "Almost ready, launching project view...")

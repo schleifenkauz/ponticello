@@ -32,8 +32,7 @@ import ponticello.model.server.SampleObject
 import ponticello.sc.*
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.InlineParameterControlsBar
-import ponticello.ui.midi.ContextualMidiReceiver
-import ponticello.ui.midi.ParameterControlsMidiContext
+import ponticello.ui.midi.MidiContext
 import ponticello.ui.registry.BufferSelectorPrompt
 import ponticello.ui.registry.BusSelectorPrompt
 import ponticello.ui.registry.ParameterDefSelectorPrompt
@@ -55,7 +54,6 @@ class SoundProcessView(
     private val lfoCanvases = mutableMapOf<NamedParameterControl, LFOCanvas>()
     private lateinit var lfosObserver: Observer
     private lateinit var controlsDisplayObserver: Observer
-    private val midiContext by lazy { ParameterControlsMidiContext(obj.controls) }
     override val tempoGrid: TempoGrid?
         get() {
             val sample = obj.sample.now?.get() as? SampleObject ?: return null
@@ -118,7 +116,7 @@ class SoundProcessView(
         }
     }
 
-    override fun setupDetailPane(pane: DetailPane) {
+    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         pane.addItem("Color:", this.colorPicker)
         val viewInstrumentBtn = ScoreObjectActions.localObjectActions.getAction("View definition")
             .withContext(obj)
@@ -128,10 +126,9 @@ class SoundProcessView(
         )
         selectorBtn.setupDropArea(InstrumentDropHandler(obj.instrumentRef, context))
         pane.addItem("Instrument: ", HBox(5.0, selectorBtn, viewInstrumentBtn).centerChildren())
-        val controlsPane = ParameterControlsPane(obj, this)
-//        VBox.setVgrow(controlsPane, Priority.ALWAYS)
+        val controlsPane = ParameterControlsPane(obj, this, midiContext)
+        VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)
-        context[ContextualMidiReceiver].registerMidiContext(pane) { midiContext }
     }
 
     private fun observeLFOs() = obj.lfosManager.onRemove { param ->

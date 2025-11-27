@@ -38,6 +38,8 @@ import ponticello.ui.dock.BusRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.midi.ControlBusesMidiContext
+import ponticello.ui.midi.MidiContext
 import reaktive.ObserverMap
 import reaktive.and
 import reaktive.value.binding.impl.notNull
@@ -61,6 +63,8 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
     private val filterSelector = SimpleSelectorPrompt(BusTypeFilter.entries, "Select filter")
         .selectorButton(this::filter)
 
+    private val midiContext = ControlBusesMidiContext(busses)
+
     override fun defaultState(): ToolPaneState = BusRegistryPaneState.default()
 
     override fun doSetup() {
@@ -69,6 +73,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         if (state is BusRegistryPaneState) {
             filter = state.filter
         }
+        midiContext.setCondition { this.isShowing.now }
     }
 
     override fun afterSetup() {
@@ -148,6 +153,9 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         } else actions.withContext(box)
     }
 
+    override fun extraHeaderActions(): List<ContextualizedAction> =
+        listOf(MidiContext.toggleActiveAction.withContext(midiContext))
+
     enum class BusTypeFilter {
         All, Audio, Control;
 
@@ -173,7 +181,6 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         private val actions = collectActions<ObjectBox<BusObject>> {
             addAction("Monitor bus") {
                 icon(MaterialDesignP.PULSE)
-                shortcut("Ctrl+M")
                 executes { box ->
                     val bus = box.obj
                     bus.context[SuperColliderClient].run("{ ${bus.superColliderName}.scope }.defer;")

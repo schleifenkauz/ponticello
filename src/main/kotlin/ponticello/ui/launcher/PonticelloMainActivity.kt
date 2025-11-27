@@ -16,21 +16,14 @@ import ponticello.model.player.CircularBufferRecorder
 import ponticello.model.player.PlaybackMessageListener
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.*
-import ponticello.model.score.SoundProcess
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.*
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.midi.ContextualMidiReceiver
-import ponticello.ui.midi.ParameterControlsMidiContext
 import ponticello.ui.misc.InteractionConfigBar
-import ponticello.ui.registry.ScriptRegistryPane
-import ponticello.ui.score.FlowGroupManager
-import ponticello.ui.score.NavigableScorePane
-import ponticello.ui.score.ScoreObjectDuplicator
-import ponticello.ui.score.ScoreObjectSelectionManager
-import ponticello.ui.score.SoundProcessView
+import ponticello.ui.score.*
 import ponticello.ui.vc.VersionControlActions
 import reaktive.value.reactiveValue
 
@@ -97,17 +90,14 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         val state = project[UI_STATE].getWindowState(WindowState.Reference.ByTitle("MainWindow"), ::RegularWindowState)
         val screenSize = Screen.getPrimary().bounds
         state.applyTo(primaryStage, defaultSize = Dimension2D(screenSize.width, screenSize.height))
-        context[ContextualMidiReceiver].registerMidiContext(mainScoreView) {
-            val selectedObject = context[ScoreObjectSelectionManager].selectedObjects.singleOrNull()
-            if (selectedObject is SoundProcess) ParameterControlsMidiContext(selectedObject.controls)
-            else null
-        }
     }
 
     override fun afterShowing() {
         for (toolPane in appLayout.toolPanes()) {
             toolPane.restoreShowing()
         }
+        val detailPaneMidiContext = appLayout.get<ScoreObjectDetailPane>().midiContext
+        context[ContextualMidiReceiver].toggleActive(detailPaneMidiContext)
         mainScoreView.isVisible = false
         setVisible()
         val displayRange = project[UI_STATE].mainScoreDisplayRange?.takeIf { !it.isEmpty() }

@@ -2,6 +2,7 @@ package ponticello.ui.score
 
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
+import fxutils.actions.registerShortcuts
 import fxutils.centerChildren
 import fxutils.hspace
 import fxutils.registerShortcuts
@@ -18,14 +19,13 @@ import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.actions.toolbarPart
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.live.LiveObjectRegistryPane
-import ponticello.ui.midi.ContextualMidiReceiver
-import ponticello.ui.midi.ParameterControlsMidiContext
+import ponticello.ui.midi.MidiContext
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.misc.ScoreObjectResizeDialog
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObject.Listener {
+class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) : ScoreObject.Listener {
     private val context = obj.context
     private val liveScoreObject = context[LiveObjectRegistry].getOrCreateLiveScoreObject(obj)
     private val paintGrid = reactiveVariable(true)
@@ -39,9 +39,10 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject): ScoreObje
         obj.addListener(this)
         setupActionHandlers()
         if (obj is ParameterizedObject) {
-            context[ContextualMidiReceiver].registerMidiContext(borderPane) {
-                ParameterControlsMidiContext(obj.controls)
-            }
+            val midiContext = context[AppLayout].get<ScoreObjectDetailPane>().midiContext
+            borderPane.registerShortcuts(
+                listOf(MidiContext.toggleActiveAction.withContext(midiContext))
+            )
         }
     }
 

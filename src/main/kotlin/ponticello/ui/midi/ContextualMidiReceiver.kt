@@ -3,7 +3,6 @@ package ponticello.ui.midi
 import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
-import javafx.scene.Node
 import ponticello.impl.Logger
 import ponticello.impl.MidiPitch
 import ponticello.model.live.LauncherGrid
@@ -16,13 +15,15 @@ import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.misc.TimeWarpPopup
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveVariable
+import reaktive.value.binding.equalTo
 import reaktive.value.now
-import java.util.*
+import reaktive.value.reactiveVariable
 import javax.sound.midi.*
 
 class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
     private var device: MidiDevice? = null
-    private val midiContextMap = WeakHashMap<Node, () -> MidiContext?>()
     private val launcherGrid: LauncherGrid?
         get() {
             if (!initialized) return null
@@ -30,7 +31,13 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
             return context.project[LAUNCHER_GRID]
         }
 
+    private var activeContext: ReactiveVariable<MidiContext?> = reactiveVariable(null)
+
     private lateinit var timeWarpPopup: TimeWarpPopup
+
+    private val attached = reactiveVariable(false)
+
+    val isAttached: ReactiveBoolean get() = attached
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -46,6 +53,8 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
             return
         }
         val device = MidiSystem.getMidiDevice(info)
+        this.device = device
+        attached.set(device != null)
         if (device == null) {
             Logger.error("MidiSystem.getMidiDevice returned null for device '${info.name}'")
             return
@@ -56,26 +65,21 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
         } catch (e: Exception) {
             Logger.error("Exception while attempting to open midi device '${info.name}'", e)
         }
-
     }
 
-    private fun getActiveMidiContext(): MidiContext? {
-        return midiContextMap.entries
-            .filter { (node, _) -> node.isFocusWithin && node.scene.window.isFocused }
-            .firstNotNullOfOrNull { (_, context) -> context.invoke() }
+    fun toggleActive(context: MidiContext) {
+        if (activeContext.now == context) {
+            activeContext.now = null
+        } else {
+            activeContext.now = context
+        }
     }
 
-    fun registerMidiContext(node: Node, context: () -> MidiContext?) {
-        midiContextMap[node] = context
-    }
-
-    fun clearMidiContext() {
-        midiContextMap.clear()
-    }
+    fun isActive(context: MidiContext) = activeContext.equalTo(context)
 
     override fun send(message: MidiMessage?, timeStamp: Long) {
         if (message !is ShortMessage) return
-        val ctx = getActiveMidiContext()
+        val ctx = activeContext.now?.takeIf { it.canReceiveMidi }
         val index = message.data1
         val velocity = message.data2
         when (message.command) {

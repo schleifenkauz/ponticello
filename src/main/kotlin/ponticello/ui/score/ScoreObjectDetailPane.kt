@@ -2,11 +2,15 @@ package ponticello.ui.score
 
 import fxutils.*
 import fxutils.actions.Action
+import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.prompt.DetailPane
 import javafx.scene.Parent
+import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.BorderPane
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.StackPane
 import javafx.stage.Popup
@@ -15,26 +19,39 @@ import javafx.stage.Window
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
+import ponticello.impl.round
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.UnresolvedScoreObject
 import ponticello.ui.actions.ArrowKeys
+import ponticello.ui.actions.ObjectActionContext
+import ponticello.ui.actions.ScoreObjectActions
+import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.sceneFill
+import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.ParameterControlsMidiContext
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import java.util.*
 
 class ScoreObjectDetailPane : ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
     private val displayedObject: ReactiveVariable<ScoreObjectView?> = reactiveVariable(null)
+    private val detailPanes = WeakHashMap<ScoreObjectView, DetailPane>()
+
     private lateinit var focusedViewObserver: Observer
+    lateinit var midiContext: MidiContext
+        private set
 
     override val type: Type
         get() = ScoreObjectDetailPane
@@ -52,6 +69,10 @@ class ScoreObjectDetailPane : ToolPane() {
                 viewDetails(focused)
             }
         }
+        midiContext = ParameterControlsMidiContext(context) {
+            (displayedObject.now?.obj as? ParameterizedObject)?.controls
+        }
+        midiContext.setCondition { this.isShowing.now }
     }
 
     override val headerActions: List<ContextualizedAction>
@@ -74,9 +95,52 @@ class ScoreObjectDetailPane : ToolPane() {
             }
             return
         }
-        val pane = ScrollPane(focusedView.detailPane)
+        val pane = ScrollPane(getDetailPane(focusedView))
         pane.isFitToWidth = true
         content = pane
+    }
+
+    private fun getDetailPane(view: ScoreObjectView) =
+        detailPanes.getOrPut(view) { createDetailPane(view, midiContext) }
+
+    private fun createDetailPane(view: ScoreObjectView, midiContext: MidiContext?): DetailPane {
+        val obj = view.obj
+        val detailPane = DetailPane(labelWidth = 120.0)
+        if (obj is UnresolvedScoreObject) {
+            return detailPane
+        }
+        val instanceCountLabel = label(obj.numberOfInstances.map { instances ->
+            when (instances) {
+                0 -> "no instances"
+                1 -> "1 instance"
+                else -> "$instances instances"
+            }
+        })
+        val actionContext = ObjectActionContext.SingleObjectContext(view)
+        val headerBox = HBox(
+            5.0,
+            NameControl(obj).setFixedWidth(200.0),
+            instanceCountLabel,
+            infiniteSpace(),
+            ActionBar(
+                ScoreObjectActions.singleObjectActions.withContext(actionContext),
+                buttonStyle = "medium-icon-button"
+            ),
+        ).centerChildren().pad(8.0)
+        detailPane.children.add(headerBox)
+        if (obj.canResizeHorizontally) {
+            val durationLabel = label(obj.duration().map { dur ->
+                "${dur.round(2).toCanonicalString()} seconds"
+            }).pad(5.0)
+            detailPane.addItem("Duration", durationLabel)
+        }
+        view.setupDetailPane(detailPane, midiContext)
+        detailPane.children.addAll(
+            vspace(8.0),
+            Label("Notes: "),
+            view.memoTextArea
+        )
+        return detailPane
     }
 
     fun hidePopup() {
@@ -120,12 +184,15 @@ class ScoreObjectDetailPane : ToolPane() {
         viewDetails(null)
         val title = windowTitle(view)
         lateinit var newWindow: SubWindow
-        val pane = StackPane(view.detailPane)
+        val obj = view.obj
+        val midiContext = if (obj is ParameterizedObject) ParameterControlsMidiContext(obj.controls) else null
+        val pane = StackPane(createDetailPane(view, midiContext))
         newWindow = makeSubWindow(pane, title, context)
+        midiContext?.setCondition { newWindow.isShowing }
         newWindow.show()
-        detached[view.obj] = newWindow
+        detached[obj] = newWindow
         newWindow.setOnHidden {
-            detached.remove(view.obj)
+            detached.remove(obj)
         }
     }
 

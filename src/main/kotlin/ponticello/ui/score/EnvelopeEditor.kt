@@ -1,6 +1,7 @@
 package ponticello.ui.score
 
 import fxutils.*
+import fxutils.actions.registerShortcuts
 import fxutils.drag.setupDragging
 import fxutils.prompt.YesNoPrompt
 import hextant.context.compoundEdit
@@ -29,8 +30,8 @@ import ponticello.sc.mapOnto
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.impl.Cursors
-import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.midi.EnvelopeMidiContext
+import ponticello.ui.midi.MidiContext
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -266,21 +267,24 @@ class EnvelopeEditor(
     private fun addHandle(idx: Int, x: Double, y: Double) {
         val handle = Circle(x, y, HANDLE_RADIUS)
         handle.visibleProperty().bind(pane.prefWidthProperty().greaterThanOrEqualTo(WIDTH_THRESHOLD))
-        val innerCircle = Circle(x, y, HANDLE_RADIUS / 3)
+        val midiContext = EnvelopeMidiContext(envelope, spec, idx)
+        handle.registerShortcuts(
+            listOf(MidiContext.toggleActiveAction.withContext(midiContext))
+        )
+        val innerCircle = Circle(x, y, 0.0)
+        innerCircle.radiusProperty().bind(midiContext.isActive.asObservableValue().map { midiActive ->
+            if (midiActive) HANDLE_RADIUS / 2 else HANDLE_RADIUS / 3
+        })
         innerCircle.centerXProperty().bind(handle.centerXProperty())
         innerCircle.centerYProperty().bind(handle.centerYProperty())
         handle.isFocusTraversable = true
         innerCircle.fillProperty().bind(color.asObservableValue())
         handle.fill = Color.TRANSPARENT
         handle.strokeProperty().bind(Bindings.createObjectBinding({
-            val focused = handle.isFocused
-            if (focused) color.now.invert() else color.now.darker()
+            if (handle.isFocused) color.now.invert() else color.now.darker()
         }, handle.focusedProperty(), color.asObservableValue()))
         handle.viewOrder = -1000.0
         setupHandle(handle)
-        envelope.context[ContextualMidiReceiver].registerMidiContext(handle) {
-            EnvelopeMidiContext(envelope, spec, handles.indexOf(handle))
-        }
         pane.children.add(innerCircle)
         pane.children.add(handle)
         handles.add(idx, handle)

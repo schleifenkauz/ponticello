@@ -27,6 +27,7 @@ import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
 import ponticello.ui.impl.DecimalSpinner
+import ponticello.ui.midi.MidiContext
 import ponticello.ui.score.TempoGrid.Companion.GRID_HEIGHT
 import reaktive.Observer
 import reaktive.and
@@ -74,7 +75,7 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         inlineControls.children.add(0, hspace(20.0)) //to avoid collision of name label with bar number
     }
 
-    override fun setupDetailPane(pane: DetailPane) {
+    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         val meter = obj.meter.get()
         if (meter == null) {
             pane.children.add(Label("Unresolved meter ${obj.meter.getName()}").styleClass("-fx-text-fill: red;"))

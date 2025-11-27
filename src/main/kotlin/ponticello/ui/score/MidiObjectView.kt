@@ -25,6 +25,7 @@ import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.Identifier
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.impl.showDialog
+import ponticello.ui.midi.MidiContext
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -58,7 +59,7 @@ class MidiObjectView(
         scorePane.repaint()
     }
 
-    override fun setupDetailPane(pane: DetailPane) {
+    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         val instrumentSelector = InstrumentSelectorPopup(context).selectorButton(
             obj.instrument,
             undoManager = context[UndoManager], actionDescription = "Select MIDI instrument",
@@ -78,7 +79,7 @@ class MidiObjectView(
             ).centerChildren()
         )
         pane.addItem("Latency (ms): ", IntSpinner(obj.latencyMs, -200..200, 5))
-        pane.children.add(ParameterControlsPane(obj, this))
+        pane.children.add(ParameterControlsPane(obj, this, midiContext))
     }
 
     private fun updatedInstrument(oldInstr: InstrumentReference, newInstr: InstrumentReference) {

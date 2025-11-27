@@ -45,7 +45,7 @@ object ServerActions : Action.Collector<PonticelloProject>({
         executes { project -> project.client.run("AppClock.sched(0) { s.scope }") }
     }
     addAction("Show server gui") {
-        shortcut("Ctrl+Shift+M")
+        shortcut("Ctrl+Alt+M")
         icon(MaterialDesignG.GAUGE)
         executes { project ->
 //            val numIns = project[SERVER_OPTIONS].numInputChannels

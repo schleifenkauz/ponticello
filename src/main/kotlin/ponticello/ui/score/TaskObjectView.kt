@@ -8,6 +8,7 @@ import javafx.scene.control.ScrollPane
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TaskObject
+import ponticello.ui.midi.MidiContext
 import reaktive.value.ReactiveVariable
 
 class TaskObjectView(override val obj: TaskObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
@@ -23,7 +24,7 @@ class TaskObjectView(override val obj: TaskObject, inst: ScoreObjectInstance) : 
 
     override fun getDisplayHeight(): Double = inlineNameLabel.prefHeight(-1.0)
 
-    override fun setupDetailPane(pane: DetailPane) {
+    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         pane.addLargeItem("Code: ", this.codeArea)
     }
 

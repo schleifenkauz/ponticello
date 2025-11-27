@@ -9,6 +9,7 @@ import javafx.scene.layout.CornerRadii
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.ScoreObjectInstance
 import ponticello.sc.view.ObjectSelectorControl
+import ponticello.ui.midi.MidiContext
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
 
@@ -35,7 +36,7 @@ class ScoreObjectGroupView(
         scorePane.initialize()
     }
 
-    override fun setupDetailPane(pane: DetailPane) {
+    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         pane.addItem("Color:", this.colorPicker)
         pane.addItem("Default bus", ObjectSelectorControl(this.obj.busSelector, createBundle()))
     }
