@@ -98,7 +98,7 @@ class SoundProcessView(
     private fun initializeObjectPane() {
         objectPane.prefWidthProperty().bind(prefWidthProperty())
         objectPane.prefHeightProperty().bind(prefHeightProperty().subtract(objectPane.layoutYProperty()))
-        objectPane.heightProperty().addListener { _, _, _ -> rescale() }
+        objectPane.heightProperty().addListener { _, _, _ -> rescale() } //TODO necessary?
         objectPane.backgroundProperty().bind(backgroundColor.map { color ->
             Background(BackgroundFill(color, CornerRadii.EMPTY, null))
         }.asObservableValue())

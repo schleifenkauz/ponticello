@@ -136,7 +136,6 @@ open class Score(
         for (inst in set) {
             Logger.info("Removing ${inst.obj.name.now} from score ${scoreName.now}", Logger.Category.Score)
             instances.remove(inst)
-            inst.removedFromScore(RegistryOption.ASK_IF_NEEDED)
             intervalTree.remove(inst, inst.start, inst.end)
             instancesByObject[inst.obj]?.remove(inst)
             if (instancesByObject[inst.obj]?.isEmpty() == true) {

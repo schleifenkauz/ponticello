@@ -43,11 +43,10 @@ class TempoGridObjectView(override val obj: TempoGridObject, inst: ScoreObjectIn
         get() {
             val meter = obj.meter.get() ?: return null
             val barOffset = meter.getDuration(TimeUnit.Bars) * obj.firstBar.now
-            val scale = one
             return TempoGrid(
                 TempoGrid.GridType.Regular, obj,
                 instance::position,
-                meter, scale, barOffset,
+                meter, scale = one, barOffset,
                 canvas, marker
             )
         }

@@ -2,6 +2,8 @@ package ponticello.impl
 
 import kotlinx.serialization.Serializable
 import ponticello.model.score.ObjectPosition
+import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlin.math.*
 
 typealias DoubleRange = ClosedFloatingPointRange<Double>
@@ -153,10 +155,7 @@ fun DoubleRange.reverseIfEmpty() = if (start > endInclusive) endInclusive..start
 
 fun accuracy(delta: Double) = ceil(-log10(delta).coerceAtMost(0.0)).toInt()
 
-fun Double.round(accuracy: Int): Double {
-    val factor = 10.0.pow(accuracy)
-    return (this * factor).roundToLong() / factor
-}
+fun Double.round(accuracy: Int): Double = BigDecimal(this).setScale(accuracy, RoundingMode.HALF_UP).toDouble()
 
 val Decimal.sign get() = value.sign
 

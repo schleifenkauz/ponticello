@@ -115,7 +115,6 @@ class SampleObject(
         infoUpdateJob!!.complete(Unit)
         contentChange.fire()
         Logger.fine("Updated infos for sample '${name.now}' [$audioFile]", Logger.Category.Buffers)
-        println("Updated infos for sample '${name.now}' ($nChannels source channels)")
     }
 
     override fun onAdded() {
