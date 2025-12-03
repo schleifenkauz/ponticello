@@ -35,7 +35,9 @@ class PonticelloApp : Application() {
 
     private fun setupLogging() {
         Thread.currentThread().setUncaughtExceptionHandler { _, e ->
-            e.printStackTrace()
+            if (e is NullPointerException && e.message?.startsWith("Cannot read field \"dragboard\"") == true) {
+                return@setUncaughtExceptionHandler
+            }
             Logger.error(e.message ?: "<no message>", e)
         }
         Logger.level = Logger.Level.Fine

@@ -26,7 +26,7 @@ interface MidiContext {
 
     companion object {
         val toggleActiveAction = action<MidiContext>("Toggle Activate") {
-            shortcut("Ctrl+M")
+            shortcut("Ctrl+T")
             description { ctx ->
                 `if`(
                     ctx.isActive,

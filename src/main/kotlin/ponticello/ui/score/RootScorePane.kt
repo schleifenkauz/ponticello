@@ -65,6 +65,7 @@ abstract class RootScorePane(
     }
 
     protected fun updatePixelsPerSecond() {
+        if (displayEnd - displayStart <= zero) return
         pixelsPerSecond = (this.width / (displayEnd - displayStart)).toDouble()
     }
 

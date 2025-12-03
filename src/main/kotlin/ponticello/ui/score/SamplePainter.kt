@@ -64,7 +64,7 @@ class SamplePainter(
         if (s != null) {
             val sample = s.get()
             if (sample is SampleObject) {
-                sampleContentObserver = sample.contentsChanged.observe { _ ->
+                sampleContentObserver = sample.spectrogramImage.observe { _ ->
                     updateSpectrogram()
                 }
                 val meter = sample.meter

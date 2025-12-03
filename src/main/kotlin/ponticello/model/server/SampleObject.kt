@@ -20,7 +20,6 @@ import ponticello.model.score.MeterObject
 import ponticello.model.score.ObjectPosition
 import ponticello.sc.client.ScWriter
 import ponticello.ui.launcher.PonticelloFiles
-import reaktive.event.unitEvent
 import reaktive.value.*
 import java.io.File
 import java.io.IOException
@@ -103,17 +102,11 @@ class SampleObject(
         infoUpdateJob?.join()
     }
 
-    @Transient
-    private val contentChange = unitEvent()
-
-    val contentsChanged get() = contentChange.stream
-
     fun updateInfos(duration: Decimal, nChannels: Int, sampleRate: Double) {
         this._duration.now = duration
         this._sourceChannels.now = nChannels
         this.sampleRate = sampleRate
         infoUpdateJob!!.complete(Unit)
-        contentChange.fire()
         Logger.fine("Updated infos for sample '${name.now}' [$audioFile]", Logger.Category.Buffers)
     }
 
