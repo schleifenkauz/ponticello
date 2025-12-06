@@ -13,7 +13,7 @@ import ponticello.model.registry.reference
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList
-import ponticello.model.score.controls.getBus
+import ponticello.model.score.controls.getControlBus
 import ponticello.model.server.BusRegistry
 import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
@@ -45,7 +45,7 @@ data object BusControlType : ControlType<BusControl>() {
         ev: Event?,
     ): BusControl {
         spec as BusControlSpec
-        val bus = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
+        val bus = oldControl?.getControlBus() ?: obj.context[BusRegistry].getDefault().reference()
         return BusControl(reactiveVariable(bus))
     }
 

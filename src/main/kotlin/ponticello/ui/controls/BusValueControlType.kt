@@ -55,7 +55,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         ev: Event?,
     ): BusValueControl {
         if (ev == null) return BusValueControl(reactiveVariable(ObjectReference.none()))
-        val initial = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
+        val initial = oldControl?.getControlBus() ?: obj.context[BusRegistry].getDefault().reference()
         val title = "Select '${parameterName}'"
         val selected = BusSelectorPrompt(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
             .showPopup(ev, initialOption = initial.get()) ?: initial.force()

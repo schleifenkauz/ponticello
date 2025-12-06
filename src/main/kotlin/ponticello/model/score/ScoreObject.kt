@@ -17,8 +17,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.flow.NodePlacement
-import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.*
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.ActiveScoreObject
@@ -27,11 +25,12 @@ import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
+import ponticello.sc.client.ScWriter
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.*
 
 @Serializable
-sealed class ScoreObject : AbstractRenamableObject() {
+sealed class ScoreObject : AbstractSuperColliderObject() {
     abstract val type: String
     open val canMute: Boolean get() = true
     private val _associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> =
@@ -121,11 +120,20 @@ sealed class ScoreObject : AbstractRenamableObject() {
         VariableEdit.updateVariable(_associatedColor, newColor, context[UndoManager], "Recolor object")
     }
 
-    abstract fun writeCode(
-        instance: ScoreObjectInstance?, uniqueName: String, placement: NodePlacement?,
-        cutoff: Decimal, latency: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
-    ): String
+    protected open fun ScWriter.writeCode() {
+        if (affectsPlayback) throw UnsupportedOperationException("writeCode() not implemented for ${this@ScoreObject}")
+        else throw AssertionError("writeCode() not implement for ${this@ScoreObject}")
+    }
+
+    override fun superColliderName(objectName: String): String = "~obj_$objectName"
+
+    override fun ScWriter.createObject() {
+        if (affectsPlayback) {
+            append("$superColliderName = ")
+            writeCode()
+            appendLine(";")
+        }
+    }
 
     protected fun recordEdit(edit: Edit) {
         if (initialized) {

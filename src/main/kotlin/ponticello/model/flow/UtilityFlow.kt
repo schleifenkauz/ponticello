@@ -62,7 +62,7 @@ class UtilityFlow(
     override fun writeCode(placement: NodePlacement): String = writeCode {
         writeSynthCode(
             this@UtilityFlow, superColliderName.removePrefix("~"),
-            cutoff = zero, placement, latency = zero,
+            cutoff = zero, placement, serverLatency = zero,
             run = isActive.now
         )
     }

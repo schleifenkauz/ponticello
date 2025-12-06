@@ -36,7 +36,7 @@ sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
                             active.uniqueName,
                             placement,
                             cutoff,
-                            latency = zero,
+                            serverLatency = zero,
                             active.extraArguments
                         )
                     }

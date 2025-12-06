@@ -4,12 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.*
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.instr.SynthDefObject
 import ponticello.model.score.Envelope
 import ponticello.model.score.Envelope.EnvelopePoint
 import ponticello.sc.ControlSpec
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.ScExpr
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -32,33 +29,6 @@ data class AttackReleaseControl(
         } else {
             true
         }
-    }
-
-    override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean = false
-
-    override fun customSynthArguments(cutoff: Decimal, totalDuration: Decimal): String {
-        val attack = (attack.now - cutoff).coerceAtLeast(zero)
-        val remainingDur = totalDuration - cutoff
-        check(remainingDur > zero) { "Negative remaining duration: $totalDuration - $cutoff = $remainingDur" }
-        val release = (release.now).coerceAtMost(remainingDur)
-        return "attack: ${attack}, release: ${release}, "
-    }
-
-    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
-
-    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
-
-    override fun generateArgumentExpr(
-        obj: ParameterizedObject,
-        uniqueName: String,
-        parameter: String,
-        spec: ControlSpec,
-        cutoff: Decimal,
-        context: CodegenContext,
-    ): ScExpr {
-        spec as NumericalControlSpec
-        val env = generateEnvelope(obj)
-        return env.generateArgumentExpr(obj, uniqueName, parameter, spec, cutoff, context)
     }
 
     private fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {

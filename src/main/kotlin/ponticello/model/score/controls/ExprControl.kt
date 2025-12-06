@@ -10,12 +10,11 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
-import ponticello.sc.ScExpr
+import ponticello.sc.code
 import ponticello.sc.editor.ScExprExpander
 import reaktive.event.unitEvent
 import reaktive.value.now
@@ -30,10 +29,6 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
-    override fun providesConstantSynthArgument(
-        obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal,
-    ): Boolean = true
-
     override fun initialize(context: Context, namedControl: NamedParameterControl) {
         super.initialize(context, namedControl)
         val myContext = context.extend {
@@ -43,11 +38,8 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
         expr.initialize(myContext)
     }
 
-    override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec,
-        cutoff: Decimal, context: CodegenContext,
-    ): ScExpr = expr.editor.result.now
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
+        "ExprControl.new { |inst, t| ${expr.editor.result.now.code(context)} }"
 
     companion object {
         fun create() = ExprControl(EditorRoot(ScExprExpander().defaultState()))

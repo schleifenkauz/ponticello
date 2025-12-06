@@ -6,15 +6,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
-import ponticello.impl.Decimal
 import ponticello.impl.Logger
-import ponticello.model.flow.NodePlacement
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.instr.SynthDefObject
 import ponticello.model.score.Envelope
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
-import ponticello.sc.*
-import ponticello.sc.client.ScWriter
+import ponticello.sc.ControlSpec
+import ponticello.sc.NumericalControlSpec
+import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.score.EnvelopeView
 import reaktive.Observer
@@ -90,76 +88,9 @@ class EnvelopeControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = spec is NumericalControlSpec
 
-    override fun providesConstantSynthArgument(
-        obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal,
-    ): Boolean = true
-
-    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
-
-    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = obj.def is SynthDefObject
-
-    override fun ScWriter.generatePreparationCode(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec,
-        cutoff: Decimal,
-        ctx: CodegenContext,
-    ) {
-        spec as NumericalControlSpec
-        val auxiliaryVarName = auxilBusName(uniqueName, parameter)
-        when (ctx) {
-            CodegenContext.Synth, CodegenContext.SubArg -> {
-                +"$auxiliaryVarName = Bus.control(s, 1)"
-                val synthName = "${obj.superColliderPrefix}$uniqueName"
-                val placement = NodePlacement.before(synthName)
-                createEnvelopeSynth(
-                    this, auxiliaryVarName, auxilSynthName(uniqueName, parameter),
-                    placement, cutoff, paused = true
-                )
-            }
-
-            CodegenContext.Process -> {
-                +"$auxiliaryVarName = ${points.code(spec.warp)}"
-            }
-        }
-    }
-
-    fun createEnvelopeSynth(
-        writer: ScWriter,
-        auxiliaryVarName: String,
-        auxiliarySynthName: String,
-        placement: NodePlacement,
-        cutoff: Decimal,
-        paused: Boolean,
-    ) = with(writer) {
-        val method = if (paused) "newPaused" else "new"
-        +"$auxiliarySynthName = Synth.$method(\\$auxilSynthDefName, [out: $auxiliaryVarName, cutoff: $cutoff], ${placement.code})"
-    }
-
-    override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
-    ): ScExpr {
-        spec as NumericalControlSpec
-        return when (context) {
-            CodegenContext.Synth -> DecimalLiteral(points.interpolateValueAt(cutoff, spec.warp))
-            CodegenContext.Process -> lambda("t") {
-                val argName = auxilBusName(uniqueName, parameter)
-                Identifier(argName).send("at", Identifier("t"))
-            }
-
-            else -> Identifier(auxilBusName(uniqueName, parameter)).send("kr")
-        }
-    }
-
-    override fun ScWriter.applyToSynth(
-        obj: ParameterizedObject,
-        uniqueName: String,
-        synthVar: String,
-        parameter: String,
-        spec: ControlSpec,
-    ) {
-        val auxiliaryVarName = auxilBusName(uniqueName, parameter)
-        +"${synthVar}.map(\\$parameter, $auxiliaryVarName)"
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
+        val warp = if (spec is NumericalControlSpec) spec.warp else Warp.Linear
+        return "EnvelopeControl.new(${points.code(warp)})"
     }
 
     override fun editedEnvelope() {

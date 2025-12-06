@@ -8,10 +8,8 @@ import javafx.geometry.Side
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.zero
-import ponticello.model.flow.NodePlacement
-import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.withName
-import ponticello.model.score.controls.ParameterControl
+import ponticello.sc.client.ScWriter
 import reaktive.value.now
 
 @Serializable
@@ -31,14 +29,9 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
         this.score.initialize(context, this)
     }
 
-    override fun writeCode(
-        instance: ScoreObjectInstance?,
-        uniqueName: String,
-        placement: NodePlacement?,
-        cutoff: Decimal,
-        latency: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl>,
-    ): String = ""
+    override fun ScWriter.createObject() {
+
+    }
 
     protected abstract fun cloneWith(score: Score): AbstractScoreObjectGroup
 

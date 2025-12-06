@@ -7,11 +7,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.copy
-import ponticello.model.flow.NodePlacement
-import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.MeterReference
 import ponticello.model.player.MeterRegistry
-import ponticello.model.score.controls.ParameterControl
+import ponticello.sc.client.ScWriter
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.Observer
 import reaktive.and
@@ -65,12 +63,5 @@ class TempoGridObject(
     override fun doClone(): ScoreObject =
         TempoGridObject(meter, firstBar.copy())
 
-    override fun writeCode(
-        instance: ScoreObjectInstance?,
-        uniqueName: String,
-        placement: NodePlacement?,
-        cutoff: Decimal,
-        latency: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl>,
-    ): String = ""
+    override fun ScWriter.writeCode() = ""
 }

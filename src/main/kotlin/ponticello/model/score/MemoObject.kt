@@ -4,9 +4,7 @@ import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
-import ponticello.model.flow.NodePlacement
-import ponticello.model.instr.ParameterDefObject
-import ponticello.model.score.controls.ParameterControl
+import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveVariable
 
 @Serializable
@@ -34,12 +32,7 @@ class MemoObject : ScoreObject() {
 
     override fun doClone(): ScoreObject = MemoObject()
 
-    override fun writeCode(
-        instance: ScoreObjectInstance?,
-        uniqueName: String,
-        placement: NodePlacement?,
-        cutoff: Decimal,
-        latency: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl>
-    ): String = ""
+    override fun ScWriter.writeCode() {
+
+    }
 }

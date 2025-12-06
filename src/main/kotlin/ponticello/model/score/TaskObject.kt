@@ -5,11 +5,8 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ponticello.impl.Decimal
 import ponticello.impl.writeCode
-import ponticello.model.flow.NodePlacement
-import ponticello.model.instr.ParameterDefObject
-import ponticello.model.score.controls.ParameterControl
+import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.CodeBlockEditor
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -40,14 +37,7 @@ class TaskObject(
         code.initialize(context)
     }
 
-    override fun writeCode(
-        instance: ScoreObjectInstance?,
-        uniqueName: String,
-        placement: NodePlacement?,
-        cutoff: Decimal,
-        latency: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl>
-    ): String = writeCode {
+    override fun ScWriter.writeCode() = writeCode {
         val name = "~task_$uniqueName"
         appendBlock("$name = Task", endLine = false) {
 //            +"s.latency.wait"

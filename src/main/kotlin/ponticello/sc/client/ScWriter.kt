@@ -76,6 +76,12 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
         appendLine(")")
     }
 
+    inline fun appendGroup(s: String = "", block: ScWriter.() -> Unit) {
+        append(s)
+        append(" ")
+        appendGroup(block)
+    }
+
     override fun run(command: String) {
         append(command)
         appendLine(";")

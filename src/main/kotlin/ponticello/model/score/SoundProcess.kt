@@ -14,7 +14,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonNames
 import ponticello.impl.*
-import ponticello.model.flow.NodePlacement
 import ponticello.model.instr.*
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.withName
@@ -23,6 +22,7 @@ import ponticello.model.player.LiveSynthUpdater
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.controls.*
 import ponticello.sc.*
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.ui.misc.LFOsManager
@@ -30,7 +30,6 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
-import kotlin.math.pow
 
 @Serializable
 @SerialName("SoundProcess")
@@ -214,60 +213,67 @@ class SoundProcess(
         lfosManager = LFOsManager()
     }
 
-    override fun writeCode(
-        instance: ScoreObjectInstance?,
-        uniqueName: String,
-        placement: NodePlacement?,
-        cutoff: Decimal,
-        latency: Decimal,
-        extraArguments: Map<ParameterDefObject, ParameterControl>,
-    ): String = writeCode {
-        var controlMap = controls.toMap() + extraArguments
-        var latency = latency
-        val midiObject = instance?.score?.parentObject as? MidiObject
-        if (midiObject != null) {
-            val midinote = instance.y
-            val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
-            val pitchControls = mapOf(
-                ParameterDefObject.MIDINOTE to ValueControl.create(midinote),
-                ParameterDefObject.FREQ to ValueControl.create(freq),
-            )
-            controlMap = midiObject.controls.toMap() + pitchControls + controlMap
-            latency -= (midiObject.latencyMs.now / 1000.toDecimal())
-        }
-        when (val instr = def) {
-            is SynthDefObject -> {
-                writeSynthCode(
-                    this@SoundProcess, uniqueName, cutoff, placement!!,
-                    latency, controlMap + extraArguments, run = true
-                )
+    override fun ScWriter.writeCode() {
+        appendGroup("SoundProcess.new") {
+            appendLine("def: ${def.superColliderName},")
+            appendLine("duration: $duration,")
+            appendGroup("controls: ") {
+                for (ctrl in controls) {
+                    val parameter = ctrl.name.now
+                    val expr = ctrl.now.writeCode(ctrl.spec.now, this@SoundProcess)
+                    appendLine("$parameter: $expr")
+                }
             }
-
-            is ProcessDefObject -> {
-                writeProcessCode(
-                    this@SoundProcess, uniqueName,
-                    cutoff, controlMap + extraArguments
-                )
-            }
-
-            is VSTInstrumentObject -> {
-                val controllerVar = instr.flow.controllerVar
-                val velocityCtrl = extraArguments.entries.find { (k, _) -> k.name.now == "velocity" }?.value
-                    ?: controls.getOrNull("velocity")?.now
-                    ?: midiObject?.controls?.getControl("velocity")
-
-                val velocity = velocityCtrl.controlToExprString() ?: "64"
-                val midinoteCtrl = extraArguments.entries.find { (k, _) -> k.name.now == "midinote" }?.value
-                    ?: controls.getOrNull("midinote")?.now
-                    ?: midiObject?.controls?.getControl("midinote")
-                val midinote = midinoteCtrl?.controlToExprString() ?: instance?.y?.toString() ?: "60"
-                +"TempoClock.sched($latency) { $controllerVar.midi.noteOn(0, $midinote, $velocity) }"
-                +"TempoClock.sched(${duration + latency}) { $controllerVar.midi.noteOff(0, $midinote) }"
-            }
-
-            is NoInstrument -> Logger.error("$this has no instrument assigned")
         }
     }
+
+    //    override fun writeCode(): String = writeCode {
+//        var controlMap = controls.toMap() + extraArguments
+//        var latency = serverLatency
+//        val midiObject = instance?.score?.parentObject as? MidiObject
+//        if (midiObject != null) {
+//            val midinote = instance.y
+//            val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
+//            val pitchControls = mapOf(
+//                ParameterDefObject.MIDINOTE to ValueControl.create(midinote),
+//                ParameterDefObject.FREQ to ValueControl.create(freq),
+//            )
+//            controlMap = midiObject.controls.toMap() + pitchControls + controlMap
+//            latency -= (midiObject.latencyMs.now / 1000.toDecimal())
+//        }
+//        when (val instr = def) {
+//            is SynthDefObject -> {
+//                writeSynthCode(
+//                    this@SoundProcess, uniqueName, cutoff, placement!!,
+//                    latency, controlMap + extraArguments, run = true
+//                )
+//            }
+//
+//            is ProcessDefObject -> {
+//                writeProcessCode(
+//                    this@SoundProcess, uniqueName,
+//                    cutoff, controlMap + extraArguments
+//                )
+//            }
+//
+//            is VSTInstrumentObject -> {
+//                val controllerVar = instr.flow.controllerVar
+//                val velocityCtrl = extraArguments.entries.find { (k, _) -> k.name.now == "velocity" }?.value
+//                    ?: controls.getOrNull("velocity")?.now
+//                    ?: midiObject?.controls?.getControl("velocity")
+//
+//                val velocity = velocityCtrl.controlToExprString() ?: "64"
+//                val midinoteCtrl = extraArguments.entries.find { (k, _) -> k.name.now == "midinote" }?.value
+//                    ?: controls.getOrNull("midinote")?.now
+//                    ?: midiObject?.controls?.getControl("midinote")
+//                val midinote = midinoteCtrl?.controlToExprString() ?: instance?.y?.toString() ?: "60"
+//                +"TempoClock.sched($latency) { $controllerVar.midi.noteOn(0, $midinote, $velocity) }"
+//                +"TempoClock.sched(${duration + latency}) { $controllerVar.midi.noteOff(0, $midinote) }"
+//            }
+//
+//            is NoInstrument -> Logger.error("$this has no instrument assigned")
+//        }
+//    }
 
     companion object {
         fun create(

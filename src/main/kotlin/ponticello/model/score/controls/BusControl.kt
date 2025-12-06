@@ -3,20 +3,15 @@ package ponticello.model.score.controls
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.superColliderExpr
 import ponticello.model.registry.reference
 import ponticello.model.server.BusRegistry
 import ponticello.sc.BusControlSpec
 import ponticello.sc.ControlSpec
-import ponticello.sc.Identifier
-import ponticello.sc.ScExpr
-import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -39,25 +34,8 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
         return checkResolution(obj, bus.now, "Bus")
     }
 
-    override fun ScWriter.generatePreparationCode(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec,
-        cutoff: Decimal,
-        ctx: CodegenContext,
-    ) {
-        if (ctx == CodegenContext.Process) {
-            val busName = bus.now.force().superColliderName
-            +"${uniqueArgumentName(uniqueName, parameter)} = $busName"
-        }
-    }
-
-    override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
-    ): ScExpr = when(context) {
-        CodegenContext.Synth, CodegenContext.SubArg -> bus.now.force().superColliderExpr
-        CodegenContext.Process -> Identifier(uniqueArgumentName(uniqueName, parameter))
-    }
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
+        "BusControl.new(${bus.now.superColliderName})"
 
     companion object {
         fun create(bus: BusObject) = BusControl(reactiveVariable(bus.reference()))

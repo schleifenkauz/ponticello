@@ -9,7 +9,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.Decimal
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.instr.ProcessDefObject
@@ -17,7 +16,6 @@ import ponticello.model.instr.SynthDefObject
 import ponticello.model.player.ActiveObject
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
-import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
@@ -48,58 +46,8 @@ data class UGenControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
-    override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean = false
-
-    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean = true
-
-    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = true
-
-    override fun ScWriter.generatePreparationCode(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec,
-        cutoff: Decimal,
-        ctx: CodegenContext,
-    ) {
-        val expr = substituteControlParameters(expr.editor.result.now, obj, uniqueName, cutoff)
-        val busName = auxilBusName(uniqueName, parameter)
-        +"$busName = Bus.control(s, 1)"
-        val auxilSynthName = auxilSynthName(uniqueName, parameter)
-        val synthName = "${obj.superColliderPrefix}$uniqueName"
-        append("$auxilSynthName = ")
-        appendBlock("", endLine = false) {
-            expr.code(writer, this@UGenControl.context)
-        }
-        +".play(target: $synthName, outbus: $busName, fadeTime: 0, addAction: 'addBefore')"
-    }
-
-    override fun generateArgumentExpr(
-        obj: ParameterizedObject,
-        uniqueName: String,
-        parameter: String,
-        spec: ControlSpec,
-        cutoff: Decimal,
-        context: CodegenContext,
-    ): ScExpr {
-        val busName = auxilBusName(uniqueName, parameter)
-        return when (context) {
-            CodegenContext.Synth, CodegenContext.SubArg -> Identifier(busName).send("kr")
-            CodegenContext.Process -> lambda {
-                val busVar = Identifier(busName)
-                busVar.send("getSynchronous")
-            }
-        }
-    }
-
-    override fun ScWriter.applyToSynth(
-        obj: ParameterizedObject,
-        uniqueName: String,
-        synthVar: String,
-        parameter: String,
-        spec: ControlSpec,
-    ) {
-        val busName = auxilBusName(uniqueName, parameter)
-        +"${synthVar}.map(\\$parameter, $busName)"
-    }
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
+        "LFOControl.new { |cutoff| ${expr.editor.result.now.code(context)} }"
 
     fun scope(activeObject: ActiveObject, parameter: String) {
         val client = context[SuperColliderClient]
@@ -121,12 +69,12 @@ data class UGenControl(
 
     companion object {
         fun substituteControlParameters(
-            expr: ScExpr, obj: ParameterizedObject, uniqueName: String, cutoff: Decimal,
+            expr: ScExpr, obj: ParameterizedObject, ctx: CodegenContext
         ): ScExpr {
             val parameterMap = obj.controls.associateWith { ctrl ->
                 val param = ctrl.name.now
                 val spec = ctrl.spec.now!!
-                { ctrl.now.generateArgumentExpr(obj, uniqueName, param, spec, cutoff, context = CodegenContext.SubArg) }
+                { ctrl.now.generateArgumentExpr(obj, param, spec, context = ctx.subArg()) }
             }
             val substitution = parameterMap.mapKeys { (param, _) -> "~ctrl_${param.name.now}" }
             return expr.transform<ParameterReference> { ref ->

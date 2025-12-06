@@ -2,14 +2,11 @@ package ponticello.model.score.controls
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ponticello.impl.Decimal
-import ponticello.impl.Logger
-import ponticello.impl.copy
-import ponticello.impl.one
+import ponticello.impl.*
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.instr.SynthDefObject
-import ponticello.sc.*
-import ponticello.sc.client.ScWriter
+import ponticello.sc.BufferPositionControlSpec
+import ponticello.sc.ControlSpec
+import ponticello.sc.NumericalControlSpec
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -30,78 +27,16 @@ data class ValueControl(
         return true
     }
 
-    override fun allocatesBus(obj: ParameterizedObject, spec: ControlSpec?): Boolean =
-        obj.def is SynthDefObject && spec is NumericalControlSpec && spec.allocateBus
-
-    override fun providesConstantSynthArgument(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal): Boolean =
-        when {
-            spec is NumericalControlSpec && spec.allocateBus -> false
-            spec !is NumericalControlSpec -> false
-//            spec.defaultValue.get() == adjustValueIfIsBufferPosition(obj, spec, cutoff) -> false
-            else -> true
-        }
-
-    override fun usesAuxilSynth(obj: ParameterizedObject, spec: ControlSpec?): Boolean = false
-
-    override fun ScWriter.generatePreparationCode(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, cutoff: Decimal,
-        ctx: CodegenContext,
-    ) {
-        val adjustedValue = adjustValueIfIsBufferPosition(obj, spec, cutoff)
-        when {
-            ctx == CodegenContext.Process -> {
-                val argVar = uniqueArgumentName(uniqueName, parameter)
-                +"$argVar = $adjustedValue"
-            }
-
-            spec is NumericalControlSpec && spec.allocateBus -> {
-                val busName = auxilBusName(uniqueName, parameter)
-                +"$busName = Bus.control(s, 1)"
-                +"$busName.set(${adjustedValue})"
-            }
-        }
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
+        val cutoffMultiplier = cutoffMultiplier(obj, spec)
+        return "ValueControl.new(${value.now}, ${allocateBus.now}, $cutoffMultiplier)"
     }
 
-    override fun ScWriter.applyToSynth(
-        obj: ParameterizedObject, uniqueName: String,
-        synthVar: String, parameter: String, spec: ControlSpec,
-    ) {
-        if (spec is NumericalControlSpec && spec.allocateBus) {
-            val busName = auxilBusName(uniqueName, parameter)
-            +"$synthVar.map('$parameter', $busName)"
-        }
-    }
-
-    override fun generateArgumentExpr(
-        obj: ParameterizedObject, uniqueName: String,
-        parameter: String, spec: ControlSpec, cutoff: Decimal, context: CodegenContext,
-    ): ScExpr {
-        val adjustedValue = adjustValueIfIsBufferPosition(obj, spec, cutoff)
-        return when (context) {
-            CodegenContext.Process -> lambda {
-                Identifier(uniqueArgumentName(uniqueName, parameter))
-            }
-
-            CodegenContext.SubArg ->
-                if (spec is NumericalControlSpec && spec.allocateBus) Identifier(
-                    auxilBusName(
-                        uniqueName,
-                        parameter
-                    )
-                ).send("kr")
-                else DecimalLiteral(adjustedValue)
-
-            CodegenContext.Synth -> DecimalLiteral(adjustedValue)
-        }
-    }
-
-    private fun adjustValueIfIsBufferPosition(obj: ParameterizedObject, spec: ControlSpec, cutoff: Decimal) =
+    private fun cutoffMultiplier(obj: ParameterizedObject, spec: ControlSpec): Decimal =
         if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) {
             val rateCtrl = obj.controls.getOrNull("rate")?.now as? ValueControl
-            val rate = rateCtrl?.value?.now ?: one
-            value.now + cutoff * rate
-        } else value.now
+            rateCtrl?.value?.now ?: one
+        } else zero
 
     companion object {
         fun create(value: Decimal) = ValueControl(reactiveVariable(value))
