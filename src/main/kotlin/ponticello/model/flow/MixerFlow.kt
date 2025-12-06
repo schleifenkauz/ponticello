@@ -9,7 +9,6 @@ import ponticello.impl.*
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.BusReference
-import ponticello.model.obj.superColliderName
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.registry.reference

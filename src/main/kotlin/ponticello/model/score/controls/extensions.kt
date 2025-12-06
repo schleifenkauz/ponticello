@@ -6,7 +6,6 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.NodePlacement.AddAction
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.obj.superColliderName
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ParameterControl.CodegenContext
 import ponticello.sc.ControlSpec

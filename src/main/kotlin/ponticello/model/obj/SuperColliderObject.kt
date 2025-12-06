@@ -5,7 +5,7 @@ import org.kordamp.ikonli.material2.Material2MZ
 import ponticello.sc.client.ScWriter
 
 interface SuperColliderObject : NamedObject {
-    fun superColliderName(objectName: String): String
+    val superColliderName: String
 
     fun ScWriter.createObject()
 

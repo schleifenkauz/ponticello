@@ -9,7 +9,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.GlobalPatternReference
-import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.project.busses
 import ponticello.sc.EmptyExpr

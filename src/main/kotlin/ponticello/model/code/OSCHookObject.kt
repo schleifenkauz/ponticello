@@ -13,7 +13,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.model.obj.AbstractSuperColliderObject
-import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.sc.DisabledExpr
 import ponticello.sc.client.ScWriter

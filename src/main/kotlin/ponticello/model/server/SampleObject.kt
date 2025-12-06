@@ -13,7 +13,6 @@ import kotlinx.serialization.Transient
 import org.jaudiotagger.audio.AudioFileIO
 import org.jaudiotagger.tag.FieldKey
 import ponticello.impl.*
-import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.score.MeterObject

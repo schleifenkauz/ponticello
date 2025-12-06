@@ -10,7 +10,6 @@ import ponticello.model.instr.BusObject
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.superColliderExpr
-import ponticello.model.obj.superColliderName
 import ponticello.model.registry.reference
 import ponticello.model.server.BusRegistry
 import ponticello.sc.BusControlSpec

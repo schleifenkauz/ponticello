@@ -3,7 +3,6 @@ package ponticello.model.record
 import hextant.context.Context
 import ponticello.impl.*
 import ponticello.model.instr.BusObject
-import ponticello.model.obj.superColliderName
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run

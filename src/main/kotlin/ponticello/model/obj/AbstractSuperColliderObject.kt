@@ -8,6 +8,11 @@ import reaktive.value.now
 abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperColliderObject {
     protected val client get() = context[SuperColliderClient]
 
+    protected abstract fun superColliderName(objectName: String): String
+
+    override val superColliderName: String
+        get() = superColliderName(name.now)
+
     override fun sync() {
         client.run {
             sync()

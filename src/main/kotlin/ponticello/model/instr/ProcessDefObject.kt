@@ -15,7 +15,6 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.obj.AbstractSuperColliderObject
-import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.reference

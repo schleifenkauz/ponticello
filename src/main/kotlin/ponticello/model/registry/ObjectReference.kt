@@ -10,7 +10,6 @@ import kotlinx.serialization.encoding.Encoder
 import ponticello.impl.Logger
 import ponticello.model.obj.NamedObject
 import ponticello.model.obj.SuperColliderObject
-import ponticello.model.obj.superColliderName
 import ponticello.model.score.ScoreObject
 import ponticello.sc.ScExpr
 import ponticello.sc.client.ScWriter

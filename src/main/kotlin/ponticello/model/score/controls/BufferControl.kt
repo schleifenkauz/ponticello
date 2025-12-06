@@ -9,7 +9,6 @@ import ponticello.impl.copy
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.superColliderExpr
-import ponticello.model.obj.superColliderName
 import ponticello.model.registry.reference
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry

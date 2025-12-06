@@ -6,7 +6,6 @@ import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.obj.RenamableObject
-import ponticello.model.obj.superColliderName
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.ScWriter
