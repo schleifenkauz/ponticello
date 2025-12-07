@@ -9,7 +9,6 @@ import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.obj.MeterReference
 import ponticello.model.player.MeterRegistry
-import ponticello.sc.client.ScWriter
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.Observer
 import reaktive.and
@@ -62,6 +61,4 @@ class TempoGridObject(
 
     override fun doClone(): ScoreObject =
         TempoGridObject(meter, firstBar.copy())
-
-    override fun ScWriter.writeCode() = ""
 }

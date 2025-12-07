@@ -20,6 +20,7 @@ import ponticello.impl.*
 import ponticello.model.obj.*
 import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.ActiveScoreObject
+import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
@@ -120,19 +121,19 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         VariableEdit.updateVariable(_associatedColor, newColor, context[UndoManager], "Recolor object")
     }
 
-    protected open fun ScWriter.writeCode() {
-        if (affectsPlayback) throw UnsupportedOperationException("writeCode() not implemented for ${this@ScoreObject}")
-        else throw AssertionError("writeCode() not implement for ${this@ScoreObject}")
-    }
-
     override fun superColliderName(objectName: String): String = "~obj_$objectName"
 
     override fun ScWriter.createObject() {
-        if (affectsPlayback) {
-            append("$superColliderName = ")
-            writeCode()
-            appendLine(";")
-        }
+        if (affectsPlayback) throw NotImplementedError("createObject not implemented for $this")
+
+    }
+
+    open fun startNewInstance(
+        scoreY: Decimal, cutoff: Decimal,
+        instance: ScoreObjectInstance?, latency: Decimal, player: ScorePlayer
+    ): String {
+        if (!affectsPlayback) return ""
+        throw NotImplementedError("startNewInstance not implemented for $this")
     }
 
     protected fun recordEdit(edit: Edit) {

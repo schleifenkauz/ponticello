@@ -4,7 +4,9 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.*
+import ponticello.impl.Decimal
+import ponticello.impl.copy
+import ponticello.impl.toDecimal
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.ReferencedSynthDefObject
@@ -13,7 +15,6 @@ import ponticello.model.registry.reference
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.ValueControl
-import ponticello.model.score.controls.writeSynthCode
 import ponticello.model.server.BusRegistry
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
@@ -70,14 +71,6 @@ class SendFlow(
 
     override fun copy(): AudioFlow =
         SendFlow(sourceRef.copy(), targetRef.copy(), amountPercent.copy())
-
-    override fun writeCode(placement: NodePlacement): String = writeCode {
-        val latency = zero // context[Settings].serverLatency.now
-        writeSynthCode(
-            this@SendFlow, superColliderName.removePrefix("~"),
-            cutoff = zero, placement, latency, run = isActive.now
-        )
-    }
 
     companion object {
         fun create(source: BusObject, target: BusObject): SendFlow = SendFlow(

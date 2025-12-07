@@ -31,6 +31,10 @@ data class AttackReleaseControl(
         }
     }
 
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
+        TODO("Not yet implemented")
+    }
+
     private fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {
         val totalDuration = obj.duration()!!.now
         val sustain = totalDuration - (attack.now + release.now)

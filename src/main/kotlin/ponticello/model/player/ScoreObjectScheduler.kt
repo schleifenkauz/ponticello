@@ -7,7 +7,6 @@ import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.unaryMinus
 import ponticello.impl.zero
-import ponticello.model.flow.ActiveObjectNode
 import ponticello.model.flow.NodeTree
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.ProcessDefObject
@@ -138,21 +137,8 @@ class ScoreObjectScheduler(val context: Context) {
             Logger.error("Failed to insert $obj into active object manager", e, Logger.Category.Playback)
             return null
         }
-        val placement = when {
-            obj is SoundProcess && obj.def is SynthDefObject -> {
-                try {
-                    val node = ActiveObjectNode(obj, activeObject)
-                    nodeTree.addNode(node)
-                } catch (e: Exception) {
-                    Logger.error("Failed to insert $obj into audio flow graph", e, Logger.Category.Playback)
-                    return null
-                }
-            }
-
-            else -> null
-        }
         val code = try {
-            obj.writeCode(instance, activeObject.uniqueName, placement, cutoff, serverLatency, extraArguments)
+            obj.startNewInstance(absolutePosition.y, cutoff, instance, serverLatency, player)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }

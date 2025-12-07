@@ -4,7 +4,10 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.*
+import ponticello.impl.Decimal
+import ponticello.impl.copy
+import ponticello.impl.toDecimal
+import ponticello.impl.zero
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.ReferencedSynthDefObject
@@ -13,7 +16,6 @@ import ponticello.model.registry.reference
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.ValueControl
-import ponticello.model.score.controls.writeSynthCode
 import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.flatMap
@@ -58,14 +60,6 @@ class UtilityFlow(
 
     override fun copy(): AudioFlow =
         UtilityFlow(targetRef.copy(), volumeDb.copy(), muted.copy())
-
-    override fun writeCode(placement: NodePlacement): String = writeCode {
-        writeSynthCode(
-            this@UtilityFlow, superColliderName.removePrefix("~"),
-            cutoff = zero, placement, serverLatency = zero,
-            run = isActive.now
-        )
-    }
 
     companion object {
         private val MUTED_VOLUME = (-60).toDecimal()

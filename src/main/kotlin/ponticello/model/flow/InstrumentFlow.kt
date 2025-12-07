@@ -5,14 +5,11 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
-import ponticello.impl.writeCode
-import ponticello.impl.zero
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.NoInstrument
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.ParameterControlList
-import ponticello.model.score.controls.writeSynthCode
 import ponticello.sc.editor.InstrumentSelector
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
@@ -51,14 +48,6 @@ class InstrumentFlow(
     }
 
     override fun copy(): AudioFlow = InstrumentFlow(defRef.copy(), controls.copy())
-
-    override fun writeCode(placement: NodePlacement): String = writeCode {
-        val latency = zero // context[Settings].serverLatency.now
-        writeSynthCode(
-            this@InstrumentFlow, superColliderName.removePrefix("~"),
-            cutoff = zero, placement, latency, run = isActive.now
-        )
-    }
 
     companion object {
         fun create(def: InstrumentObject, controls: ParameterControlList): InstrumentFlow =

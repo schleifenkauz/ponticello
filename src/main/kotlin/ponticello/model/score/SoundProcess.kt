@@ -213,18 +213,16 @@ class SoundProcess(
         lfosManager = LFOsManager()
     }
 
-    override fun ScWriter.writeCode() {
-        appendGroup("SoundProcess.new") {
-            appendLine("def: ${def.superColliderName},")
-            appendLine("duration: $duration,")
-            appendGroup("controls: ") {
-                for (ctrl in controls) {
-                    val parameter = ctrl.name.now
-                    val expr = ctrl.now.writeCode(ctrl.spec.now, this@SoundProcess)
-                    appendLine("$parameter: $expr")
-                }
-            }
-        }
+    override fun ScWriter.createObject() {
+        createSoundProcessObject(writer, this@SoundProcess, duration, superColliderName)
+    }
+
+    override fun startNewInstance(
+        scoreY: Decimal, cutoff: Decimal, instance: ScoreObjectInstance?,
+        latency: Decimal, player: ScorePlayer
+    ): String {
+        val midiNote = "nil"
+        return "$superColliderName.startNewInstance($scoreY, $cutoff, $midiNote, $latency, ${player.id})"
     }
 
     //    override fun writeCode(): String = writeCode {
@@ -292,5 +290,20 @@ class SoundProcess(
                     null
                 }
             }
+
+        fun createSoundProcessObject(
+            writer: ScWriter, obj: ParameterizedObject,
+            duration: Decimal, variableName: String
+        ) = writer.appendGroup("$variableName = SoundProcess.new") {
+            appendLine("def: ${obj.def.superColliderName},")
+            appendLine("duration: $duration,")
+            appendGroup("controls: ") {
+                for (ctrl in obj.controls) {
+                    val parameter = ctrl.name.now
+                    val expr = ctrl.now.writeCode(ctrl.spec.now, obj)
+                    appendLine("$parameter: $expr")
+                }
+            }
+        }
     }
 }

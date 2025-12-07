@@ -46,8 +46,13 @@ data class UGenControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
-        "LFOControl.new { |cutoff| ${expr.editor.result.now.code(context)} }"
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
+        val expr = expr.editor.result.now.transform<ParameterReference> { ref ->
+            val parameter = ref.parameter.name.now
+            Identifier("inst").send("getControlUGen($parameter)")
+        }
+        return "LFOControl.new { |inst, cutoff| ${expr.code(context)} }"
+    }
 
     fun scope(activeObject: ActiveObject, parameter: String) {
         val client = context[SuperColliderClient]
@@ -67,20 +72,4 @@ data class UGenControl(
         }
     }
 
-    companion object {
-        fun substituteControlParameters(
-            expr: ScExpr, obj: ParameterizedObject, ctx: CodegenContext
-        ): ScExpr {
-            val parameterMap = obj.controls.associateWith { ctrl ->
-                val param = ctrl.name.now
-                val spec = ctrl.spec.now!!
-                { ctrl.now.generateArgumentExpr(obj, param, spec, context = ctx.subArg()) }
-            }
-            val substitution = parameterMap.mapKeys { (param, _) -> "~ctrl_${param.name.now}" }
-            return expr.transform<ParameterReference> { ref ->
-                parameterMap[ref.parameter.get()]?.invoke()
-                    ?: error("Unresolved control reference '${ref.parameter.getName()}'")
-            }.substitute(substitution)
-        }
-    }
 }

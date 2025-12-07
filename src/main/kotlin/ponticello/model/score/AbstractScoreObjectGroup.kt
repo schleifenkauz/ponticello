@@ -9,7 +9,6 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.obj.withName
-import ponticello.sc.client.ScWriter
 import reaktive.value.now
 
 @Serializable
@@ -27,10 +26,6 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
         if (initialized) return
         super.initialize(context)
         this.score.initialize(context, this)
-    }
-
-    override fun ScWriter.createObject() {
-
     }
 
     protected abstract fun cloneWith(score: Score): AbstractScoreObjectGroup

@@ -4,7 +4,6 @@ import hextant.context.Context
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveValue
@@ -26,8 +25,6 @@ class UnresolvedScoreObject : ScoreObject() {
 
     override val affectsPlayback: Boolean
         get() = false
-
-    override fun ScWriter.writeCode() = ""
 
     override fun doClone(): ScoreObject = this
 

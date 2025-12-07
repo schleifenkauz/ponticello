@@ -37,8 +37,6 @@ class VSTPluginFlow private constructor(
     override lateinit var isValid: ReactiveValue<Boolean>
         private set
 
-    private val client get() = context[SuperColliderClient]
-
     private var preset: String? = null
 
     val pluginName: ReactiveString get() = _pluginName
@@ -129,6 +127,9 @@ class VSTPluginFlow private constructor(
     override fun canRenameTo(newName: String): Boolean = true
 
     val controllerVar get() = "~plugin_${name.now}"
+
+    override fun ScWriter.createObject() {
+    }
 
     override fun writeCode(placement: NodePlacement) = writeCode {
         val busName = busRef.now.get()?.superColliderName ?: "nil"

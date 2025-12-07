@@ -62,6 +62,13 @@ class MidiObject(
             else reactiveValue(null)
         })
 
+    override val def: InstrumentObject
+        get() = when (val instr = instrument.now) {
+            is InstrumentReference.UserDefined -> instr.reference.get() ?: NoInstrument()
+            is InstrumentReference.VST -> instr.flow.get()?.let { f -> VSTInstrumentObject(f) } ?: NoInstrument()
+            InstrumentReference.None -> NoInstrument()
+        }
+
     @Transient
     private var pixelsPerPitch: Double = -1.0
 
@@ -126,13 +133,6 @@ class MidiObject(
     override fun duration(): ReactiveValue<Decimal> = super<AbstractScoreObjectGroup>.duration()
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
-
-    override val def: InstrumentObject
-        get() = when (val instr = instrument.now) {
-            is InstrumentReference.UserDefined -> instr.reference.get() ?: NoInstrument()
-            is InstrumentReference.VST -> instr.flow.get()?.let { f -> VSTInstrumentObject(f) } ?: NoInstrument()
-            InstrumentReference.None -> NoInstrument()
-        }
 
     class TransposeEdit(private val obj: MidiObject, private val deltaPitch: Int) : AbstractEdit() {
         override val actionDescription: String

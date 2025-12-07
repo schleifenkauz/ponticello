@@ -4,7 +4,6 @@ import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
-import ponticello.sc.client.ScWriter
 import reaktive.value.ReactiveVariable
 
 @Serializable
@@ -31,8 +30,4 @@ class MemoObject : ScoreObject() {
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject? = null
 
     override fun doClone(): ScoreObject = MemoObject()
-
-    override fun ScWriter.writeCode() {
-
-    }
 }

@@ -13,8 +13,7 @@ import kotlinx.serialization.Transient
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
-import ponticello.sc.ControlSpec
-import ponticello.sc.code
+import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander
 import reaktive.event.unitEvent
 import reaktive.value.now
@@ -38,8 +37,13 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
         expr.initialize(myContext)
     }
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
-        "ExprControl.new { |inst, t| ${expr.editor.result.now.code(context)} }"
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
+        val expr = expr.editor.result.now.transform<ParameterReference> { ref ->
+            val parameter = ref.parameter.name.now
+            Identifier("inst").send("getControlValue($parameter)")
+        }
+        return "ExprControl.new { |inst, t| ${expr.code(context)} }"
+    }
 
     companion object {
         fun create() = ExprControl(EditorRoot(ScExprExpander().defaultState()))

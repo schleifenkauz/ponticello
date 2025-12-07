@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.model.instr.BusObject
-import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.project
 import ponticello.model.project.flows
@@ -19,14 +19,14 @@ import reaktive.value.reactiveVariable
 import java.util.concurrent.CompletableFuture
 
 @Serializable
-sealed class AudioFlow : AbstractRenamableObject() {
+sealed class AudioFlow : AbstractSuperColliderObject() {
     private val active = reactiveVariable(true)
     val isActive: ReactiveValue<Boolean> get() = active
 
     @Transient
     private var deactivateOnInvalid: Observer? = null
 
-    val superColliderName get() = "~flow_${name.now}"
+    override fun superColliderName(objectName: String): String = "~flow_${objectName}"
 
     abstract val isValid: ReactiveValue<Boolean>
 
@@ -70,7 +70,7 @@ sealed class AudioFlow : AbstractRenamableObject() {
         context[SuperColliderClient].run("$superColliderName.run($active)")
     }
 
-    fun sync() {
+    override fun sync() {
         if (!isActive.now || parentGroup?.isActive?.now != true) return
         context[SuperColliderClient].run("$superColliderName.free")
         val placement = parentGroup!!.getPlacement(this)

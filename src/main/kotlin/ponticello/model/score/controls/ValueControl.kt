@@ -32,7 +32,7 @@ data class ValueControl(
         return "ValueControl.new(${value.now}, ${allocateBus.now}, $cutoffMultiplier)"
     }
 
-    private fun cutoffMultiplier(obj: ParameterizedObject, spec: ControlSpec): Decimal =
+    private fun cutoffMultiplier(obj: ParameterizedObject, spec: ControlSpec?): Decimal =
         if (spec is NumericalControlSpec && spec.origin is BufferPositionControlSpec) {
             val rateCtrl = obj.controls.getOrNull("rate")?.now as? ValueControl
             rateCtrl?.value?.now ?: one

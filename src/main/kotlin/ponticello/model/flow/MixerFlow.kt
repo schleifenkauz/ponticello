@@ -13,11 +13,10 @@ import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.AttackReleaseControl
-import ponticello.model.score.controls.guardAgainstReplaceNil
 import ponticello.model.server.BusRegistry
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
-import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.ScWriter
 import ponticello.ui.midi.AbstractMidiContext
 import ponticello.ui.midi.MidiContext
 import ponticello.ui.midi.adjustByMidiDelta
@@ -74,9 +73,6 @@ class MixerFlow(
 
     override val isValid: ReactiveValue<Boolean> get() = valid
 
-    @Transient
-    private lateinit var client: SuperColliderClient
-
     fun usedBuses(): List<@Contextual BusObject> {
         val sourceBuses = components.mapNotNull { it.sourceBus.now.get() }
         val targetBus = targetBus.now.get()?.let(::listOf) ?: emptyList()
@@ -84,7 +80,6 @@ class MixerFlow(
     }
 
     override fun initialize(context: Context) {
-        client = context[SuperColliderClient]
         super.initialize(context)
         components.initialize(context)
         targetBus.now.resolve(context[BusRegistry])
@@ -223,14 +218,16 @@ class MixerFlow(
             +"ReplaceOut.ar(${sink.superColliderName}, snd)"
             +"0"
         }
-        val action = guardAgainstReplaceNil(placement)
-        appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${action});")
+        appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${placement.addAction});")
         +"s.sync"
         +"$superColliderName.register"
         if (!isActive.now) {
             +"$superColliderName.run(false)"
         }
     }
+
+
+    override fun ScWriter.createObject() {}
 
     override fun copy(): AudioFlow = MixerFlow(targetBus.copy(), MixerComponentList(components.toMutableList()))
 
