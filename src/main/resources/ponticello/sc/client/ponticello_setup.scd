@@ -104,7 +104,7 @@ OSCdef('pause_play', { |msg|
 }, '/pause_play');
 OSCdef('schedule', {
 	arg msg;
-	var absolute = msg[2], time = msg[3].asFloat, player_id = msg[4], code = msg[5], info = msg[6], fct, my_play_start, abs_time;
+	var id = msg[1], absolute = msg[2], time = msg[3].asFloat, player_id = msg[4], code = msg[5], info = msg[6], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
     abs_time = if (absolute) { time } { time + (my_play_start ?? TempoClock.beats) };
     postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = %, current time = %\n", info, player_id, my_play_start, time, abs_time, TempoClock.beats);
@@ -115,8 +115,11 @@ OSCdef('schedule', {
             fork {
                 //postf("EXECUTE %\n", info);
                 //code.postln;
-                try { fct.value(player_id) } { |error|
-                    ~ponticello_addr.sendMsg('/error', error.what);
+                try {
+                    var answer = fct.value(player_id);
+                    ~ponticello_addr.sendMsg('/reply', id, answer.asString);
+                } { |error|
+                    ~ponticello_addr.sendMsg('/error', id, error.what);
                     error.throw;
                 }
             }

@@ -115,6 +115,8 @@ sealed class ItemTarget : AbstractContextualObject() {
     ) : ItemTarget() {
         var velocityParameter: ReactiveVariable<ParameterDefReference> = reactiveVariable(ObjectReference.none())
 
+        private var instanceId: Int = -1
+
         override val canView: Boolean
             get() = ref.isResolved.now
 
@@ -160,25 +162,25 @@ sealed class ItemTarget : AbstractContextualObject() {
                     extraArguments[velocityParameter] = ValueControl.create(value)
                 }
                 ScorePlayer.execute {
-                    grid.activeObjects[item] = grid.scheduler.scheduleObject(
+                    grid.scheduler.scheduleObject(
                         obj, instance = null, position, cutoff = zero, player,
                         scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2,
                         extraArguments
-                    )
+                    )?.thenAccept { id -> instanceId = id ?: -1 }
                 }
             }
 
         }
 
         override fun released(item: LauncherGrid.GridItem) {
+            val obj = ref.get() ?: return
             active.set(false)
-            val activeObject = grid.activeObjects[item] ?: return
-            grid.addToTargetScore(activeObject, item)
+//            grid.addToTargetScore(obj, item)
             if (!item.stopOnRelease.now) return
-            ScorePlayer.execute {
-                grid.scheduler.stopObjectInstantly(activeObject)
+            if (instanceId != -1) {
+                grid.scheduler.stopObjectInstantly(obj, instanceId)
+                instanceId = -1
             }
-            grid.activeObjects[item] = null
         }
 
         override fun toString() = ref.getName()

@@ -5,8 +5,8 @@ import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
 import fxutils.controls.CheckBox
 import fxutils.opacity
-import fxutils.prompt.InfoPrompt
 import fxutils.undo.UndoManager
+import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.event.Event
 import javafx.scene.Node
@@ -14,14 +14,15 @@ import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.player.ActiveObject
-import ponticello.model.player.ActiveScoreObject
+import ponticello.model.score.ObjectPosition
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.score.ScoreObjectView
@@ -84,21 +85,17 @@ data object UGenControlType : ControlType<UGenControl>() {
         }
         addAction("Scope") {
             icon(Evaicons.ACTIVITY)
-            executes { (ctrl, view), ev ->
-                val ugen = ctrl.now as UGenControl
-                val activeObject = getActiveObject(ctrl, view)
+            executes { (ctrl, view), _ ->
                 val parameter = ctrl.name.now
-                if (activeObject != null) {
-                    ugen.scope(activeObject, parameter)
-                } else {
-                    InfoPrompt("Object is not played currently").showDialog(ev)
-                }
+                val processName = ctrl.parentObject.soundProcessName!!
+                scope(processName, view?.absolutePosition, parameter, ctrl.context)
             }
         }
         add(detailsAction(sceneFill = DEFAULT_SCENE_FILL.opacity(0.5)) { (namedControl) ->
             val control = namedControl.now as UGenControl
             val displayToggle = CheckBox(control.display).setupUndo(
-                namedControl.context[UndoManager], variableDescription = "Display UGen")
+                namedControl.context[UndoManager], variableDescription = "Display UGen"
+            )
                 .named("Display")
             displayToggle.disableProperty().bind(
                 control.expr.editor.result.map { expr ->
@@ -108,18 +105,23 @@ data object UGenControlType : ControlType<UGenControl>() {
         })
     }
 
-    private fun getActiveObject(
-        ctrl: ParameterControlList.NamedParameterControl,
-        view: ScoreObjectView?,
-    ): ActiveObject? {
-        val activeObjects = ctrl.parentObject.activeObjects()
-        return if (view != null) {
-            activeObjects
-                .filterIsInstance<ActiveScoreObject>()
-                .find { obj ->
-                    val absolutePosition = view.absolutePosition// + obj.player.pane.absolutePosition TODO
-                    obj.absolutePosition == absolutePosition
+    private fun scope(processName: String, absolutePosition: ObjectPosition?, parameter: String, context: Context) {
+        context[SuperColliderClient].run {
+            append("var inst = ")
+            if (absolutePosition != null) appendLine("SoundProcess.get('$processName').getInstanceAt($absolutePosition);")
+            else appendLine("SoundProcess.get($processName.getSingleInstance);")
+            appendBlock("if (inst != nil)", endLine = false) {
+                appendBlock("AppClock.sched(0)") {
+                    +"var index = inst.getControlBus('$parameter').index"
+                    +"var scope = Stethoscope.new(s, 1, index, rate:'control')"
                 }
-        } else activeObjects.singleOrNull()
+                appendBlock("inst.onDispose") {
+                    +"AppClock.sched(0.05) { scope.window.close; scope.quit; nil  }"
+                }
+            }
+            appendBlock {
+                +"\"No instance found for $processName\".postln"
+            }
+        }
     }
 }

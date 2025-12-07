@@ -11,13 +11,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.instr.ProcessDefObject
-import ponticello.model.instr.SynthDefObject
-import ponticello.model.player.ActiveObject
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
-import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
 import reaktive.event.unitEvent
 import reaktive.value.ReactiveVariable
@@ -50,24 +45,6 @@ data class UGenControl(
         val expr = substituteParameterReferences(expr.editor.result.now)
         val references = expr.parameterReferences().joinToString(", ", "[", "]") { name -> "'$name'" }
         return "LFOControl($references) { |cutoff| ${expr.code(context)} }"
-    }
-
-    fun scope(activeObject: ActiveObject, parameter: String) {
-        val client = context[SuperColliderClient]
-        val uniqueName = activeObject.uniqueName
-        val busName = auxilBusName(uniqueName, parameter)
-        client.run {
-            appendBlock("AppClock.sched(0)") {
-                +"var scope"
-                +"scope = Stethoscope.new(s, 1, $busName.index, rate:'control')"
-                val closeScope = "AppClock.sched(0.05) { scope.window.close; scope.quit; nil  }"
-                if (activeObject.associatedDef is SynthDefObject) {
-                    +"${activeObject.superColliderName}.onFree { $closeScope }"
-                } else if (activeObject.associatedDef is ProcessDefObject) {
-                    +"${activeObject.superColliderName}.addDependant { |obj, signal| if (signal == 'stopped') { $closeScope } }"
-                }
-            }
-        }
     }
 
     companion object {

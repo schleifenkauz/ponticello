@@ -33,7 +33,6 @@ class ScorePlayer private constructor(
     val lookAhead get() = context.playbackSettings.lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
-    private val activeObjects = context[ActiveObjectsManager]
     private val updater = LiveScoreUpdater(score, this)
 
     private var currentClock: ClockObject? = null
@@ -164,14 +163,7 @@ class ScorePlayer private constructor(
 
     private fun freeActiveObjects() = execute {
         Logger.info("Pausing playback", Logger.Category.Playback)
-        context[Recorder].pausingPlayback()
-        for (activeObject in activeObjects.all()) {
-            if (activeObject.player == this) {
-                println("Stopping $activeObject")
-                scheduler.stopObjectInstantly(activeObject)
-            }
-        }
-        activeObjects.clear(this)
+        client.run("SoundProcess.stopAllProcesses(player_id:$id)")
     }
 
     //Only inside ScorePlayer.execute

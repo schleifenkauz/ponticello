@@ -7,8 +7,6 @@ import ponticello.impl.Decimal
 import ponticello.impl.writeCode
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.player.ActiveAudioFlow
-import ponticello.model.player.ActiveObject
 import ponticello.model.player.SoundProcessUpdater
 import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BusControl
@@ -23,8 +21,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     @Transient
     private lateinit var listener: SoundProcessUpdater<ParameterizedAudioFlow>
 
-    final override fun activeObjects(): List<ActiveObject> =
-        if (isActive.now) listOf(ActiveAudioFlow(this)) else emptyList()
+    override fun soundProcessName(objectName: String): String? = "flow_${objectName}"
 
     final override fun duration(): ReactiveValue<Decimal>? = null
 
@@ -44,19 +41,16 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     }
 
     override fun ScWriter.createObject() {
-        SoundProcess.createSoundProcessObject(
-            writer, this@ParameterizedAudioFlow,
-            duration = null, "flow_${name.now}"
-        )
+        SoundProcess.createSoundProcessObject(writer, this@ParameterizedAudioFlow, duration = null)
     }
 
     override fun onRename(oldName: String, newName: String) {
-        client.run("SoundProcess.rename('flow_$oldName', 'flow_$newName')")
+        client.run("SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')")
     }
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
         +"$superColliderName = SoundProcess.get('flow_${name.now}').createInstance"
-        +"$superColliderName.start($placement, 0, -1)"
+        +"$superColliderName.start($placement, 0, -1, ${isActive.now})"
     }
 
     override fun midiContext(): MidiContext? = ParameterControlsMidiContext(controls)

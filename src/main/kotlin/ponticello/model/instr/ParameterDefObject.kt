@@ -101,7 +101,7 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
 
         val LEVEL = ParameterDefObject("level", NumericalControlSpec.LEVEL).immutable()
 
-        val ATTACK_RELEASE = ParameterDefObject("attack_release", AttackReleaseControlSpec()).immutable()
+        val ATTACK_RELEASE = ParameterDefObject("attack-release", AttackReleaseControlSpec()).immutable()
 
         val defaults = listOf(FREQ, AMP, PAN)
 

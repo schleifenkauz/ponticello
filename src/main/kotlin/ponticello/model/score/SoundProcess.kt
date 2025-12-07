@@ -62,6 +62,10 @@ class SoundProcess(
             else -> "~unknown_"
         }
 
+    override fun soundProcessName(objectName: String): String = "proc_${objectName}"
+
+    override fun superColliderName(objectName: String): String = "SoundProcess.get('${soundProcessName}')"
+
     @Transient
     private var playBufRateBeforeResize = zero
 
@@ -194,19 +198,19 @@ class SoundProcess(
     }
 
     override fun ScWriter.createObject() {
-        createSoundProcessObject(writer, this@SoundProcess, duration, "proc_${name.now}")
+        createSoundProcessObject(writer, this@SoundProcess, duration)
     }
 
     override fun onRename(oldName: String, newName: String) {
-        client.run("SoundProcess.rename('proc_$oldName', 'proc_$newName')")
+        client.run("SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')")
     }
 
     override fun startNewInstance(
-        scoreY: Decimal, cutoff: Decimal, instance: ScoreObjectInstance?,
-        latency: Decimal, player: ScorePlayer
+        pos: ObjectPosition, cutoff: Decimal, instance: ScoreObjectInstance?,
+        latency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String {
         val midiNote = "nil"
-        return "SoundProcess.get('proc_${name.now}').startNewInstance($scoreY, $cutoff, $midiNote, $latency, ${player.id})"
+        return "$superColliderName.startNewInstance($pos, $cutoff, $midiNote, $latency, ${player.id})"
     }
 
     //    override fun writeCode(): String = writeCode {
@@ -275,21 +279,19 @@ class SoundProcess(
                 }
             }
 
-        fun createSoundProcessObject(
-            writer: ScWriter, obj: ParameterizedObject,
-            duration: Decimal?, name: String
-        ) = writer.appendGroup("SoundProcess.create") {
-            appendLine("name: '$name',")
-            appendLine("def: ${obj.def.superColliderName},")
-            appendLine("duration: ${duration ?: "nil"},")
-            appendGroup("controls: ") {
-                for (ctrl in obj.controls) {
-                    val parameter = ctrl.name.now
-                    if (parameter == "attack-release") continue //TODO
-                    val expr = ctrl.now.writeCode(ctrl.spec.now, obj)
-                    appendLine("$parameter: $expr,")
+        fun createSoundProcessObject(writer: ScWriter, obj: ParameterizedObject, duration: Decimal?) =
+            writer.appendGroup("SoundProcess.create") {
+                appendLine("name: '${obj.soundProcessName}',")
+                appendLine("def: ${obj.def.superColliderName},")
+                appendLine("duration: ${duration ?: "nil"},")
+                appendGroup("controls: ") {
+                    for (ctrl in obj.controls) {
+                        val parameter = ctrl.name.now
+                        if (parameter == "attack-release") continue //TODO
+                        val expr = ctrl.now.writeCode(ctrl.spec.now, obj)
+                        appendLine("$parameter: $expr,")
+                    }
                 }
             }
-        }
     }
 }

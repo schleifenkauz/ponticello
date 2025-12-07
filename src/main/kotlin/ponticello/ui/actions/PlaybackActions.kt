@@ -7,10 +7,8 @@ import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import ponticello.model.flow.AudioFlows
-import ponticello.model.flow.NodeTree
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.project
-import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.PLAYBACK_SETTINGS
@@ -105,9 +103,7 @@ object PlaybackActions {
                 for (liveObject in p.context[LiveObjectRegistry]) {
                     liveObject.pause()
                 }
-                p.context[ActiveObjectsManager].clear()
-                p.context[NodeTree].clear()
-                p.context[SuperColliderClient].run("s.freeAll")
+                p.context[SuperColliderClient].run("s.freeAll;") //TODO
                 p.pause()
             }
         }

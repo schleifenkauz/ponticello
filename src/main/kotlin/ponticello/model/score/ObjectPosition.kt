@@ -20,7 +20,7 @@ data class ObjectPosition(val time: Decimal, val y: Decimal) : Comparable<Object
 
     infix fun plusY(y: Decimal) = ObjectPosition(time, this.y + y)
 
-    override fun toString(): String = "($time, $y)"
+    override fun toString(): String = "(t: $time, y: $y)"
 
     operator fun unaryMinus(): ObjectPosition = ObjectPosition(-time, -y)
 

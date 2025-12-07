@@ -15,7 +15,6 @@ import kotlinx.serialization.Transient
 import ponticello.impl.zero
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.project
-import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.mainScore
@@ -23,6 +22,7 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.SoundProcess
@@ -48,9 +48,6 @@ class LauncherGrid private constructor(
 
     @Transient
     lateinit var scheduler: ScoreObjectScheduler
-
-    @Transient
-    val activeObjects = mutableMapOf<GridItem, ActiveScoreObject?>()
 
     @Transient
     private val listeners = ListenerManager.createWeakListenerManager<View>()
@@ -103,12 +100,12 @@ class LauncherGrid private constructor(
         item.target.released(item)
     }
 
-    fun addToTargetScore(activeObject: ActiveScoreObject, item: GridItem) {
+    fun addToTargetScore(scoreObject: ScoreObject, absolutePosition: ObjectPosition, item: GridItem) {
         val score = getScore() ?: return
         val player = getPlayer()
         if (!player.isPlaying.now) return
-        val (time, y) = activeObject.absolutePosition
-        var obj = activeObject.obj
+        val (time, y) = absolutePosition
+        var obj = scoreObject
         val cutoff = (time + obj.duration) - player.playHead.currentTime
         if (item.stopOnRelease.now && cutoff > zero) {
             val name = context[ScoreObjectRegistry].availableName(obj.name.now)

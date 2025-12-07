@@ -51,6 +51,9 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
             }
         }
         active.now = value
+        if (parentGroup?.isActive?.now == true) {
+            context[SuperColliderClient].run("$superColliderName.setRunning($value)")
+        }
     }
 
     fun toggleActive() {
@@ -67,7 +70,6 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
     }
 
     open fun setRunning(active: Boolean) {
-        context[SuperColliderClient].run("$superColliderName.run($active)")
     }
 
     override fun sync() {

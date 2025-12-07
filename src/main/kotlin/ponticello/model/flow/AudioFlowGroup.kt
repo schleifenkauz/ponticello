@@ -15,7 +15,6 @@ import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
-import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.map
 
@@ -34,14 +33,8 @@ class AudioFlowGroup(
 
     val isActive: ReactiveBoolean get() = active
 
-    override val isStillActive: Boolean
-        get() = isActive.now
-
     override val startedAt: Decimal
         get() = Decimal.NINF
-
-    @Transient
-    private val observers = mutableMapOf<AudioFlow, Observer>()
 
     @Transient
     private lateinit var client: SuperColliderClient
@@ -59,7 +52,6 @@ class AudioFlowGroup(
         flows.addListener(this, initialize = false)
         for (flow in flows) {
             flow.parentGroup = this
-            observeFlow(flow)
         }
     }
 
@@ -78,21 +70,12 @@ class AudioFlowGroup(
             client.run("${obj.superColliderName}.${placement.moveMethod}(${placement.target})")
         } else {
             obj.addToServer(placement)
-            observeFlow(obj)
         }
         obj.parentGroup = this
     }
 
-    private fun observeFlow(obj: AudioFlow) {
-        observers[obj] = obj.isActive.observe { _, _, active ->
-            if (!this.isActive.now) return@observe
-            obj.setRunning(active)
-        }
-    }
-
     override fun removed(obj: AudioFlow, idx: Int) {
-        if (isActive.now && obj.isActive.now && obj.parentGroup == this) obj.removeFromServer()
-        observers.remove(obj)?.kill()
+        if (isActive.now && obj.parentGroup == this) obj.removeFromServer()
     }
 
     private fun previousActiveFlow(idx: Int) = flows.take(idx).findLast { it.isActive.now }

@@ -22,14 +22,14 @@ class NodeTree(private val client: SuperColliderClient) {
         } else {
             idx = -(idx + 1)
         }
-         while (idx >= 1) {
-            val prevNode = activeNodes[idx - 1]
-            when {
-                !prevNode.isStillActive -> idx--
-                prevNode.yPosition.now >= node.yPosition.now -> idx--
-                else -> break
-            }
-        }
+//         while (idx >= 1) {
+//            val prevNode = activeNodes[idx - 1]
+//            when {
+//                !prevNode.isStillActive -> idx--
+//                prevNode.yPosition.now >= node.yPosition.now -> idx--
+//                else -> break
+//            }
+//        }
         activeNodes.add(idx, node)
         observeNode(node)
         return if (idx == 0) NodePlacement.head("s.defaultGroup")

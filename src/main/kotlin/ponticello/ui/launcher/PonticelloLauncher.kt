@@ -34,7 +34,6 @@ import ponticello.model.flow.NodeTree
 import ponticello.model.git.ProjectGitRepository
 import ponticello.model.instr.GlobalDefinitionLibrary
 import ponticello.model.obj.project
-import ponticello.model.player.ActiveObjectsManager
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
@@ -342,8 +341,6 @@ class PonticelloLauncher {
                     progressBar.displayProgress(0.1, "SuperCollider started, booting server...")
                     try {
                         context[SuperColliderClient] = client
-                        context[ActiveObjectsManager] = ActiveObjectsManager(context)
-                        client.addListener(context[ActiveObjectsManager])
                         context[NodeTree] = NodeTree(client)
                         context[ScoreObjectScheduler] = ScoreObjectScheduler(context)
                         context[ScoreObjectDuplicator] = ScoreObjectDuplicator()

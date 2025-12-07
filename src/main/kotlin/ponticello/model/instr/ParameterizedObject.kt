@@ -2,7 +2,6 @@ package ponticello.model.instr
 
 import ponticello.impl.Decimal
 import ponticello.model.obj.NamedObject
-import ponticello.model.player.ActiveObject
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
 import reaktive.value.ReactiveValue
@@ -13,7 +12,9 @@ interface ParameterizedObject : NamedObject {
 
     val controls: ParameterControlList
 
-    fun activeObjects(): List<ActiveObject>
+    fun soundProcessName(objectName: String): String? = null
+
+    val soundProcessName: String? get() = soundProcessName(name.now)
 
     fun duration(): ReactiveValue<Decimal>? = null
 

@@ -7,8 +7,6 @@ import reaktive.value.ReactiveValue
 import reaktive.value.now
 
 sealed interface AudioNode: Comparable<AudioNode> {
-    val isStillActive: Boolean
-
     val startedAt: Decimal
 
     val player: ScorePlayer? get() = null

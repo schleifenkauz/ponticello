@@ -17,9 +17,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.*
-import ponticello.model.player.ActiveObjectsManager
-import ponticello.model.player.ActiveScoreObject
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.controls.EnvelopeControl
@@ -106,8 +105,6 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
 
     open fun duration(): ReactiveValue<Decimal> = _duration
 
-    open fun activeObjects(): List<ActiveScoreObject> = context[ActiveObjectsManager].activeInstances(this)
-
     fun height(): ReactiveValue<Decimal> = _height
 
     open val minY: Decimal get() = zero
@@ -129,8 +126,12 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     }
 
     open fun startNewInstance(
-        scoreY: Decimal, cutoff: Decimal,
-        instance: ScoreObjectInstance?, latency: Decimal, player: ScorePlayer
+        pos: ObjectPosition,
+        cutoff: Decimal,
+        instance: ScoreObjectInstance?,
+        latency: Decimal,
+        player: ScorePlayer,
+        extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String {
         if (!affectsPlayback) return ""
         throw NotImplementedError("startNewInstance not implemented for $this")

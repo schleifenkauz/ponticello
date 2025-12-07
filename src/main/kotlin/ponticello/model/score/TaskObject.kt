@@ -8,7 +8,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.writeCode
+import ponticello.model.instr.ParameterDefObject
 import ponticello.model.player.ScorePlayer
+import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.CodeBlockEditor
 import reaktive.Observer
@@ -61,8 +63,8 @@ class TaskObject(
     }
 
     override fun startNewInstance(
-        scoreY: Decimal, cutoff: Decimal, instance: ScoreObjectInstance?,
-        latency: Decimal, player: ScorePlayer
+        pos: ObjectPosition, cutoff: Decimal, instance: ScoreObjectInstance?,
+        latency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String = writeCode(group = !synchronized) {
         if (!synchronized) {
             sync()
