@@ -87,7 +87,7 @@ class PatternPlotPane(private val pattern: GlobalPatternObject) : ToolPane() {
         if (!expr.isValid) return displayError("Invalid pattern code")
         val n = sampleNumber.text.toIntOrNull() ?: return displayError("Invalid sample number")
         val client = pattern.context[SuperColliderClient]
-        val code = writeCode {
+        val code = writeCode(group = false) {
             expr.code(writer, pattern.context)
             append(".asStream.nextN($n).asCompileString")
         }

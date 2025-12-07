@@ -113,7 +113,7 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         val lastFrame = (range.endInclusive * sampleRate).toLong()
         val synthName = "~play_buf_${playbackSynthsCounter++}"
         context[SuperColliderClient].run {
-            +"""$synthName = SoundFile.new($path).cue(
+            +"""$synthName = SoundFile($path).cue(
                 |(firstFrame: $frameOffset, lastFrame: $lastFrame, 
                 |out: ${outBus.superColliderName}, 
                 |atk: 0.02, rel: 0.02), playNow: true)""".trimMargin()

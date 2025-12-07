@@ -38,14 +38,16 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
     }
 
     override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
-        val expr = expr.editor.result.now.transform<ParameterReference> { ref ->
-            val parameter = ref.parameter.name.now
-            Identifier("inst").send("getControlValue($parameter)")
-        }
+        val expr = substituteParameterReferences(expr.editor.result.now)
         return "ExprControl.new { |inst, t| ${expr.code(context)} }"
     }
 
     companion object {
         fun create() = ExprControl(EditorRoot(ScExprExpander().defaultState()))
+
+        fun substituteParameterReferences(expr: ScExpr) = expr.transform<ParameterReference> { ref ->
+            val parameter = ref.parameter.name.now
+            Identifier("inst").send("getControlValue($parameter)")
+        }
     }
 }

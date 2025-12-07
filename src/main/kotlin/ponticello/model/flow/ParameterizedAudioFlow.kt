@@ -9,7 +9,7 @@ import ponticello.model.instr.BusObject
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.player.ActiveAudioFlow
 import ponticello.model.player.ActiveObject
-import ponticello.model.player.LiveSynthUpdater
+import ponticello.model.player.SoundProcessUpdater
 import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BusControl
 import ponticello.sc.client.ScWriter
@@ -20,11 +20,8 @@ import reaktive.value.now
 
 @Serializable
 sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
-    override val superColliderPrefix: String
-        get() = "~"
-
     @Transient
-    private lateinit var listener: LiveSynthUpdater
+    private lateinit var listener: SoundProcessUpdater<ParameterizedAudioFlow>
 
     final override fun activeObjects(): List<ActiveObject> =
         if (isActive.now) listOf(ActiveAudioFlow(this)) else emptyList()
@@ -33,7 +30,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        listener = LiveSynthUpdater(this)
+        listener = SoundProcessUpdater(this)
     }
 
     override fun onLoadedIntoRegistry() {
@@ -49,13 +46,17 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     override fun ScWriter.createObject() {
         SoundProcess.createSoundProcessObject(
             writer, this@ParameterizedAudioFlow,
-            duration = Decimal.INF, superColliderName
+            duration = null, "flow_${name.now}"
         )
     }
 
+    override fun onRename(oldName: String, newName: String) {
+        client.run("SoundProcess.rename('flow_$oldName', 'flow_$newName')")
+    }
+
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        +"var inst = $superColliderName.createInstance"
-        +"inst.start($placement, 0, -1)"
+        +"$superColliderName = SoundProcess.get('flow_${name.now}').createInstance"
+        +"$superColliderName.start($placement, 0, -1)"
     }
 
     override fun midiContext(): MidiContext? = ParameterControlsMidiContext(controls)

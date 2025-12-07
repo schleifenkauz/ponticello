@@ -35,8 +35,6 @@ class EnvelopeControl(
     @Transient
     private lateinit var specObserver: Observer
 
-    private val auxilSynthDefName get() = "env_${index}"
-
     @Transient
     val update = unitEvent()
 
@@ -90,7 +88,7 @@ class EnvelopeControl(
 
     override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
         val warp = if (spec is NumericalControlSpec) spec.warp else Warp.Linear
-        return "EnvelopeControl.new(${points.code(warp)})"
+        return "EnvelopeControl(${points.code(warp)})"
     }
 
     override fun editedEnvelope() {

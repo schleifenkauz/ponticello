@@ -63,8 +63,11 @@ class TaskObject(
     override fun startNewInstance(
         scoreY: Decimal, cutoff: Decimal, instance: ScoreObjectInstance?,
         latency: Decimal, player: ScorePlayer
-    ): String = writeCode {
-        if (!synchronized) sync()
+    ): String = writeCode(group = !synchronized) {
+        if (!synchronized) {
+            sync()
+            synchronized = true
+        }
         +"$superColliderName.play"
     }
 }

@@ -37,7 +37,7 @@ data class BufferControl(
     }
 
     override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
-        "ValueControl.new(${sample.get().superColliderName})"
+        "ValueControl(${sample.get().superColliderName})"
 
     companion object {
         fun create(buffer: BufferObject) = BufferControl(reactiveVariable(buffer.reference()))

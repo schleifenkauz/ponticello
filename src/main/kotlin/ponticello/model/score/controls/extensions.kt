@@ -1,5 +1,8 @@
 package ponticello.model.score.controls
 
+import ponticello.sc.ParameterReference
+import ponticello.sc.ScExpr
+import ponticello.sc.allChildren
 import reaktive.value.now
 
 fun ParameterControl.getNumericalValue() = when (this) {
@@ -13,3 +16,5 @@ fun ParameterControl.getBus() = when (this) {
     is BusValueControl -> bus.now
     else -> null
 }
+
+fun ScExpr.parameterReferences() = allChildren<ParameterReference>().map(ParameterReference::parameter)

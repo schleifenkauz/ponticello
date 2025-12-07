@@ -31,9 +31,7 @@ data class AttackReleaseControl(
         }
     }
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
-        TODO("Not yet implemented")
-    }
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String = "nil"
 
     private fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {
         val totalDuration = obj.duration()!!.now

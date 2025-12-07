@@ -32,9 +32,6 @@ class MidiObject(
     override val type: String
         get() = "midi"
 
-    override val superColliderPrefix: String
-        get() = "~midi_"
-
     var lowestPitch
         get() = _lowestPitch
         set(value) {

@@ -65,7 +65,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         val curve =
             if (curves.all { it == defaultWarp }) defaultWarp.code(context)
             else curves.joinToString(",", "[", "]")
-        return "Env.new(levels: $levels, times: $times, curve: $curve)"
+        return "Env(levels: $levels, times: $times, curve: $curve)"
     }
 
     fun getLevels() = points.map { (_, y) -> y.toDouble() }

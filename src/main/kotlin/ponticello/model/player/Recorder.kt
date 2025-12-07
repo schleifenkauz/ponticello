@@ -115,7 +115,7 @@ class Recorder(private val context: Context) {
         val bus = getRecordedBus()
         client.run("s.prepareForRecord(${path.superColliderPath}, ${bus.channels.now})")
         val settings = context.project[PLAYBACK_SETTINGS]
-        val code = writeCode {
+        val code = writeCode(group = false) {
             appendBlock("s.bind") {
                 +"s.record(bus: ${bus.superColliderName})"
             }

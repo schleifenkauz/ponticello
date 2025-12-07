@@ -8,10 +8,11 @@ import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
 import ponticello.model.obj.AbstractRenamableObject
+import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
-import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
+import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import reaktive.Observer
@@ -119,7 +120,7 @@ class AudioFlowGroup(
     private fun addToServer(placement: NodePlacement) {
         val groupName = superColliderName.now
         client.eval(description = "creating group $groupName") {
-            +"$groupName = Group.new(${placement.target}, ${placement.addAction})"
+            +"$groupName = Group(${placement.target}, ${placement.addAction})"
         }.join()
         for (flow in flows) {
             //join enforces that the synths are added in the right order
@@ -159,9 +160,12 @@ class AudioFlowGroup(
     @SerialName("AudioFlowList")
     class AudioFlowList(
         override val objects: MutableList<AudioFlow> = mutableListOf(),
-    ) : NamedObjectList<AudioFlow>() {
+    ) : SuperColliderObjectRegistry<AudioFlow>() {
         override val objectType: String
             get() = "Flow"
+
+        override val liveCycleType: SuperColliderObject.LiveCycleType
+            get() = SuperColliderObject.LiveCycleType.ServerBoot
 
         object Serializer : ObjectListSerializer<AudioFlow, AudioFlowList>(AudioFlow.serializer(), ::AudioFlowList)
     }

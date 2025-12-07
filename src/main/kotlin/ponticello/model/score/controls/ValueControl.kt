@@ -27,9 +27,13 @@ data class ValueControl(
         return true
     }
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
+    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String = writeCode(group = false) {
         val cutoffMultiplier = cutoffMultiplier(obj, spec)
-        return "ValueControl.new(${value.now}, ${allocateBus.now}, $cutoffMultiplier)"
+        append("ValueControl(")
+        append(value.now.toString())
+        if (allocateBus.now) append(", allocate_bus: true")
+        if (cutoffMultiplier != zero) append(", cutoff_multiplier: $cutoffMultiplier")
+        append(")")
     }
 
     private fun cutoffMultiplier(obj: ParameterizedObject, spec: ControlSpec?): Decimal =

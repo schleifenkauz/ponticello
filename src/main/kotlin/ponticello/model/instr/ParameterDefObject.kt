@@ -11,14 +11,7 @@ import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.withName
-import ponticello.sc.AttackReleaseControlSpec
-import ponticello.sc.BufferControlSpec
-import ponticello.sc.BusControlSpec
-import ponticello.sc.ControlSpec
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.Rate
-import ponticello.sc.Warp
-import ponticello.sc.defaultControl
+import ponticello.sc.*
 import ponticello.sc.editor.ControlSpecEditor
 import reaktive.Observer
 import reaktive.and
@@ -106,9 +99,9 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
         val IN = ParameterDefObject("in", BusControlSpec(Rate.Audio, 2))
         val BUS = ParameterDefObject("bus", BusControlSpec(Rate.Control, 2))
 
-        val LEVEL = ParameterDefObject("level", NumericalControlSpec.Companion.LEVEL).immutable()
+        val LEVEL = ParameterDefObject("level", NumericalControlSpec.LEVEL).immutable()
 
-        val ATTACK_RELEASE = ParameterDefObject("attack-release", AttackReleaseControlSpec()).immutable()
+        val ATTACK_RELEASE = ParameterDefObject("attack_release", AttackReleaseControlSpec()).immutable()
 
         val defaults = listOf(FREQ, AMP, PAN)
 

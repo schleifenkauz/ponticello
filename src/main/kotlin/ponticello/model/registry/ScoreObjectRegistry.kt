@@ -8,10 +8,10 @@ import hextant.context.compoundEdit
 import javafx.event.Event
 import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
+import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.project
 import ponticello.model.project.UIState
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.UnresolvedScoreObject
 import ponticello.ui.controls.NamePrompt
 import reaktive.value.now
@@ -19,9 +19,12 @@ import reaktive.value.now
 @Serializable
 class ScoreObjectRegistry(
     override val objects: MutableList<ScoreObject> = mutableListOf(),
-) : ObjectRegistry<ScoreObject>() {
+) : SuperColliderObjectRegistry<ScoreObject>() {
     override val objectType: String
         get() = "Score Object"
+
+    override val liveCycleType: SuperColliderObject.LiveCycleType
+        get() = SuperColliderObject.LiveCycleType.ServerBoot
 
     override fun initialize(context: Context) {
         context[ScoreObjectRegistry] = this

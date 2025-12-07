@@ -1,8 +1,8 @@
 package ponticello.model.instr
 
 import ponticello.impl.Decimal
-import ponticello.model.player.ActiveObject
 import ponticello.model.obj.NamedObject
+import ponticello.model.player.ActiveObject
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
 import reaktive.value.ReactiveValue
@@ -12,8 +12,6 @@ interface ParameterizedObject : NamedObject {
     val def: InstrumentObject
 
     val controls: ParameterControlList
-
-    val superColliderPrefix: String
 
     fun activeObjects(): List<ActiveObject>
 

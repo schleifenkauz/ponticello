@@ -14,6 +14,8 @@ data class NodePlacement(
         AddAction.AddReplace -> throw AssertionError("AddReplace is not a valid move method")
     }
 
+    override fun toString(): String = "($code)"
+
     enum class AddAction {
         AddAfter, AddBefore, AddToTail, AddToHead, AddReplace;
 

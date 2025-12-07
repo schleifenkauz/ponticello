@@ -5,13 +5,13 @@ import hextant.context.compoundEdit
 import javafx.application.Platform
 import javafx.scene.control.Tooltip
 import javafx.util.Duration
-import reaktive.value.now
 import ponticello.impl.writeCode
 import ponticello.sc.EmptyExpr
 import ponticello.sc.NamedExpr
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import ponticello.sc.editor.*
+import reaktive.value.now
 
 fun addAllNamedArguments(editor: MessageSendEditor) {
     val existingArguments = editor.arguments.result.now
@@ -63,7 +63,7 @@ private fun getParameterInfo(
     val method = messageSend.method.result.now.text
     val receiver = messageSend.receiver.result.now
     val context = messageSend.context
-    val code = writeCode {
+    val code = writeCode(group = false) {
         receiver.code(writer, context)
         append(".class.findRespondingMethodFor(")
         append("\\")

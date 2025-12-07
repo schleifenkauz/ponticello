@@ -17,14 +17,11 @@ import ponticello.impl.*
 import ponticello.model.instr.*
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.withName
-import ponticello.model.player.ActiveObjectsManager
-import ponticello.model.player.LiveSynthUpdater
 import ponticello.model.player.ScorePlayer
+import ponticello.model.player.SoundProcessUpdater
 import ponticello.model.score.controls.*
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
-import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.run
 import ponticello.ui.misc.LFOsManager
 import reaktive.value.*
 import reaktive.value.binding.flatMap
@@ -41,7 +38,7 @@ class SoundProcess(
     override var _name: ReactiveVariable<String>? = null
 
     @Transient
-    private lateinit var controlListener: LiveSynthUpdater
+    private lateinit var controlListener: SoundProcessUpdater<SoundProcess>
 
     @Transient
     lateinit var lfosManager: LFOsManager
@@ -102,23 +99,6 @@ class SoundProcess(
         super<ScoreObject>.onRemoved()
         controlListener.stopListening()
         controls.removeListener(lfosManager)
-    }
-
-    override fun rename(newName: String) {
-        ScorePlayer.execute {
-            context[SuperColliderClient].run {
-                activeObjects().forEach { active ->
-                    val old = ActiveObjectsManager.uniqueName(name.now, active.suffix)
-                    val new = ActiveObjectsManager.uniqueName(newName, active.suffix)
-                    +"${ParameterControl.auxilBusesVar(new)} = ${ParameterControl.auxilBusesVar(old)}"
-                    +"${ParameterControl.auxilBusesVar(old)} = nil"
-                    +"${ParameterControl.auxilSynthsVar(new)} = ${ParameterControl.auxilSynthsVar(old)}"
-                    +"${ParameterControl.auxilSynthsVar(old)} = nil"
-                    appendLine()
-                }
-            }
-        }
-        super.rename(newName)
     }
 
     override fun doClone(): ScoreObject = SoundProcess(
@@ -209,12 +189,16 @@ class SoundProcess(
         super.initialize(context)
         instrumentRef.now.resolve(context)
         controls.initialize(this.context, this)
-        controlListener = LiveSynthUpdater(this)
+        controlListener = SoundProcessUpdater(this)
         lfosManager = LFOsManager()
     }
 
     override fun ScWriter.createObject() {
-        createSoundProcessObject(writer, this@SoundProcess, duration, superColliderName)
+        createSoundProcessObject(writer, this@SoundProcess, duration, "proc_${name.now}")
+    }
+
+    override fun onRename(oldName: String, newName: String) {
+        client.run("SoundProcess.rename('proc_$oldName', 'proc_$newName')")
     }
 
     override fun startNewInstance(
@@ -222,7 +206,7 @@ class SoundProcess(
         latency: Decimal, player: ScorePlayer
     ): String {
         val midiNote = "nil"
-        return "$superColliderName.startNewInstance($scoreY, $cutoff, $midiNote, $latency, ${player.id})"
+        return "SoundProcess.get('proc_${name.now}').startNewInstance($scoreY, $cutoff, $midiNote, $latency, ${player.id})"
     }
 
     //    override fun writeCode(): String = writeCode {
@@ -293,15 +277,17 @@ class SoundProcess(
 
         fun createSoundProcessObject(
             writer: ScWriter, obj: ParameterizedObject,
-            duration: Decimal, variableName: String
-        ) = writer.appendGroup("$variableName = SoundProcess.new") {
+            duration: Decimal?, name: String
+        ) = writer.appendGroup("SoundProcess.create") {
+            appendLine("name: '$name',")
             appendLine("def: ${obj.def.superColliderName},")
-            appendLine("duration: $duration,")
+            appendLine("duration: ${duration ?: "nil"},")
             appendGroup("controls: ") {
                 for (ctrl in obj.controls) {
                     val parameter = ctrl.name.now
+                    if (parameter == "attack-release") continue //TODO
                     val expr = ctrl.now.writeCode(ctrl.spec.now, obj)
-                    appendLine("$parameter: $expr")
+                    appendLine("$parameter: $expr,")
                 }
             }
         }

@@ -47,11 +47,9 @@ data class UGenControl(
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
     override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
-        val expr = expr.editor.result.now.transform<ParameterReference> { ref ->
-            val parameter = ref.parameter.name.now
-            Identifier("inst").send("getControlUGen($parameter)")
-        }
-        return "LFOControl.new { |inst, cutoff| ${expr.code(context)} }"
+        val expr = substituteParameterReferences(expr.editor.result.now)
+        val references = expr.parameterReferences().joinToString(", ", "[", "]") { name -> "'$name'" }
+        return "LFOControl($references) { |cutoff| ${expr.code(context)} }"
     }
 
     fun scope(activeObject: ActiveObject, parameter: String) {
@@ -72,4 +70,10 @@ data class UGenControl(
         }
     }
 
+    companion object {
+        fun substituteParameterReferences(now: ScExpr) = now.transform<ParameterReference> { ref ->
+            val parameter = ref.parameter.name.now
+            SymbolLiteral(parameter).send("kr")
+        }
+    }
 }

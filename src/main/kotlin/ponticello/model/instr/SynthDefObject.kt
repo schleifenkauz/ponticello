@@ -1,16 +1,9 @@
 package ponticello.model.instr
 
 import kotlinx.serialization.Serializable
-import ponticello.impl.zero
-import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.SuperColliderObject
-import ponticello.model.player.ActiveAudioFlow
-import ponticello.model.player.ActiveObjectsManager
-import ponticello.model.player.ActiveScoreObject
-import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.reference
-import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
 
 @Serializable
@@ -22,28 +15,7 @@ sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
         get() = "\\${name.now}"
 
     override fun onUpdated() {
-        ScorePlayer.execute {
-            context[ActiveObjectsManager].forEach { active ->
-                val def = active.associatedDef
-                if (def != this@SynthDefObject) return@forEach
-                val placement = NodePlacement.replace(active.superColliderName)
-                val code = when (active) {
-                    is ActiveAudioFlow -> active.flow.writeCode(placement)
-                    is ActiveScoreObject -> {
-                        val cutoff = active.player.currentTime - active.absolutePosition.time
-                        active.obj.writeCode(
-                            active.instance,
-                            active.uniqueName,
-                            placement,
-                            cutoff,
-                            serverLatency = zero,
-                            active.extraArguments
-                        )
-                    }
-                }
-                context[SuperColliderClient].run(code)
-            }
-        }
+        //TODO
     }
 
     override fun instrumentReference(): InstrumentReference = InstrumentReference.UserDefined(this.reference())

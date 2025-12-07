@@ -35,10 +35,11 @@ fun Context.registerImplementationsFromClasspath() {
     }
 }
 
-inline fun writeCode(writeCode: ScWriter.() -> Unit): String {
+inline fun writeCode(group: Boolean = true, writeCode: ScWriter.() -> Unit): String {
     val writer = StringWriter()
     try {
-        ScWriter(writer).appendGroup(writeCode)
+        if (group) ScWriter(writer).appendGroup(writeCode)
+        else ScWriter(writer).writeCode()
     } catch (e: Exception) {
         Logger.error("Error during code generation", e)
         return ""

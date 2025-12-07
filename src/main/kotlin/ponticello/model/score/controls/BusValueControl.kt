@@ -32,5 +32,5 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
     }
 
     override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
-        "BusControl.new(${bus.get().superColliderName})"
+        "BusControl(${bus.get().superColliderName})"
 }

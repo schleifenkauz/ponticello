@@ -50,7 +50,7 @@ class OSCHookObject(
     override fun ScWriter.createObject() {
         val path = name.now
         val func = function.editor.result.now
-        appendBlock("$superColliderName = OSCFunc.new(", endLine = false) {
+        appendBlock("$superColliderName = OSCFunc(", endLine = false) {
             +"arg msg, time, addr, recvPort"
             val vars = func.parameters + func.body.variables
             if (vars.isNotEmpty()) {
