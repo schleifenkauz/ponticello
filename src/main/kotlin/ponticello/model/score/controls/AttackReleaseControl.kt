@@ -31,7 +31,8 @@ data class AttackReleaseControl(
         }
     }
 
-    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String = "nil"
+    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String =
+        "ASRControl('$parameter', ${attack.now}, ${release.now})"
 
     private fun generateEnvelope(obj: ParameterizedObject): EnvelopeControl {
         val totalDuration = obj.duration()!!.now

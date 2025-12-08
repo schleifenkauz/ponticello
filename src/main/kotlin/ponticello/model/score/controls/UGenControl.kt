@@ -31,6 +31,7 @@ data class UGenControl(
     override fun copy(): ParameterControl = UGenControl(expr.clone())
 
     override fun initialize(context: Context, namedControl: NamedParameterControl) {
+        if (initialized) return
         super.initialize(context, namedControl)
         val myContext = context.extend {
             set(UndoManager, context[UndoManager]/*.createSubManager()*/)

@@ -55,13 +55,6 @@ class SoundProcess(
     override val type: String
         get() = "synth"
 
-    override val superColliderPrefix: String
-        get() = when (def) {
-            is SynthDefObject -> "~synth_"
-            is ProcessDefObject -> "~proc_"
-            else -> "~unknown_"
-        }
-
     override fun soundProcessName(objectName: String): String = "proc_${objectName}"
 
     override fun superColliderName(objectName: String): String = "SoundProcess.get('${soundProcessName}')"
@@ -168,6 +161,7 @@ class SoundProcess(
         if (resizeMode!!.isStretch && playBufRate != null) {
             playBufRate!!.now = playBufRateBeforeResize * (durationBeforeResize / duration)
         }
+        client.run("$superColliderName.duration = $duration")
     }
 
     fun reverse(reverseEnvelopes: Boolean) = context.compoundEdit("Reverse SoundProcess") {

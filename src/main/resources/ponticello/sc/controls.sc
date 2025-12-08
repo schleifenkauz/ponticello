@@ -50,13 +50,44 @@ ValueControl : ParameterControl {
 
 	allocatesBus { ^allocateBus && (cutoff_multiplier != 0) }
 
+	setAllocateBus { |allocate|
+		if (allocateBus != allocate) {
+			allocateBus = allocate;
+			if (allocate) {
+				if (cutoff_multiplier == 0) {
+					bus = Bus.control;
+					this.updateInstances { |inst|
+						inst.mapParameter(this.name, bus);
+					}
+				} {
+					this.updateInstances { |inst|
+						var bus = inst.createControlBus(this.name, value);
+						inst.mapParameter(this.name, bus);
+					}
+				}
+			} {
+				this.updateInstances { |inst|
+					inst.putArgument(this.name, value); //unmap
+				};
+				if (cutoff_multiplier == 0) {
+					bus.free; bus = nil;
+				} {
+					updateInstances { |inst|
+						inst.freeControlBus(this.name);
+					}
+				}
+			}
+		};
+	}
+
 	apply { |inst|
 		if (inst.type == \synth) {
 			inst.putArgument(this.name, value);
 		};
 	}
 
-	update { |value|
+	update { |val|
+		value = val;
 		if (allocateBus) {
 			if (bus != nil) { bus.set(value); } {
 				this.updateInstances { |inst|
@@ -216,7 +247,6 @@ LFOControl : ParameterControl {
 		references.do { |ref|
 			var ctrl = inst.def.getControl(ref);
 			var b = ctrl.getBus(inst);
-			postf("%.bus = %, allocatesBus: %, bus: %\n", ctrl.name, b, ctrl.allocatesBus, inst.getControlBus(ref));
 			if (b.notNil) {
 				synth.map(ref, b);
 			} {
@@ -225,7 +255,8 @@ LFOControl : ParameterControl {
 		}
 	}
 
-	update { |func|
+	update { |refs, func|
+		references = refs;
 		ugen_func = func;
 		this.defineSynth;
 		this.updateInstances { |inst|
@@ -244,8 +275,8 @@ LFOControl : ParameterControl {
 ExprControl : ParameterControl {
 	var func;
 
-	* new { |func|
-		^super.new.init(func);
+	* new { |name, func|
+		^super.new(name).init(func);
 	}
 
 	init { |f| func = f }
@@ -265,5 +296,31 @@ ExprControl : ParameterControl {
 				inst.putArgument(func.value(inst, inst.current_time));
 			}
 		}
+	}
+}
+
+ASRControl : ParameterControl {
+	var attack, release;
+
+	* new { |name, attack, release|
+		^super.new(name).init(attack, release);
+	}
+
+	init { |att, rel|
+		attack = att; release = rel;
+	}
+
+	getValue { |inst|
+
+	}
+
+	getUGen { |inst| }
+
+	apply { |inst|
+
+	}
+
+	update { |att, rel|
+		attack = att; release = rel;
 	}
 }

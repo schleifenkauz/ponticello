@@ -101,8 +101,6 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     override val registry: ScoreObjectRegistry
         get() = context[ScoreObjectRegistry]
 
-    open val superColliderPrefix: String? get() = null
-
     open fun duration(): ReactiveValue<Decimal> = _duration
 
     fun height(): ReactiveValue<Decimal> = _height

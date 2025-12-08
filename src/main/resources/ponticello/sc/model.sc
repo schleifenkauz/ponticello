@@ -1,6 +1,6 @@
 SoundProcess {
 	classvar dict;
-	var <>name, <def, <duration, <controls, control_map, instances, byPosition, instance_ctr;
+	var <>name, <def, <>duration, <controls, control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
@@ -78,12 +78,19 @@ SoundProcess {
 		ctrl.dispose;
 	}
 
+	moveControl { |parameter, idx|
+		var ctrl = control_map[parameter];
+		var old_idx = controls.indexOf(ctrl);
+		controls.removeAt(old_idx);
+		controls.insert(idx, ctrl);
+	}
+
 	replaceControl { |new_ctrl|
 		var parameter = new_ctrl.name;
 		var old_ctrl = control_map[parameter];
 		var idx = controls.indexOf(old_ctrl);
 		new_ctrl.sound_proc = this;
-		controls.put(parameter, new_ctrl);
+		control_map[parameter] = new_ctrl;
 		controls[idx] = new_ctrl;
 
 		if (old_ctrl.allocatesBus && new_ctrl.allocatesBus.not) {
@@ -165,7 +172,6 @@ SoundProcessInstance : AudioNode {
 
 	createAuxilSynth { |param_name, synth_def, args, replace = false|
 		var auxil_synth;
-		postf("Creating auxil synth % for % on %\n", synth_def, param_name, def.name);
 		auxil_synth = if (this.type == \synth) {
 			if (synth == nil) { Error("Cannot create auxiliary synth because, this.synth is nil.").throw };
 			Synth.newPaused(synth_def, args, target: synth, addAction: \addBefore)

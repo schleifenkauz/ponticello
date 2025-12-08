@@ -29,6 +29,7 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
     override fun initialize(context: Context, namedControl: NamedParameterControl) {
+        if (initialized) return
         super.initialize(context, namedControl)
         val myContext = context.extend {
             set(UndoManager, context[UndoManager]/*.createSubManager()*/)

@@ -123,7 +123,7 @@ class LFOsManager : ParameterControlList.Listener {
                     displayed.add(param)
                     display.fire(Triple(param, spec, lfo))
                 }
-                ctrl.update.fire()
+//                ctrl.update.fire()
             }
         }
     }

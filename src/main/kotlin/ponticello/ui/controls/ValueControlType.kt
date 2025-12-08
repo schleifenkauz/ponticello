@@ -1,7 +1,6 @@
 package ponticello.ui.controls
 
 import fxutils.controls.SliderBar
-import fxutils.label
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
@@ -26,7 +25,7 @@ import ponticello.sc.Transformation
 import ponticello.sc.mapOnto
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.ScoreObjectView
-import reaktive.value.binding.map
+import reaktive.value.forEach
 import reaktive.value.now
 
 data object ValueControlType : ControlType<ValueControl>() {
@@ -49,7 +48,8 @@ data object ValueControlType : ControlType<ValueControl>() {
     }
 
     override fun createSimpleInput(namedControl: NamedParameterControl, control: ValueControl): Node {
-        val valueLabel = label(control.value.map { v -> v.toString() })
+        val valueLabel = Label()
+        valueLabel.userData = control.value.forEach { v -> valueLabel.text = v.toString() }
         valueLabel.cursor = Cursor.V_RESIZE
         setupValueDragging(valueLabel, namedControl, control)
         valueLabel.setOnMouseClicked { ev ->

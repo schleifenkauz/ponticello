@@ -28,8 +28,6 @@ class TaskObject(
     override val type: String
         get() = "task"
 
-    override val superColliderPrefix: String get() = "~task"
-
     override val canResizeHorizontally: Boolean
         get() = false
 

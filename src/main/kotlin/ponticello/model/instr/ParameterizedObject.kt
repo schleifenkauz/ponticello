@@ -19,7 +19,7 @@ interface ParameterizedObject : NamedObject {
     fun duration(): ReactiveValue<Decimal>? = null
 
     fun getSpec(parameter: String): ControlSpec? =
-        def.getSpec(parameter)?.now ?: controls.getOrNull(parameter)?.spec?.now
+        controls.getOrNull(parameter)?.spec?.now ?: def.getSpec(parameter)?.now
 
     fun addControlsForAllObjectParameters() {
         for (param in def.allParameters()) {
