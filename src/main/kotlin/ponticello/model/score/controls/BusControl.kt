@@ -34,8 +34,8 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
         return checkResolution(obj, bus.now, "Bus")
     }
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
-        "ValueControl(${bus.now.superColliderName})"
+    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String =
+        "ValueControl('$parameter', ${bus.now.superColliderName})"
 
     companion object {
         fun create(bus: BusObject) = BusControl(reactiveVariable(bus.reference()))

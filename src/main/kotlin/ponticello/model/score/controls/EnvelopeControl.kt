@@ -86,9 +86,9 @@ class EnvelopeControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = spec is NumericalControlSpec
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
+    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String {
         val warp = if (spec is NumericalControlSpec) spec.warp else Warp.Linear
-        return "EnvelopeControl(${points.code(warp)})"
+        return "EnvelopeControl('$parameter', ${points.code(warp)})"
     }
 
     override fun editedEnvelope() {

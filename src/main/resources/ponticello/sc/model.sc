@@ -1,6 +1,6 @@
 SoundProcess {
 	classvar dict;
-	var <>name, <def, <duration, <controls, instances, byPosition, instance_ctr;
+	var <>name, <def, <duration, <controls, control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
@@ -22,9 +22,12 @@ SoundProcess {
 
 	init { |n, d, dur, ctrls|
 		name = n; def = d; duration = dur; controls = ctrls;
-		instances = Dictionary.new; byPosition = Dictionary.new;
+		instances = Dictionary.new; byPosition = Dictionary.new; control_map = Dictionary.new;
 		instance_ctr = 0;
-		controls.keysValuesDo { |param, ctrl| ctrl.initialize(this, param) };
+		controls.do { |ctrl|
+			ctrl.sound_proc = this;
+			control_map[ctrl.name] = ctrl;
+		};
 	}
 
 	* stopAllProcesses { |player_id|
@@ -54,11 +57,12 @@ SoundProcess {
 		^instances.values[0]
 	}
 
-	getControl { |parameter| ^controls[parameter] }
+	getControl { |parameter| ^control_map[parameter] }
 
-	addControl { |parameter, ctrl, idx|
-		ctrl.initialize(this, parameter);
-		controls[parameter] = ctrl;
+	addControl { |ctrl, idx|
+		ctrl.sound_proc = this;
+		controls.insert(idx, ctrl);
+		control_map[ctrl.name] = ctrl;
 		this.updateInstances { |inst|
 			ctrl.prepare(inst);
 			ctrl.apply(inst);
@@ -66,17 +70,22 @@ SoundProcess {
 	}
 
 	removeControl { |parameter, defaultValue|
-		var ctrl = controls.removeAt(parameter);
+		var ctrl = control_map.removeAt(parameter);
+		controls.remove(ctrl);
 		this.updateInstances { |inst|
 			inst.putArgument(parameter, defaultValue);
 		};
 		ctrl.dispose;
 	}
 
-	replaceControl { |parameter, new_ctrl|
-		var old_ctrl = controls[parameter];
-		new_ctrl.initialize(this, parameter);
+	replaceControl { |new_ctrl|
+		var parameter = new_ctrl.name;
+		var old_ctrl = control_map[parameter];
+		var idx = controls.indexOf(old_ctrl);
+		new_ctrl.sound_proc = this;
 		controls.put(parameter, new_ctrl);
+		controls[idx] = new_ctrl;
+
 		if (old_ctrl.allocatesBus && new_ctrl.allocatesBus.not) {
 			this.updateInstances { |inst|
 				inst.freeControlBus(parameter);
@@ -121,7 +130,7 @@ SoundProcess {
 
 SoundProcessInstance : AudioNode {
 	var <def, idx, <cutoff, <pos, midi_note, <playerId,
-	start_time, control_buses, auxil_synths, group, <synth, routine, onDispose;
+	start_time, control_buses, auxil_synths, group, <synth, routine, on_dispose;
 
 	* new { |def, idx, pos, cutoff = 0, midi_note = nil|
 		^super.new.init(def, idx, pos, cutoff, midi_note);
@@ -129,14 +138,14 @@ SoundProcessInstance : AudioNode {
 
 	init { |d, i, p, offset, midi|
 		def = d; idx = i; pos = p; cutoff = offset; midi_note = midi;
-		control_buses = (); auxil_synths = (); onDispose = [];
+		control_buses = (); auxil_synths = (); on_dispose = [];
 	}
 
 	type { ^def.type }
 
 	score_y { ^pos.y }
 
-	current_time { TempoClock.beats - start_time + cutoff }
+	current_time { ^TempoClock.beats - start_time + cutoff }
 
 	createControlBus { |name, initial_value|
 		var bus = Bus.control(Server.local, 1);
@@ -155,7 +164,9 @@ SoundProcessInstance : AudioNode {
 	}
 
 	createAuxilSynth { |param_name, synth_def, args, replace = false|
-		var auxil_synth = if (this.type == \synth) {
+		var auxil_synth;
+		postf("Creating auxil synth % for % on %\n", synth_def, param_name, def.name);
+		auxil_synth = if (this.type == \synth) {
 			if (synth == nil) { Error("Cannot create auxiliary synth because, this.synth is nil.").throw };
 			Synth.newPaused(synth_def, args, target: synth, addAction: \addBefore)
 		} { Synth.newPaused(synth_def, args, target: group, addAction: \addToTail) };
@@ -198,24 +209,19 @@ SoundProcessInstance : AudioNode {
 		}
 	}
 
-	getControlValue { |name| def.getControl(name).getValue(this) }
+	getControlValue { |name| ^def.getControl(name).getValue(this) }
 
-	getControlUGen { |name| def.getControl(name).getUGen(this) }
+	getControlUGen { |name| ^def.getControl(name).getUGen(this) }
 
 	onDispose { |func|
-		if (synth != nil) {
-			synth.onFree(func);
-		};
-		if (routine != nil) {
-			routine.addDependant { |obj, sig| if (sig == 'stopped') { func.value() } };
-		};
+		on_dispose.add(func);
 	}
 
 	dispose {
 		~ponticello_addr.sendMsg('/freed', -1, def.name, idx);
 		control_buses.do(_.free);
 		group.free;
-		onDispose.do(_.value);
+		on_dispose.do(_.value);
 		AudioNodeOrder.remove(this);
 		def.removeInstance(idx);
 	}

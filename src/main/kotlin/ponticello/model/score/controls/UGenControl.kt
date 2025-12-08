@@ -41,10 +41,11 @@ data class UGenControl(
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String {
-        val expr = substituteParameterReferences(expr.editor.result.now)
-        val references = expr.parameterReferences().joinToString(", ", "[", "]") { name -> "'$name'" }
-        return "LFOControl($references) { |cutoff| ${expr.code(context)} }"
+    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String {
+        val expr = expr.editor.result.now
+        val references = expr.parameterReferences().joinToString(", ", "[", "]") { name -> "'${name.getName()}'" }
+        val subst = substituteParameterReferences(expr)
+        return "LFOControl('$parameter', $references) { |cutoff| ${subst.code(context)} }"
     }
 
     companion object {

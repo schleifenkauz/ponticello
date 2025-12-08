@@ -1,20 +1,19 @@
 ParameterControl {
-	var <name, <sound_proc;
+	var <>name, <>sound_proc;
 
-	initialize { |proc, param_name|
-		sound_proc = proc;
-		name = param_name;
+	* new { |n|
+		^super.new.name_(n);
 	}
 
-	allocatesBus { false }
+	allocatesBus { ^false }
 
-	getBus { |inst| if (this.allocatesBus) { inst.getControlBus(this) } { nil } }
+	getBus { |inst| ^if (this.allocatesBus) { inst.getControlBus(this.name) } { nil } }
 
 	updateInstances { |func| sound_proc.updateInstances(func) }
 
-	getValue { |inst, t| }
+	getValue { |inst| ^nil }
 
-	getUGen { |inst| }
+	getUGen { |inst| ^nil }
 
 	prepare { |inst| }
 
@@ -26,19 +25,22 @@ ParameterControl {
 ValueControl : ParameterControl {
 	var value, allocateBus, cutoff_multiplier, bus;
 
-	* new { |value = 0, allocate_bus = false, cutoff_multiplier = 0|
-		^super.new.init(value, allocate_bus, cutoff_multiplier)
+	* new { |name, value, allocate_bus = false, cutoff_multiplier = 0|
+		^super.new(name).init(value, allocate_bus, cutoff_multiplier)
 	}
 
 	init { |val = 0, use_bus = false, multiplier = 0|
 		value = val;
 		allocateBus = use_bus;
 		cutoff_multiplier = multiplier;
+		if (allocateBus && (cutoff_multiplier == 0)) {
+			bus = Bus.control;
+		}
 	}
 
-	getBus { |inst| bus ? super.getBus(inst) }
+	getBus { |inst| ^bus ? super.getBus(inst) }
 
-	getValue { |inst, t| value + (cutoff_multiplier * inst.cutoff) }
+	getValue { |inst| ^value + (cutoff_multiplier * inst.cutoff) }
 
 	getUGen { |inst|
 		^if (allocateBus) {
@@ -46,14 +48,7 @@ ValueControl : ParameterControl {
 		} { value }
 	}
 
-	initialize { |proc, name|
-		super.initialize(proc, name);
-		if (allocateBus && (cutoff_multiplier == 0)) {
-			bus = Bus.control;
-		}
-	}
-
-	allocatesBus { allocateBus && (cutoff_multiplier != 0) }
+	allocatesBus { ^allocateBus && (cutoff_multiplier != 0) }
 
 	apply { |inst|
 		if (inst.type == \synth) {
@@ -86,17 +81,17 @@ ValueControl : ParameterControl {
 BusControl : ParameterControl {
 	var bus;
 
-	* new { |bus|
-		^super.new.init(bus)
+	* new { |name, bus|
+		^super.new(name).init(bus)
 	}
 
-	init { |b| bus = b  }
+	init { |b| bus = b }
 
-	getBus { bus }
+	getBus { ^bus }
 
-	getValue { |inst, t| bus.getSynchronous }
+	getValue { |inst| ^bus.getSynchronous }
 
-	getUGen { |inst| bus.kr }
+	getUGen { |inst| ^bus.kr }
 
 	apply { |inst|
 		inst.mapParameter(this.name, bus);
@@ -114,20 +109,18 @@ EnvelopeControl : ParameterControl {
 	classvar synth_def_ctr = 0;
 	var env, synth_def;
 
-	* new { |env|
-		^super.new.init(env)
+	* new { |name, env|
+		^super.new(name).init(env)
 	}
 
-	init { |e| env = e }
-
-	initialize { |proc, name|
-		super.initialize(proc, name);
-		synth_def = ("env" ++ synth_def_ctr).asSymbol;
+	init { |e|
+		env = e;
+		synth_def = ("env_" ++ name ++ synth_def_ctr).asSymbol;
 		synth_def_ctr = synth_def_ctr + 1;
 		this.defineSynth;
 	}
 
-	allocatesBus { true }
+	allocatesBus { ^true }
 
 	defineSynth {
 		SynthDef(synth_def) { |out, cutoff = 0|
@@ -136,7 +129,7 @@ EnvelopeControl : ParameterControl {
 		}.add;
 	}
 
-	getValue { |inst, t| ^env.at(t) }
+	getValue { |inst| ^env.at(inst.current_time) }
 
 	getUGen { |inst| ^inst.getControlBus(super.name).kr }
 
@@ -178,23 +171,19 @@ LFOControl : ParameterControl {
 	classvar synth_def_ctr = 0;
 	var references, ugen_func, synth_def;
 
-	* new { |references, ugen_func|
-		^super.new.init(references, ugen_func);
+	* new { |name, references, ugen_func|
+		^super.new(name).init(references, ugen_func);
 	}
 
 	init { |refs, func|
 		references = refs;
-		ugen_func = func
-	}
-
-	initialize { |proc, name|
-		super.initialize(proc, name);
-		synth_def = ("lfo" ++ synth_def_ctr).asSymbol;
+		ugen_func = func;
+		synth_def = ("lfo_" ++ name ++ synth_def_ctr).asSymbol;
 		synth_def_ctr = synth_def_ctr + 1;
 		this.defineSynth;
 	}
 
-	allocatesBus { true }
+	allocatesBus { ^true }
 
 	defineSynth {
 		SynthDef(synth_def) { |out, cutoff|
@@ -225,11 +214,13 @@ LFOControl : ParameterControl {
 			inst.createAuxilSynth(this.name, synth_def, args);
 		};
 		references.do { |ref|
-			var b = inst.def.getControl(ref).getBus(inst);
-			if (b != nil) {
+			var ctrl = inst.def.getControl(ref);
+			var b = ctrl.getBus(inst);
+			postf("%.bus = %, allocatesBus: %, bus: %\n", ctrl.name, b, ctrl.allocatesBus, inst.getControlBus(ref));
+			if (b.notNil) {
 				synth.map(ref, b);
 			} {
-				synth.set(ref, inst.getControlValue(ref));
+				synth.set(ref, ctrl.getValue(inst));
 			}
 		}
 	}
@@ -259,9 +250,9 @@ ExprControl : ParameterControl {
 
 	init { |f| func = f }
 
-	getValue { |inst, t| func.value(inst, t) }
+	getValue { |inst| ^func.value(inst.current_time) }
 
-	getUGen { |inst, t| this.getValue(inst, t) }
+	getUGen { |inst| ^this.getValue(inst) }
 
 	apply { |inst|
 		inst.putArgument(func.value(inst, 0));

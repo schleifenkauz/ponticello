@@ -114,9 +114,9 @@ data object UGenControlType : ControlType<UGenControl>() {
                 appendBlock("AppClock.sched(0)") {
                     +"var index = inst.getControlBus('$parameter').index"
                     +"var scope = Stethoscope.new(s, 1, index, rate:'control')"
-                }
-                appendBlock("inst.onDispose") {
-                    +"AppClock.sched(0.05) { scope.window.close; scope.quit; nil  }"
+                    appendBlock("inst.onDispose") {
+                        +"AppClock.sched(0.05) { scope.window.close; scope.quit; nil  }"
+                    }
                 }
             }
             appendBlock {

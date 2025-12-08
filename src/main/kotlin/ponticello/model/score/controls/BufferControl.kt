@@ -36,8 +36,8 @@ data class BufferControl(
         return checkResolution(obj, sample.now, "Sample")
     }
 
-    override fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String =
-        "ValueControl(${sample.get().superColliderName})"
+    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String =
+        "ValueControl('$parameter', ${sample.get().superColliderName})"
 
     companion object {
         fun create(buffer: BufferObject) = BufferControl(reactiveVariable(buffer.reference()))

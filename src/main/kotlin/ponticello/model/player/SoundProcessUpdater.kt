@@ -40,9 +40,8 @@ class SoundProcessUpdater<O>(
 
     override fun added(obj: NamedParameterControl, idx: Int) {
         observeControl(obj, obj.now)
-        val code = obj.now.writeCode(obj.spec.now, this.obj)
-        val paramName = obj.name.now
-        client.run("${this.obj.superColliderName}.addControl($paramName, $code, $idx)")
+        val code = obj.now.writeCode(obj.name.now, obj.spec.now, this.obj)
+        client.run("${this.obj.superColliderName}.addControl($code, $idx)")
     }
 
     override fun removed(obj: NamedParameterControl, idx: Int) {
@@ -98,8 +97,8 @@ class SoundProcessUpdater<O>(
         controlObservers.remove(oldControl)?.kill()
         val spec = parameter.spec.now
         val paramName = parameter.name.now
-        val code = newControl.writeCode(spec, obj)
-        client.run("${obj.superColliderName}.replaceControl('$paramName', $code)")
+        val code = newControl.writeCode(paramName, spec, obj)
+        client.run("${obj.superColliderName}.replaceControl($code)")
     }
 
     private fun updateControl(ctrl: NamedParameterControl, updateMessage: String) {

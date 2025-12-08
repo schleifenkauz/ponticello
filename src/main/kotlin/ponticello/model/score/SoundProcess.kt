@@ -284,14 +284,16 @@ class SoundProcess(
                 appendLine("name: '${obj.soundProcessName}',")
                 appendLine("def: ${obj.def.superColliderName},")
                 appendLine("duration: ${duration ?: "nil"},")
-                appendGroup("controls: ") {
+                append("controls: [")
+                indented {
                     for (ctrl in obj.controls) {
                         val parameter = ctrl.name.now
                         if (parameter == "attack-release") continue //TODO
-                        val expr = ctrl.now.writeCode(ctrl.spec.now, obj)
-                        appendLine("$parameter: $expr,")
+                        val expr = ctrl.now.writeCode(parameter, ctrl.spec.now, obj)
+                        appendLine("$expr,")
                     }
                 }
+                appendLine("]")
             }
     }
 }

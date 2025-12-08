@@ -22,7 +22,7 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     abstract fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean
 
-    abstract fun writeCode(spec: ControlSpec?, obj: ParameterizedObject): String
+    abstract fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String
 
     fun hasOwnSynth(obj: ParameterizedObject): Boolean = when (this) {
         is UGenControl -> true
