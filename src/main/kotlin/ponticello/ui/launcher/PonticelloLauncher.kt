@@ -30,7 +30,6 @@ import ponticello.impl.registerImplementationsFromClasspath
 import ponticello.model.GlobalSettings
 import ponticello.model.ServerOptions
 import ponticello.model.code.ScriptObject
-import ponticello.model.flow.NodeTree
 import ponticello.model.git.ProjectGitRepository
 import ponticello.model.instr.GlobalDefinitionLibrary
 import ponticello.model.obj.project
@@ -341,7 +340,6 @@ class PonticelloLauncher {
                     progressBar.displayProgress(0.1, "SuperCollider started, booting server...")
                     try {
                         context[SuperColliderClient] = client
-                        context[NodeTree] = NodeTree(client)
                         context[ScoreObjectScheduler] = ScoreObjectScheduler(context)
                         context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
                         context[Recorder] = Recorder(context)

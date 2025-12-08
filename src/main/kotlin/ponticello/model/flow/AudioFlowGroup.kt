@@ -15,55 +15,62 @@ import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
-import reaktive.value.*
-import reaktive.value.binding.map
+import ponticello.sc.client.run
+import reaktive.Observer
+import reaktive.value.ReactiveBoolean
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class AudioFlowGroup(
     private val active: ReactiveVariable<Boolean> = reactiveVariable(true),
-    override val yPosition: ReactiveVariable<Decimal>,
+    val yPosition: ReactiveVariable<Decimal>,
     val associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     val flows: AudioFlowList,
-) : AudioNode, AbstractRenamableObject(), ObjectList.Listener<AudioFlow> {
+) : AbstractRenamableObject(), ObjectList.Listener<AudioFlow> {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
-    override lateinit var superColliderName: ReactiveString
-        private set
+    private val audioNodeName get() = "~flows_${name.now}"
+    private val groupName get() = "${audioNodeName}.node"
 
     val isActive: ReactiveBoolean get() = active
-
-    override val startedAt: Decimal
-        get() = Decimal.NINF
 
     @Transient
     private lateinit var client: SuperColliderClient
 
-    private val nodeTree: NodeTree get() = context[NodeTree]
+    @Transient
+    private lateinit var yObserver: Observer
 
     override val registry: AudioFlows
         get() = context[AudioFlows]
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        superColliderName = name.map { name -> "~flows_$name" }
         client = context[SuperColliderClient]
         flows.initialize(context)
         flows.addListener(this, initialize = false)
         for (flow in flows) {
             flow.parentGroup = this
         }
+        yObserver = yPosition.observe { _, _, newY ->
+            client.run {
+                +"$audioNodeName.score_y = $newY"
+                +"AudioNodeOrder.moved($audioNodeName)"
+            }
+        }
     }
 
     fun toggleActive() {
         active.now = !active.now
         if (!active.now) freeGroup()
-        else createFlows()
+        else createGroupOnServer()
     }
 
     override fun added(obj: AudioFlow, idx: Int) {
         val placement = when {
-            idx == 0 -> NodePlacement.head(superColliderName.now)
+            idx == 0 -> NodePlacement.head(groupName)
             else -> NodePlacement.after(flows[idx - 1].superColliderName)
         }
         if (obj.parentGroup == this) {
@@ -85,7 +92,6 @@ class AudioFlowGroup(
         val name = obj.superColliderName
         val prev = previousActiveFlow(idx)
         if (prev == null) {
-            val groupName = superColliderName.now
             client.run("$name.moveToHead($groupName)")
         } else {
             client.run("$name.moveAfter(${prev.superColliderName})")
@@ -95,29 +101,28 @@ class AudioFlowGroup(
     fun getPlacement(flow: AudioFlow): NodePlacement {
         val idx = flows.indexOf(flow)
         return when (val prev = previousActiveFlow(idx)) {
-            null -> NodePlacement.head(superColliderName.now)
+            null -> NodePlacement.head(groupName)
             else -> NodePlacement.after(prev.superColliderName)
         }
     }
 
-    private fun addToServer(placement: NodePlacement) {
-        val groupName = superColliderName.now
-        client.eval(description = "creating group $groupName") {
-            +"$groupName = Group(${placement.target}, ${placement.addAction})"
-        }.join()
+    private fun createFlows() {
         for (flow in flows) {
             //join enforces that the synths are added in the right order
             flow.addToServer(placement = NodePlacement.tail(groupName)).join()
         }
     }
 
-    fun createFlows() {
-        val placement = nodeTree.addNode(this)
-        addToServer(placement)
+    fun createGroupOnServer() {
+        val scoreY = yPosition.now
+        client.eval(description = "creating group $audioNodeName") {
+            +"$audioNodeName = AudioNodeOrder.insertGroup(score_y: $scoreY)"
+        }.join()
+        createFlows()
     }
 
     override fun onAdded() {
-        if (isActive.now) createFlows()
+        if (isActive.now) createGroupOnServer()
     }
 
     override fun onRemoved() {
@@ -128,14 +133,15 @@ class AudioFlowGroup(
     }
 
     private fun freeGroup() {
-        context[NodeTree].removeNode(this)
-        client.run("${superColliderName.now}.free")
+        client.run("$groupName.free")
     }
 
     fun sync() {
         if (isActive.now) {
-            val placement = NodePlacement.replace(superColliderName.now)
-            addToServer(placement)
+            client.eval(description = "syncing group $audioNodeName") {
+                +"$groupName.free"
+            }
+            createFlows()
         }
     }
 

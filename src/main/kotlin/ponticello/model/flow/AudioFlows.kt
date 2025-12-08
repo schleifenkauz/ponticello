@@ -30,7 +30,6 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         context[AudioFlows] = this
         super.initialize(context)
         context[SuperColliderClient].onTreeCleared {
-            context[NodeTree].clear()
             addedToServer = false
             createAllFlows()
         }
@@ -40,7 +39,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         if (addedToServer) return
         for (group in this) {
             if (!group.isActive.now) continue
-            group.createFlows()
+            group.createGroupOnServer()
         }
         addedToServer = true
     }

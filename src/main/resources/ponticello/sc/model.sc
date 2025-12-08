@@ -1,6 +1,6 @@
 SoundProcess {
 	classvar dict;
-	var <>name, <def, <>duration, <controls, control_map, instances, byPosition, instance_ctr;
+	var <>name, <instr, <>duration, <controls, control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
@@ -12,16 +12,16 @@ SoundProcess {
 		dict[name] = proc;
 	}
 
-	* create { |name, def, duration, controls|
-		var proc = super.new.init(name, def, duration, controls);
+	* create { |name, instr, duration, controls|
+		var proc = super.new.init(name, instr, duration, controls);
 		dict[name] = proc;
 		^proc;
 	}
 
 	* get { |name| ^dict[name] }
 
-	init { |n, d, dur, ctrls|
-		name = n; def = d; duration = dur; controls = ctrls;
+	init { |n, i, dur, ctrls|
+		name = n; instr = i; duration = dur; controls = ctrls;
 		instances = Dictionary.new; byPosition = Dictionary.new; control_map = Dictionary.new;
 		instance_ctr = 0;
 		controls.do { |ctrl|
@@ -43,7 +43,11 @@ SoundProcess {
 	}
 
 	type {
-		^if (def.isMemberOf(Symbol)) { \synth } { \routine }
+		^switch (instr.class)
+		{ Symbol } { \synth }
+		{ VSTPluginController } { \vst_midi }
+		{ Function } { \routine }
+		{ Error("Invalid instrument type %".format(instr)).throw }
 	}
 
 	getInstance { |idx| ^instances[idx] }
@@ -61,7 +65,7 @@ SoundProcess {
 
 	addControl { |ctrl, idx|
 		ctrl.sound_proc = this;
-		controls.insert(idx, ctrl);
+		controls = controls.insert(idx, ctrl);
 		control_map[ctrl.name] = ctrl;
 		this.updateInstances { |inst|
 			ctrl.prepare(inst);
@@ -82,7 +86,7 @@ SoundProcess {
 		var ctrl = control_map[parameter];
 		var old_idx = controls.indexOf(ctrl);
 		controls.removeAt(old_idx);
-		controls.insert(idx, ctrl);
+		controls = controls.insert(idx, ctrl);
 	}
 
 	replaceControl { |new_ctrl|
@@ -109,17 +113,19 @@ SoundProcess {
 		}
 	}
 
-	createInstance { |pos, cutoff, midi_note|
-		var inst = SoundProcessInstance.new(this, instance_ctr, pos, cutoff ? 0, midi_note);
+	createInstance { |pos, cutoff = 0, extra_args|
+		var inst = SoundProcessInstance.new(this, instance_ctr, pos, cutoff ? 0, extra_args ? ());
 		instances.put(instance_ctr, inst);
-		byPosition[pos] = inst;
+		if (pos != nil) {
+			byPosition[pos] = inst;
+		};
 		instance_ctr = instance_ctr + 1;
 		^inst
 	}
 
-	startNewInstance { |pos, cutoff, midi_note, server_latency, player_id|
-		var inst = this.createInstance(pos, cutoff, midi_note);
-		var placement = AudioNodeOrder.insert(inst);
+	startNewInstance { |pos, cutoff, extra_args, server_latency, player_id|
+		var inst = this.createInstance(pos, cutoff, extra_args);
+		var placement = if (this.type != \vst_midi) { AudioNodeOrder.insert(inst) };
 		inst.start(placement, server_latency, player_id);
 	}
 
@@ -136,16 +142,16 @@ SoundProcess {
 }
 
 SoundProcessInstance : AudioNode {
-	var <def, idx, <cutoff, <pos, midi_note, <playerId,
-	start_time, control_buses, auxil_synths, group, <synth, routine, on_dispose;
+	var <def, idx, <cutoff, <pos, extra_args, <playerId,
+	start_time, control_buses, auxil_synths, group, <synth, routine, midinote, channel, on_dispose;
 
 	* new { |def, idx, pos, cutoff = 0, midi_note = nil|
 		^super.new.init(def, idx, pos, cutoff, midi_note);
 	}
 
-	init { |d, i, p, offset, midi|
-		def = d; idx = i; pos = p; cutoff = offset; midi_note = midi;
-		control_buses = (); auxil_synths = (); on_dispose = [];
+	init { |d, i, p, offset, extra|
+		def = d; idx = i; pos = p; cutoff = offset; extra_args = extra;
+		control_buses = Dictionary.new; auxil_synths = Dictionary.new; on_dispose = [];
 	}
 
 	type { ^def.type }
@@ -161,7 +167,11 @@ SoundProcessInstance : AudioNode {
 		^bus
 	}
 
-	getControl { |name| ^def.getControl(name) }
+	getControl { |name|
+		^if (extra_args.includesKey(name)) {
+			ValueControl.new(name, extra_args[name])
+		} { def.getControl(name) }
+	}
 
 	getControlBus { |name| ^control_buses[name] }
 
@@ -193,16 +203,21 @@ SoundProcessInstance : AudioNode {
 	}
 
 	mapParameter { |name, bus|
-		if (this.type == \synth) {
-			if (synth == nil) { Error("Cannot map parameter because this.synth is nil.").throw };
-			synth.map(name, bus);
+		if (extra_args.includesKey(name).not) {
+			if (this.type == \synth) {
+				if (synth == nil) { Error("Cannot map parameter because this.synth is nil.").throw };
+				synth.map(name, bus);
+			}
 		}
 	}
 
 	putArgument { |name, value|
-		if (synth != nil) {
-			synth.set(name, value);
-		};
+		if (extra_args.includesKey(name).not) {
+			if (this.type == \synth) {
+				if (synth == nil) { Error("Cannot set control because this.synth is nil.").throw };
+				synth.set(name, value);
+			}
+		}
 	}
 
 	setDefaultValue { |parameter|
@@ -215,20 +230,28 @@ SoundProcessInstance : AudioNode {
 		}
 	}
 
-	getControlValue { |name| ^def.getControl(name).getValue(this) }
+	getControlValue { |name|
+		^extra_args[name] ? def.getControl(name) !? { |ctrl| ctrl.getValue(this) }
+	}
 
-	getControlUGen { |name| ^def.getControl(name).getUGen(this) }
+	getControlUGen { |name|
+		^extra_args[name] ? def.getControl(name) !? { |ctrl| ctrl.getUGen(this) }
+	}
 
 	onDispose { |func|
-		on_dispose.add(func);
+		on_dispose = on_dispose.add(func);
 	}
 
 	dispose {
-		~ponticello_addr.sendMsg('/freed', -1, def.name, idx);
+		~ponticello_addr.sendMsg('/stopped', -1, def.name, idx);
 		control_buses.do(_.free);
-		group.free;
+		if (def.type != \vst_midi) {
+			group.free;
+			if (pos != nil) {
+				AudioNodeOrder.remove(this);
+			}
+		};
 		on_dispose.do(_.value);
-		AudioNodeOrder.remove(this);
 		def.removeInstance(idx);
 	}
 
@@ -236,15 +259,23 @@ SoundProcessInstance : AudioNode {
 		var duration = def.duration !? { def.duration - cutoff };
 		start_time = TempoClock.beats;
 		playerId = player_id;
-		group = Group.new(placement.target, placement.addAction);
-		def.controls.do { |ctrl| ctrl.prepare(this) };
+		if (placement != nil) {
+			group = Group.new(placement.target, placement.addAction);
+		};
+		def.controls.do { |ctrl|
+			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) } { postf("skipping %\n", ctrl.name) };
+		};
 		if (this.type == \synth) {
 			var auto_release = (duration != nil).asInteger;
-			var args = [duration: duration ? inf, auto_release: auto_release];
-			synth = Synth.newPaused(def.def, args, group, \addToTail);
+			var args = List[duration: duration ? inf, auto_release: auto_release];
+			extra_args.keysValuesDo { |p, v| args = args.addAll([p, v]) };
+			synth = Synth.newPaused(def.instr, args, group, \addToTail);
 		};
-		def.controls.do { |ctrl| ctrl.apply(this) };
-		if (this.type == \synth) {
+		def.controls.do { |ctrl|
+			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) } { postf("skipping %\n", ctrl.name) };
+		};
+		switch (this.type)
+		{ \synth }{
 			if (run) {
 				var start = {
 					Server.local.sync;
@@ -252,20 +283,30 @@ SoundProcessInstance : AudioNode {
 					synth.run;
 				};
 				if (latency != 0) {
-					latency = latency - (TempoClock.beats - start_time);
+					//latency = latency - (TempoClock.beats - start_time);
 					Server.local.makeBundle(latency, start);
 				} {
 					start.value();
 				};
 			};
 			synth.onFree { this.dispose };
-		} {
+		} { \routine } {
 			routine = Task {
-				def.value(this);
+				def.instr.value(player_id, this);
 				this.dispose;
 			};
 			if (run) { routine.play };
-		}
+		} { \vst_midi } {
+			var velocity = this.getControlValue(\velocity);
+			channel = this.getControlValue(\channel) ? 0;
+			midinote = this.getControlValue(\midinote);
+			TempoClock.sched(latency) {
+				def.instr.midi.noteOn(channel, midinote, velocity);
+			};
+			TempoClock.sched(latency + def.duration) {
+				def.instr.midi.noteOff(channel, midinote, velocity);
+			}
+		};
 	}
 
 	setRunning { |active|
@@ -282,5 +323,9 @@ SoundProcessInstance : AudioNode {
 	release {
 		if (synth != nil) { synth.release };
 		if (routine != nil) { routine.stop };
+		if (midinote != nil) {
+			def.instr.midi.noteOff(midinote, channel);
+			this.dispose;
+		};
 	}
 }

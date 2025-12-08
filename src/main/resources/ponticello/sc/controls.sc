@@ -245,7 +245,7 @@ LFOControl : ParameterControl {
 			inst.createAuxilSynth(this.name, synth_def, args);
 		};
 		references.do { |ref|
-			var ctrl = inst.def.getControl(ref);
+			var ctrl = inst.getControl(ref);
 			var b = ctrl.getBus(inst);
 			if (b.notNil) {
 				synth.map(ref, b);

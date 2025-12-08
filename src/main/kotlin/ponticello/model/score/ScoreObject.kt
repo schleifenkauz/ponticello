@@ -127,7 +127,7 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         pos: ObjectPosition,
         cutoff: Decimal,
         instance: ScoreObjectInstance?,
-        latency: Decimal,
+        serverLatency: Decimal,
         player: ScorePlayer,
         extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String {

@@ -62,7 +62,7 @@ class TaskObject(
 
     override fun startNewInstance(
         pos: ObjectPosition, cutoff: Decimal, instance: ScoreObjectInstance?,
-        latency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
+        serverLatency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String = writeCode(group = !synchronized) {
         if (!synchronized) {
             sync()

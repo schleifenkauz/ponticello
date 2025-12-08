@@ -20,13 +20,17 @@ import ponticello.model.obj.withName
 import ponticello.model.player.ScorePlayer
 import ponticello.model.player.SoundProcessUpdater
 import ponticello.model.score.controls.*
-import ponticello.sc.*
+import ponticello.sc.BufferControlSpec
+import ponticello.sc.BufferPositionControlSpec
+import ponticello.sc.ControlSpec
+import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.ScWriter
 import ponticello.ui.misc.LFOsManager
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
+import kotlin.math.pow
 
 @Serializable
 @SerialName("SoundProcess")
@@ -201,59 +205,26 @@ class SoundProcess(
 
     override fun startNewInstance(
         pos: ObjectPosition, cutoff: Decimal, instance: ScoreObjectInstance?,
-        latency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
+        serverLatency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
     ): String {
-        val midiNote = "nil"
-        return "$superColliderName.startNewInstance($pos, $cutoff, $midiNote, $latency, ${player.id})"
+        val extraArgs = extraArguments.entries.associateTo(mutableMapOf()) { (param, ctrl) ->
+            val valueCtrl = ctrl as? ValueControl ?: error("Expected ValueControl for $param")
+            param.name.now to valueCtrl.value.now
+        }
+        var latency = serverLatency
+        val midiObject = instance?.score?.parentObject as? MidiObject
+        if (midiObject != null) {
+            val midinote = instance.y
+            extraArgs["midinote"] = midinote
+            if (def is SynthDefObject || def is ProcessDefObject) {
+                val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
+                extraArgs["freq"] = freq
+            }
+            latency -= (midiObject.latencyMs.now / 1000.toDecimal())
+        }
+        val extraArgsString = extraArgs.entries.joinToString(", ", "(", ")") { (name, value) -> "$name: $value" }
+        return "$superColliderName.startNewInstance($pos, $cutoff, $extraArgsString, $serverLatency, ${player.id})"
     }
-
-    //    override fun writeCode(): String = writeCode {
-//        var controlMap = controls.toMap() + extraArguments
-//        var latency = serverLatency
-//        val midiObject = instance?.score?.parentObject as? MidiObject
-//        if (midiObject != null) {
-//            val midinote = instance.y
-//            val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
-//            val pitchControls = mapOf(
-//                ParameterDefObject.MIDINOTE to ValueControl.create(midinote),
-//                ParameterDefObject.FREQ to ValueControl.create(freq),
-//            )
-//            controlMap = midiObject.controls.toMap() + pitchControls + controlMap
-//            latency -= (midiObject.latencyMs.now / 1000.toDecimal())
-//        }
-//        when (val instr = def) {
-//            is SynthDefObject -> {
-//                writeSynthCode(
-//                    this@SoundProcess, uniqueName, cutoff, placement!!,
-//                    latency, controlMap + extraArguments, run = true
-//                )
-//            }
-//
-//            is ProcessDefObject -> {
-//                writeProcessCode(
-//                    this@SoundProcess, uniqueName,
-//                    cutoff, controlMap + extraArguments
-//                )
-//            }
-//
-//            is VSTInstrumentObject -> {
-//                val controllerVar = instr.flow.controllerVar
-//                val velocityCtrl = extraArguments.entries.find { (k, _) -> k.name.now == "velocity" }?.value
-//                    ?: controls.getOrNull("velocity")?.now
-//                    ?: midiObject?.controls?.getControl("velocity")
-//
-//                val velocity = velocityCtrl.controlToExprString() ?: "64"
-//                val midinoteCtrl = extraArguments.entries.find { (k, _) -> k.name.now == "midinote" }?.value
-//                    ?: controls.getOrNull("midinote")?.now
-//                    ?: midiObject?.controls?.getControl("midinote")
-//                val midinote = midinoteCtrl?.controlToExprString() ?: instance?.y?.toString() ?: "60"
-//                +"TempoClock.sched($latency) { $controllerVar.midi.noteOn(0, $midinote, $velocity) }"
-//                +"TempoClock.sched(${duration + latency}) { $controllerVar.midi.noteOff(0, $midinote) }"
-//            }
-//
-//            is NoInstrument -> Logger.error("$this has no instrument assigned")
-//        }
-//    }
 
     companion object {
         fun create(
@@ -261,22 +232,10 @@ class SoundProcess(
             controls: ParameterControlList = ParameterControlList.empty(),
         ): SoundProcess = SoundProcess(reactiveVariable(instrument), controls).withName(name)
 
-        private fun ParameterControl?.controlToExprString(): String? =
-            when (this) {
-                is BusValueControl -> "${bus.get().superColliderName}.getSynchronous"
-                is ExprControl -> expr.editor.result.now.code(context)
-                is ValueControl -> value.now.toString()
-                null -> null
-                else -> {
-                    Logger.warn("Invalid velocity control: $this", Logger.Category.Playback)
-                    null
-                }
-            }
-
         fun createSoundProcessObject(writer: ScWriter, obj: ParameterizedObject, duration: Decimal?) =
             writer.appendGroup("SoundProcess.create") {
                 appendLine("name: '${obj.soundProcessName}',")
-                appendLine("def: ${obj.def.superColliderName},")
+                appendLine("instr: ${obj.def.superColliderName},")
                 appendLine("duration: ${duration ?: "nil"},")
                 append("controls: [")
                 indented {

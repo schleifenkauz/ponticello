@@ -59,7 +59,7 @@ class ProcessDefObject(
         createObject()
     }
 
-    override fun ScWriter.createObject() {
+    override fun ScWriter.createObject() { //TODO update
         val setup = setupBlock.editor.result.now
         val loop = loopBlock.editor.result.now
         val delta = deltaExpr.editor.result.now
