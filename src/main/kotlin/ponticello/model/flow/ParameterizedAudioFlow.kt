@@ -49,7 +49,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     }
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        +"$superColliderName = SoundProcess.get('flow_${name.now}').createInstance"
+        +"$superColliderName = SoundProcess.get('flow_${name.now}').createInstance(extra_args: (auto_release: 0))"
         +"$superColliderName.start($placement, 0, -1, ${isActive.now})"
     }
 

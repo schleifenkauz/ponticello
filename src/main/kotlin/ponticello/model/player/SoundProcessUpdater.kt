@@ -11,6 +11,7 @@ import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.code
 import reaktive.Observer
+import reaktive.and
 import reaktive.value.now
 import reaktive.value.observe
 
@@ -47,7 +48,7 @@ class SoundProcessUpdater<O>(
     override fun removed(obj: NamedParameterControl, idx: Int) {
         controlObservers.remove(obj.now)?.kill()
         val parameter = obj.name.now
-        val default = obj.spec.now?.defaultValueExpr
+        val default = obj.spec.now?.defaultValueExpr ?: "nil"
         client.run("${this.process.superColliderName}.removeControl('$parameter', $default)")
     }
 
@@ -69,7 +70,12 @@ class SoundProcessUpdater<O>(
                 updateControl(parameter, "update(${buf.superColliderName})")
             }
 
-            is AttackReleaseControl -> return //TODO
+            is AttackReleaseControl -> control.attack.observe { _, _, att ->
+                updateControl(parameter, "setAttack($att)")
+            } and control.release.observe { _, _, rel ->
+                updateControl(parameter, "setRelease($rel)")
+            }
+
             is EnvelopeControl -> control.update.stream.observe { _ ->
                 val warp = (parameter.spec.now as? NumericalControlSpec)?.warp ?: Warp.Linear
                 val code = control.points.code(warp)

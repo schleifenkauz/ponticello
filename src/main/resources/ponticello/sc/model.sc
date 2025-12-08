@@ -127,6 +127,7 @@ SoundProcess {
 		var inst = this.createInstance(pos, cutoff, extra_args);
 		var placement = if (this.type != \vst_midi) { AudioNodeOrder.insert(inst) };
 		inst.start(placement, server_latency, player_id);
+		^inst.idx;
 	}
 
 	updateInstances { |func|
@@ -142,7 +143,7 @@ SoundProcess {
 }
 
 SoundProcessInstance : AudioNode {
-	var <def, idx, <cutoff, <pos, extra_args, <playerId,
+	var <def, <idx, <cutoff, <pos, extra_args, <playerId,
 	start_time, control_buses, auxil_synths, group, <synth, routine, midinote, channel, on_dispose;
 
 	* new { |def, idx, pos, cutoff = 0, midi_note = nil|
@@ -157,6 +158,8 @@ SoundProcessInstance : AudioNode {
 	type { ^def.type }
 
 	score_y { ^pos.y }
+
+	node { ^group }
 
 	current_time { ^TempoClock.beats - start_time + cutoff }
 
@@ -256,23 +259,23 @@ SoundProcessInstance : AudioNode {
 	}
 
 	start { |placement, latency, player_id, run = true|
-		var duration = def.duration !? { def.duration - cutoff };
+		var duration = def.duration !? { |dur| dur - cutoff };
 		start_time = TempoClock.beats;
 		playerId = player_id;
 		if (placement != nil) {
+			Server.local.sync;
 			group = Group.new(placement.target, placement.addAction);
 		};
 		def.controls.do { |ctrl|
-			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) } { postf("skipping %\n", ctrl.name) };
+			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) };
 		};
 		if (this.type == \synth) {
-			var auto_release = (duration != nil).asInteger;
-			var args = List[duration: duration ? inf, auto_release: auto_release];
+			var args = List[duration: duration];
 			extra_args.keysValuesDo { |p, v| args = args.addAll([p, v]) };
 			synth = Synth.newPaused(def.instr, args, group, \addToTail);
 		};
 		def.controls.do { |ctrl|
-			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) } { postf("skipping %\n", ctrl.name) };
+			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
 		};
 		switch (this.type)
 		{ \synth }{
@@ -321,7 +324,10 @@ SoundProcessInstance : AudioNode {
 	}
 
 	release {
-		if (synth != nil) { synth.release };
+		if (synth != nil) {
+			postf("Releasing % #% (%)\n", def.name, idx, synth);
+			synth.set(\gate, 0);
+		};
 		if (routine != nil) { routine.stop };
 		if (midinote != nil) {
 			def.instr.midi.noteOff(midinote, channel);

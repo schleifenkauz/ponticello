@@ -113,7 +113,7 @@ sealed class ItemTarget : AbstractContextualObject() {
         val ref: ScoreObjectReference,
         val yPosition: ReactiveVariable<Decimal>,
     ) : ItemTarget() {
-        var velocityParameter: ReactiveVariable<ParameterDefReference> = reactiveVariable(ObjectReference.none())
+        val velocityParameter: ReactiveVariable<String?> = reactiveVariable(null)
 
         private var instanceId: Int = -1
 
@@ -133,15 +133,7 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            val obj = ref.resolve(context[ScoreObjectRegistry])
-            val velocityParam = velocityParameter.now
-            if (obj is ParameterizedObject) {
-                val paramName = velocityParam.getName()
-                velocityParameter.now = obj.def.getParameter(paramName)?.reference()
-                    ?: velocityParam.also { it.setUnresolved() }
-            } else {
-                velocityParameter.now.setUnresolved()
-            }
+            ref.resolve(context[ScoreObjectRegistry])
         }
 
         override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
@@ -154,12 +146,19 @@ sealed class ItemTarget : AbstractContextualObject() {
                 val position = ObjectPosition(time, yPosition.now)
                 val totalDelay = quantizationDelay.coerceAtMost(context.playbackSettings.lookAhead)
                 val extraArguments = mutableMapOf<ParameterDefObject, ParameterControl>()
-                val velocityParameter = velocityParameter.now.get()
-                val spec = velocityParameter?.spec?.now as? NumericalControlSpec
-                if (obj is ParameterizedObject && spec != null) {
-                    val transform = spec.mapOnto(0.0, 127.0)
-                    val value = transform.unmap(velocity.toDouble()).toDecimal().withPrecision(spec.precision)
-                    extraArguments[velocityParameter] = ValueControl.create(value)
+                val velocityParam = velocityParameter.now
+                if (obj is ParameterizedObject && velocityParam != null) {
+                    val velocityCtrl = obj.controls.get(velocityParam)
+                    val spec = velocityCtrl.spec.now
+                    if (spec is NumericalControlSpec) {
+                        val transform = spec.mapOnto(0.0, 127.0)
+                        val value = transform.unmap(velocity.toDouble()).toDecimal().withPrecision(spec.precision)
+                        val param = ParameterDefObject(velocityParam, spec)
+                        extraArguments[param] = ValueControl.create(value)
+                    }
+                }
+                if (item.stopOnRelease.now) {
+                    extraArguments[ParameterDefObject.AUTO_RELEASE] = ValueControl.create(zero)
                 }
                 ScorePlayer.execute {
                     grid.scheduler.scheduleObject(

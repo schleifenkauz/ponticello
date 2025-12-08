@@ -33,8 +33,8 @@ class ScoreObjectViewPane : ToolPane() {
     override val title: ReactiveValue<String> =
         displayedObject.flatMap { obj -> obj?.name ?: reactiveValue("No object selected") }
 
-    private var playerPane: ScoreObjectPlayerPane? = null
-        set(value) {
+    var playerPane: ScoreObjectPlayerPane? = null
+        private set(value) {
             field = value
             content = if (value == null) Region() else {
                 value.borderPane.prefHeightProperty().bind(heightProperty().subtract(header.heightProperty()))

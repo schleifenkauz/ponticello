@@ -154,7 +154,7 @@ class LauncherGrid private constructor(
                 if (value is ItemTarget.Object) {
                     val target = value.targetObject
                     if (target is SoundProcess && target.def.hasParameter("level")) {
-                        value.velocityParameter.now = target.def.getParameter("level")!!.reference()
+                        value.velocityParameter.now = "level"
                     }
                 }
             }

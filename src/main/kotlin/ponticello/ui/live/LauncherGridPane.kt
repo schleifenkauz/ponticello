@@ -37,8 +37,6 @@ import ponticello.model.player.ScorePlayer
 import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
-import ponticello.model.registry.ObjectReference
-import ponticello.model.registry.reference
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.ParameterType
 import ponticello.sc.Warp
@@ -51,8 +49,12 @@ import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.registry.ParameterDefSelectorPrompt
 import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.score.FlowGroupManager
+import ponticello.ui.score.ScoreObjectDetailPane
 import ponticello.ui.score.ScoreObjectViewPane
-import reaktive.value.binding.*
+import reaktive.value.binding.and
+import reaktive.value.binding.impl.notNull
+import reaktive.value.binding.map
+import reaktive.value.binding.not
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
@@ -194,9 +196,12 @@ class LauncherGridPane(
                             when (liveObject) {
                                 is LiveTaskObject ->
                                     target.context[AppLayout].get<LiveObjectRegistryPane>().showContent(liveObject)
+
                                 is LiveScoreObject -> {
                                     val objectsPane = target.context[AppLayout].get<ScoreObjectViewPane>()
                                     objectsPane.showContent(liveObject)
+                                    val focusedView = objectsPane.playerPane?.scorePane?.getSingleObjectView()
+                                    target.context[AppLayout].get<ScoreObjectDetailPane>().viewDetails(focusedView)
                                 }
                             }
                         }
@@ -205,6 +210,8 @@ class LauncherGridPane(
                             val obj = target.ref.get() ?: return@executes
                             val objectsPane = obj.context[AppLayout].get<ScoreObjectViewPane>()
                             objectsPane.showContent(obj)
+                            val focusedView = objectsPane.playerPane?.scorePane?.getSingleObjectView()
+                            obj.context[AppLayout].get<ScoreObjectDetailPane>().viewDetails(focusedView)
                         }
 
                         is ItemTarget.Script -> {
@@ -220,22 +227,18 @@ class LauncherGridPane(
                 applicableIf { target -> target is ItemTarget.Object && target.targetObject is ParameterizedObject }
                 icon { target ->
                     if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(null)
-                    else `if`(
-                        target.velocityParameter.flatMap { p -> p.isResolved or (p.getName() == "level") },
-                        then = { MaterialDesignA.ALPHA_V_BOX },
-                        otherwise = { MaterialDesignA.ALPHA_V_BOX_OUTLINE }
-                    )
+                    else reactiveValue(MaterialDesignA.ALPHA_V_BOX)
                 }
                 toggleState { target ->
                     if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(false)
-                    else target.velocityParameter.map { it != ObjectReference.none<ParameterDefObject>() }
+                    else target.velocityParameter.notNull()
                 }
                 executes { target, ev ->
                     val obj = target.targetObject as? ParameterizedObject ?: return@executes
                     when {
                         target !is ItemTarget.Object -> {}
                         ev is MouseEvent && ev.button == MouseButton.SECONDARY -> {
-                            target.velocityParameter.set(ObjectReference.none())
+                            target.velocityParameter.set(null)
                         }
 //                        ev.isShiftDown() -> {
 //                            val velocityParam = target.velocityParameter.now.get() ?: return@executes
@@ -243,17 +246,19 @@ class LauncherGridPane(
 //                                ?.showDialog(ev)
 //                        }
                         else -> {
-                            val oldVelocityParam = target.velocityParameter.now
+                            val oldVelocityParam = target.velocityParameter.now?.let { name ->
+                                obj.getSpec(name)?.let { spec -> ParameterDefObject(name, spec) }
+                            }
                             val newVelocityParam = ParameterDefSelectorPrompt(
                                 obj.def.allParameters(), "Select velocity parameter",
                                 fixedParameterType = ParameterType.Numerical
-                            ).showPopup(ev, initialOption = oldVelocityParam.get()) ?: return@executes
-                            if (newVelocityParam != oldVelocityParam.get()) {
-                                val ref = newVelocityParam.reference()
-                                target.velocityParameter.set(ref)
+                            ).showPopup(ev, initialOption = oldVelocityParam) ?: return@executes
+                            if (newVelocityParam != oldVelocityParam) {
+                                val newParamName = newVelocityParam.name.now
+                                target.velocityParameter.set(newParamName)
                                 target.context[UndoManager].record(
                                     VariableEdit(
-                                        target.velocityParameter, oldVelocityParam, ref,
+                                        target.velocityParameter, oldVelocityParam?.name?.now, newParamName,
                                         "Select velocity parameter"
                                     )
                                 )

@@ -241,7 +241,6 @@ class SoundProcess(
                 indented {
                     for (ctrl in obj.controls) {
                         val parameter = ctrl.name.now
-                        if (parameter == "attack-release") continue //TODO
                         val expr = ctrl.now.writeCode(parameter, ctrl.spec.now, obj)
                         appendLine("$expr,")
                     }

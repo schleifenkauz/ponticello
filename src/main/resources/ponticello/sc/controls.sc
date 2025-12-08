@@ -311,16 +311,32 @@ ASRControl : ParameterControl {
 	}
 
 	getValue { |inst|
-
+		var t = inst.current_time;
+		^case
+		{ t <= attack } { t / attack }
+		{ t <= inst.def.duration - release } { 1 }
+		{ t <= inst.def.duration } { (inst.def.duration - t) / release }
+		{ 0 }
 	}
 
-	getUGen { |inst| }
+	getUGen { |inst| nil }
 
 	apply { |inst|
-
+		inst.putArgument('attack', attack);
+		inst.putArgument('release', release);
 	}
 
-	update { |att, rel|
-		attack = att; release = rel;
+	setAttack { |att|
+		attack = att;
+		this.updateInstances { |inst|
+			inst.putArgument('attack', attack);
+		}
+	}
+
+	setRelease { |rel|
+		release = rel;
+		this.updateInstances { |inst|
+			inst.putArgument('release', release);
+		}
 	}
 }

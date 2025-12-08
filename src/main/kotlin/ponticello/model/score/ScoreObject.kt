@@ -119,7 +119,7 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     override fun superColliderName(objectName: String): String = "~obj_$objectName"
 
     override fun ScWriter.createObject() {
-        if (affectsPlayback) throw NotImplementedError("createObject not implemented for $this")
+        if (affectsPlayback) throw NotImplementedError("createObject not implemented for ${this@ScoreObject}")
 
     }
 

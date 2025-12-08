@@ -11,6 +11,7 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveValue
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 class ScorePlayer private constructor(
@@ -142,9 +143,10 @@ class ScorePlayer private constructor(
         val timeRange = time..time + lookAhead
         val events = mutableListOf<ScoreEvent>()
         events.collectEvents(score, timeRange, withCutoff = true)
+        events.sortBy { ev -> ev.absolutePosition.y }
         for ((type, position, inst) in events) {
             if (type == ScoreEvent.Type.ObjectStart) {
-                scheduleInstantly(inst, position)
+                scheduleInstantly(inst, position)?.join()
             }
         }
     }
@@ -167,13 +169,13 @@ class ScorePlayer private constructor(
     }
 
     //Only inside ScorePlayer.execute
-    fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition) {
+    fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition): CompletableFuture<Int?>? {
         val obj = inst.obj
         val delta = position.time - playHead.currentTime
         val cutoff = (-delta).coerceAtLeast(zero)
-        if (cutoff >= inst.obj.duration) return
+        if (cutoff >= inst.obj.duration) return null
         Logger.fine("Scheduling $obj at $position, delta: $delta", Logger.Category.Playback)
-        scheduler.scheduleObject(obj, inst, position, cutoff = cutoff, this)
+        return scheduler.scheduleObject(obj, inst, position, cutoff = cutoff, this)
     }
 
     override fun toString(): String = "ScorePlayer [$id]"
