@@ -2,9 +2,11 @@ AudioNode {
 	score_y {}
 
 	node {  }
+
+	asTarget { ^this.node }
 }
 
-SimpleAudioNode {
+SimpleAudioNode : AudioNode {
 	var <>node, <>score_y;
 }
 
