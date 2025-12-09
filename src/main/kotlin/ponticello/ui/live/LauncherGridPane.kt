@@ -1,8 +1,11 @@
 package ponticello.ui.live
 
 import fxutils.*
-import fxutils.actions.*
-import fxutils.controls.CheckBox
+import fxutils.actions.Action
+import fxutils.actions.ActionBar
+import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
+import fxutils.controls.OptionSpinner
 import fxutils.controls.SliderBar
 import fxutils.drag.setupDropArea
 import fxutils.prompt.SimpleSelectorPrompt
@@ -28,11 +31,8 @@ import ponticello.impl.toDecimal
 import ponticello.impl.zero
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.live.ItemTarget
-import ponticello.model.live.LauncherGrid
+import ponticello.model.live.*
 import ponticello.model.live.LauncherGrid.GridItemReference
-import ponticello.model.live.LiveScoreObject
-import ponticello.model.live.LiveTaskObject
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PonticelloProject
@@ -45,7 +45,6 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
-import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.registry.ParameterDefSelectorPrompt
 import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.score.FlowGroupManager
@@ -53,15 +52,15 @@ import ponticello.ui.score.ScoreObjectDetailPane
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.and
 import reaktive.value.binding.impl.notNull
-import reaktive.value.binding.map
 import reaktive.value.binding.not
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class LauncherGridPane(
     private val grid: LauncherGrid,
 ) : ToolPane(), LauncherGrid.View {
-    private val boxes = mutableMapOf<LauncherGrid.GridItem, Region>()
+    private val boxes = mutableMapOf<GridItem, Region>()
     override val content = GridPane().styleClass("launcher-grid-pane")
     override val headerContent: Node = setupHeader()
     override val type: Type get() = LauncherGridPane
@@ -92,7 +91,7 @@ class LauncherGridPane(
         }
     }
 
-    override fun updateItem(item: LauncherGrid.GridItem) {
+    override fun updateItem(item: GridItem) {
         content.children.remove(boxes[item])
         val box = display(item)
         boxes[item] = box
@@ -100,19 +99,22 @@ class LauncherGridPane(
         content.add(box, j, i)
     }
 
-    private fun display(item: LauncherGrid.GridItem): VBox {
+    private fun display(item: GridItem): VBox {
         val target = item.target
         val buttonText = if (target is ItemTarget.None) "Select Target" else item.target.toString()
-        val button = button(buttonText)
+        val button = selectorButton(buttonText)
         button.setOnAction {
             val listView = SimpleSelectorPrompt(ItemTarget.options(grid.context), "Choose item target")
             val newTarget = listView.showPopup(button) ?: return@setOnAction
             item.target = newTarget
         }
-        val actions = itemActions.withContext(target) + detailsAction.withContext(item)
+        val actions = itemActions.withContext(target)
         val actionBar = ActionBar(actions, buttonStyle = "medium-icon-button")
         val centeredActionBar = HBox(infiniteSpace(), actionBar, infiniteSpace())
-        val box = VBox(button, centeredActionBar).styleClass("launcher-grid-item").centerChildren()
+        val modeSpinner = OptionSpinner(item.mode, item.target.supportedModes)
+        modeSpinner.disableProperty().bind(item.target.isActive.asObservableValue())
+        modeSpinner.label.minWidth = 55.0
+        val box = VBox(button, centeredActionBar, modeSpinner).styleClass("launcher-grid-item").centerChildren()
         if (target is ItemTarget.Object) {
             val obj = target.ref.get()
             if (obj != null) {
@@ -130,7 +132,7 @@ class LauncherGridPane(
         return box
     }
 
-    private fun addMouseActions(box: VBox, item: LauncherGrid.GridItem) {
+    private fun addMouseActions(box: VBox, item: GridItem) {
         box.setOnMousePressed { ev ->
             if (ev.target == box && ev.modifiers.isEmpty() && ev.button == MouseButton.PRIMARY) {
                 grid.noteOn(item, velocity = 64)
@@ -148,7 +150,7 @@ class LauncherGridPane(
         }
     }
 
-    private fun setupDragAndDrop(box: VBox, item: LauncherGrid.GridItem) {
+    private fun setupDragAndDrop(box: VBox, item: GridItem) {
         box.setOnDragDetected { ev ->
             if (ev.modifiers != setOf(Ctrl)) return@setOnDragDetected
             val db = box.startDragAndDrop(TransferMode.MOVE)
@@ -170,15 +172,6 @@ class LauncherGridPane(
             get() = "Ctrl+G"
 
         override fun createToolPane(project: PonticelloProject): ToolPane = LauncherGridPane(project[LAUNCHER_GRID])
-
-        private val detailsAction = detailsAction<LauncherGrid.GridItem>(
-            applicability = { item -> item.target().map { target -> target.canStop } },
-            sceneFill = DEFAULT_SCENE_FILL.opacity(0.5), labelWidth = 150.0
-        ) { item ->
-            CheckBox(item.stopOnRelease)
-                .setupUndo(item.context[UndoManager], "Stop on release")
-                .named("Stop on release")
-        }
 
         private val itemActions = collectActions<ItemTarget> {
             addAction("View object") {

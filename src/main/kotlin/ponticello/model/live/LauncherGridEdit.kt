@@ -5,8 +5,8 @@ import fxutils.undo.AbstractEdit
 abstract class LauncherGridEdit : AbstractEdit() {
     class SwapItems(
         val grid: LauncherGrid,
-        val item1: LauncherGrid.GridItem,
-        val item2: LauncherGrid.GridItem,
+        val item1: GridItem,
+        val item2: GridItem,
     ): LauncherGridEdit() {
         override val actionDescription: String
             get() = "Swap Launcher Grid items"

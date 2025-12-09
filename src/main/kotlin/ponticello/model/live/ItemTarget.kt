@@ -10,7 +10,6 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.*
-import ponticello.model.player.ScorePlayer
 import ponticello.model.project.LIVE_BUFFERS
 import ponticello.model.project.get
 import ponticello.model.project.scripts
@@ -29,9 +28,13 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.*
 import reaktive.value.binding.and
+import java.util.concurrent.CompletableFuture
 
 @Serializable
 sealed class ItemTarget : AbstractContextualObject() {
+    open val supportedModes: List<GridItem.Mode>
+        get() = listOf(GridItem.Mode.Toggle, GridItem.Mode.Gate)
+
     open val targetObject: ScoreObject? get() = null
 
     @Transient
@@ -44,9 +47,23 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     abstract val isActive: ReactiveBoolean
 
-    abstract fun pressed(velocity: Int, item: LauncherGrid.GridItem)
+    abstract fun activate(velocity: Int, mode: GridItem.Mode)
 
-    abstract fun released(item: LauncherGrid.GridItem)
+    abstract fun deactivate()
+
+    open fun pressed(velocity: Int, item: GridItem) {
+        if (!isActive.now || item.mode.now != GridItem.Mode.Toggle) {
+            activate(velocity, item.mode.now)
+        } else {
+            deactivate()
+        }
+    }
+
+    open fun released(item: GridItem) {
+        if (item.mode.now == GridItem.Mode.Gate) {
+            deactivate()
+        }
+    }
 
     fun initialize(grid: LauncherGrid) {
         initialize(grid.context)
@@ -56,16 +73,19 @@ sealed class ItemTarget : AbstractContextualObject() {
     @Serializable
     @SerialName("None")
     class None : ItemTarget() { //has to be a class, otherwise we get double initialization errors
+        override val supportedModes: List<GridItem.Mode>
+            get() = listOf(GridItem.Mode.None)
+
         override val isActive: ReactiveBoolean
             get() = reactiveValue(false)
 
         override val canView: Boolean
             get() = false
 
-        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
+        override fun activate(velocity: Int, mode: GridItem.Mode) {
         }
 
-        override fun released(item: LauncherGrid.GridItem) {
+        override fun deactivate() {
         }
 
         override fun toString(): String = "None"
@@ -93,17 +113,14 @@ sealed class ItemTarget : AbstractContextualObject() {
             isActive = liveBuffer.get()?.enabled ?: reactiveValue(false)
         }
 
-        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
+        override fun activate(velocity: Int, mode: GridItem.Mode) {
             val buf = liveBuffer.get() ?: return
-            if (item.stopOnRelease.now && buf.enabled.now) return
-            buf.toggleEnabled()
+            buf.setEnabled(true)
         }
 
-        override fun released(item: LauncherGrid.GridItem) {
+        override fun deactivate() {
             val buf = liveBuffer.get() ?: return
-            if (item.stopOnRelease.now && buf.enabled.now) {
-                buf.setEnabled(false)
-            }
+            buf.setEnabled(false)
         }
     }
 
@@ -115,13 +132,17 @@ sealed class ItemTarget : AbstractContextualObject() {
     ) : ItemTarget() {
         val velocityParameter: ReactiveVariable<String?> = reactiveVariable(null)
 
-        private var instanceId: Int = -1
+        @Transient
+        private var instanceId: CompletableFuture<Int?>? = null
 
         override val canView: Boolean
             get() = ref.isResolved.now
 
         override val targetObject: ScoreObject?
             get() = ref.get()
+
+        override val supportedModes: List<GridItem.Mode>
+            get() = GridItem.Mode.entries - GridItem.Mode.None
 
         override val canStop: Boolean get() = true
 
@@ -136,7 +157,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             ref.resolve(context[ScoreObjectRegistry])
         }
 
-        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
+        override fun activate(velocity: Int, mode: GridItem.Mode) {
             active.set(true)
             val obj = ref.get() ?: return
             val player = grid.getPlayer()
@@ -157,29 +178,33 @@ sealed class ItemTarget : AbstractContextualObject() {
                         extraArguments[param] = ValueControl.create(value)
                     }
                 }
-                if (item.stopOnRelease.now) {
+                if (mode != GridItem.Mode.Trigger) {
                     extraArguments[ParameterDefObject.AUTO_RELEASE] = ValueControl.create(zero)
                 }
-                ScorePlayer.execute {
-                    grid.scheduler.scheduleObject(
-                        obj, instance = null, position, cutoff = zero, player,
-                        scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2,
-                        extraArguments
-                    )?.thenAccept { id -> instanceId = id ?: -1 }
-                }
+                instanceId = grid.scheduler.scheduleObject(
+                    obj, instance = null, position, cutoff = zero, player,
+                    scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2,
+                    extraArguments
+                )
             }
-
         }
 
-        override fun released(item: LauncherGrid.GridItem) {
-            val obj = ref.get() ?: return
-            active.set(false)
-//            grid.addToTargetScore(obj, item)
-            if (!item.stopOnRelease.now) return
-            if (instanceId != -1) {
-                grid.scheduler.stopObjectInstantly(obj, instanceId)
-                instanceId = -1
+        override fun released(item: GridItem) {
+            if (item.mode.now == GridItem.Mode.Trigger) {
+                active.set(false)
             }
+            super.released(item)
+        }
+
+        override fun deactivate() {
+            active.set(false)
+            val obj = ref.get() ?: return
+            instanceId?.thenAccept { id ->
+                if (id != null) {
+                    grid.scheduler.stopObjectInstantly(obj, id)
+                }
+            }
+            instanceId = null
         }
 
         override fun toString() = ref.getName()
@@ -206,26 +231,19 @@ sealed class ItemTarget : AbstractContextualObject() {
             ref.resolve(context[LiveObjectRegistry])
         }
 
-        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
-            Platform.runLater {
-                val obj = ref.get() ?: return@runLater
-                if (!obj.isScheduled.now) {
-                    obj.play()
-                    if (obj is LiveScoreObject) {
-                        context[AppLayout].get<ScoreObjectViewPane>().showContent(obj)
-                    }
-                } else if (!item.stopOnRelease.now) {
-                    obj.pause()
+        override fun activate(velocity: Int, mode: GridItem.Mode) {
+            val obj = ref.get() ?: return
+            obj.play()
+            if (obj is LiveScoreObject) {
+                Platform.runLater {
+                    context[AppLayout].get<ScoreObjectViewPane>().showContent(obj)
                 }
             }
-
         }
 
-        override fun released(item: LauncherGrid.GridItem) {
+        override fun deactivate() {
             val obj = ref.get() ?: return
-            if (obj.isScheduled.now && item.stopOnRelease.now) {
-                obj.pause()
-            }
+            obj.pause()
         }
 
         override fun toString() = "LiveObject: ${ref.getName()}"
@@ -252,22 +270,17 @@ sealed class ItemTarget : AbstractContextualObject() {
                 else flow.isActive and flow.parentGroup!!.isActive
         }
 
-        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
+        override fun deactivate() {
+            val flow = ref.get() ?: return
+            flow.setActive(false)
+        }
+
+        override fun activate(velocity: Int, mode: GridItem.Mode) {
             val flow = ref.get() ?: return
             if (!flow.parentGroup!!.isActive.now) {
                 flow.parentGroup!!.toggleActive()
             }
-            if (!flow.isActive.now) flow.setActive(true)
-            else if (!item.stopOnRelease.now) {
-                flow.setActive(false)
-            }
-        }
-
-        override fun released(item: LauncherGrid.GridItem) {
-            val flow = ref.get() ?: return
-            if (flow.isActive.now && item.stopOnRelease.now) {
-                flow.setActive(false)
-            }
+            flow.setActive(true)
         }
 
         override fun toString(): String = "Flow ${ref.getName()}"
@@ -278,16 +291,17 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val canView: Boolean
             get() = true
 
-        override val isActive: ReactiveBoolean
-            get() = reactiveValue(false)
+        private val active = reactiveVariable(false)
+        override val isActive: ReactiveBoolean get() = active
 
-        override fun pressed(velocity: Int, item: LauncherGrid.GridItem) {
+        override fun activate(velocity: Int, mode: GridItem.Mode) {
+            active.set(true)
             val script = ref.get() ?: return
             script.executeContents(context[SuperColliderClient])
         }
 
-        override fun released(item: LauncherGrid.GridItem) {
-
+        override fun deactivate() {
+            active.set(false)
         }
 
         override fun toString(): String = "Script ${ref.getName()}"

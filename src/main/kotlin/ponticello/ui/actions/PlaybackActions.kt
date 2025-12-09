@@ -11,6 +11,7 @@ import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.project
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
+import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
@@ -103,6 +104,7 @@ object PlaybackActions {
                 for (liveObject in p.context[LiveObjectRegistry]) {
                     liveObject.pause()
                 }
+                p.context.project[LAUNCHER_GRID].deactivateAll()
                 p.context[SuperColliderClient].run("s.freeAll;") //TODO
                 p.pause()
             }

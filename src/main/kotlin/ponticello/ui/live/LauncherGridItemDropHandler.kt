@@ -7,6 +7,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.code.ScriptObject
 import ponticello.model.flow.AudioFlow
+import ponticello.model.live.GridItem
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LauncherGrid.GridItemReference
@@ -24,7 +25,7 @@ import ponticello.ui.record.LiveBuffersPane
 import reaktive.value.reactiveVariable
 
 class LauncherGridItemDropHandler(
-    private val grid: LauncherGrid, private val item: LauncherGrid.GridItem,
+    private val grid: LauncherGrid, private val item: GridItem,
 ) : ConfiguredDropHandler() {
     init {
         handleTypedFormat(GridItemReference.DATA_FORMAT, TransferMode.MOVE) { _, ref ->
@@ -66,7 +67,7 @@ class LauncherGridItemDropHandler(
         }
     }
 
-    private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: LauncherGrid.GridItem) {
+    private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: GridItem) {
         val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = buffer.createSoundProcess(synthDef) ?: return
         grid.context[ScoreObjectRegistry].add(obj)

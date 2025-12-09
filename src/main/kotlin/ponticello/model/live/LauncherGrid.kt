@@ -4,12 +4,10 @@ import bundles.set
 import fxutils.drag.TypedDataFormat
 import fxutils.runFXWithTimeout
 import fxutils.undo.UndoManager
-import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.zero
@@ -25,8 +23,6 @@ import ponticello.model.registry.reference
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
-import ponticello.model.score.SoundProcess
-import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -100,6 +96,14 @@ class LauncherGrid private constructor(
         item.target.released(item)
     }
 
+    fun deactivateAll() {
+        for (item in items) {
+            if (item.mode.now in setOf(GridItem.Mode.Toggle, GridItem.Mode.Gate)) {
+                item.target.deactivate()
+            }
+        }
+    }
+
     fun addToTargetScore(scoreObject: ScoreObject, absolutePosition: ObjectPosition, item: GridItem) {
         val score = getScore() ?: return
         val player = getPlayer()
@@ -107,7 +111,7 @@ class LauncherGrid private constructor(
         val (time, y) = absolutePosition
         var obj = scoreObject
         val cutoff = (time + obj.duration) - player.playHead.currentTime
-        if (item.stopOnRelease.now && cutoff > zero) {
+        if (item.mode.now == GridItem.Mode.Gate && cutoff > zero) {
             val name = context[ScoreObjectRegistry].availableName(obj.name.now)
             obj = obj.cut(obj.duration - cutoff, HorizontalDirection.LEFT, name) ?: obj
         }
@@ -129,56 +133,12 @@ class LauncherGrid private constructor(
         Target.MainScore, Target.None -> context[ScorePlayer.MAIN]
     }
 
-    fun addView(view: View) {
-        listeners.addListener(view)
+    fun notifyViews(block: View.() -> Unit) {
+        listeners.notifyListeners(block)
     }
 
-    @Serializable
-    class GridItem(
-        @SerialName("target") private val _target: ReactiveVariable<ItemTarget> = reactiveVariable(ItemTarget.None()),
-        val stopOnRelease: ReactiveVariable<Boolean> = reactiveVariable(false),
-    ) : AbstractContextualObject() {
-        @Transient
-        private lateinit var grid: LauncherGrid
-
-        var target: ItemTarget
-            get() = _target.now
-            set(value) {
-                val oldTarget = _target.now
-                if (value == oldTarget) return
-                _target.now = value
-                value.initialize(grid)
-                val description = if (value is ItemTarget.None) "Reset target" else "Choose target"
-                grid.undoManager.record(VariableEdit(_target, oldTarget, value, description))
-                grid.listeners.notifyListeners { updateItem(this@GridItem) }
-                if (value is ItemTarget.Object) {
-                    val target = value.targetObject
-                    if (target is SoundProcess && target.def.hasParameter("level")) {
-                        value.velocityParameter.now = "level"
-                    }
-                }
-            }
-
-        fun target(): ReactiveValue<ItemTarget> = _target
-
-        fun reference() = GridItemReference(grid.items.indexOf(this))
-
-        override fun initialize(context: Context) {
-            super.initialize(context)
-            target.initialize(grid)
-        }
-
-        fun initialize(context: Context, grid: LauncherGrid) {
-            this.grid = grid
-            initialize(context)
-        }
-
-        companion object {
-            fun createDefault(): GridItem = GridItem(
-                _target = reactiveVariable(ItemTarget.None()),
-                stopOnRelease = reactiveVariable(false),
-            )
-        }
+    fun addView(view: View) {
+        listeners.addListener(view)
     }
 
     class GridItemReference(private val index: Int) : java.io.Serializable {

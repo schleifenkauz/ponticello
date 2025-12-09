@@ -1,6 +1,7 @@
 .launcher-grid-item {
     -fx-alignment: top-center;
     -fx-border-color: black;
+    -fx-padding: 5px;
     -fx-spacing: 8px;
     -fx-pref-height: 150px;
     -fx-pref-width: 150px;
