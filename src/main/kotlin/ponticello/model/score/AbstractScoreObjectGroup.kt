@@ -33,11 +33,26 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
     protected abstract fun cloneWith(score: Score): AbstractScoreObjectGroup
 
     override fun ScWriter.createInSuperCollider() {
-
+//        SoundProcess.createSoundProcessObject(writer, this, duration)
     }
 
     override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
-        //TODO
+        var t = zero
+        score.allInstances().filter { inst ->
+            inst.obj !is AbstractScoreObjectGroup && inst.obj.affectsPlayback
+        }.sortedBy { inst -> inst.start }.forEach { inst ->
+            val deltaT = (inst.start - info.cutoff).coerceAtLeast(zero) - t
+            +"$deltaT.wait"
+            +inst.obj.startNewInstance(
+                info.copy(
+                    instance = inst,
+                    pos = info.pos + inst.position,
+                    cutoff = (info.cutoff - inst.start).coerceAtLeast(zero),
+                    extraArguments = emptyMap()
+                )
+            )
+            t = inst.start
+        }
     }
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject {
