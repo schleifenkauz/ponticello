@@ -40,7 +40,9 @@ ValueControl : ParameterControl {
 
 	getBus { |inst| ^bus ? super.getBus(inst) }
 
-	getValue { |inst| ^value + (cutoff_multiplier * inst.cutoff) }
+	getValue { |inst|
+		^if (cutoff_multiplier == 0) { value } { value + (cutoff_multiplier * inst.cutoff) }
+	}
 
 	getUGen { |inst|
 		^if (allocateBus) {
@@ -80,9 +82,18 @@ ValueControl : ParameterControl {
 		};
 	}
 
+	prepare { |inst|
+		var initial_value = this.getValue(inst);
+		inst.createControlBus(this.name, initial_value);
+	}
+
 	apply { |inst|
 		if (inst.type == \synth) {
-			inst.putArgument(this.name, value);
+			if (this.allocatesBus) {
+				inst.mapParameter(this.name, bus ? inst.getControlBus(this.name));
+			} {
+				inst.putArgument(this.name, this.getValue(inst));
+			}
 		};
 	}
 
