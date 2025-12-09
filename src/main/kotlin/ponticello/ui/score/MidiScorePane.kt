@@ -15,6 +15,8 @@ import ponticello.model.obj.project
 import ponticello.model.project.uiState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.*
+import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.ValueControl
 import reaktive.value.binding.`if`
 import reaktive.value.binding.or
 import reaktive.value.fx.asObservableValue
@@ -202,7 +204,11 @@ class MidiScorePane(
             if (duration <= zero) return
             val midinote = getMidiNote(cursorNode.y)
             val name = context[ScoreObjectRegistry].availableName("midinote")
-            val note = SoundProcess.create(name, obj.instrument.now)
+            val controls = ParameterControlList.create(
+                "velocity" to ValueControl.create(64.toDecimal()),
+                "channel" to ValueControl.create(0.toDecimal())
+            )
+            val note = SoundProcess.create(name, obj.instrument.now, controls)
             note.setInitialSize(duration, height = zero)
             val inst = ScoreObjectInstance(note, time, y = midinote.toDecimal())
             obj.score.addObject(inst, autoSelect = true)

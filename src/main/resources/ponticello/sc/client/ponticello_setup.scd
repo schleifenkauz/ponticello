@@ -107,7 +107,7 @@ OSCdef('schedule', {
 	var id = msg[1], absolute = msg[2], time = msg[3].asFloat, player_id = msg[4], code = msg[5], info = msg[6], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
     abs_time = if (absolute) { time } { time + (my_play_start ?? TempoClock.beats) };
-    postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = %, current time = %\n", info, player_id, my_play_start, time, abs_time, TempoClock.beats);
+    //postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = %, current time = %\n", info, player_id, my_play_start, time, abs_time, TempoClock.beats);
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
     TempoClock.schedAbs(abs_time) {

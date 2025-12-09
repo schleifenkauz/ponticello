@@ -93,6 +93,11 @@ class ScoreObjectScheduler(val context: Context) {
         try {
             val description = "Schedule ${obj.name.now}"
             val args = listOf(absolute, scheduledTime.toString(), info.player.id, code)
+            if (playbackSettings.logScCode.now) {
+                println("Schedule ${obj.name.now} at $scheduledTime, player_id = ${info.player.id}:")
+                println(code)
+                println("################ END #################")
+            }
             return client.send("schedule", args, description).thenApply(String::toIntOrNull)
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)

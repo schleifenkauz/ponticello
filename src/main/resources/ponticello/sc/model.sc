@@ -249,7 +249,7 @@ SoundProcessInstance : AudioNode {
 	}
 
 	getControlValue { |name|
-		^extra_args[name] ? def.getControl(name) !? { |ctrl| ctrl.getValue(this) }
+		^extra_args[name] ? (def.getControl(name) !? { |ctrl| ctrl.getValue(this) })
 	}
 
 	getControlUGen { |name|
@@ -320,7 +320,7 @@ SoundProcessInstance : AudioNode {
 			};
 			if (run) { routine.play };
 		} { \vst_midi } {
-			var velocity = this.getControlValue(\velocity);
+			var velocity = this.getControlValue(\velocity) ? 64;
 			var note_start_time = start_time;
 			channel = this.getControlValue(\channel) ? 0;
 			midinote = this.getControlValue(\midinote);
@@ -328,7 +328,7 @@ SoundProcessInstance : AudioNode {
 				def.instr.midi.noteOn(channel, midinote, velocity);
 			};
 			TempoClock.sched(latency + def.duration) {
-				if (start_time = note_start_time) {
+				if (start_time == note_start_time) {
 					def.instr.midi.noteOff(channel, midinote, velocity);
 				}
 			};
