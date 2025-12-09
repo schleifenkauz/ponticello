@@ -21,7 +21,7 @@ object ScriptActions : Action.Collector<AppLayout>({
         }
     }
     addAction("Evaluate expression") {
-        shortcut("Ctrl+Shift+K")
+        shortcut("Ctrl+Alt+K")
         executes { layout ->
             val popup = CodePopup.get(layout.context)
             popup.show(layout.scene.window)

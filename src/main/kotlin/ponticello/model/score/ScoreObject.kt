@@ -120,7 +120,6 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
 
     override fun ScWriter.createObject() {
         if (affectsPlayback) throw NotImplementedError("createObject not implemented for ${this@ScoreObject}")
-
     }
 
     open fun startNewInstance(

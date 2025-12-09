@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.obj.withName
+import ponticello.sc.client.ScWriter
 import reaktive.value.now
 
 @Serializable
@@ -29,6 +30,10 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
     }
 
     protected abstract fun cloneWith(score: Score): AbstractScoreObjectGroup
+
+    override fun ScWriter.createObject() {
+        //TODO
+    }
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject {
         val objects = mutableListOf<ScoreObjectInstance>()
