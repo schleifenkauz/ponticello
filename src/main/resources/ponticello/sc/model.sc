@@ -7,9 +7,14 @@ SoundProcess {
 	}
 
 	* rename { |old_name, new_name|
-		var proc = dict.removeAt(name);
+	    dict.postln;
+		var proc = dict[old_name];
+		if (proc == nil) {
+		    Error("SoundProcess % not found".format(old_name)).throw;
+		};
+		dict.removeAt(old_name);
 		proc.name = new_name;
-		dict[name] = proc;
+		dict[new_name] = proc;
 	}
 
 	* create { |name, instr, duration, controls|
