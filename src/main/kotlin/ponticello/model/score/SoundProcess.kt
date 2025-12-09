@@ -94,14 +94,14 @@ class SoundProcess(
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
-    override fun onLoadedIntoRegistry() {
-        super<ScoreObject>.onLoadedIntoRegistry()
+    override fun activate() {
+        super<ScoreObject>.activate()
         updater.startListening()
         controls.addListener(lfosManager)
     }
 
-    override fun onRemoved() {
-        super<ScoreObject>.onRemoved()
+    override fun deactivate() {
+        super<ScoreObject>.deactivate()
         updater.stopListening()
         controls.removeListener(lfosManager)
     }

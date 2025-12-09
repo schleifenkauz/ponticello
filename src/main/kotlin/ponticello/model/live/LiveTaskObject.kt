@@ -55,13 +55,13 @@ class LiveTaskObject(
 
     override fun copy() = LiveTaskObject(code.clone())
 
-    override fun onLoadedIntoRegistry() {
-        super.onLoadedIntoRegistry()
+    override fun activate() {
+        super.activate()
         sync()
     }
 
-    override fun onRemoved() {
-        super.onRemoved()
+    override fun deactivate() {
+        super.deactivate()
         client.run {
             +"$superColliderName.clear"
         }

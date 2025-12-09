@@ -9,7 +9,7 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
     override fun initialize(context: Context) {
         super.initialize(context)
         for (obj in this) {
-            obj.onLoadedIntoRegistry()
+            obj.activate()
         }
     }
 
@@ -33,12 +33,13 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
         }
         super.add(obj, idx)
         obj.onAdded()
-        obj.onLoadedIntoRegistry()
+        obj.activate()
     }
 
     override fun remove(obj: O) {
         removeByName(obj.name.now)
-        obj.onRemoved()
+        obj.deactivate()
+        obj.dispose()
     }
 
     fun removeByName(name: String) {
@@ -52,5 +53,11 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
             if (!has(name)) return name
         }
         throw AssertionError()
+    }
+
+    override fun dispose() {
+        for (obj in objects) {
+            obj.dispose()
+        }
     }
 }

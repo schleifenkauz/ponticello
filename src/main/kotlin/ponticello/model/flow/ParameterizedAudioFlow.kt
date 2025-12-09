@@ -33,13 +33,13 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
         listener = SoundProcessUpdater(this)
     }
 
-    override fun onLoadedIntoRegistry() {
+    override fun activate() {
         super<AudioFlow>.onAdded()
         listener.startListening()
     }
 
-    override fun onRemoved() {
-        super<AudioFlow>.onRemoved()
+    override fun deactivate() {
+        super<AudioFlow>.deactivate()
         listener.stopListening()
     }
 

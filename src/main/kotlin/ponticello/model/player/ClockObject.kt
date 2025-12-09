@@ -232,7 +232,7 @@ class ClockObject(
         activeMeters.removeIf { active -> active.meter == meter && active.player == player }
     }
 
-    fun dispose() {
+    override fun dispose() {
         thread.interrupt()
     }
 

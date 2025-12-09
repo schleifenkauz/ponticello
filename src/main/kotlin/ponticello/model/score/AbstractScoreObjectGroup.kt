@@ -166,10 +166,10 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
         }
     }
 
-    override fun onRemoved() {
-        super.onRemoved()
+    override fun deactivate() {
+        super.deactivate()
         for (obj in score.objects) {
-            obj.onRemoved()
+            obj.deactivate()
         }
     }
 

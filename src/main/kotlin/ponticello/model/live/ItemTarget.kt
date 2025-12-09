@@ -52,19 +52,19 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     abstract fun activate(velocity: Int, mode: GridItem.Mode)
 
-    abstract fun deactivate()
+    abstract fun deactivate(mode: GridItem.Mode)
 
     open fun pressed(velocity: Int, item: GridItem) {
         if (!isActive.now || item.mode.now != GridItem.Mode.Toggle) {
             activate(velocity, item.mode.now)
         } else {
-            deactivate()
+            deactivate(item.mode.now)
         }
     }
 
     open fun released(item: GridItem) {
         if (item.mode.now == GridItem.Mode.Gate) {
-            deactivate()
+            deactivate(item.mode.now)
         }
     }
 
@@ -91,7 +91,7 @@ sealed class ItemTarget : AbstractContextualObject() {
         override fun activate(velocity: Int, mode: GridItem.Mode) {
         }
 
-        override fun deactivate() {
+        override fun deactivate(mode: GridItem.Mode) {
         }
 
         override fun toString(): String = "None"
@@ -126,7 +126,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             buf.setEnabled(true)
         }
 
-        override fun deactivate() {
+        override fun deactivate(mode: GridItem.Mode) {
             val buf = liveBuffer.get() ?: return
             buf.setEnabled(false)
         }
@@ -203,7 +203,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             super.released(item)
         }
 
-        override fun deactivate() {
+        override fun deactivate(mode: GridItem.Mode) {
             active.set(false)
             val obj = ref.get() ?: return
             instanceId?.thenAccept { id ->
@@ -251,7 +251,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             }
         }
 
-        override fun deactivate() {
+        override fun deactivate(mode: GridItem.Mode) {
             val obj = ref.get() ?: return
             obj.pause()
         }
@@ -282,7 +282,7 @@ sealed class ItemTarget : AbstractContextualObject() {
                 else flow.isActive and flow.parentGroup!!.isActive
         }
 
-        override fun deactivate() {
+        override fun deactivate(mode: GridItem.Mode) {
             val flow = ref.get() ?: return
             flow.setActive(false)
         }
@@ -312,7 +312,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             script.executeContents(context[SuperColliderClient])
         }
 
-        override fun deactivate() {
+        override fun deactivate(mode: GridItem.Mode) {
             active.set(false)
         }
 

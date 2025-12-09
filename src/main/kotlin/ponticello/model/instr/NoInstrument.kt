@@ -4,13 +4,13 @@ import javafx.scene.paint.Color
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.sc.client.ScWriter
 import ponticello.ui.registry.ParameterDefList
-import reaktive.value.*
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.reactiveValue
+import reaktive.value.reactiveVariable
 import java.util.*
 
 class NoInstrument : InstrumentObject, AbstractContextualObject() {
-    override val isAdded: ReactiveBoolean
-        get() = reactiveValue(false)
-
     override val color: ReactiveVariable<Color>
         get() = reactiveVariable(Color.GRAY)
 
@@ -23,7 +23,7 @@ class NoInstrument : InstrumentObject, AbstractContextualObject() {
     override val name: ReactiveValue<String>
         get() = reactiveValue("<none>")
 
-    override fun onLoadedIntoRegistry() {
+    override fun activate() {
         throw IllegalStateException()
     }
 

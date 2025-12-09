@@ -121,7 +121,6 @@ class VSTPluginFlow private constructor(
     }
 
     override fun removed(obj: VSTPluginParameterMapping, idx: Int) {
-        obj.dispose()
     }
 
     override fun canRenameTo(newName: String): Boolean = true

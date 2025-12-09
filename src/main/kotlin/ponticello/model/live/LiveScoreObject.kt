@@ -35,8 +35,6 @@ class LiveScoreObject(
 
     override val name: ReactiveValue<String>
         get() = scoreObject.name
-    override val isAdded: ReactiveBoolean
-        get() = scoreObject.isAdded
 
     @Transient
     private var scheduled = reactiveVariable(false)
@@ -77,7 +75,7 @@ class LiveScoreObject(
         player.playHead.movePlayHeadToStart()
     }
 
-    override fun onRemoved() {
+    override fun deactivate() {
         reset()
     }
 

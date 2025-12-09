@@ -11,7 +11,6 @@ import javafx.geometry.Dimension2D
 import javafx.scene.input.KeyCombination
 import javafx.stage.Screen
 import javafx.stage.StageStyle
-import ponticello.model.flow.AudioFlows
 import ponticello.model.player.PlaybackMessageListener
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.*
@@ -68,7 +67,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
             project[PLAYBACK_SETTINGS], project.objects, project.flows
         )
         context[SuperColliderClient].addListener(playbackMessageListener)
-        context[AudioFlows].createAllFlows()
     }
 
     override fun beforeShowing() {
@@ -126,8 +124,8 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     }
 
     override fun close() {
+        project.closeProject()
         context[SuperColliderClient].quit()
-        project[CLOCKS].stopAll()
     }
 
     companion object : PublicProperty<PonticelloMainActivity> by publicProperty("PonticelloMainScreen")

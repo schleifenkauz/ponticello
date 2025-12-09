@@ -10,9 +10,6 @@ data class Component<T>(
     var onSave: (T) -> Unit = {}
         private set
 
-    var beforeClosing: (T) -> Unit = {}
-        private set
-
     val gitFilePattern: String?
         get() = when (serializer) {
             is SingleFileComponentSerializer<*> -> "data/$name.json"
@@ -27,11 +24,6 @@ data class Component<T>(
 
     fun onSave(handler: (T) -> Unit): Component<T> {
         onSave = handler
-        return this
-    }
-
-    fun beforeClosing(handler: (T) -> Unit): Component<T> {
-        beforeClosing = handler
         return this
     }
 

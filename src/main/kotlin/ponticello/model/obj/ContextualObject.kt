@@ -8,4 +8,12 @@ interface ContextualObject {
     val initialized: Boolean
 
     fun initialize(context: Context)
+
+    fun onAdded() {}
+
+    fun activate() {}
+
+    fun deactivate() {}
+
+    fun dispose() {}
 }

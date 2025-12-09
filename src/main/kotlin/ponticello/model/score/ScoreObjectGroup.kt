@@ -32,15 +32,15 @@ class ScoreObjectGroup(
         busSelector.initialize(context)
     }
 
-    override fun onLoadedIntoRegistry() {
-        super.onLoadedIntoRegistry()
+    override fun activate() {
+        super.activate()
         for (obj in score.objects) {
             obj.addedToScore(score)
         }
     }
 
-    override fun onRemoved() {
-        super.onRemoved()
+    override fun deactivate() {
+        super.deactivate()
         for (obj in score.objects) {
             obj.removedFromScore(Score.RegistryOption.ASK_IF_NEEDED)
         }

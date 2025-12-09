@@ -95,7 +95,6 @@ class PonticelloLauncher {
 
     private fun confirmCloseRequest(autoSave: Boolean = false): Boolean {
         val project = getActiveProject() ?: return true
-        project.onCloseRequest()
         project.context[AppLayout].saveLayoutState()
         project[UI_STATE].saveWindowStates()
         project.save(UI_STATE)

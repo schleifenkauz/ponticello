@@ -35,7 +35,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         }
     }
 
-    fun createAllFlows() {
+    private fun createAllFlows() {
         if (addedToServer) return
         for (group in this) {
             if (!group.isActive.now) continue

@@ -109,10 +109,9 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         save(component.key)
     }
 
-    fun onCloseRequest() {
-        for ((component, value) in components) {
-            component as Component<ContextualObject>
-            component.beforeClosing(value)
+    fun closeProject() {
+        for (component in components) {
+            component.value.dispose()
         }
     }
 

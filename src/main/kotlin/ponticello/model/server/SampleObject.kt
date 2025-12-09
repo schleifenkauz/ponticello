@@ -109,15 +109,8 @@ class SampleObject(
         Logger.fine("Updated infos for sample '${name.now}' [$audioFile]", Logger.Category.Buffers)
     }
 
-    override fun onAdded() {
-        super.onAdded()
-        if (registry.copyAudioFiles.now) {
-            copyReferencedFileToSamplesDir()
-        }
-    }
-
-    override fun onLoadedIntoRegistry() {
-        super.onLoadedIntoRegistry()
+    override fun activate() {
+        super.activate()
         if (registry.copyAudioFiles.now && !audioFile.isFile) {
             copyReferencedFileToSamplesDir()
         }
@@ -181,8 +174,8 @@ class SampleObject(
         }
     }
 
-    override fun onRemoved() {
-        super.onRemoved()
+    override fun deactivate() {
+        super.deactivate()
         spectrogramFile.delete()
         if (registry.copyAudioFiles.now) {
             audioFileInSamplesDir().delete()

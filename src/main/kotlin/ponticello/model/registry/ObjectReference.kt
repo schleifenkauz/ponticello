@@ -31,7 +31,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
 
     constructor(obj: O) : this(obj.name.now) {
         this.obj = obj
-        isResolved = obj.isAdded
+        isResolved = reactiveValue(true)
     }
 
     fun setUnresolved() {
@@ -46,12 +46,10 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
             return null
         }
         obj = registry.find { obj -> obj.name.now == _name }
-        if (obj != null) {
-            isResolved = obj!!.isAdded
-        } else {
+        isResolved = reactiveValue(obj != null)
+        if (obj == null) {
             val objectType = if (registry is ObjectList) registry.objectType else "Object"
             Logger.warn("$objectType '$_name' not found", Logger.Category.Registries)
-            isResolved = reactiveValue(false)
         }
         return obj
     }

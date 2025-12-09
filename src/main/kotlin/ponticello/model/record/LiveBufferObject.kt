@@ -90,8 +90,12 @@ class LiveBufferObject(
         }
     }
 
-    override fun onRemoved() {
+    override fun dispose() {
         capture.close()
+    }
+
+    override fun deactivate() {
+        dispose()
     }
 
     fun addListener(listener: Listener) {

@@ -121,15 +121,13 @@ class AudioFlowGroup(
         createFlows()
     }
 
-    override fun onAdded() {
+    override fun activate() {
         if (isActive.now) createGroupOnServer()
     }
 
-    override fun onRemoved() {
-        super.onRemoved()
-        if (isActive.now) {
-            freeGroup()
-        }
+    override fun deactivate() {
+        super.deactivate()
+        if (isActive.now) freeGroup()
     }
 
     private fun freeGroup() {
