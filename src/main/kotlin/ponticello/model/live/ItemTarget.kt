@@ -38,6 +38,8 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     open val targetObject: ScoreObject? get() = null
 
+    abstract val name: ReactiveString
+
     @Transient
     protected lateinit var grid: LauncherGrid
         private set
@@ -80,6 +82,9 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val isActive: ReactiveBoolean
             get() = reactiveValue(false)
 
+        override val name: ReactiveString
+            get() = reactiveValue("<select>")
+
         override val canView: Boolean
             get() = false
 
@@ -106,7 +111,9 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override val canStop get() = true
 
-        override fun toString(): String = "Toggle Recording"
+        override val name: ReactiveString get() = liveBuffer.name
+
+        override fun toString(): String = "Toggle ${liveBuffer.getName()}"
 
         override fun initialize(context: Context) {
             super.initialize(context)
@@ -141,6 +148,8 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override val targetObject: ScoreObject?
             get() = ref.get()
+
+        override val name: ReactiveString get() = ref.name
 
         override val supportedModes: List<GridItem.Mode>
             get() = GridItem.Mode.entries - GridItem.Mode.None
@@ -216,6 +225,9 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         val liveObject get() = ref.get()
 
+        override val name: ReactiveString
+            get() = ref.name
+
         override val targetObject: ScoreObject?
             get() = (ref.get() as? LiveScoreObject)?.scoreObject
 
@@ -259,6 +271,8 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override val canStop: Boolean get() = true
 
+        override val name: ReactiveString get() = ref.name
+
         override fun initialize(context: Context) {
             super.initialize(context)
             ref.resolve(context)
@@ -280,14 +294,14 @@ sealed class ItemTarget : AbstractContextualObject() {
             }
             flow.setActive(true)
         }
-
-        override fun toString(): String = "Flow ${ref.getName()}"
     }
 
     @Serializable
     data class Script(val ref: ScriptObjectReference) : ItemTarget() {
         override val canView: Boolean
             get() = true
+
+        override val name: ReactiveString get() = ref.name
 
         private val active = reactiveVariable(false)
         override val isActive: ReactiveBoolean get() = active

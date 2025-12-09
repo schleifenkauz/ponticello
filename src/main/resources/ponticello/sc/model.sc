@@ -7,8 +7,7 @@ SoundProcess {
 	}
 
 	* rename { |old_name, new_name|
-	    dict.postln;
-		var proc = dict[old_name];
+	    var proc = dict[old_name];
 		if (proc == nil) {
 		    Error("SoundProcess % not found".format(old_name)).throw;
 		};

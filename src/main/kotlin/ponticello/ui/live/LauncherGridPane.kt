@@ -52,6 +52,7 @@ import ponticello.ui.score.ScoreObjectDetailPane
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.and
 import reaktive.value.binding.impl.notNull
+import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -101,7 +102,7 @@ class LauncherGridPane(
 
     private fun display(item: GridItem): VBox {
         val target = item.target
-        val buttonText = if (target is ItemTarget.None) "Select Target" else item.target.toString()
+        val buttonText = item.target.name
         val button = selectorButton(buttonText)
         button.setOnAction {
             val listView = SimpleSelectorPrompt(ItemTarget.options(grid.context), "Choose item target")
@@ -113,6 +114,7 @@ class LauncherGridPane(
         val centeredActionBar = HBox(infiniteSpace(), actionBar, infiniteSpace())
         val modeSpinner = OptionSpinner(item.mode, item.target.supportedModes)
         modeSpinner.disableProperty().bind(item.target.isActive.asObservableValue())
+        modeSpinner.visibleProperty().bind(item.target().map { t -> t !is ItemTarget.None }.asObservableValue())
         modeSpinner.label.minWidth = 55.0
         val box = VBox(button, centeredActionBar, modeSpinner).styleClass("launcher-grid-item").centerChildren()
         if (target is ItemTarget.Object) {
