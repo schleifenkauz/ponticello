@@ -52,7 +52,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
         }
         active.now = value
         if (parentGroup?.isActive?.now == true) {
-            context[SuperColliderClient].run("$superColliderName.setRunning($value)")
+            context[SuperColliderClient].run("$superColliderName.run($value)")
         }
     }
 

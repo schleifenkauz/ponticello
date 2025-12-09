@@ -38,7 +38,7 @@ SoundProcess {
 
 	stopAllInstances { |player_id|
 		instances.copy.do { |inst|
-			if (inst.playerId == player_id) { inst.release; }
+			if (player_id == nil || inst.playerId == player_id) { inst.release; }
 		};
 	}
 
@@ -48,6 +48,13 @@ SoundProcess {
 		{ VSTPluginController } { \vst_midi }
 		{ Function } { \routine }
 		{ Error("Invalid instrument type %".format(instr)).throw }
+	}
+
+	setInstrument { |i|
+		instr = i;
+		instances.do { |inst|
+			inst.restart;
+		}
 	}
 
 	getInstance { |idx| ^instances[idx] }
@@ -144,7 +151,11 @@ SoundProcess {
 
 SoundProcessInstance : AudioNode {
 	var <def, <idx, <cutoff, <pos, extra_args, <playerId,
-	start_time, control_buses, auxil_synths, group, <synth, routine, midinote, channel, on_dispose;
+	start_time, running, restarting = false, placement,
+	control_buses, auxil_synths,
+	group, <synth, routine,
+	midinote, channel,
+	on_dispose;
 
 	* new { |def, idx, pos, cutoff = 0, midi_note = nil|
 		^super.new.init(def, idx, pos, cutoff, midi_note);
@@ -246,8 +257,8 @@ SoundProcessInstance : AudioNode {
 	}
 
 	dispose {
-		~ponticello_addr.sendMsg('/stopped', -1, def.name, idx);
 		control_buses.do(_.free);
+		control_buses = Dictionary.new;
 		if (def.type != \vst_midi) {
 			group.free;
 			if (pos != nil) {
@@ -255,13 +266,18 @@ SoundProcessInstance : AudioNode {
 			}
 		};
 		on_dispose.do(_.value);
-		def.removeInstance(idx);
+		if (restarting.not) {
+			~ponticello_addr.sendMsg('/stopped', -1, def.name, idx);
+			def.removeInstance(idx);
+		}
 	}
 
-	start { |placement, latency, player_id, run = true|
+	start { |plcmnt, latency, player_id, run = true|
 		var duration = def.duration !? { |dur| dur - cutoff };
+		placement = plcmnt;
 		start_time = TempoClock.beats;
 		playerId = player_id;
+		running = run;
 		if (placement != nil) {
 			Server.local.sync;
 			group = Group.new(placement.target, placement.addAction);
@@ -301,18 +317,30 @@ SoundProcessInstance : AudioNode {
 			if (run) { routine.play };
 		} { \vst_midi } {
 			var velocity = this.getControlValue(\velocity);
+			var note_start_time = start_time;
 			channel = this.getControlValue(\channel) ? 0;
 			midinote = this.getControlValue(\midinote);
 			TempoClock.sched(latency) {
 				def.instr.midi.noteOn(channel, midinote, velocity);
 			};
 			TempoClock.sched(latency + def.duration) {
-				def.instr.midi.noteOff(channel, midinote, velocity);
-			}
+				if (start_time = note_start_time) {
+					def.instr.midi.noteOff(channel, midinote, velocity);
+				}
+			};
 		};
 	}
 
-	setRunning { |active|
+	restart {
+		restarting = true;
+		this.release;
+		cutoff = this.current_time;
+		this.start(placement, 0, playerId, run: running);
+		restarting = false;
+	}
+
+	run { |active|
+		running = active;
 		auxil_synths.do { |s| s.run(active) };
 		if (synth != nil) { synth.run(active) } {
 			if (routine != nil) {

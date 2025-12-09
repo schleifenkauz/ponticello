@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.obj.withName
+import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.sc.client.ScWriter
 import reaktive.value.now
 
@@ -31,7 +32,11 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
 
     protected abstract fun cloneWith(score: Score): AbstractScoreObjectGroup
 
-    override fun ScWriter.createObject() {
+    override fun ScWriter.createInSuperCollider() {
+
+    }
+
+    override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
         //TODO
     }
 

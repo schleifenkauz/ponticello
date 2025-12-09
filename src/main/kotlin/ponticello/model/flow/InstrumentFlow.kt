@@ -11,6 +11,7 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.editor.InstrumentSelector
+import reaktive.Reactive
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.and
@@ -33,6 +34,8 @@ class InstrumentFlow(
 
     override val def: InstrumentObject
         get() = defRef.now.get() ?: NoInstrument()
+
+    override val instrumentChanged: Reactive get() = defRef
 
     @Transient
     override lateinit var isValid: ReactiveValue<Boolean>

@@ -155,7 +155,7 @@ EnvelopeControl : ParameterControl {
 
 	defineSynth {
 		SynthDef(synth_def) { |out, cutoff = 0|
-			var sig = IEnvGen.kr(env, index: Sweep.kr(rate: ~time_warp_bus.kr));
+			var sig = IEnvGen.kr(env, index: cutoff + Sweep.kr(rate: ~time_warp_bus.kr));
 			Out.kr(out, sig);
 		}.add;
 	}
