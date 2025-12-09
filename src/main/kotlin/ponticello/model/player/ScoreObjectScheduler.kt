@@ -6,15 +6,12 @@ import hextant.context.Context
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.zero
-import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.score.TempoGridObject
-import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
@@ -22,7 +19,7 @@ import java.util.concurrent.CompletableFuture
 class ScoreObjectScheduler(val context: Context) {
     private val client = context[SuperColliderClient]
     private val playbackSettings by lazy { context.project[PLAYBACK_SETTINGS] }
-    private val serverLatency get() = playbackSettings.serverLatency.now
+    val serverLatency get() = playbackSettings.serverLatency.now
     private val sclangLatency get() = playbackSettings.scLangLatency.now
     private val extraLatency get() = playbackSettings.extraLatency.now
 
@@ -35,7 +32,8 @@ class ScoreObjectScheduler(val context: Context) {
             when (type) {
                 ScoreEvent.Type.ObjectStart -> {
                     Logger.fine("ObjectStart: $obj at $position", Logger.Category.Playback)
-                    scheduleObject(obj, inst, position, cutoff = zero, player)
+                    val info = ObjectPlaybackInfo(position, player, instance = inst)
+                    scheduleObject(obj, info)
                 }
 
                 ScoreEvent.Type.ObjectEnd -> {
@@ -64,25 +62,16 @@ class ScoreObjectScheduler(val context: Context) {
 
     //Only inside ScorePlayer.execute
     fun scheduleObject(
-        obj: ScoreObject, instance: ScoreObjectInstance?, absolutePosition: ObjectPosition,
-        cutoff: Decimal, player: ScorePlayer,
-        scLangLatency: Decimal = this.sclangLatency, serverLatency: Decimal = this.serverLatency,
-        extraArguments: Map<ParameterDefObject, ParameterControl> = emptyMap(),
+        obj: ScoreObject, info: ObjectPlaybackInfo, scLangLatency: Decimal = this.sclangLatency,
     ): CompletableFuture<Int?>? {
-        val time = absolutePosition.time + cutoff + player.timeOffset
+        val time = info.pos.time + info.cutoff + info.player.timeOffset
         val scheduledTime = (time + scLangLatency - extraLatency)
-        return scheduleObject(
-            obj, instance, player, cutoff, absolutePosition,
-            serverLatency, scheduledTime, absolute = false,
-            extraArguments
-        )
+        return scheduleObject(obj, info, scheduledTime, absolute = false)
     }
 
     fun scheduleObject(
-        obj: ScoreObject, instance: ScoreObjectInstance?, player: ScorePlayer,
-        cutoff: Decimal, absolutePosition: ObjectPosition,
-        serverLatency: Decimal, scheduledTime: Decimal, absolute: Boolean,
-        extraArguments: Map<ParameterDefObject, ParameterControl>,
+        obj: ScoreObject, info: ObjectPlaybackInfo,
+        scheduledTime: Decimal, absolute: Boolean,
     ): CompletableFuture<Int?>? {
         try {
             if (!obj.validate()) return null
@@ -92,18 +81,18 @@ class ScoreObjectScheduler(val context: Context) {
         }
         if (obj is TempoGridObject && obj.meter.isResolved.now) {
             val meter = obj.meter.force()
-            player.getClock().attach(player, meter, cutoff)
+            info.player.getClock().attach(info.player, meter, info.cutoff)
         }
         if (!obj.affectsPlayback) return null
         val code = try {
-            obj.startNewInstance(absolutePosition, cutoff, instance, serverLatency, player, extraArguments)
+            obj.startNewInstance(info)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
         }
         if (code == "") return null
         try {
             val description = "Schedule ${obj.name.now}"
-            val args = listOf(absolute, scheduledTime.toString(), player.id, code)
+            val args = listOf(absolute, scheduledTime.toString(), info.player.id, code)
             return client.send("schedule", args, description).thenApply(String::toIntOrNull)
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)

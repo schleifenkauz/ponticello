@@ -2,13 +2,15 @@ package ponticello.model.player
 
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
-import ponticello.impl.*
+import ponticello.impl.Decimal
+import ponticello.impl.Logger
+import ponticello.impl.asTime
+import ponticello.impl.toDecimal
 import ponticello.model.PlaybackSettings
 import ponticello.model.flow.AudioFlows
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.sc.client.getArgument
-import reaktive.value.now
 
 class PlaybackMessageListener(
     private val settings: PlaybackSettings,
@@ -47,13 +49,8 @@ class PlaybackMessageListener(
             return
         }
         val scoreTime = player.playHead.currentTime
-        val serverLatency = settings.serverLatency.now
         val scorePosition = ObjectPosition(scoreTime, absoluteY)
-        ScorePlayer.execute {
-            player.scheduler.scheduleObject(
-                obj, instance = null, player, cutoff =  zero, scorePosition,
-                serverLatency, timestamp, absolute = true, emptyMap()
-            )
-        }
+        val info = ObjectPlaybackInfo(scorePosition, player)
+        player.scheduler.scheduleObject(obj, info, timestamp, absolute = true)
     }
 }

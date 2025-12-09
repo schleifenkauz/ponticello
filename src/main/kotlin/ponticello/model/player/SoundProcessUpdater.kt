@@ -16,40 +16,45 @@ import reaktive.value.now
 import reaktive.value.observe
 
 class SoundProcessUpdater<O>(
-    private val process: O
+    private val obj: O
 ) : ParameterControlList.Listener, ScoreObject.Listener
         where O : ParameterizedObject, O : SuperColliderObject {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
+    private lateinit var instrumentObserver: Observer
 
-    private val client = process.context[SuperColliderClient]
+    private val client = obj.context[SuperColliderClient]
 
     fun startListening() {
-        process.controls.addListener(this, initialize = false)
-        for (control in process.controls) {
+        obj.controls.addListener(this, initialize = false)
+        for (control in obj.controls) {
             observeControl(control, control.now)
         }
-        if (process is ScoreObject) {
-            process.addListener(this)
+        if (obj is ScoreObject) {
+            obj.addListener(this)
+        }
+        instrumentObserver = obj.instrumentChanged.observe { _ ->
+            updateSoundProcess("setInstrument(${obj.def.superColliderName})")
         }
     }
 
     fun stopListening() {
-        process.controls.removeListener(this)
+        obj.controls.removeListener(this)
         for ((_, observer) in controlObservers) observer.kill()
         controlObservers.clear()
+        instrumentObserver.kill()
     }
 
     override fun added(obj: NamedParameterControl, idx: Int) {
         observeControl(obj, obj.now)
-        val code = obj.now.writeCode(obj.name.now, obj.spec.now, this.process)
-        client.run("${this.process.superColliderName}.addControl($code, $idx)")
+        val code = obj.now.writeCode(obj.name.now, obj.spec.now, this.obj)
+        updateSoundProcess("addControl($code, $idx)")
     }
 
     override fun removed(obj: NamedParameterControl, idx: Int) {
         controlObservers.remove(obj.now)?.kill()
         val parameter = obj.name.now
         val default = obj.spec.now?.defaultValueExpr ?: "nil"
-        client.run("${this.process.superColliderName}.removeControl('$parameter', $default)")
+        updateSoundProcess("removeControl('$parameter', $default)")
     }
 
     private fun observeControl(parameter: NamedParameterControl, control: ParameterControl) {
@@ -99,7 +104,7 @@ class SoundProcessUpdater<O>(
     }
 
     override fun moved(obj: NamedParameterControl, idx: Int) {
-        client.run("${process.superColliderName}.moveControl('${obj.name.now}', $idx)")
+        updateSoundProcess("moveControl('${obj.name.now}', $idx)")
     }
 
     override fun reassignedControl(
@@ -110,14 +115,9 @@ class SoundProcessUpdater<O>(
         controlObservers.remove(oldControl)?.kill()
         val spec = parameter.spec.now
         val paramName = parameter.name.now
-        val code = newControl.writeCode(paramName, spec, process)
-        client.run("${process.superColliderName}.replaceControl($code)")
+        val code = newControl.writeCode(paramName, spec, obj)
+        updateSoundProcess("replaceControl($code)")
         observeControl(parameter, newControl)
-    }
-
-    private fun updateControl(ctrl: NamedParameterControl, updateMessage: String) {
-        val name = ctrl.name.now
-        client.run("${process.superColliderName}.getControl('$name').$updateMessage")
     }
 
     override fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {
@@ -127,5 +127,16 @@ class SoundProcessUpdater<O>(
                 updateControl(parameter, "setAllocateBus(${newSpec.allocateBus})")
             }
         }
+    }
+
+    private fun updateSoundProcess(message: String) {
+        if (obj.isCreatedInSuperCollider) {
+            client.run("${obj.superColliderName}.$message")
+        }
+    }
+
+    private fun updateControl(ctrl: NamedParameterControl, updateMessage: String) {
+        val name = ctrl.name.now
+        updateSoundProcess("getControl('$name').$updateMessage")
     }
 }

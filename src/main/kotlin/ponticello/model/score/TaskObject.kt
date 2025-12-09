@@ -6,11 +6,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.Decimal
-import ponticello.impl.writeCode
-import ponticello.model.instr.ParameterDefObject
-import ponticello.model.player.ScorePlayer
-import ponticello.model.score.controls.ParameterControl
+import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.CodeBlockEditor
 import reaktive.Observer
@@ -35,9 +31,6 @@ class TaskObject(
         get() = false
 
     @Transient
-    private var synchronized = false
-
-    @Transient
     private lateinit var synchronizer: Observer
 
     override fun doClone(): ScoreObject = TaskObject(code.clone(context))
@@ -45,29 +38,23 @@ class TaskObject(
     override fun initialize(context: Context) {
         super.initialize(context)
         code.initialize(context)
-        synchronizer = code.editor.result.observe { _, _, _ ->
-            synchronized = false
+        synchronizer = code.editor.result.observe { _ ->
+            isCreatedInSuperCollider = false
         }
     }
 
-    override fun ScWriter.createObject() {
+    override fun ScWriter.createInSuperCollider() {
         appendBlock("$name = Task", endLine = false) {
 //            +"s.latency.wait"
             val block = code.editor.result.now
             block.writeCode(writer, context)
             +"$name = nil"
         }
-        synchronized = true
     }
 
-    override fun startNewInstance(
-        pos: ObjectPosition, cutoff: Decimal, instance: ScoreObjectInstance?,
-        serverLatency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
-    ): String = writeCode(group = !synchronized) {
-        if (!synchronized) {
-            sync()
-            synchronized = true
-        }
+    override fun ScWriter.startNewInstance(
+        info: ObjectPlaybackInfo
+    ) {
         +"$superColliderName.play"
     }
 }

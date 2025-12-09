@@ -17,15 +17,15 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.instr.ParameterDefObject
 import ponticello.model.obj.*
-import ponticello.model.player.ScorePlayer
+import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.ScWriter
+import ponticello.sc.client.eval
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.*
 
@@ -70,6 +70,10 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
             field = value
             notifyListeners { this.updatedMemoText(value) }
         }
+
+    @Transient
+    var isCreatedInSuperCollider = false
+        protected set
 
     @Transient
     private val viewManager: ListenerManager<Listener> = ListenerManager.createWeakListenerManager()
@@ -118,20 +122,29 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
 
     override fun superColliderName(objectName: String): String = "~obj_$objectName"
 
-    override fun ScWriter.createObject() {
+    final override fun ScWriter.createObject() {
+        if (affectsPlayback) {
+            isCreatedInSuperCollider = false
+        }
+    }
+
+    protected open fun ScWriter.createInSuperCollider() {
         if (affectsPlayback) throw NotImplementedError("createObject not implemented for ${this@ScoreObject}")
     }
 
-    open fun startNewInstance(
-        pos: ObjectPosition,
-        cutoff: Decimal,
-        instance: ScoreObjectInstance?,
-        serverLatency: Decimal,
-        player: ScorePlayer,
-        extraArguments: Map<ParameterDefObject, ParameterControl>
-    ): String {
-        if (!affectsPlayback) return ""
+    protected open fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
         throw NotImplementedError("startNewInstance not implemented for $this")
+    }
+
+    fun startNewInstance(info: ObjectPlaybackInfo): String {
+        if (!affectsPlayback) return ""
+        if (!isCreatedInSuperCollider) {
+            client.eval {
+                createInSuperCollider()
+            }.join()
+            isCreatedInSuperCollider = true
+        }
+        return writeCode { startNewInstance(info) }
     }
 
     protected fun recordEdit(edit: Edit) {

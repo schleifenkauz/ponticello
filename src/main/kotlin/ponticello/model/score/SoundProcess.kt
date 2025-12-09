@@ -17,7 +17,7 @@ import ponticello.impl.*
 import ponticello.model.instr.*
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.withName
-import ponticello.model.player.ScorePlayer
+import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.model.player.SoundProcessUpdater
 import ponticello.model.score.controls.*
 import ponticello.sc.BufferControlSpec
@@ -26,6 +26,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.ScWriter
 import ponticello.ui.misc.LFOsManager
+import reaktive.Reactive
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
@@ -42,7 +43,7 @@ class SoundProcess(
     override var _name: ReactiveVariable<String>? = null
 
     @Transient
-    private lateinit var controlListener: SoundProcessUpdater<SoundProcess>
+    private lateinit var updater: SoundProcessUpdater<SoundProcess>
 
     @Transient
     lateinit var lfosManager: LFOsManager
@@ -50,6 +51,9 @@ class SoundProcess(
 
     override val associatedControls: Map<String, ParameterControl>
         get() = controls.controlMap
+
+    override val instrumentChanged: Reactive
+        get() = instrumentRef
 
     override val associatedColor: ReactiveValue<Color?>
         get() = super.associatedColor.orElse(instrumentRef.flatMap { ref ->
@@ -92,13 +96,13 @@ class SoundProcess(
 
     override fun onLoadedIntoRegistry() {
         super<ScoreObject>.onLoadedIntoRegistry()
-        controlListener.startListening()
+        updater.startListening()
         controls.addListener(lfosManager)
     }
 
     override fun onRemoved() {
         super<ScoreObject>.onRemoved()
-        controlListener.stopListening()
+        updater.stopListening()
         controls.removeListener(lfosManager)
     }
 
@@ -165,7 +169,9 @@ class SoundProcess(
         if (resizeMode!!.isStretch && playBufRate != null) {
             playBufRate!!.now = playBufRateBeforeResize * (durationBeforeResize / duration)
         }
-        client.run("$superColliderName.duration = $duration")
+        if (isCreatedInSuperCollider) {
+            client.run("$superColliderName.duration = $duration")
+        }
     }
 
     fun reverse(reverseEnvelopes: Boolean) = context.compoundEdit("Reverse SoundProcess") {
@@ -191,30 +197,29 @@ class SoundProcess(
         super.initialize(context)
         instrumentRef.now.resolve(context)
         controls.initialize(this.context, this)
-        controlListener = SoundProcessUpdater(this)
+        updater = SoundProcessUpdater(this)
         lfosManager = LFOsManager()
     }
 
-    override fun ScWriter.createObject() {
+    override fun ScWriter.createInSuperCollider() {
         createSoundProcessObject(writer, this@SoundProcess, duration)
     }
 
     override fun onRename(oldName: String, newName: String) {
-        client.run("SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')")
+        if (isCreatedInSuperCollider) {
+            client.run("SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')")
+        }
     }
 
-    override fun startNewInstance(
-        pos: ObjectPosition, cutoff: Decimal, instance: ScoreObjectInstance?,
-        serverLatency: Decimal, player: ScorePlayer, extraArguments: Map<ParameterDefObject, ParameterControl>
-    ): String {
-        val extraArgs = extraArguments.entries.associateTo(mutableMapOf()) { (param, ctrl) ->
+    override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
+        val extraArgs = info.extraArguments.entries.associateTo(mutableMapOf()) { (param, ctrl) ->
             val valueCtrl = ctrl as? ValueControl ?: error("Expected ValueControl for $param")
             param.name.now to valueCtrl.value.now
         }
-        var latency = serverLatency
-        val midiObject = instance?.score?.parentObject as? MidiObject
+        var latency = info.serverLatency
+        val midiObject = info.instance?.score?.parentObject as? MidiObject
         if (midiObject != null) {
-            val midinote = instance.y
+            val midinote = info.instance.y
             extraArgs["midinote"] = midinote
             if (def is SynthDefObject || def is ProcessDefObject) {
                 val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
@@ -223,7 +228,11 @@ class SoundProcess(
             latency -= (midiObject.latencyMs.now / 1000.toDecimal())
         }
         val extraArgsString = extraArgs.entries.joinToString(", ", "(", ")") { (name, value) -> "$name: $value" }
-        return "$superColliderName.startNewInstance($pos, $cutoff, $extraArgsString, $serverLatency, ${player.id})"
+        append(
+            superColliderName, ".startNewInstance(",
+            info.pos, ",", info.cutoff, ",", extraArgsString, ",",
+            latency, ",", info.player.id, ")"
+        )
     }
 
     companion object {

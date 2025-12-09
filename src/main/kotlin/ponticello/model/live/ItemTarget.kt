@@ -10,6 +10,7 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.*
+import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.model.project.LIVE_BUFFERS
 import ponticello.model.project.get
 import ponticello.model.project.scripts
@@ -181,11 +182,8 @@ sealed class ItemTarget : AbstractContextualObject() {
                 if (mode != GridItem.Mode.Trigger) {
                     extraArguments[ParameterDefObject.AUTO_RELEASE] = ValueControl.create(zero)
                 }
-                instanceId = grid.scheduler.scheduleObject(
-                    obj, instance = null, position, cutoff = zero, player,
-                    scLangLatency = totalDelay / 2, serverLatency = totalDelay / 2,
-                    extraArguments
-                )
+                val playbackInfo = ObjectPlaybackInfo(position, player, totalDelay / 2, extraArguments = extraArguments)
+                instanceId = grid.scheduler.scheduleObject(obj, playbackInfo, scLangLatency = totalDelay / 2)
             }
         }
 

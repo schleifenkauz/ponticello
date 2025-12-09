@@ -19,6 +19,12 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
         output.append(str)
     }
 
+    fun append(vararg objects: Any) {
+        for (obj in objects) {
+            append(obj.toString())
+        }
+    }
+
     fun appendLine() {
         if (newLine) return
         output.appendLine()

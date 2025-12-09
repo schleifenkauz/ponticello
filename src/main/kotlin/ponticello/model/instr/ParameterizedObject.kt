@@ -4,11 +4,17 @@ import ponticello.impl.Decimal
 import ponticello.model.obj.NamedObject
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
+import reaktive.Reactive
 import reaktive.value.ReactiveValue
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 interface ParameterizedObject : NamedObject {
     val def: InstrumentObject
+
+    val instrumentChanged: Reactive get() = reactiveValue(Unit)
+
+    val isCreatedInSuperCollider: Boolean
 
     val controls: ParameterControlList
 

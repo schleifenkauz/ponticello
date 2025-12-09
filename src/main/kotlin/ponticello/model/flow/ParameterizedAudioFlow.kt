@@ -23,6 +23,9 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
 
     override fun soundProcessName(objectName: String): String? = "flow_${objectName}"
 
+    final override var isCreatedInSuperCollider: Boolean = false
+        private set
+
     final override fun duration(): ReactiveValue<Decimal>? = null
 
     override fun initialize(context: Context) {
@@ -42,6 +45,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
 
     override fun ScWriter.createObject() {
         SoundProcess.createSoundProcessObject(writer, this@ParameterizedAudioFlow, duration = null)
+        isCreatedInSuperCollider = true
     }
 
     override fun onRename(oldName: String, newName: String) {

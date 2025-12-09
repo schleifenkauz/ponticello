@@ -175,7 +175,8 @@ class ScorePlayer private constructor(
         val cutoff = (-delta).coerceAtLeast(zero)
         if (cutoff >= inst.obj.duration) return null
         Logger.fine("Scheduling $obj at $position, delta: $delta", Logger.Category.Playback)
-        return scheduler.scheduleObject(obj, inst, position, cutoff = cutoff, this)
+        val info = ObjectPlaybackInfo(position, this, cutoff = cutoff, instance = inst)
+        return scheduler.scheduleObject(obj, info)
     }
 
     override fun toString(): String = "ScorePlayer [$id]"
