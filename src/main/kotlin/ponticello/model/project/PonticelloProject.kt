@@ -111,7 +111,11 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
 
     fun closeProject() {
         for (component in components) {
-            component.value.dispose()
+            try {
+                component.value.dispose()
+            } catch (e: Exception) {
+                Logger.error("Error while disposing ${component.key.name}!", e)
+            }
         }
     }
 

@@ -71,7 +71,9 @@ abstract class AbstractAudioCapture : AudioCapture {
 
     final override fun close() {
         checkStatus(AudioCapture.Status.RUNNING, AudioCapture.Status.PREPARED)
-        doClose()
+        if (status.now in setOf(AudioCapture.Status.PREPARED, AudioCapture.Status.RUNNING)) {
+            doClose()
+        }
         _status.now = AudioCapture.Status.CLOSED
     }
 

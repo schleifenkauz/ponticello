@@ -38,8 +38,16 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
 
     override fun remove(obj: O) {
         removeByName(obj.name.now)
-        obj.deactivate()
-        obj.dispose()
+        try {
+            obj.deactivate()
+        } catch (e: Exception) {
+            Logger.error("Error while deactivating $objectType '${obj.name.now}'", e)
+        }
+        try {
+            obj.dispose()
+        } catch (e: Exception) {
+            Logger.error("Error while disposing $objectType '${obj.name.now}'", e)
+        }
     }
 
     fun removeByName(name: String) {
@@ -57,7 +65,11 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
 
     override fun dispose() {
         for (obj in objects) {
-            obj.dispose()
+            try {
+                obj.dispose()
+            } catch (e: Exception) {
+                Logger.error("Error while disposing $objectType '${obj.name.now}'", e)
+            }
         }
     }
 }

@@ -294,6 +294,8 @@ sealed class ItemTarget : AbstractContextualObject() {
             }
             flow.setActive(true)
         }
+
+        override fun toString(): String = "Flow $${ref.getName()}"
     }
 
     @Serializable
