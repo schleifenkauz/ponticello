@@ -88,7 +88,7 @@ ValueControl : ParameterControl {
 	}
 
 	apply { |inst|
-		if (inst.type == \synth) {
+		if (inst.type != \ routine) {
 			if (this.allocatesBus) {
 				inst.mapParameter(this.name, bus ? inst.getControlBus(this.name));
 			} {
@@ -107,7 +107,7 @@ ValueControl : ParameterControl {
 				};
 			};
 		} {
-			if (this.sound_proc.type == \synth) {
+			if (this.sound_proc.type != \ routine) {
 				this.updateInstances { |inst|
 					inst.putArgument(this.name, value);
 				}
@@ -181,7 +181,7 @@ EnvelopeControl : ParameterControl {
 	}
 
 	apply { |inst|
-		if (inst.type == \synth) {
+		if (inst.type != \ routine) {
 			var bus = inst.getControlBus(this.name);
 			inst.createAuxilSynth(this.name, synth_def, [out: bus, cutoff: inst.cutoff]);
 			inst.mapParameter(this.name, bus);
@@ -190,7 +190,7 @@ EnvelopeControl : ParameterControl {
 
 	update { |new_env|
 		env = new_env;
-		if (this.sound_proc.type == \synth) {
+		if (this.sound_proc.type != \ routine) {
 			this.defineSynth;
 			this.updateInstances { |inst|
 				var bus = inst.getControlBus(this.name);
@@ -201,7 +201,7 @@ EnvelopeControl : ParameterControl {
 
 
 	dispose {
-		if (this.sound_proc.type == \synth) {
+		if (this.sound_proc.type != \ routine) {
 			this.updateInstances { |inst|
 				inst.freeAuxilSynth(this.name);
 			}
@@ -257,11 +257,15 @@ LFOControl : ParameterControl {
 		};
 		references.do { |ref|
 			var ctrl = inst.getControl(ref);
-			var b = ctrl.getBus(inst);
-			if (b.notNil) {
-				synth.map(ref, b);
+			if (ctrl.notNil) {
+				var b = ctrl !? {ctrl.getBus (inst)};
+				if (b.notNil) {
+					synth.map (ref, b);
+				} {
+					synth.set (ref, ctrl.getValue (inst) );
+				}
 			} {
-				synth.set(ref, ctrl.getValue(inst));
+				postf ("Could not resolve control % on SoundProcess %", ref, inst.def.name);
 			}
 		}
 	}
@@ -302,7 +306,7 @@ ExprControl : ParameterControl {
 
 	update { |new_func|
 		func = new_func;
-		if (this.sound_process.type == \synth) {
+		if (this.sound_process.type != \ routine) {
 			this.updateInstances { |inst|
 				inst.putArgument(func.value(inst, inst.current_time));
 			}

@@ -18,13 +18,11 @@ import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
 import ponticello.model.registry.reference
-import ponticello.sc.ParameterType
+import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
-import ponticello.sc.code
 import ponticello.sc.editor.CodeBlockEditor
-import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -34,9 +32,7 @@ import reaktive.value.reactiveVariable
 class ProcessDefObject(
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: ParameterDefList,
-    val setupBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
-    val loopBlock: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
-    val deltaExpr: EditorRoot<@Contextual ScExprExpander> = EditorRoot(ScExprExpander().defaultState()),
+    val body: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
 ) : ConfigurableInstrumentObject, AbstractSuperColliderObject() {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -51,56 +47,28 @@ class ProcessDefObject(
     override fun copy(): ProcessDefObject = ProcessDefObject(
         color.copy(),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy().withName(p.name.now) }),
-        setupBlock.clone(context),
-        loopBlock.clone(context)
+        body.clone(context)
     )
 
     override fun ScWriter.sync() {
         createObject()
     }
 
-    override fun ScWriter.createObject() { //TODO update
-        val setup = setupBlock.editor.result.now
-        val loop = loopBlock.editor.result.now
-        val delta = deltaExpr.editor.result.now
-
-        appendBlock("$superColliderName = ") {
-            append("arg player_id, t = 0, duration")
-            for (p in parameters) {
-                val defaultValue = p.spec.now.defaultValueExpr
-                append(", ")
-                val name = "${p.name.now}___"
-                if (defaultValue != null) append("$name = $defaultValue")
-                else append(name)
+    override fun ScWriter.createObject() {
+        val subst = body.editor.result.now.transform<ParameterReference> { ref ->
+            Identifier("inst").send("getControlValue", SymbolLiteral(ref.parameter.getName()))
+        }.substitute(
+            mapOf(
+            "time" to { Identifier("inst").send("current_time") }
+        ))
+        val defaultValueMap = parameters.filter { p -> p.spec.now is NumericalControlSpec }
+            .joinToString(", ", "(", ")") { param ->
+                val spec = param.spec.now as NumericalControlSpec
+                "${param.name.now}: ${spec.defaultValue.text}"
             }
-            appendLine(";")
-            if (parameters.isNotEmpty()) {
-                +"var ${parameters.joinToString { p -> p.name.now }}"
-            }
-            for (p in parameters) {
-                val name = p.name.now
-                +"$name = ${name}___.value(0)"
-            }
-            setup.writeCode(writer, context)
-            appendBlock("while { t <= duration }") {
-                append("var delta___")
-                for (variable in loop.variables) {
-                    append(", ")
-                    append(variable.text)
-                }
-                appendLine(";")
-                for (p in parameters) {
-                    val name = p.name.now
-                    +"$name = ${name}___.value(t)"
-                }
-                for (statement in loop.statements) {
-                    statement.code(writer, context)
-                    appendLine("; ")
-                }
-                +"delta___ = ${delta.code(context)}"
-                +"delta___.wait"
-                +"t = t + delta___"
-            }
+        appendBlock("$superColliderName = RoutineInstrument($defaultValueMap)") {
+            append("arg inst, duration")
+            subst.code(this, context)
         }
     }
 
@@ -120,9 +88,7 @@ class ProcessDefObject(
         }
         super.initialize(myContext)
         parameters.initialize(myContext)
-        setupBlock.initialize(myContext)
-        loopBlock.initialize(myContext)
-        deltaExpr.initialize(myContext)
+        body.initialize(myContext)
     }
 
     override fun onRename(oldName: String, newName: String) {
@@ -135,8 +101,7 @@ class ProcessDefObject(
         fun newEmpty(name: String) = ProcessDefObject(
             color = reactiveVariable(randomColor()),
             parameters = ParameterDefList(),
-            setupBlock = EditorRoot(CodeBlockEditor().defaultState()),
-            loopBlock = EditorRoot(CodeBlockEditor().defaultState())
+            body = EditorRoot(CodeBlockEditor().defaultState())
         ).withName(name)
 
         fun unresolved() = newEmpty("<unresolved>")

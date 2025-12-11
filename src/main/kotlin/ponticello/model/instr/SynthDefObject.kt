@@ -12,7 +12,7 @@ sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
         get() = context[InstrumentRegistry]
 
     override val superColliderName: String
-        get() = "\\${name.now}"
+        get() = "~synthdef_${name.now}"
 
     override fun onUpdated() {
         //TODO

@@ -13,14 +13,8 @@ class ProcessDefObjectPane(
 
     override fun getContent(def: ProcessDefObject): Node {
         val rootControl = CompoundEditorControl.vertical {
-            horizontal { keyword("arg"); space(); text("t"); operator(", "); text("duration"); operator(";") }
-            setupCodePane = def.setupBlock.control
-            add(setupCodePane)
-            horizontal { keyword("while"); space(); text("t"); operator(" <= "); text("duration") }
-            indented {
-                add(def.loopBlock.control)
-                horizontal { keyword("wait "); add(def.deltaExpr.control) }
-            }
+            horizontal { keyword("arg"); space(); text("inst"); operator(", "); text("duration"); operator(";") }
+            add(def.body.control)
             styleClass("code-pane")
         }
         return CodePane(null, rootControl, def.context)

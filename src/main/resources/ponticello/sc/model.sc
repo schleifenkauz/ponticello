@@ -7,9 +7,9 @@ SoundProcess {
 	}
 
 	* rename { |old_name, new_name|
-	    var proc = dict[old_name];
+		var proc = dict[old_name];
 		if (proc == nil) {
-		    Error("SoundProcess % not found".format(old_name)).throw;
+			Error("SoundProcess % not found".format(old_name)).throw;
 		};
 		dict.removeAt(old_name);
 		proc.name = new_name;
@@ -72,7 +72,15 @@ SoundProcess {
 		^instances.values[0]
 	}
 
-	getControl { |parameter| ^control_map[parameter] }
+	getControl {
+		| parameter |
+		^ control_map[parameter]
+		? instr
+		.getDefaultValue(parameter) !? {
+			| default | ValueControl
+			.new(default)
+		}
+	}
 
 	addControl { |ctrl, idx|
 		ctrl.sound_proc = this;
@@ -154,15 +162,27 @@ SoundProcess {
 }
 
 SoundProcessInstance : AudioNode {
-	var <def, <idx, <cutoff, <pos, extra_args, <playerId,
-	start_time, running, restarting = false, placement,
-	control_buses, auxil_synths,
-	group, <synth, routine,
-	midinote, channel,
+	var <def
+	,
+	<idx
+	,
+	<cutoff
+	,
+	<pos
+	,
+	<extra_args
+	,
+	<playerId
+	,
+	<server_latency
+	,
+	start_time, placement, group,
+	running = false, restarting = false, disposed = false,
+	control_buses, auxil_synths, sound_obj,
 	on_dispose;
 
-	* new { |def, idx, pos, cutoff = 0, midi_note = nil|
-		^super.new.init(def, idx, pos, cutoff, midi_note);
+	* new {| def, idx, pos, cutoff = 0, extra_args |
+		^ super.new.init (def, idx, pos, cutoff, extra_args);
 	}
 
 	init { |d, i, p, offset, extra|
@@ -200,9 +220,9 @@ SoundProcessInstance : AudioNode {
 
 	createAuxilSynth { |param_name, synth_def, args, replace = false|
 		var auxil_synth;
-		auxil_synth = if (this.type == \synth) {
-			if (synth == nil) { Error("Cannot create auxiliary synth because, this.synth is nil.").throw };
-			Synth.newPaused(synth_def, args, target: synth, addAction: \addBefore)
+		if (sound_obj == nil) {Error ("Cannot create auxiliary synth because sound_obj = nil.").throw};
+		auxil_synth = if (sound_obj.isMemberOf (Synth) ) {
+			Synth.newPaused (synth_def, args, target: sound_obj, addAction: \ addBefore)
 		} { Synth.newPaused(synth_def, args, target: group, addAction: \addToTail) };
 		auxil_synths[param_name] = auxil_synth;
 		^auxil_synth
@@ -222,30 +242,24 @@ SoundProcessInstance : AudioNode {
 
 	mapParameter { |name, bus|
 		if (extra_args.includesKey(name).not) {
-			if (this.type == \synth) {
-				if (synth == nil) { Error("Cannot map parameter because this.synth is nil.").throw };
-				synth.map(name, bus);
+			if (sound_obj == nil) {Error ("Cannot map parameter because sound_obj = nil.").throw};
+			if (sound_obj.respondsTo (\ map) ) {
+				sound_obj.map (name, bus);
 			}
 		}
 	}
 
 	putArgument { |name, value|
 		if (extra_args.includesKey(name).not) {
-			if (this.type == \synth) {
-				if (synth == nil) { Error("Cannot set control because this.synth is nil.").throw };
-				synth.set(name, value);
+			if (sound_obj.respondsTo (\ set) ) {
+				if (sound_obj == nil) {Error ("Cannot set control because this.synth is nil.").throw};
+				sound_obj.set (name, value);
 			}
 		}
 	}
 
 	setDefaultValue { |parameter|
-		if (synth != nil) {
-			var def = SynthDescLib.global.at(synth.defName);
-			var default = def.controlDict[parameter].defaultValue;
-			synth.set(parameter, default);
-		} {
-			Error("default value for routines not implemented").throw;
-		}
+		sound_obj.set (parameter, def.instr.getDefaultValue (parameter) )
 	}
 
 	getControlValue { |name|
@@ -261,18 +275,22 @@ SoundProcessInstance : AudioNode {
 	}
 
 	dispose {
-		control_buses.do(_.free);
-		control_buses = Dictionary.new;
-		if (def.type != \vst_midi) {
-			group.free;
-			if (pos != nil) {
-				AudioNodeOrder.remove(this);
+		if (disposed.not) {
+			control_buses.do (_.free);
+			control_buses = Dictionary.new;
+			if (group != nil) {
+				group.free;
+				group = nil;
+				if (pos != nil) {
+					AudioNodeOrder.remove (this);
+				}
+			};
+			on_dispose.do (_.value);
+			if (restarting.not) {
+				~ ponticello_addr.sendMsg ('/ stopped', - 1, def.name, idx);
+				def.removeInstance (idx);
+				disposed = true;
 			}
-		};
-		on_dispose.do(_.value);
-		if (restarting.not) {
-			~ponticello_addr.sendMsg('/stopped', -1, def.name, idx);
-			def.removeInstance(idx);
 		}
 	}
 
@@ -280,6 +298,7 @@ SoundProcessInstance : AudioNode {
 		var duration = def.duration !? { |dur| dur - cutoff };
 		placement = plcmnt;
 		start_time = TempoClock.beats;
+		server_latency = latency;
 		playerId = player_id;
 		running = run;
 		if (placement != nil) {
@@ -289,50 +308,16 @@ SoundProcessInstance : AudioNode {
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) };
 		};
-		if (this.type == \synth) {
-			var args = List[duration: duration];
-			extra_args.keysValuesDo { |p, v| args = args.addAll([p, v]) };
-			synth = Synth.newPaused(def.instr, args, group, \addToTail);
-		};
+		sound_obj = def.instr.create (this);
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
 		};
-		switch (this.type)
-		{ \synth }{
-			if (run) {
-				var start = {
-					Server.local.sync;
-					auxil_synths.do(_.run);
-					synth.run;
-				};
-				if (latency != 0) {
-					//latency = latency - (TempoClock.beats - start_time);
-					Server.local.makeBundle(latency, start);
-				} {
-					start.value();
-				};
-			};
-			synth.onFree { this.dispose };
-		} { \routine } {
-			routine = Task {
-				def.instr.value(player_id, this);
-				this.dispose;
-			};
-			if (run) { routine.play };
-		} { \vst_midi } {
-			var velocity = this.getControlValue(\velocity) ? 64;
-			var note_start_time = start_time;
-			channel = this.getControlValue(\channel) ? 0;
-			midinote = this.getControlValue(\midinote);
-			TempoClock.sched(latency) {
-				def.instr.midi.noteOn(channel, midinote, velocity);
-			};
-			TempoClock.sched(latency + def.duration) {
-				if (start_time == note_start_time) {
-					def.instr.midi.noteOff(channel, midinote, velocity);
-				}
-			};
-		};
+		if (run) {
+			Server.local.makeBundle (latency) {
+				auxil_synths.do (_.run);
+				sound_obj.run (true, this);
+			}
+		}
 	}
 
 	restart {
@@ -346,24 +331,15 @@ SoundProcessInstance : AudioNode {
 	run { |active|
 		running = active;
 		auxil_synths.do { |s| s.run(active) };
-		if (synth != nil) { synth.run(active) } {
-			if (routine != nil) {
-				if (active) { routine.play } { routine.pause };
-			} {
-				Error("Not initialized").throw;
-			}
-		}
+		sound_obj.run (active, this);
 	}
 
 	release {
-		if (synth != nil) {
-			postf("Releasing % #% (%)\n", def.name, idx, synth);
-			synth.set(\gate, 0);
-		};
-		if (routine != nil) { routine.stop };
-		if (midinote != nil) {
-			def.instr.midi.noteOff(midinote, channel);
+		if (sound_obj.isMemberOf (Synth) ) {
+			sound_obj.set (\ gate, 0); //why does [release] not work here?
+		} {
+			sound_obj.release;
 			this.dispose;
-		};
+		}
 	}
 }

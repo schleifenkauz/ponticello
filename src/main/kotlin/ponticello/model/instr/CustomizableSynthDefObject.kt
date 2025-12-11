@@ -126,6 +126,7 @@ class CustomizableSynthDefObject(
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this, context)
         appendLine(").add;")
+        +"$superColliderName = SynthInstrument(\\${name.now})"
     }
 
     override fun ScWriter.freeObject() {
