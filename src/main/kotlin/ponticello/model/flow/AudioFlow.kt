@@ -52,12 +52,16 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
         }
         active.now = value
         if (parentGroup?.isActive?.now == true) {
-            context[SuperColliderClient].run("$superColliderName.run($value)")
+            setRunning(value)
         }
     }
 
     fun toggleActive() {
         setActive(!isActive.now)
+    }
+
+    open fun setRunning(active: Boolean) {
+        context[SuperColliderClient].run("$superColliderName.run($active)")
     }
 
     fun addToServer(placement: NodePlacement): CompletableFuture<String> {
@@ -67,9 +71,6 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
 
     fun removeFromServer() {
         context[SuperColliderClient].run("${superColliderName}.release")
-    }
-
-    open fun setRunning(active: Boolean) {
     }
 
     override fun sync() {
