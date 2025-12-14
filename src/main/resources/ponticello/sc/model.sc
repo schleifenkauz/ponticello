@@ -46,13 +46,7 @@ SoundProcess {
 		};
 	}
 
-	type {
-		^switch (instr.class)
-		{ Symbol } { \synth }
-		{ VSTPluginController } { \vst_midi }
-		{ Function } { \routine }
-		{ Error("Invalid instrument type %".format(instr)).throw }
-	}
+	type { ^instr.type }
 
 	setInstrument { |i|
 		instr = i;
@@ -72,14 +66,9 @@ SoundProcess {
 		^instances.values[0]
 	}
 
-	getControl {
-		| parameter |
-		^ control_map[parameter]
-		? instr
-		.getDefaultValue(parameter) !? {
-			| default | ValueControl
-			.new(default)
-		}
+	getControl { | parameter |
+		^control_map[parameter] 
+		?? { instr.getDefaultValue(parameter) !? {| default | ValueControl.new(default) } }
 	}
 
 	addControl { |ctrl, idx|
@@ -162,21 +151,9 @@ SoundProcess {
 }
 
 SoundProcessInstance : AudioNode {
-	var <def
-	,
-	<idx
-	,
-	<cutoff
-	,
-	<pos
-	,
-	<extra_args
-	,
-	<playerId
-	,
-	<server_latency
-	,
-	start_time, placement, group,
+	var <def, <idx, <cutoff, <pos, 
+	<extra_args, <playerId, 
+	<server_latency, start_time, placement, group,
 	running = false, restarting = false, disposed = false,
 	control_buses, auxil_synths, sound_obj,
 	on_dispose;
@@ -222,7 +199,7 @@ SoundProcessInstance : AudioNode {
 		var auxil_synth;
 		if (sound_obj == nil) {Error ("Cannot create auxiliary synth because sound_obj = nil.").throw};
 		auxil_synth = if (sound_obj.isMemberOf (Synth) ) {
-			Synth.newPaused (synth_def, args, target: sound_obj, addAction: \ addBefore)
+			Synth.newPaused (synth_def, args, target: sound_obj, addAction: \addBefore)
 		} { Synth.newPaused(synth_def, args, target: group, addAction: \addToTail) };
 		auxil_synths[param_name] = auxil_synth;
 		^auxil_synth
@@ -243,7 +220,7 @@ SoundProcessInstance : AudioNode {
 	mapParameter { |name, bus|
 		if (extra_args.includesKey(name).not) {
 			if (sound_obj == nil) {Error ("Cannot map parameter because sound_obj = nil.").throw};
-			if (sound_obj.respondsTo (\ map) ) {
+			if (sound_obj.respondsTo (\map) ) {
 				sound_obj.map (name, bus);
 			}
 		}
@@ -251,7 +228,7 @@ SoundProcessInstance : AudioNode {
 
 	putArgument { |name, value|
 		if (extra_args.includesKey(name).not) {
-			if (sound_obj.respondsTo (\ set) ) {
+			if (sound_obj.respondsTo (\set) ) {
 				if (sound_obj == nil) {Error ("Cannot set control because this.synth is nil.").throw};
 				sound_obj.set (name, value);
 			}
@@ -263,11 +240,11 @@ SoundProcessInstance : AudioNode {
 	}
 
 	getControlValue { |name|
-		^extra_args[name] ? (def.getControl(name) !? { |ctrl| ctrl.getValue(this) })
+		^extra_args[name] ?? {(def.getControl(name) !? { |ctrl| ctrl.getValue(this) })}
 	}
 
 	getControlUGen { |name|
-		^extra_args[name] ? def.getControl(name) !? { |ctrl| ctrl.getUGen(this) }
+		^extra_args[name] ?? {def.getControl(name) !? { |ctrl| ctrl.getUGen(this) }}
 	}
 
 	onDispose { |func|
@@ -287,8 +264,8 @@ SoundProcessInstance : AudioNode {
 			};
 			on_dispose.do (_.value);
 			if (restarting.not) {
-				~ ponticello_addr.sendMsg ('/ stopped', - 1, def.name, idx);
-				def.removeInstance (idx);
+				~ponticello_addr.sendMsg ('/stopped', -1, def.name, idx);
+				def.removeInstance(idx);
 				disposed = true;
 			}
 		}
@@ -308,14 +285,16 @@ SoundProcessInstance : AudioNode {
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) };
 		};
-		sound_obj = def.instr.create (this);
+		sound_obj = def.instr.create(this);
+		Server.local.sync;
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
 		};
 		if (run) {
+			Server.local.sync;
 			Server.local.makeBundle (latency) {
 				auxil_synths.do (_.run);
-				sound_obj.run (true, this);
+				sound_obj.run(true, this);
 			}
 		}
 	}
@@ -336,7 +315,7 @@ SoundProcessInstance : AudioNode {
 
 	release {
 		if (sound_obj.isMemberOf (Synth) ) {
-			sound_obj.set (\ gate, 0); //why does [release] not work here?
+			sound_obj.set (\gate, 0); //why does [release] not work here?
 		} {
 			sound_obj.release;
 			this.dispose;

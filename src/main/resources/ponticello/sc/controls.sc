@@ -38,7 +38,7 @@ ValueControl : ParameterControl {
 		}
 	}
 
-	getBus { |inst| ^bus ? super.getBus(inst) }
+	getBus { |inst| ^bus ?? { super.getBus(inst) } }
 
 	getValue { |inst|
 		^if (cutoff_multiplier == 0) { value } { value + (cutoff_multiplier * inst.cutoff) }
@@ -88,7 +88,7 @@ ValueControl : ParameterControl {
 	}
 
 	apply { |inst|
-		if (inst.type != \ routine) {
+		if (inst.type != \routine) {
 			if (this.allocatesBus) {
 				inst.mapParameter(this.name, bus ? inst.getControlBus(this.name));
 			} {
@@ -107,7 +107,7 @@ ValueControl : ParameterControl {
 				};
 			};
 		} {
-			if (this.sound_proc.type != \ routine) {
+			if (this.sound_proc.type != \routine) {
 				this.updateInstances { |inst|
 					inst.putArgument(this.name, value);
 				}
@@ -181,7 +181,7 @@ EnvelopeControl : ParameterControl {
 	}
 
 	apply { |inst|
-		if (inst.type != \ routine) {
+		if (inst.type != \routine) {
 			var bus = inst.getControlBus(this.name);
 			inst.createAuxilSynth(this.name, synth_def, [out: bus, cutoff: inst.cutoff]);
 			inst.mapParameter(this.name, bus);
@@ -190,7 +190,7 @@ EnvelopeControl : ParameterControl {
 
 	update { |new_env|
 		env = new_env;
-		if (this.sound_proc.type != \ routine) {
+		if (this.sound_proc.type != \routine) {
 			this.defineSynth;
 			this.updateInstances { |inst|
 				var bus = inst.getControlBus(this.name);
@@ -201,7 +201,7 @@ EnvelopeControl : ParameterControl {
 
 
 	dispose {
-		if (this.sound_proc.type != \ routine) {
+		if (this.sound_proc.type != \routine) {
 			this.updateInstances { |inst|
 				inst.freeAuxilSynth(this.name);
 			}
@@ -306,7 +306,7 @@ ExprControl : ParameterControl {
 
 	update { |new_func|
 		func = new_func;
-		if (this.sound_process.type != \ routine) {
+		if (this.sound_process.type != \routine) {
 			this.updateInstances { |inst|
 				inst.putArgument(func.value(inst, inst.current_time));
 			}
