@@ -4,11 +4,11 @@ import fxutils.*
 import fxutils.actions.action
 import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
+import fxutils.controls.CheckBox
 import fxutils.controls.IntSpinner
 import fxutils.drag.ConfiguredDropHandler
 import fxutils.drag.setupDropArea
 import fxutils.prompt.SelectorPrompt
-import hextant.context.Context
 import javafx.animation.AnimationTimer
 import javafx.animation.PauseTransition
 import javafx.application.Platform
@@ -36,12 +36,14 @@ import ponticello.ui.impl.DecimalSpinner
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.score.RootScorePane
 import reaktive.Observer
-import reaktive.value.binding.*
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.`if`
+import reaktive.value.binding.map
+import reaktive.value.binding.or
 import reaktive.value.fx.asObservableValue
 import reaktive.value.fx.asProperty
 import reaktive.value.now
 import java.io.File
-import java.util.WeakHashMap
 
 class ConductorPane(
     private val conductor: Conductor,
@@ -79,6 +81,8 @@ class ConductorPane(
         conductor.options.minBeatDur,
         min = 0.1.toDecimal(), max = 2.toDecimal(), step = 0.1.toDecimal()
     ).minColumns(5)
+
+    private val visualFeedbackCheckBox = CheckBox(conductor.options.visualFeedback)
 
     private val extraOptionsField = textField(conductor.options.extraArguments.now) styleClass "sleek-text-field"
 
@@ -125,6 +129,7 @@ class ConductorPane(
             HBox(5.0, Label("Factor:      "), warpFactorSpinner).centerChildren(),
             HBox(5.0, Label("Min interval:"), minBeatDurSpinner).centerChildren(),
             HBox(5.0, Label("Warp range:  "), minWarpSpinner, Label("-"), maxWarpSpinner),
+            HBox(5.0, Label("Blink:       "), visualFeedbackCheckBox),
             HBox(5.0, Label("Model:       "), modelSelector.alwaysHGrow()).centerChildren(),
             HBox(5.0, Label("Input:       "), videoInputField.alwaysHGrow()).centerChildren(),
             Label("Command line options:  "),
@@ -168,10 +173,12 @@ class ConductorPane(
 
     override fun onBeat(measure: Int, barPosition: Int, conductorTime: Decimal) = Platform.runLater {
         this.conductorTime = conductorTime
-        background = background(Color.RED)
-        val pause = PauseTransition(Duration.millis(100.0))
-        pause.setOnFinished { background = null }
-        pause.play()
+        if (conductor.options.visualFeedback.now) {
+            background = background(Color.RED)
+            val pause = PauseTransition(Duration.millis(100.0))
+            pause.setOnFinished { background = null }
+            pause.play()
+        }
         currentMeasureLabel.text = "Measure: $measure"
         barPositionLabel.text = "Beat: $barPosition / ${conductor.beatsPerBar}"
         repositionConductorTimeIndicator()

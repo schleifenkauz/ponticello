@@ -131,11 +131,9 @@ abstract class Conductor(
         val meter = activeMeter ?: return
         lastBeatMs = System.currentTimeMillis()
 
-        println(nBeats)
         if (nBeats >= 0) {
             if (playing) {
                 conductorTime += meter.getDuration(TimeUnit.Beats)
-                println("$conductorTime")
             } else {
                 playing = true
                 currentMeasure = 1
@@ -144,7 +142,6 @@ abstract class Conductor(
         if (nBeats == -1 && !player.isScheduled.now) {
             val conductorTempo = currentTempo()
             val beatDur = 60 / conductorTempo
-            println("Beat duration: $beatDur")
             val delay = ((beatDur - player.lookAhead) * 1000).toLong()
             println("Scheduling the player with a delay of $delay ms.")
             scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
