@@ -102,7 +102,7 @@ data class TempoGrid(
                 tick % ticksPerBar == 0 -> {
                     if ((tick / ticksPerBar) % barDistance != 0) continue
                     lineWidth = 3.0
-                    stroke = if (snapOption <= TimeUnit.Bars && snapEnabled) Color.GREEN else Color.GRAY
+                    stroke = if (snapOption <= TimeUnit.Bars && snapEnabled) GRID_COLOR else Color.GRAY
                     when (type) {
                         GridType.Regular -> strokeLine(x, CENTER_Y - BAR_LINE_HEIGHT, x, CENTER_Y + BAR_LINE_HEIGHT)
                         GridType.SampleOverlay -> strokeLine(x, 10.0, x, canvas.height)
@@ -115,14 +115,14 @@ data class TempoGrid(
                         val y = 10.0
                         font = Font.font("Monospaced", 10.0)
                         lineWidth = 0.75
-                        stroke = if (snapEnabled) Color.GREEN else Color.GRAY
+                        stroke = if (snapEnabled) GRID_COLOR else Color.GRAY
                         strokeText(text, textX, y)
                     }
                 }
 
                 tick % tpb == 0 -> {
                     if (beatWidth < MIN_BEAT_WIDTH) continue
-                    stroke = if (snapOption <= TimeUnit.Beats && snapEnabled) Color.GREEN else Color.GRAY
+                    stroke = if (snapOption <= TimeUnit.Beats && snapEnabled) GRID_COLOR else Color.GRAY
                     lineWidth = 2.0
                     when (type) {
                         GridType.Regular -> strokeLine(x, CENTER_Y - BEAT_LINE_HEIGHT, x, CENTER_Y + BEAT_LINE_HEIGHT)
@@ -132,7 +132,7 @@ data class TempoGrid(
 
                 else -> {
                     if (tickWidth < MIN_TICK_WIDTH) continue
-                    stroke = if (snapOption <= TimeUnit.Ticks && snapEnabled) Color.GREEN else Color.GRAY
+                    stroke = if (snapOption <= TimeUnit.Ticks && snapEnabled) GRID_COLOR else Color.GRAY
                     lineWidth = 1.0
                     when (type) {
                         GridType.Regular -> strokeLine(x, CENTER_Y - TICK_LINE_HEIGHT, x, CENTER_Y + TICK_LINE_HEIGHT)
@@ -143,7 +143,7 @@ data class TempoGrid(
         }
 
         if (type == GridType.Regular) {
-            stroke = if (snapEnabled) Color.GREEN else Color.GRAY
+            stroke = if (snapEnabled) GRID_COLOR else Color.GRAY
             lineWidth = 2.0
             strokeLine(0.0, CENTER_Y, canvas.width, CENTER_Y)
         }
@@ -164,5 +164,6 @@ data class TempoGrid(
         private const val MIN_TICK_WIDTH = 5.0
         const val GRID_HEIGHT = 30.0
         private const val CENTER_Y = 20.0
+        private val GRID_COLOR = Color.GREEN
     }
 }

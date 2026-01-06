@@ -83,6 +83,7 @@ class ConductorPane(
     ).minColumns(5)
 
     private val visualFeedbackCheckBox = CheckBox(conductor.options.visualFeedback)
+    private val saveTempoCurveCheckBox = CheckBox(conductor.options.saveTempoCurve)
 
     private val extraOptionsField = textField(conductor.options.extraArguments.now) styleClass "sleek-text-field"
 
@@ -123,16 +124,17 @@ class ConductorPane(
         videoInputProperty.bindBidirectional(videoInputField.textProperty())
         extraOptionsProperty.bindBidirectional(extraOptionsField.textProperty())
         content = VBox(
-            HBox(5.0, Label("Port:        "), portSpinner).centerChildren(),
-            HBox(5.0, Label("Countdown:   "), countdownTimeSpinner).centerChildren(),
-            HBox(5.0, Label("Threshold:   "), beatThresholdSpinner).centerChildren(),
-            HBox(5.0, Label("Factor:      "), warpFactorSpinner).centerChildren(),
-            HBox(5.0, Label("Min interval:"), minBeatDurSpinner).centerChildren(),
-            HBox(5.0, Label("Warp range:  "), minWarpSpinner, Label("-"), maxWarpSpinner),
-            HBox(5.0, Label("Blink:       "), visualFeedbackCheckBox),
-            HBox(5.0, Label("Model:       "), modelSelector.alwaysHGrow()).centerChildren(),
-            HBox(5.0, Label("Input:       "), videoInputField.alwaysHGrow()).centerChildren(),
-            Label("Command line options:  "),
+            HBox(5.0, Label("Port:            "), portSpinner).centerChildren(),
+            HBox(5.0, Label("Countdown:       "), countdownTimeSpinner).centerChildren(),
+            HBox(5.0, Label("Threshold:       "), beatThresholdSpinner).centerChildren(),
+            HBox(5.0, Label("Factor:          "), warpFactorSpinner).centerChildren(),
+            HBox(5.0, Label("Min interval:    "), minBeatDurSpinner).centerChildren(),
+            HBox(5.0, Label("Warp range:      "), minWarpSpinner, Label("-"), maxWarpSpinner),
+            HBox(5.0, Label("Blink:           "), visualFeedbackCheckBox),
+            HBox(5.0, Label("Save Tempo Curve:"), saveTempoCurveCheckBox),
+            HBox(5.0, Label("Model:           "), modelSelector.alwaysHGrow()).centerChildren(),
+            HBox(5.0, Label("Input:           "), videoInputField.alwaysHGrow()).centerChildren(),
+            Label("Command line options:      "),
             extraOptionsField,
             centerPane,
             HBox(10.0, currentMeasureLabel, barPositionLabel).center()

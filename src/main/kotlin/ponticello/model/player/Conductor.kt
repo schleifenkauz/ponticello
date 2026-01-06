@@ -41,6 +41,10 @@ abstract class Conductor(
     val isActive: ReactiveBoolean get() = active
     val isScheduled: ReactiveBoolean get() = scheduled
 
+    private val beats = mutableListOf<Decimal>()
+    private val tempoList = mutableListOf<Decimal>()
+    private var startAt = zero
+
     private val playerStopObserver = player.isPlaying.observe { _, before, now ->
         if (before && !now) {
             stop()
@@ -49,6 +53,17 @@ abstract class Conductor(
 
     fun addView(view: View) {
         views.addListener(view)
+    }
+
+    protected fun setTimeWarp(warp: Decimal) {
+        tempoList.add(warp.withPrecision(3))
+        clock.timeWarp.now = warp.coerceIn(options.minWarp.now, options.maxWarp.now)
+        val timePlaying = (System.currentTimeMillis() / 1000.0).withPrecision(3) - startAt
+        val delta = (tempoList.size / 15.0).withPrecision(3) - timePlaying
+    }
+
+    protected fun keepTimeWarp() {
+        tempoList.add(clock.timeWarp.now.withPrecision(3))
     }
 
     protected abstract fun startVideoAnalysis(pythonExe: String, rubatoDir: File, startAt: Long): Process
@@ -73,7 +88,6 @@ abstract class Conductor(
         val measureOffset = (offset / meter.getDuration(TimeUnit.Bars)).roundToInt()
         currentMeasure = grid.firstBar.now + measureOffset
 
-
         val receiver = OSCPortIn(options.port.now)
         receiver.startListening()
         receiver.dispatcher.addListener(OSCSuperColliderClient.ALL_MESSAGES, this)
@@ -94,6 +108,7 @@ abstract class Conductor(
     }
 
     private fun doStop() {
+        if (!active.now) return
         beatTimes.clear()
         nBeats = 0
         currentMeasure = 0
@@ -107,6 +122,19 @@ abstract class Conductor(
         player.pause()
         player.playHead.movePlayHeadToStart()
         clock.timeWarp.now = one
+        if (options.saveTempoCurve.now) {
+            if (beats.isNotEmpty()) {
+                val firstBeat = beats.first()
+                File("/home/nikolaus/dev/rubato/beat_times.txt").writeText(
+                    beats.map { b -> b - firstBeat }.joinToString("\n")
+                )
+                beats.clear()
+            }
+            if (tempoList.isNotEmpty()) {
+                File("/home/nikolaus/dev/rubato/tempo.txt").writeText(tempoList.joinToString("\n"))
+                tempoList.clear()
+            }
+        }
         views.notifyListeners { onStopped() }
     }
 
@@ -114,6 +142,7 @@ abstract class Conductor(
         if (event.message.address == "/started") {
             active.set(true)
             conductorTime = player.currentTime
+            startAt = (System.currentTimeMillis() / 1000.0).withPrecision(3)
             views.notifyListeners { onStarted() }
         }
         if (event.message.address == "/exited") {
@@ -132,6 +161,7 @@ abstract class Conductor(
         lastBeatMs = System.currentTimeMillis()
 
         if (nBeats >= 0) {
+            beats.add(timestamp)
             if (playing) {
                 conductorTime += meter.getDuration(TimeUnit.Beats)
             } else {
@@ -143,7 +173,8 @@ abstract class Conductor(
             val conductorTempo = currentTempo()
             val beatDur = 60 / conductorTempo
             val delay = ((beatDur - player.lookAhead) * 1000).toLong()
-            println("Scheduling the player with a delay of $delay ms.")
+            clock.timeWarp.now = conductorTempo / startingMeter!!.beatsPerMinute.now
+            println("INITIAL TEMPO $conductorTempo")
             scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
         }
         val barPosition = if (beatsPerBar != 0) nBeats.mod(beatsPerBar) + 1 else 0
@@ -158,7 +189,6 @@ abstract class Conductor(
             currentMeasure += 1
         }
     }
-
 
     interface View {
         fun onBeat(measure: Int, barPosition: Int, conductorTime: Decimal)

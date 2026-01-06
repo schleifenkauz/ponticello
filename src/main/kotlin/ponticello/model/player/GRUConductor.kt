@@ -49,20 +49,21 @@ class GRUConductor private constructor(player: ScorePlayer, options: ConductorOp
                 val minBeatDurMs = (options.minBeatDur.now * 1000).toLong()
                 if (beatProbability >= options.beatThreshold.now.value && now > lastBeatMs + minBeatDurMs) {
                     beat(timestamp)
+                    if (player.isPlaying.now) keepTimeWarp()
                 } else if (player.isScheduled.now) {
                     if (predictedTimeToNextBeat <= lastPrediction) {
                         val conductorTime = conductorTime
                         val playerTime = player.playHead.currentTime
                         val scoreTimeToNextBeat = (conductorTime + meter.getDuration(TimeUnit.Beats) - playerTime)
                             .coerceAtLeast(0.1.toDecimal())
-                        val warp = scoreTimeToNextBeat / predictedTimeToNextBeat.toDouble()
-                        val warpRange = options.minWarp.now..options.maxWarp.now
+                        var warp = scoreTimeToNextBeat / predictedTimeToNextBeat.toDouble()
                         if (meter == lastMeter) {
                             val alpha = options.warpFactor.now
-                            clock.timeWarp.now = ((alpha * warp) + (1 - alpha) * clock.timeWarp.now).coerceIn(warpRange)
-                        } else {
-                            clock.timeWarp.now = warp.coerceIn(warpRange)
+                            warp = (alpha * warp) + (1 - alpha) * clock.timeWarp.now
                         }
+                        setTimeWarp(warp)
+                    } else {
+                        keepTimeWarp()
                     }
                 }
                 lastPrediction = predictedTimeToNextBeat

@@ -3,11 +3,13 @@ package ponticello.model.player
 import com.illposed.osc.OSCMessageEvent
 import hextant.context.Context
 import javafx.application.Platform
-import ponticello.impl.*
+import ponticello.impl.Decimal
+import ponticello.impl.plus
+import ponticello.impl.toDecimal
+import ponticello.impl.toSeconds
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
-import ponticello.model.score.TimeUnit
 import ponticello.sc.client.getArgument
 import reaktive.value.now
 import java.io.File
@@ -53,7 +55,7 @@ class AccelerationBasedConductor private constructor(
         if (nBeats == beatsPerBar) {
             val warp = (conductorTempo / meter.beatsPerMinute.now).coerceIn(0.5.toDecimal(), 2.0.toDecimal())
             println("Time warp: $warp")
-            clock.timeWarp.set(warp)
+            setTimeWarp(warp)
         } else if (nBeats > beatsPerBar) {
             println("Conductor tempo: $conductorTempo")
             val scoreTime = player.playHead.currentTime
@@ -65,7 +67,7 @@ class AccelerationBasedConductor private constructor(
                 val warp = clock.timeWarp.now
                 val totalWarp = (warp + nudge).coerceIn(0.5.toDecimal(), 2.0.toDecimal())
                 println("New time warp: $warp + $nudge = $totalWarp")
-                clock.timeWarp.set(totalWarp)
+                setTimeWarp(totalWarp)
             }
         }
     }

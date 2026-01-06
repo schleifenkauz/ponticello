@@ -17,6 +17,7 @@ data class ConductorOptions(
     val maxWarp: ReactiveVariable<Decimal> = reactiveVariable(1.3.toDecimal()),
     val minBeatDur: ReactiveVariable<Decimal> = reactiveVariable(0.5.toDecimal()),
     val visualFeedback: ReactiveVariable<Boolean> = reactiveVariable(false),
+    val saveTempoCurve: ReactiveVariable<Boolean> = reactiveVariable(false),
     val modelName: ReactiveVariable<String> = reactiveVariable("<none>"),
     val videoInput: ReactiveVariable<String> = reactiveVariable("/dev/video0")
 ) {
