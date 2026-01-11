@@ -160,7 +160,7 @@ SoundProcessInstance : AudioNode {
 	<extra_args, <playerId, 
 	<server_latency, start_time, placement, group,
 	running = false, restarting = false, disposed = false,
-	control_buses, auxil_synths, sound_obj,
+	<initial_args, control_buses, auxil_synths, sound_obj,
 	on_dispose;
 
 	* new {| def, idx, pos, cutoff = 0, extra_args |
@@ -169,7 +169,8 @@ SoundProcessInstance : AudioNode {
 
 	init { |d, i, p, offset, extra|
 		def = d; idx = i; pos = p; cutoff = offset; extra_args = extra;
-		control_buses = Dictionary.new; auxil_synths = Dictionary.new; on_dispose = [];
+		initial_args = Dictionary.new; control_buses = Dictionary.new; auxil_synths = Dictionary.new; 
+		on_dispose = [];
 	}
 
 	type { ^def.type }
@@ -194,6 +195,8 @@ SoundProcessInstance : AudioNode {
 	}
 
 	getControlBus { |name| ^control_buses[name] }
+
+	getInitialArguments { ^initial_args ++ extra_args }
 
 	freeControlBus { |name|
 		var bus = control_buses.removeAt(name);
@@ -233,9 +236,12 @@ SoundProcessInstance : AudioNode {
 
 	putArgument { |name, value|
 		if (extra_args.includesKey(name).not) {
-			if (sound_obj.respondsTo (\set) ) {
-				if (sound_obj == nil) {Error ("Cannot set control because this.synth is nil.").throw};
-				sound_obj.set (name, value);
+			if (sound_obj == nil) {
+				initial_args.put(name, value);
+			} {
+				if (sound_obj.respondsTo (\set) ) {
+					sound_obj.set(name, value);
+				}
 			}
 		}
 	}

@@ -21,7 +21,7 @@ RoutineInstrument : Instrument {
 
 	create {| inst |
 		^Task {
-			func.value (inst, inst.def.duration ? inf);
+			func.value(inst, inst.def.duration ? inf);
 		}
 	}
 }
@@ -48,7 +48,7 @@ SynthInstrument : Instrument {
 		if (duration == inf || duration == nil) {
 			args.addAll([\auto_release, 0]);
 		};
-		inst.extra_args.keysValuesDo {| p, v | args = args.addAll([p, v])};
+		inst.getInitialArguments.keysValuesDo {| p, v | args = args.addAll([p, v]) };
 		postf("create % with args %\n", synthDefName, args);
 		synth = Synth.newPaused(synthDefName, args, inst.node, \addToTail);
 		synth.onFree { inst.dispose };
@@ -58,6 +58,11 @@ SynthInstrument : Instrument {
 
 MIDIInstrument : Instrument {
 	var vst;
+	classvar reserved_names;
+
+	*initClass {
+		reserved_names = Set['velocity', 'channel', 'midinote'];
+	}
 
 	* new {| vst |
 		^super.new.init (vst);
@@ -71,6 +76,11 @@ MIDIInstrument : Instrument {
 		var velocity = inst.getControlValue(\velocity) ? 64;
 		var channel = inst.getControlValue(\channel) ? 0;
 		var midinote = inst.getControlValue(\midinote);
+		inst.getInitialArguments.keysValuesDo { |p, v| 
+			if (reserved_names.includes(p).not) {
+				vst.set(p, v);
+			}
+		};
 		^MIDINote(vst, midinote, velocity, channel);
 	}
 }

@@ -83,16 +83,17 @@ ValueControl : ParameterControl {
 	}
 
 	prepare { |inst|
-		var initial_value = this.getValue(inst);
-		inst.createControlBus(this.name, initial_value);
+		inst.putArgument(this.name, this.getValue(inst));
+		if (this.allocatesBus) {
+			var initial_value = this.getValue(inst);
+			inst.createControlBus(this.name, initial_value);
+		}
 	}
 
 	apply { |inst|
 		if (inst.type != \routine) {
 			if (this.allocatesBus) {
 				inst.mapParameter(this.name, bus ? inst.getControlBus(this.name));
-			} {
-				inst.putArgument(this.name, this.getValue(inst));
 			}
 		};
 	}
@@ -134,6 +135,10 @@ BusControl : ParameterControl {
 	getValue { |inst| ^bus.getSynchronous }
 
 	getUGen { |inst| ^bus.kr }
+
+	prepare { |inst|
+		inst.putArgument(this.name, bus.getSynchronous);
+	}
 
 	apply { |inst|
 		inst.mapParameter(this.name, bus);
@@ -178,6 +183,7 @@ EnvelopeControl : ParameterControl {
 	prepare { |inst|
 		var initial_value = env.at(inst.cutoff);
 		inst.createControlBus(this.name, initial_value);
+		inst.putArgument(this.name, initial_value);
 	}
 
 	apply { |inst|
@@ -300,7 +306,7 @@ ExprControl : ParameterControl {
 
 	getUGen { |inst| ^this.getValue(inst) }
 
-	apply { |inst|
+	prepare { |inst| 
 		inst.putArgument(func.value(inst, 0));
 	}
 
@@ -336,7 +342,7 @@ ASRControl : ParameterControl {
 
 	getUGen { |inst| nil }
 
-	apply { |inst|
+	prepare { |inst|
 		inst.putArgument('attack', attack);
 		inst.putArgument('release', release);
 	}
