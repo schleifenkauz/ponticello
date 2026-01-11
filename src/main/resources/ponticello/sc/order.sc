@@ -14,7 +14,7 @@ AudioNodeOrder {
 	classvar nodes;
 
 	* binarySearch { |score_y|
-		var low = 0, high = nodes.size - 1, mid;
+		var low = 0, high = nodes.size, mid;
 
 		while { low < high } {
 			mid = ((low + high) / 2).asInteger;
@@ -34,6 +34,7 @@ AudioNodeOrder {
 
 	* insert { |node|
 		var idx = AudioNodeOrder.binarySearch(node.score_y);
+		//postf("Inserting node (score_y = %) at index %\n", node.score_y, idx);
 		nodes = nodes.insert(idx, node);
 		^if (idx == 0) {
 			(target: Server.local.defaultGroup, addAction: \addToHead);
