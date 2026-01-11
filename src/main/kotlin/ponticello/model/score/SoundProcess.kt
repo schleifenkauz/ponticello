@@ -101,9 +101,9 @@ class SoundProcess(
     }
 
     override fun deactivate() {
-        super<ScoreObject>.deactivate()
         updater.stopListening()
         controls.removeListener(lfosManager)
+        super<ScoreObject>.deactivate()
     }
 
     override fun doClone(): ScoreObject = SoundProcess(
@@ -203,6 +203,13 @@ class SoundProcess(
 
     override fun ScWriter.createInSuperCollider() {
         createSoundProcessObject(writer, this@SoundProcess, duration)
+    }
+
+    override fun ScWriter.freeObject() {
+        if (isCreatedInSuperCollider) {
+            client.run("SoundProcess.remove('${name.now}')")
+            isCreatedInSuperCollider = false
+        }
     }
 
     override fun onRename(oldName: String, newName: String) {

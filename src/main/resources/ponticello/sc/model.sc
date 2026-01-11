@@ -22,6 +22,10 @@ SoundProcess {
 		^proc;
 	}
 
+	* remove { |name|
+		dict.removeAt(name); 
+	}
+
 	* get { |name| ^dict[name] }
 
 	init { |n, i, dur, ctrls|
