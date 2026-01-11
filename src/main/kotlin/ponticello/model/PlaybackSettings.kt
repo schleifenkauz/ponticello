@@ -13,6 +13,7 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.forEach
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class PlaybackSettings(
@@ -21,6 +22,7 @@ class PlaybackSettings(
     val extraLatency: ReactiveVariable<Decimal>,
     val logScCode: ReactiveVariable<Boolean>,
     val djMode: DjMode = DjMode(),
+    val scrollWithPlayHead: ReactiveVariable<Boolean> = reactiveVariable(false),
     val conductorOptions: ConductorOptions = ConductorOptions.createDefault(),
 ) : AbstractContextualObject() {
     val lookAhead get() = scLangLatency.now + serverLatency.now

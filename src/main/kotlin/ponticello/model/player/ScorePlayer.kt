@@ -1,9 +1,13 @@
 package ponticello.model.player
 
 import bundles.publicProperty
+import javafx.application.Platform
 import ponticello.impl.*
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.playbackSettings
+import ponticello.model.obj.project
+import ponticello.model.project.PLAYBACK_SETTINGS
+import ponticello.model.project.get
 import ponticello.model.score.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.misc.PlayHead
@@ -62,6 +66,11 @@ class ScorePlayer private constructor(
                 playHead.movePlayHeadToStart()
                 pause()
                 return@execute
+            }
+        }
+        if (context.project[PLAYBACK_SETTINGS].scrollWithPlayHead.now) {
+            Platform.runLater {
+                playHead.centerInScorePane()
             }
         }
         playHead.movePlayHead(playHeadPos)

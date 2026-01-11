@@ -3,11 +3,10 @@ package ponticello.ui.misc
 import fxutils.styleClass
 import javafx.application.Platform
 import javafx.scene.shape.Line
-import ponticello.impl.Decimal
-import ponticello.impl.asTime
-import ponticello.impl.withPrecision
+import ponticello.impl.*
 import ponticello.model.player.ScorePlayer
 import ponticello.model.score.ObjectPosition
+import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.RootScorePane
 import ponticello.ui.score.ScorePane
 import ponticello.ui.score.TimeCodeView
@@ -54,6 +53,16 @@ class PlayHead {
     fun movePlayHead(pos: Decimal) {
         currentTime = pos
         Platform.runLater { updatePosition() }
+    }
+
+    fun centerInScorePane() {
+        for ((pane) in attached) {
+            if (pane is NavigableScorePane) {
+                val displayStart = (currentTime - pane.displayedDuration * 0.5).coerceAtLeast(zero)
+                val displayEnd = displayStart + pane.displayedDuration
+                pane.display(displayStart, displayEnd)
+            }
+        }
     }
 
     fun movePlayHeadToStart() {
