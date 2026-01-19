@@ -24,6 +24,9 @@ class VSTInstrumentObject(val flow: VSTPluginFlow) : InstrumentObject {
     override fun initialize(context: Context) {
     }
 
+    override fun allParameters(): List<ParameterDefObject> =
+        listOf(ParameterDefObject.VELOCITY, ParameterDefObject.CHANNEL)
+
     override val superColliderName: String get() = "MIDIInstrument(${flow.controllerVar})"
 
     override fun ScWriter.createObject() {

@@ -99,6 +99,9 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
         val IN = ParameterDefObject("in", BusControlSpec(Rate.Audio, 2))
         val BUS = ParameterDefObject("bus", BusControlSpec(Rate.Control, 2))
 
+        val VELOCITY = ParameterDefObject("velocity", NumericalControlSpec.VELOCITY).immutable()
+        val CHANNEL = ParameterDefObject("channel", NumericalControlSpec.CHANNEL).immutable()
+
         val LEVEL = ParameterDefObject("level", NumericalControlSpec.LEVEL).immutable()
         val DURATION = ParameterDefObject("duration", NumericalControlSpec.DURATION)
         val AUTO_RELEASE = ParameterDefObject("auto_release", NumericalControlSpec.AUTO_RELEASE)
