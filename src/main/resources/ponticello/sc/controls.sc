@@ -306,13 +306,14 @@ ExprControl : ParameterControl {
 
 	getUGen { |inst| ^this.getValue(inst) }
 
-	prepare { |inst| 
-		inst.putArgument(func.value(inst, 0));
+	prepare { |inst|
+	    var value = func.value(inst, 0);
+		inst.putArgument(this.name, value);
 	}
 
 	update { |new_func|
 		func = new_func;
-		if (this.sound_process.type != \routine) {
+		if (this.sound_proc.type != \routine) {
 			this.updateInstances { |inst|
 				inst.putArgument(func.value(inst, inst.current_time));
 			}

@@ -239,7 +239,7 @@ SoundProcessInstance : AudioNode {
 			if (sound_obj == nil) {
 				initial_args.put(name, value);
 			} {
-				if (sound_obj.respondsTo (\set) ) {
+				if (sound_obj.respondsTo(\set)) {
 					sound_obj.set(name, value);
 				}
 			}

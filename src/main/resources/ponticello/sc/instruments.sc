@@ -49,7 +49,6 @@ SynthInstrument : Instrument {
 			args.addAll([\auto_release, 0]);
 		};
 		inst.getInitialArguments.keysValuesDo {| p, v | args = args.addAll([p, v]) };
-		postf("create % with args %\n", synthDefName, args);
 		synth = Synth.newPaused(synthDefName, args, inst.node, \addToTail);
 		synth.onFree { inst.dispose };
 		^synth

@@ -402,8 +402,8 @@ abstract class ScoreObjectView(
     private fun replaceWithCutHalves(half1: ScoreObject, half2: ScoreObject, relativePosition: ObjectPosition) {
         context.compoundEdit("Cut object") {
             for (inst in context.rootScore.instancesOf(obj).toList()) {
-                val score = inst.score
-                score!!.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
+                val score = inst.score!!
+                score.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
                 val inst1 = ScoreObjectInstance(half1, inst.position, inst.muted.copy())
                 val inst2 = ScoreObjectInstance(half2, inst.position + relativePosition, inst.muted.copy())
                 score.addObject(inst1, autoSelect = false)
