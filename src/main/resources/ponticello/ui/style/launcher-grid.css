@@ -18,3 +18,17 @@
 .launcher-grid-item:drop-possible {
     -fx-background-color: rgba(0, 128, 0, 0.5);
 }
+
+Button.grid-bank-selector {
+    -fx-focus-traversable: false;
+    -fx-border-color: black;
+    -fx-border-radius: 2px;
+}
+
+Button.grid-bank-selector:hover {
+    -fx-background-color: rgba(100, 0, 0, 0.35);
+}
+
+Button.grid-bank-selector:selected {
+    -fx-border-color: green;
+}

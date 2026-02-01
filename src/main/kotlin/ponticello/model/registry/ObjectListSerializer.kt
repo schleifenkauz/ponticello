@@ -12,6 +12,7 @@ open class ObjectListSerializer<O : ContextualObject, L : ObjectList<O>>(
     val elementSerializer: KSerializer<O>,
     val createList: (MutableList<O>) -> L
 ) : KSerializer<L> {
+    @Suppress("OPT_IN_USAGE")
     override val descriptor: SerialDescriptor
         get() = listSerialDescriptor(elementSerializer.descriptor)
 

@@ -77,7 +77,7 @@ val SCRIPTS = Component(
 
 val SCORE = Component<Score>("score", "Score", ::Score)
 
-val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", "Launcher Grid", { LauncherGrid.createNByN(4) })
+val LAUNCHER_GRID = Component<LauncherGrid>("launcher_grid", "Launcher Grid", { LauncherGrid.createNByN(4, banks = 3) })
 
 val OSC_HOOKS = Component(
     "osc_hooks", "OSC Hooks", OSCHookRegistry::createDefault,

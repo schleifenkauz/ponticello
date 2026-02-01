@@ -1,17 +1,16 @@
 package ponticello.ui.live
 
 import fxutils.*
-import fxutils.actions.Action
-import fxutils.actions.ActionBar
-import fxutils.actions.ContextualizedAction
-import fxutils.actions.collectActions
+import fxutils.actions.*
 import fxutils.controls.OptionSpinner
 import fxutils.controls.SliderBar
 import fxutils.drag.setupDropArea
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
+import javafx.geometry.Side.BOTTOM
 import javafx.scene.Node
+import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -22,10 +21,7 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.codicons.Codicons
-import org.kordamp.ikonli.materialdesign2.MaterialDesignA
-import org.kordamp.ikonli.materialdesign2.MaterialDesignE
-import org.kordamp.ikonli.materialdesign2.MaterialDesignG
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
@@ -63,6 +59,9 @@ class LauncherGridPane(
 ) : ToolPane(), LauncherGrid.View {
     private val boxes = mutableMapOf<GridItem, Region>()
     override val content = GridPane().styleClass("launcher-grid-pane")
+    private val bankSelectors = mutableListOf<Button>()
+    private val bankSelectorsBox = HBox(5.0).centerChildren()
+    private val addBankButton = button("+", style = "grid-bank-selector")
     override val headerContent: Node = setupHeader()
     override val type: Type get() = LauncherGridPane
 
@@ -71,24 +70,88 @@ class LauncherGridPane(
     override fun defaultState(): ToolPaneState = ToolPaneState.window
 
     override fun afterSetup() {
-        setupGridPane()
         grid.addView(this)
+        addBankButton.setOnAction { grid.addBank() }
+        registerShortcuts {
+            for (i in 1..9) {
+                on("Ctrl+DIGIT$i") {
+                    if (i - 1 in grid.availableBanks) {
+                        grid.selectBank(i - 1)
+                    }
+                }
+            }
+            on("Ctrl+LEFT") {
+                if (grid.currentBank != 0) {
+                    grid.selectBank(grid.currentBank - 1)
+                }
+            }
+            on("Ctrl+RIGHT") {
+                if (grid.currentBank != grid.availableBanks.last) {
+                    grid.selectBank(grid.currentBank + 1)
+                }
+            }
+        }
     }
 
     private fun setupHeader(): HBox {
         val availableTargets = LauncherGrid.Target.options(grid.context)
         val targetSelector = SimpleSelectorPrompt(availableTargets, "Choose target")
             .selectorButton(grid.target, undoManager = grid.context[UndoManager])
-        val headerContent = HBox(5.0, Label("Target: "), targetSelector).centerChildren()
+        val headerContent = HBox(
+            5.0,
+            bankSelectorsBox,
+            addBankButton,
+            hspace(10.0),
+            Label("Target: "), targetSelector,
+        ).centerChildren()
         return headerContent
     }
 
     private fun setupGridPane() {
+        content.children.clear()
         for (item in grid.items()) {
             val box = display(item)
             boxes[item] = box
             val (i, j) = grid.getGridIndices(item)
             content.add(box, j, i)
+        }
+    }
+
+    override fun selectedBank(bank: Int) {
+        for ((idx, selector) in bankSelectors.withIndex()) {
+            selector.setPseudoClassState("selected", idx == bank)
+        }
+        setupGridPane()
+    }
+
+    override fun addedBank(bankIndex: Int) {
+        val btn = Button().styleClass("grid-bank-selector")
+        bankSelectors.add(bankIndex, btn)
+        bankSelectorsBox.children.add(bankIndex, btn)
+        btn.setOnMouseClicked { ev ->
+            val bankIdx = bankSelectors.indexOf(btn)
+            when (ev.button) {
+                MouseButton.PRIMARY -> grid.selectBank(bankIdx)
+                MouseButton.SECONDARY -> {
+                    contextMenu(bankActions.withContext(Pair(grid, bankIdx))).show(btn, BOTTOM, 0.0, 0.0)
+                }
+
+                else -> {}
+            }
+            ev.consume()
+        }
+        updateBankButtonLabels(bankIndex)
+    }
+
+    override fun removedBank(bankIndex: Int) {
+        bankSelectors.removeAt(bankIndex)
+        bankSelectorsBox.children.removeAt(bankIndex)
+        updateBankButtonLabels(bankIndex)
+    }
+
+    private fun updateBankButtonLabels(fromIndex: Int) {
+        for ((idx, selector) in bankSelectors.withIndex().drop(fromIndex)) {
+            selector.text = (idx + 1).toString()
         }
     }
 
@@ -286,6 +349,13 @@ class LauncherGridPane(
                     whenTrue = MaterialDesignR.RADIOBOX_MARKED,
                     whenFalse = MaterialDesignR.RADIOBOX_BLANK
                 )
+            }
+        }
+
+        private val bankActions = collectActions<Pair<LauncherGrid, Int>> {
+            addAction("Remove bank") {
+                icon(MaterialDesignD.DELETE)
+                executes { (grid, bankIndex) -> grid.removeBank(bankIndex) }
             }
         }
     }

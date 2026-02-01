@@ -91,7 +91,7 @@ class AudioFlowGroup(
         if (!obj.isActive.now) return
         val name = obj.superColliderName
         val prev = previousActiveFlow(idx)
-        if (prev == null) {
+        if (prev == null) { //TODO adjust to new SuperCollider API
             client.run("$name.moveToHead($groupName)")
         } else {
             client.run("$name.moveAfter(${prev.superColliderName})")

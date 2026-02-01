@@ -380,6 +380,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
     }
 
     object Serializer : KSerializer<Envelope> {
+        @Suppress("OPT_IN_USAGE")
         override val descriptor: SerialDescriptor
             get() = listSerialDescriptor<EnvelopePoint>()
 

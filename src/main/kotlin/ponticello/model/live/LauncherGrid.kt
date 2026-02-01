@@ -8,6 +8,7 @@ import hextant.context.Context
 import hextant.context.extend
 import hextant.core.editor.ListenerManager
 import javafx.geometry.HorizontalDirection
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.zero
@@ -30,15 +31,19 @@ import kotlin.math.sqrt
 
 @Serializable
 class LauncherGrid private constructor(
-    private val items: Array<GridItem>,
+    @SerialName("items") private val banks: MutableList<Array<GridItem>>,
     val target: ReactiveVariable<Target> = reactiveVariable(Target.None),
 ) : AbstractContextualObject() {
     @Transient
     lateinit var undoManager: UndoManager
         private set
 
-    @Transient
-    private val columns = sqrt(items.size.toDouble()).toInt()
+    var currentBank = 0
+        private set
+
+    val availableBanks get() = banks.indices
+
+    private val columns get() = sqrt(banks[currentBank].size.toDouble()).toInt()
 
     val isActive = reactiveVariable(false)
 
@@ -48,7 +53,7 @@ class LauncherGrid private constructor(
     @Transient
     private val listeners = ListenerManager.createWeakListenerManager<View>()
 
-    fun items(): List<GridItem> = items.asList()
+    fun items(): List<GridItem> = banks[currentBank].asList()
 
     override fun initialize(context: Context) {
         undoManager = context[UndoManager]/*.createSubManager()*/
@@ -62,30 +67,63 @@ class LauncherGrid private constructor(
             @Suppress("UNCHECKED_CAST")
             target.ref.resolve(context[ScoreObjectRegistry] as ObjectRegistry<ScoreObjectGroup>)
         }
-        for (item in items) {
-            item.initialize(myContext, this)
+        for (bank in banks) {
+            for (item in bank) {
+                item.initialize(myContext, this)
+            }
+        }
+    }
+
+    fun selectBank(index: Int) {
+        require(index in banks.indices) { "Invalid bank index: $index" }
+        currentBank = index
+        listeners.notifyListeners {
+            selectedBank(index)
+        }
+    }
+
+    fun addBank(
+        bankIndex: Int = banks.lastIndex,
+        items: Array<GridItem> = Array(columns * columns) { GridItem.createDefault() }
+    ) {
+        banks.add(bankIndex, items)
+        selectBank(banks.lastIndex)
+        undoManager.record(LauncherGridEdit.AddBank(this, bankIndex))
+        notifyViews { addedBank(banks.lastIndex) }
+    }
+
+    fun removeBank(index: Int) {
+        check(banks.size >= 2) { "Cannot remove the last bank" }
+        banks.removeAt(index)
+        undoManager.record(LauncherGridEdit.RemoveBank(this, index))
+        notifyViews { removedBank(index) }
+        if (currentBank == index) {
+            selectBank((currentBank - 1).coerceAtLeast(0))
+        } else if (currentBank >= index) {
+            currentBank--
         }
     }
 
     fun getGridIndices(item: GridItem): Pair<Int, Int> {
-        val index = items.indexOf(item)
+        val index = items().indexOf(item)
         val row = index / columns
         val column = index % columns
         return Pair(row, column)
     }
 
-    operator fun get(row: Int, column: Int) = items[row * columns + column]
+    operator fun get(row: Int, column: Int) = banks[row * columns + column]
 
-    fun swap(item1: GridItem, item2: GridItem) {
-        val i = items.indexOf(item1)
-        val j = items.indexOf(item2)
-        items[j] = item1
-        items[i] = item2
+    fun swap(item1: GridItem, item2: GridItem, bankIndex: Int = currentBank) {
+        val bank = banks[bankIndex]
+        val i = bank.indexOf(item1)
+        val j = bank.indexOf(item2)
+        bank[j] = item1
+        bank[i] = item2
         listeners.notifyListeners {
             updateItem(item1)
             updateItem(item2)
         }
-        undoManager.record(LauncherGridEdit.SwapItems(this, item1, item2))
+        undoManager.record(LauncherGridEdit.SwapItems(this, bankIndex, item1, item2))
     }
 
     fun noteOn(item: GridItem, velocity: Int) {
@@ -97,7 +135,7 @@ class LauncherGrid private constructor(
     }
 
     fun deactivateAll() {
-        for (item in items) {
+        for (item in banks.asSequence().flatMap { it.asSequence() }) {
             if (item.mode.now in setOf(GridItem.Mode.Toggle, GridItem.Mode.Gate)) {
                 item.target.deactivate()
             }
@@ -120,6 +158,14 @@ class LauncherGrid private constructor(
         }
     }
 
+    fun getReference(item: GridItem): GridItemReference {
+        for ((bankIdx, bank) in banks.withIndex()) {
+            val idx = bank.indexOf(item)
+            if (idx != -1) return GridItemReference(bankIdx, idx)
+        }
+        error("$item not found in grid")
+    }
+
     fun hasReferencesTo(obj: ScoreObject) = items().any { item -> item.target.targetObject == obj }
 
     private fun getScore() = when (val t = target.now) {
@@ -139,10 +185,12 @@ class LauncherGrid private constructor(
 
     fun addView(view: View) {
         listeners.addListener(view)
+        for (bankIdx in availableBanks) view.addedBank(bankIdx)
+        view.selectedBank(currentBank)
     }
 
-    class GridItemReference(private val index: Int) : java.io.Serializable {
-        fun getItem(grid: LauncherGrid) = grid.items[index]
+    class GridItemReference(private val bank: Int, private val index: Int) : java.io.Serializable {
+        fun getItem(grid: LauncherGrid) = grid.banks[bank][index]
 
         companion object {
             val DATA_FORMAT = TypedDataFormat<GridItemReference>("ponticello/grid-item-reference")
@@ -175,9 +223,16 @@ class LauncherGrid private constructor(
 
     interface View {
         fun updateItem(item: GridItem)
+
+        fun selectedBank(bank: Int)
+
+        fun addedBank(bankIndex: Int)
+
+        fun removedBank(bankIndex: Int)
     }
 
     companion object {
-        fun createNByN(n: Int) = LauncherGrid(Array(n * n) { GridItem.createDefault() })
+        fun createNByN(n: Int, banks: Int) =
+            LauncherGrid(MutableList(banks) { Array(n * n) { GridItem.createDefault() } })
     }
 }

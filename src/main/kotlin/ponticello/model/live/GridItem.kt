@@ -44,7 +44,7 @@ class GridItem(
 
     fun target(): ReactiveValue<ItemTarget> = _target
 
-    fun reference() = LauncherGrid.GridItemReference(grid.items().indexOf(this))
+    fun reference() = grid.getReference(this)
 
     override fun initialize(context: Context) {
         super.initialize(context)
