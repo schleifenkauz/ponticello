@@ -8,6 +8,7 @@ import fxutils.drag.setupDropArea
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
+import javafx.application.Platform
 import javafx.geometry.Side.BOTTOM
 import javafx.scene.Node
 import javafx.scene.control.Button
@@ -45,6 +46,7 @@ import ponticello.ui.registry.ParameterDefSelectorPrompt
 import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.score.FlowGroupManager
 import ponticello.ui.score.ScoreObjectDetailPane
+import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.and
 import reaktive.value.binding.impl.notNull
@@ -155,7 +157,7 @@ class LauncherGridPane(
         }
     }
 
-    override fun updateItem(item: GridItem) {
+    override fun updateItem(item: GridItem) = Platform.runLater {
         content.children.remove(boxes[item])
         val box = display(item)
         boxes[item] = box
@@ -279,6 +281,14 @@ class LauncherGridPane(
 
                         else -> {}
                     }
+                }
+            }
+            addAction("Add to score") {
+                icon(MaterialDesignC.CONTENT_DUPLICATE)
+                applicableIf { target -> target.targetObject != null }
+                executes { target ->
+                    val obj = target.targetObject!!
+                    obj.context[ScoreObjectDuplicator].enterDuplicateMode(obj, clone = false)
                 }
             }
             addAction("Set velocity parameter") {

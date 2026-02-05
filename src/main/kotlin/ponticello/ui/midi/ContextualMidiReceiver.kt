@@ -77,19 +77,25 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
 
     fun isActive(context: MidiContext) = activeContext.equalTo(context)
 
-    override fun send(message: MidiMessage?, timeStamp: Long) {
-        if (message !is ShortMessage) return
-        val ctx = activeContext.now?.takeIf { it.canReceiveMidi }
-        val index = message.data1
-        val velocity = message.data2
-        when (message.command) {
-            ShortMessage.NOTE_ON -> {
-                if (velocity == 0) noteOff(index, message.channel, ctx)
-                else noteOn(index, velocity, message.channel, ctx)
-            }
+    override fun send(message: MidiMessage, timeStamp: Long) {
+        try {
+            if (message !is ShortMessage) return
+            val ctx = activeContext.now?.takeIf { it.canReceiveMidi }
+            val index = message.data1
+            val velocity = message.data2
+            when (message.command) {
+                ShortMessage.NOTE_ON -> {
+                    if (velocity == 0) noteOff(index, message.channel, ctx)
+                    else noteOn(index, velocity, message.channel, ctx)
+                }
 
-            ShortMessage.NOTE_OFF -> noteOff(index, message.channel, ctx)
-            ShortMessage.CONTROL_CHANGE -> cc(ctx, message, index, velocity)
+                ShortMessage.NOTE_OFF -> noteOff(index, message.channel, ctx)
+                ShortMessage.CONTROL_CHANGE -> cc(ctx, message, index, velocity)
+            }
+        } catch (e: Exception) {
+            val deviceName = device!!.deviceInfo.name
+            val message = message.message?.asList()
+            Logger.error("Exception while processing MIDI message from $deviceName: $message", e, Logger.Category.Midi)
         }
     }
 

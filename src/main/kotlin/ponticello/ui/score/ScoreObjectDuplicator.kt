@@ -12,11 +12,14 @@ import ponticello.impl.Decimal
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
+import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.server.SampleObject
+import ponticello.ui.launcher.PonticelloMainActivity
 import reaktive.Observer
 
-class ScoreObjectDuplicator {
+class ScoreObjectDuplicator { //TODO replace snapshots with deactivated ScoreObjectViews
     private val repaintObservers = mutableListOf<Observer>()
 
     var clipboardObject: ScoreObject? = null
@@ -39,6 +42,16 @@ class ScoreObjectDuplicator {
         view.snapshot(parameters, null)
         val image = view.snapshot(parameters, null)
         enterDuplicateMode(obj, image, view, clone)
+    }
+
+    fun enterDuplicateMode(obj: ScoreObject, clone: Boolean) {
+        val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
+        val view = ScorePane.createObjectView(obj, inst)
+        val mainScorePane = obj.context[PonticelloMainActivity].mainScoreView
+        view.initialize(mainScorePane)
+        view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
+        view.rescale()
+        enterDuplicateMode(obj, view, clone)
     }
 
     private fun enterDuplicateMode(obj: ScoreObject, image: Image, view: ScoreObjectView?, clone: Boolean) {

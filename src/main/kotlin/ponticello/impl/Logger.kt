@@ -9,7 +9,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignI
 import ponticello.ui.impl.stackTraceString
 
 object Logger {
-    private val views = ListenerManager.Companion.createWeakListenerManager<View>()
+    private val views = ListenerManager.createWeakListenerManager<View>()
     private val records = mutableListOf<Record>()
 
     var level: Level = Level.Info
@@ -106,6 +106,7 @@ object Logger {
         object Instruments : Category(superCategory = Registries)
         object Server : Category()
         object Project : Category()
+        object Midi : Category()
         object VSTPlugins : Category()
         object Layout: Category()
         object Memory: Category()

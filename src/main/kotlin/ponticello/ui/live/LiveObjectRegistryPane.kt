@@ -68,7 +68,7 @@ class LiveObjectRegistryPane(
     override fun getActions(box: ObjectBox<LiveObject>): List<ContextualizedAction> = actions.withContext(box.obj)
 
     override val headerActions: List<ContextualizedAction>
-        get() = LiveObjectRegistryPane.headerActions.withContext(this)
+        get() = LiveObjectRegistryPane.headerActions.withContext(this) + super.headerActions
 
     override fun getContent(obj: LiveObject, box: ObjectBox<LiveObject>): Parent = when (obj) {
         is LiveTaskObject -> {

@@ -7,10 +7,13 @@ import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.extend
 import hextant.core.editor.ListenerManager
+import hextant.fx.ModifierKeyTracker
+import javafx.application.Platform
 import javafx.geometry.HorizontalDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import ponticello.impl.Logger
 import ponticello.impl.zero
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.project
@@ -24,6 +27,8 @@ import ponticello.model.registry.reference
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
+import ponticello.ui.score.ScoreObjectDuplicator
+import ponticello.ui.score.ScoreObjectSelectionManager
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -76,6 +81,7 @@ class LauncherGrid private constructor(
 
     fun selectBank(index: Int) {
         require(index in banks.indices) { "Invalid bank index: $index" }
+        if (currentBank == index) return
         currentBank = index
         listeners.notifyListeners {
             selectedBank(index)
@@ -83,13 +89,13 @@ class LauncherGrid private constructor(
     }
 
     fun addBank(
-        bankIndex: Int = banks.lastIndex,
+        bankIndex: Int = banks.size,
         items: Array<GridItem> = Array(columns * columns) { GridItem.createDefault() }
     ) {
         banks.add(bankIndex, items)
-        selectBank(banks.lastIndex)
         undoManager.record(LauncherGridEdit.AddBank(this, bankIndex))
-        notifyViews { addedBank(banks.lastIndex) }
+        notifyViews { addedBank(bankIndex) }
+        selectBank(bankIndex)
     }
 
     fun removeBank(index: Int) {
@@ -127,7 +133,38 @@ class LauncherGrid private constructor(
     }
 
     fun noteOn(item: GridItem, velocity: Int) {
-        item.target.pressed(velocity, item)
+        when {
+            ModifierKeyTracker.isAltDown.now -> {
+                val selectedView = context[ScoreObjectSelectionManager].focusedView.now
+                if (selectedView == null) {
+                    Logger.warn("No score object selected", Logger.Category.Midi)
+                    return
+                }
+                val selectedObject = selectedView.obj
+                if (!(selectedObject.affectsPlayback)) {
+                    Logger.warn("Selected object does not affect playback", Logger.Category.Midi)
+                    return
+                }
+                val yPosition = reactiveVariable(selectedView.absolutePosition.y)
+                item.target = ItemTarget.Object(selectedObject.reference(), yPosition)
+            }
+
+            ModifierKeyTracker.isCtrlDown.now -> {
+                val targetObject = item.target.targetObject
+                if (targetObject == null) {
+                    Logger.warn("Invalid target object: ${item.target}", Logger.Category.Midi)
+                    return
+                }
+                val clone = ModifierKeyTracker.isShiftDown.now
+                Platform.runLater {
+                    context[ScoreObjectDuplicator].enterDuplicateMode(targetObject, clone)
+                }
+            }
+
+            else -> {
+                item.target.pressed(velocity, item)
+            }
+        }
     }
 
     fun noteOff(item: GridItem) {
