@@ -181,6 +181,10 @@ SoundProcessInstance : AudioNode {
 
 	current_time { ^TempoClock.beats - start_time + cutoff }
 
+	isActive {
+	    ^running && (this.current_time < def.duration)
+	}
+
 	createControlBus { |name, initial_value|
 		var bus = Bus.control(Server.local, 1);
 		bus.set(initial_value);
@@ -270,7 +274,7 @@ SoundProcessInstance : AudioNode {
 				group.free;
 				group = nil;
 				if (pos != nil) {
-					AudioNodeOrder.remove (this);
+					AudioNodeOrder.remove(this);
 				}
 			};
 			on_dispose.do (_.value);
@@ -292,6 +296,7 @@ SoundProcessInstance : AudioNode {
 		if (placement != nil) {
 			Server.local.sync;
 			group = Group.new(placement.target, placement.addAction);
+			//group.register(assumePlaying: true);
 		};
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) };

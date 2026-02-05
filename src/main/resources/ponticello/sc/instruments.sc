@@ -50,6 +50,7 @@ SynthInstrument : Instrument {
 		};
 		inst.getInitialArguments.keysValuesDo {| p, v | args = args.addAll([p, v]) };
 		synth = Synth.newPaused(synthDefName, args, inst.node, \addToTail);
+		//synth.register(assumePlaying: true);
 		synth.onFree { inst.dispose };
 		^synth
 	}

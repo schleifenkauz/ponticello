@@ -8,6 +8,8 @@ AudioNode {
 
 SimpleAudioNode : AudioNode {
 	var <>node, <>score_y;
+
+	isActive { ^true }
 }
 
 AudioNodeOrder {
@@ -36,10 +38,15 @@ AudioNodeOrder {
 		var idx = AudioNodeOrder.binarySearch(node.score_y);
 		//postf("Inserting node (score_y = %) at index %\n", node.score_y, idx);
 		nodes = nodes.insert(idx, node);
-		^if (idx == 0) {
+		idx = idx - 1;
+		while { (nodes[idx] != nil) && { (nodes[idx].node == nil) || { nodes[idx].isActive.not } } } {
+            nodes.removeAt(idx);
+		    idx = idx - 1;
+		};
+		^if (idx < 0) {
 			(target: Server.local.defaultGroup, addAction: \addToHead);
 		} {
-			(target: nodes[idx - 1].node, addAction: \addAfter);
+			(target: nodes[idx].node, addAction: \addAfter);
 		}
 	}
 
