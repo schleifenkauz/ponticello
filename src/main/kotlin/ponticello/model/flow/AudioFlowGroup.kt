@@ -56,8 +56,7 @@ class AudioFlowGroup(
         }
         yObserver = yPosition.observe { _, _, newY ->
             client.run {
-                +"$audioNodeName.score_y = $newY"
-                +"AudioNodeOrder.moved($audioNodeName)"
+                +"AudioNodeOrder.move($audioNodeName, $newY)"
             }
         }
     }

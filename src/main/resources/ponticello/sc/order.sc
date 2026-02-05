@@ -84,24 +84,19 @@ AudioNodeOrder {
 		^node
 	}
 
-	moved { |node|
-		var new_y = node.score_y;
+	* move { |node, new_y|
 		var old_idx = nodes.indexOf(node);
-		var below_prev = (old_idx == 0) || (nodes[old_idx - 1].score_y < new_y);
-		var above_next = (old_idx == nodes.size - 1) || (nodes[old_idx + 1].score_y > new_y);
-		if (below_prev.not || above_next.not) {
-			var new_idx;
-			nodes.removeAt(old_idx);
-			new_idx = this.binarySearch(new_y);
-			nodes = nodes.insert(new_idx, node);
-			if (new_idx != old_idx) {
-				if (new_idx == 0) {
-					node.node.moveToHead(Server.local.defaultGroup);
-				} {
-					var prev = nodes[new_idx - 1];
-					node.node.moveAfter(prev.node);
-				}
-			}
+		var new_idx = this.binarySearch(new_y);
+		if (new_idx != old_idx) {
+		    nodes.removeAt(old_idx);
+		    if (old_idx < new_idx) { new_idx = new_idx - 1 };
+		    nodes = nodes.insert(new_idx, node);
+		    if (new_idx == 0) {
+                node.moveToHead(Server.local.defaultGroup);
+            } {
+                var prev = nodes[new_idx - 1];
+                node.moveAfter(prev.node);
+            }
 		}
 	}
 

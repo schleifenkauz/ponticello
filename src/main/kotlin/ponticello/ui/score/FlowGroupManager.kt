@@ -5,6 +5,8 @@ import bundles.publicProperty
 import fxutils.drag.setupDragging
 import fxutils.modifiers
 import fxutils.setPseudoClassState
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
@@ -119,6 +121,7 @@ class FlowGroupManager(
             },
             onReleased = {
                 group.yPosition.now = pos
+                VariableEdit.updateVariable(group.yPosition, pos, group.context[UndoManager], "Move flow group")
                 val y = getLineY(group)
                 line.startYProperty().bind(y)
                 line.endYProperty().bind(y)
