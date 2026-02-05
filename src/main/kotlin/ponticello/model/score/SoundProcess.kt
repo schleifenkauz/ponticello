@@ -2,6 +2,8 @@
 
 package ponticello.model.score
 
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.geometry.HorizontalDirection
@@ -68,7 +70,10 @@ class SoundProcess(
     override fun superColliderName(objectName: String): String = "SoundProcess.get('${soundProcessName}')"
 
     @Transient
-    private var playBufRateBeforeResize = zero
+    private var stretchControlBeforeResize = zero
+
+    @Transient
+    private var bufferPositionBeforeResize = zero
 
     override val def: InstrumentObject
         get() = instrumentRef.now.get() ?: NoInstrument()
@@ -84,11 +89,11 @@ class SoundProcess(
             (spec as? BufferControlSpec)?.displaySpectrogram ?: false
         }
 
-    val playbufStartPos: ReactiveVariable<Decimal>?
-        get() = (controls.controlMap["startPos"] as? ValueControl)?.value?.takeIf { bufferControl != null }
+    val bufferOffset: ReactiveVariable<Decimal>?
+        get() = getBufferPositionControl()?.first?.value
 
-    val playBufRate: ReactiveVariable<Decimal>?
-        get() = (controls.controlMap["rate"] as? ValueControl)?.value?.takeIf { bufferControl != null }
+    val bufferStretchFactor: ReactiveVariable<Decimal>?
+        get() = getStretchControl()?.first?.value
 
     override fun duration(): ReactiveValue<Decimal> = super<ScoreObject>.duration()
 
@@ -123,7 +128,7 @@ class SoundProcess(
         when {
             c is ValueControl && spec is NumericalControlSpec && whichHalf == RIGHT -> {
                 if (spec.origin is BufferPositionControlSpec) {
-                    ValueControl(reactiveVariable(c.value.now + position * (playBufRate?.now ?: one(3))))
+                    ValueControl(reactiveVariable(c.value.now + position * (bufferStretchFactor?.now ?: one(3))))
                 } else c.copy()
             }
 
@@ -136,29 +141,40 @@ class SoundProcess(
         }
     }
 
+    private fun getNumericalControls() = controls.asSequence().mapNotNull { control ->
+        val spec = control.spec.now as? NumericalControlSpec ?: return@mapNotNull null
+        val ctrl = control.now as? ValueControl ?: return@mapNotNull null
+        Triple(ctrl, spec, control.name.now)
+    }
+
+    fun getBufferPositionControl() = getNumericalControls()
+        .singleOrNull { (_, spec, _) -> spec.origin is BufferPositionControlSpec }
+
+    fun getStretchControl() = getNumericalControls()
+        .singleOrNull { (_, spec, _) -> spec.isStretch }
+
     override fun beginResize(mode: ResizeMode, side: Side): Boolean {
-        if (mode.isStretch && playBufRate != null) {
-            playBufRateBeforeResize = playBufRate!!.now
+        getBufferPositionControl()?.let { (ctrl, _, _) -> bufferPositionBeforeResize = ctrl.value.now }
+        if (mode.isStretch) {
+            getStretchControl()?.let { (ctrl, _, _) -> stretchControlBeforeResize = ctrl.value.now }
         }
         return super.beginResize(mode, side)
     }
 
     override fun resize(targetDuration: Decimal, targetHeight: Decimal) {
-        val ratePrecision = (getSpec("rate") as? NumericalControlSpec)?.precision ?: 3
-        if (resizeMode!!.isStretch && playBufRate != null) {
-            playBufRate!!.now = (playBufRate!!.now * (this.duration / targetDuration)).round(ratePrecision)
-        } else if (playbufStartPos != null) {
-            if (resizeSide == Side.LEFT) {
-                val rate = playBufRate?.now ?: one(ratePrecision)
-                val deltaStart = this.duration - targetDuration
-                var startPos = playbufStartPos!!.now
-                startPos += deltaStart * rate
-                val buf = sample.now?.get()
-                if (buf != null) {
-                    val dur = buf.duration().now
-                    startPos = ((startPos % dur) + dur) % dur
-                }
-                playbufStartPos!!.now = startPos.round(ratePrecision)
+        if (resizeMode!!.isStretch) {
+            getStretchControl()?.let { (ctrl, spec, _) ->
+                ctrl.value.now = (stretchControlBeforeResize * (durationBeforeResize / targetDuration))
+                    .roundToNearestMultiple(spec.step.get())
+            }
+        } else if (resizeSide == Side.LEFT) {
+            getBufferPositionControl()?.let { (ctrl, spec, _) ->
+                val rate = bufferStretchFactor?.now ?: one
+                val deltaStart = durationBeforeResize - targetDuration
+                ctrl.value.now = (bufferPositionBeforeResize + (deltaStart * rate))
+                    .mod(spec.max.get())
+                    .roundToNearestMultiple(spec.step.get())
+                    .coerceAtMost(spec.max.get())
             }
         }
         super.resize(targetDuration, targetHeight)
@@ -166,9 +182,6 @@ class SoundProcess(
 
     override fun finishResize(recordEdit: Boolean) {
         super.finishResize(recordEdit)
-        if (resizeMode!!.isStretch && playBufRate != null) {
-            playBufRate!!.now = playBufRateBeforeResize * (durationBeforeResize / duration)
-        }
         if (isCreatedInSuperCollider) {
             client.run("$superColliderName.duration = $duration")
         }
@@ -182,14 +195,14 @@ class SoundProcess(
                 }
             }
         }
-        if (sample.now != null && playBufRate != null && playbufStartPos != null) {
-            val sampleDur = sample.now!!.get()?.duration()?.now ?: 0.0.asTime
-            var startPos = (playbufStartPos!!.now + playBufRate!!.now * duration).wrapAt(sampleDur)
-            while (startPos < zero) startPos += sampleDur
-            playBufRate!!.now *= -1
-            if (startPos == zero && playBufRate!!.now < zero) startPos = sampleDur
-            playbufStartPos!!.now = startPos
-        }
+        val (offset, offsetSpec) = getBufferPositionControl() ?: return@compoundEdit
+        val stretchFactor = bufferStretchFactor ?: return@compoundEdit
+        val sampleDur = offsetSpec.max.get()
+        var startPos = (offset.value.now + stretchFactor.now * duration)
+            .mod(sampleDur).roundToNearestMultiple(offsetSpec.step.get())
+        VariableEdit.updateVariable(stretchFactor, -stretchFactor.now, context[UndoManager], "Update stretch factor")
+        if (startPos == zero && stretchFactor.now < zero) startPos = sampleDur
+        VariableEdit.updateVariable(offset.value, startPos, context[UndoManager], "Update buffer position")
     }
 
     override fun initialize(context: Context) {

@@ -102,12 +102,13 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                 }
                 ifNotApplicable(IfNotApplicable.Hide)
                 executes { box, _ ->
-                    val detailsPane = DetailPane(labelWidth = 110.0)
+                    val detailsPane = DetailPane(labelWidth = 120.0)
                     when (val editor = box.obj.specEditor.content.now) {
                         is NumericalControlSpecEditor -> {
                             detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
                             detailsPane.addItem("Attack-release", editor.context.createControl(editor.attackRelease))
                             detailsPane.addItem("Allocate bus", editor.context.createControl(editor.allocateBus))
+                            detailsPane.addItem("Use as stretch factor", editor.context.createControl(editor.isStretch))
                         }
 
                         is BusControlSpecEditor -> {

@@ -165,12 +165,12 @@ class SamplePainter(
         if (obj.displaySample?.now != true) return@runLater
         if (spectrogramImage == null) return@runLater
         val sample = obj.sample.now?.get() as? SampleObject ?: return@runLater
-        val rate = obj.playBufRate?.now ?: one(precision = 3)
+        val rate = obj.bufferStretchFactor?.now ?: one(precision = 3)
         if (rate == zero) return@runLater
         val sampleDuration = sample.duration().now
         if (sampleDuration <= zero) return@runLater
         val defaultStartPos = if (rate < zero) sampleDuration else zero
-        var startPos = obj.playbufStartPos?.now?.wrapAt(sampleDuration) ?: defaultStartPos
+        var startPos = obj.bufferOffset?.now?.wrapAt(sampleDuration) ?: defaultStartPos
         if (rate < zero && startPos == zero) startPos = sampleDuration
         if (rate > zero && startPos == sampleDuration) startPos = zero
         var t = zero
@@ -224,7 +224,7 @@ class SamplePainter(
                 segment.image.viewport = segment.viewport
             }
             segment.image.fitHeight = objectPane.height
-            val rate = obj.playBufRate
+            val rate = obj.bufferStretchFactor
             if (rate != null && rate.now < zero) {
                 segment.image.transforms.setAll(
                     Translate(segment.image.fitWidth, 0.0),

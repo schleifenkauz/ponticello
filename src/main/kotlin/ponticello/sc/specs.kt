@@ -91,7 +91,8 @@ data class NumericalControlSpec(
     val associatedColor: Color = Color.WHITE,
     @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
     @Component(SimpleBooleanEditor::class) val attackRelease: Boolean = false,
-    @Component(SimpleBooleanEditor::class) val allocateBus: Boolean = false
+    @Component(SimpleBooleanEditor::class) val allocateBus: Boolean = false,
+    @Component(SimpleBooleanEditor::class) val isStretch: Boolean = false
 ) : ControlSpec {
     val precision get() = step.get().precision
 

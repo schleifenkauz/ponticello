@@ -59,8 +59,8 @@ class SoundProcessView(
             val sample = obj.sample.now?.get() as? SampleObject ?: return null
             val meter = sample.meter
             if (meter.isNone()) return null
-            val rate = obj.playBufRate?.now ?: one
-            val startPos = obj.playbufStartPos?.now ?: zero
+            val rate = obj.bufferStretchFactor?.now ?: one
+            val startPos = obj.bufferOffset?.now ?: zero
             val offset = (startPos / rate) - sample.firstBeat.now
             return TempoGrid(
                 type = TempoGrid.GridType.SampleOverlay, scoreObject = obj,

@@ -1,7 +1,10 @@
 package ponticello.ui.midi
 
+import fxutils.undo.UndoManager
+import fxutils.undo.VariableEdit
 import hextant.context.Context
 import ponticello.impl.Decimal
+import ponticello.impl.roundToNearestMultiple
 import ponticello.impl.times
 import ponticello.model.GlobalSettings
 import ponticello.sc.NumericalControlSpec
@@ -23,8 +26,13 @@ fun Decimal.adjustByMidiDelta(midiValue: Int, spec: NumericalControlSpec, contex
     }
 }
 
-fun Variable<Decimal>.adjustByMidiDelta(midiValue: Int, spec: NumericalControlSpec, context: Context) {
+fun Variable<Decimal>.adjustByMidiDelta(
+    midiValue: Int, spec: NumericalControlSpec,
+    context: Context, actionDescription: String
+) {
     val before = get()
-    val after = before.adjustByMidiDelta(midiValue, spec, context)
-    set(after)
+    val after = before
+        .adjustByMidiDelta(midiValue, spec, context)
+        .roundToNearestMultiple(spec.step.get())
+    VariableEdit.updateVariable(this, after, context[UndoManager], actionDescription)
 }

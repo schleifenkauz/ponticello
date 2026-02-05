@@ -124,7 +124,7 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
         val djMode = context.project[PLAYBACK_SETTINGS].djMode
         if (index - CC_INDEX_OFFSET == 5 && djMode.activated.now) {
             val clock = context.project[CLOCKS].getDefault()
-            clock.timeWarp.adjustByMidiDelta(midiDelta, ClockObject.TIME_WARP_SPEC, context)
+            clock.timeWarp.adjustByMidiDelta(midiDelta, ClockObject.TIME_WARP_SPEC, context, "Adjust playback speed")
             timeWarpPopup.update(clock.timeWarp.now)
         } else {
             ctx?.cc(message.channel, index - CC_INDEX_OFFSET, midiDelta)

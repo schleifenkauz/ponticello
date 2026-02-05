@@ -3,6 +3,7 @@ package ponticello.impl
 import kotlinx.serialization.Serializable
 import ponticello.model.score.ObjectPosition
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 import kotlin.math.*
 
@@ -105,7 +106,20 @@ fun Decimal.withPrecision(precision: Int) = Decimal(value, precision)
 
 fun Decimal.withMaxPrecision(precision: Int) = Decimal(value, minOf(this.precision, precision))
 
-fun Decimal.round(precision: Int) = Decimal(value.round(precision), precision)
+fun Decimal.toBigDecimal() = BigDecimal(value, MathContext(precision))
+
+fun Decimal.round(precision: Int): Decimal {
+    val value = toBigDecimal().setScale(precision, RoundingMode.HALF_UP)
+    return Decimal(value.toDouble(), precision)
+}
+
+fun Decimal.roundToNearestMultiple(factor: Decimal): Decimal {
+    val f = factor.toBigDecimal()
+    val v = toBigDecimal()
+        .divide(f).setScale(0, RoundingMode.HALF_UP)
+        .multiply(f)
+    return Decimal(v.toDouble(), factor.precision)
+}
 
 fun String.parseDecimal(): Decimal? {
     val tailZeros = takeLastWhile { it == '0' }.length

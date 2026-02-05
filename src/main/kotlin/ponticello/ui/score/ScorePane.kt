@@ -209,7 +209,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 if (context.project[UI_STATE].snapEnabled.now && obj is SoundProcess) {
                     val sample = obj.sample.now?.get() as? SampleObject
                     val grid = getNearestGrid(ObjectPosition(t, y))
-                    val rateControl = obj.playBufRate
+                    val rateControl = obj.bufferStretchFactor
                     if (grid != null && rateControl != null && sample != null && !sample.meter.isNone()) {
                         val trackBpm = sample.meter.beatsPerMinute.now
                         if (trackBpm != grid.bpm) {
