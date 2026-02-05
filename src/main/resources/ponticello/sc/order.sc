@@ -4,10 +4,20 @@ AudioNode {
 	node {  }
 
 	asTarget { ^this.node }
+
+	moveToHead { |target| this.node.moveToHead(target) }
+
+	moveAfter { |node| this.node.moveAfter(node) }
+
+	moveBefore { |node| this.node.moveBefore(node) }
 }
 
 SimpleAudioNode : AudioNode {
-	var <>node, <>score_y;
+	var <>score_y, <>node;
+
+	* new { |score_y, node|
+		^SimpleAudioNode.newCopyArgs(score_y, node);
+	}
 
 	isActive { ^true }
 }
@@ -51,7 +61,7 @@ AudioNodeOrder {
 	}
 
 	* insertSynth { |score_y, def, args|
-		var node = SimpleAudioNode.new.score_y_(score_y);
+		var node = SimpleAudioNode.new(score_y);
 		var placement = this.insert(node);
 		var synth = Synth(def, args, placement.target, placement.addAction);
 		node.node_(synth);
@@ -59,7 +69,7 @@ AudioNodeOrder {
 	}
 
 	* insertAdhocSynth { |score_y, out, graphFunc|
-		var node = SimpleAudioNode.new.score_y_(score_y);
+		var node = SimpleAudioNode.new(score_y);
 		var placement = this.insert(node);
 		var synth = graphFunc.play(placement.target, out, addAction: placement.addAction);
 		node.node_(synth);
@@ -67,7 +77,7 @@ AudioNodeOrder {
 	}
 
 	* insertGroup { |score_y|
-		var node = SimpleAudioNode.new.score_y_(score_y);
+		var node = SimpleAudioNode.new(score_y);
 		var placement = this.insert(node);
 		var group = Group.new(placement.target, placement.addAction);
 		node.node = group;
