@@ -132,24 +132,26 @@ class InstrumentRegistryPane(
             addAction("Save to global library") {
                 icon(MaterialDesignF.FILE_UPLOAD_OUTLINE)
                 enableWhen { p -> p.listView.selectedBox().map { box -> box?.obj is ConfigurableInstrumentObject } }
-                executes { p, ev ->
+                shortcut("Ctrl+Shift+U")
+                executes { p, _ ->
                     val def = p.listView.selectedBox().now?.obj as? ConfigurableInstrumentObject ?: return@executes
                     val library = def.context[GlobalDefinitionLibrary.instruments]
-                    library.saveToGlobalLib(def, ev)
+                    library.saveToGlobalLib(def, anchor = p.extraActionBar)
                 }
             }
             addAction("Load from global library") {
                 icon(MaterialDesignF.FILE_DOWNLOAD_OUTLINE)
-                executes { p, ev ->
+                shortcut("Ctrl+I")
+                executes { p, _ ->
                     val library = p.registry.context[GlobalDefinitionLibrary.instruments]
                     val names = library.getNames()
-                    val selected =
-                        SimpleSelectorPrompt(names, "Select instrument to load").showPopup(ev) ?: return@executes
+                    val selected = SimpleSelectorPrompt(names, "Select instrument to load")
+                        .showPopup(anchorNode = p.extraActionBar) ?: return@executes
                     val def = library.get(selected) ?: return@executes
                     if (p.instruments.has(def.name.now)) {
                         val overwrite = YesNoPrompt(
                             "Instrument '${def.name.now}' already exists in project. Overwrite?", default = false
-                        ).showDialog(ev) ?: return@executes
+                        ).showDialog(anchorNode = p.extraActionBar) ?: return@executes
                         if (overwrite) {
                             p.instruments.overwrite(def)
                             def.sync()

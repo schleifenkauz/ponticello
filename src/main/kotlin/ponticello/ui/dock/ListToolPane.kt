@@ -23,6 +23,9 @@ abstract class ListToolPane<O : ContextualObject>(
     override val headerActions: List<ContextualizedAction>
         get() = modeChangeActions.withContext(listView) + super.headerActions
 
+    lateinit var extraActionBar: ActionBar
+        private set
+
     override val content: Parent get() = listView
 
     override fun doSetup() {
@@ -45,7 +48,8 @@ abstract class ListToolPane<O : ContextualObject>(
         registerShortcuts {
             registerActions(actions)
         }
-        header.children.addAfter(headerContent, ActionBar(actions, buttonStyle = "medium-icon-button"))
+        extraActionBar = ActionBar(actions, buttonStyle = "medium-icon-button")
+        header.children.addAfter(headerContent, extraActionBar)
     }
 
     fun showContent(obj: O): Window? {

@@ -5,7 +5,7 @@ import fxutils.prompt.YesNoPrompt
 import hextant.serial.readJson
 import hextant.serial.writeJson
 import javafx.application.Platform
-import javafx.event.Event
+import javafx.scene.layout.Region
 import kotlinx.serialization.KSerializer
 import ponticello.impl.Logger
 import ponticello.impl.async
@@ -51,13 +51,13 @@ class GlobalDefinitionLibrary<T: NamedObject>(
 
     private fun jsonFile(name: String): File = directory.resolve("$name.json")
 
-    fun saveToGlobalLib(obj: T, ev: Event?) {
+    fun saveToGlobalLib(obj: T, anchor: Region) {
         val name = obj.name.now
         if (!has(name) ||
             YesNoPrompt(
                 "Overwrite SynthDef $name in global library?",
                 default = true
-            ).showDialog(ev) == true
+            ).showDialog(anchor) == true
         ) {
             async {
                 push(obj)
