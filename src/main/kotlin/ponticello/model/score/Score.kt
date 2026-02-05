@@ -162,6 +162,7 @@ open class Score(
     }
 
     override fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {
+        if (this.isAuxiliary) return
         if (side !in setOf(Side.LEFT, Side.RIGHT)) return
         for (inst in instancesByObject[obj].orEmpty()) {
             val oldStart = if (side == Side.LEFT) inst.start + deltaDuration else inst.start
@@ -260,7 +261,7 @@ open class Score(
     companion object {
         const val ROOT_SCORE_NAME = "<root>"
 
-        fun makeScore(obj: ScoreObject) = when (obj) {
+        fun makeAuxiliaryScore(obj: ScoreObject) = when (obj) {
             is ScoreObjectGroup -> obj.score
             else -> {
                 val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)

@@ -52,7 +52,7 @@ class LiveScoreObject(
         super.initialize(context)
         objReference.resolve(context[ScoreObjectRegistry]) ?: UnresolvedScoreObject()
         quantization.initialize(context)
-        val score = Score.makeScore(scoreObject)
+        val score = Score.makeAuxiliaryScore(scoreObject)
         playHead = playHead ?: PlayHead()
         player = ScorePlayer.create(score, playHead!!, loopingActivated, quantization)
         playerObserver = player.isScheduled.forEach {

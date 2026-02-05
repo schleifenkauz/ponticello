@@ -199,6 +199,8 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         this.height = targetHeight
         val instances = context.rootScore.instancesOf(this).toSet()
         for (inst in instances) {
+            val score = inst.score
+            if (score == null || score.isAuxiliary) continue
             if (resizeSide == Side.LEFT) {
                 inst.moveTo(inst.start - deltaDur, inst.y, simpleMove = false)
             }

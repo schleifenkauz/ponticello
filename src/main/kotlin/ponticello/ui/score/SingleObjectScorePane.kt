@@ -30,7 +30,7 @@ import java.util.concurrent.Future
 class SingleObjectScorePane(
     val rootObj: ScoreObject, context: Context, playHead: PlayHead,
     private val paintGrid: ReactiveValue<Boolean>, playHeadStyle: String? = null,
-) : RootScorePane(Score.makeScore(rootObj), context, playHead, playHeadStyle = playHeadStyle) {
+) : RootScorePane(Score.makeAuxiliaryScore(rootObj), context, playHead, playHeadStyle = playHeadStyle) {
     override val displayStart: Decimal
         get() = zero(ObjectPosition.TIME_PRECISION)
     override val displayEnd: Decimal
