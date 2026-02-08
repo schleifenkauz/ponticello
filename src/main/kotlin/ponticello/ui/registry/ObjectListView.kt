@@ -404,7 +404,7 @@ class ObjectListView<O : Any>(
 
     fun select(obj: O) {
         if (!config.enableSelection) return
-        val box = boxes.find { b -> b.obj == obj } ?: error("No box for $obj")
+        val box = boxes.find { b -> b.obj == obj } ?: return //TODO
         select(box)
     }
 

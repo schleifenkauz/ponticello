@@ -11,6 +11,7 @@ import ponticello.model.player.SoundProcessUpdater
 import ponticello.model.score.SoundProcess
 import ponticello.model.score.controls.BusControl
 import ponticello.sc.client.ScWriter
+import ponticello.sc.client.run
 import ponticello.ui.midi.MidiContext
 import ponticello.ui.midi.ParameterControlsMidiContext
 import reaktive.value.ReactiveValue
@@ -49,7 +50,12 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     }
 
     override fun onRename(oldName: String, newName: String) {
-        client.run("SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')")
+        client.run {
+            +"SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')"
+            val oldSuperColliderName = superColliderName(oldName)
+            +"$superColliderName = $oldSuperColliderName"
+            +"$oldSuperColliderName = nil"
+        }
     }
 
     override fun writeCode(placement: NodePlacement): String = writeCode {

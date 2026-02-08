@@ -3,13 +3,15 @@ AudioNode {
 
 	node {  }
 
+	group { ^this.node }
+
 	asTarget { ^this.node }
 
-	moveToHead { |target| this.node.moveToHead(target) }
+	moveToHead { |target| this.asTarget.moveToHead(target.asTarget) }
 
-	moveAfter { |node| this.node.moveAfter(node) }
+	moveAfter { |node| this.asTarget.moveAfter(node.asTarget) }
 
-	moveBefore { |node| this.node.moveBefore(node) }
+	moveBefore { |node| this.asTarget.moveBefore(node.asTarget) }
 }
 
 SimpleAudioNode : AudioNode {

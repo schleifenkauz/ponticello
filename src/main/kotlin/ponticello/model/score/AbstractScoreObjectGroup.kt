@@ -168,9 +168,9 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
 
     override fun deactivate() {
         super.deactivate()
-        for (obj in score.objects) {
-            obj.deactivate()
-        }
+//        for (obj in score.objects) { //TODO deactivate children?
+//            obj.deactivate()
+//        }
     }
 
     override fun doClone(): ScoreObject = cloneWith(score.clone())

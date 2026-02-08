@@ -146,7 +146,9 @@ class LauncherGrid private constructor(
                     return
                 }
                 val yPosition = reactiveVariable(selectedView.absolutePosition.y)
-                item.target = ItemTarget.Object(selectedObject.reference(), yPosition)
+                Platform.runLater {
+                    item.target = ItemTarget.Object(selectedObject.reference(), yPosition)
+                }
             }
 
             ModifierKeyTracker.isCtrlDown.now -> {
