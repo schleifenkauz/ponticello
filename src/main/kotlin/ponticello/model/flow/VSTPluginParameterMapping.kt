@@ -49,7 +49,7 @@ class VSTPluginParameterMapping(
         }
     }
 
-    override fun deactivate() {
+    override fun onRemoved() {
         unmap()
         observer?.kill()
         observer = null

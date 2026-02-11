@@ -60,8 +60,8 @@ class LiveTaskObject(
         sync()
     }
 
-    override fun deactivate() {
-        super.deactivate()
+    override fun onRemoved() {
+        super.onRemoved()
         client.run {
             +"$superColliderName.clear"
         }

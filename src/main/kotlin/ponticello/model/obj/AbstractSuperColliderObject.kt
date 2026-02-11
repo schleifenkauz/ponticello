@@ -23,8 +23,8 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         +"if ($superColliderName != nil) { $superColliderName.free; $superColliderName = nil; }"
     }
 
-    override fun deactivate() {
-        super<AbstractRenamableObject>.deactivate()
+    override fun onRemoved() {
+        super<AbstractRenamableObject>.onRemoved()
         client.run { freeObject() }
     }
 

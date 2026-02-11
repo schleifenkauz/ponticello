@@ -304,22 +304,19 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     fun addedToScore(score: Score) {
         if (this is UnresolvedScoreObject) return
         val registry = context[ScoreObjectRegistry]
-        if (!registry.has(this)) {
+        if (!registry.has(this)) { //TODO what if there is a naming conflict?
             registry.context.withoutUndo { registry.add(this) }
         }
         if (!score.isAuxiliary) {
             instances.now += 1
         }
-        if (this is AbstractScoreObjectGroup) {
-            for (inst in this.score.objectInstances) {
-                inst.obj.addedToScore(score)
-            }
-        }
     }
 
-    fun removedFromScore(option: Score.RegistryOption) {
+    fun removedFromScore(score: Score, option: Score.RegistryOption) {
         if (this is UnresolvedScoreObject) return
-        instances.now -= 1
+        if (!score.isAuxiliary) {
+            instances.now -= 1
+        }
         if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
         if (!context.project.hasReferencesTo(this) && registry.has(this)) {
             val remove = this is MemoObject || option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(

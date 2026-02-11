@@ -75,7 +75,7 @@ class LiveScoreObject(
         player.playHead.movePlayHeadToStart()
     }
 
-    override fun deactivate() {
+    override fun onRemoved() {
         reset()
     }
 

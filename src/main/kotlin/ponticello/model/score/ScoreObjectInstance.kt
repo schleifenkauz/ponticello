@@ -74,9 +74,7 @@ class ScoreObjectInstance(
     fun removedFromScore(option: Score.RegistryOption) {
         val oldScore = score ?: return
         score = null
-        if (!oldScore.isAuxiliary) {
-            obj.removedFromScore(option)
-        }
+        obj.removedFromScore(oldScore, option)
     }
 
     fun initialize(context: Context) {

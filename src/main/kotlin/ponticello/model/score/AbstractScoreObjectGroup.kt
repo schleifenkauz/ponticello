@@ -30,6 +30,22 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
         this.score.initialize(context, this)
     }
 
+    override fun activate() {
+        if (!score.isAuxiliary) {
+            for (inst in score.objectInstances) {
+                inst.addedToScore(score)
+            }
+        }
+    }
+
+    override fun onRemoved() {
+        if (!score.isAuxiliary) {
+            for (inst in score.objectInstances) {
+                inst.removedFromScore(Score.RegistryOption.ASK_IF_NEEDED)
+            }
+        }
+    }
+
     protected abstract fun cloneWith(score: Score): AbstractScoreObjectGroup
 
     override fun ScWriter.createInSuperCollider() {
@@ -164,13 +180,6 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
                 inst.finishMove(notifyScore = false, recordEdit = false)
             }
         }
-    }
-
-    override fun deactivate() {
-        super.deactivate()
-//        for (obj in score.objects) { //TODO deactivate children?
-//            obj.deactivate()
-//        }
     }
 
     override fun doClone(): ScoreObject = cloneWith(score.clone())

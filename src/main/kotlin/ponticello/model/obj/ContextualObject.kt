@@ -13,7 +13,7 @@ interface ContextualObject {
 
     fun activate() {}
 
-    fun deactivate() {}
+    fun onRemoved() {}
 
     fun dispose() {}
 }

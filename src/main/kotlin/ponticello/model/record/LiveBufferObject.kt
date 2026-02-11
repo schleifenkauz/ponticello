@@ -94,7 +94,7 @@ class LiveBufferObject(
         capture.close()
     }
 
-    override fun deactivate() {
+    override fun onRemoved() {
         dispose()
     }
 

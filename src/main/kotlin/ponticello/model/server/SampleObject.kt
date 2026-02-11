@@ -174,8 +174,8 @@ class SampleObject(
         }
     }
 
-    override fun deactivate() {
-        super.deactivate()
+    override fun onRemoved() {
+        super.onRemoved()
         spectrogramFile.delete()
         if (registry.copyAudioFiles.now) {
             audioFileInSamplesDir().delete()

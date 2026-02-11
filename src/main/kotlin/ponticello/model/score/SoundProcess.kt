@@ -105,10 +105,10 @@ class SoundProcess(
         controls.addListener(lfosManager)
     }
 
-    override fun deactivate() {
+    override fun onRemoved() {
         updater.stopListening()
         controls.removeListener(lfosManager)
-        super<ScoreObject>.deactivate()
+        super<ScoreObject>.onRemoved()
     }
 
     override fun doClone(): ScoreObject = SoundProcess(

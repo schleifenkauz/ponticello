@@ -39,7 +39,7 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
     override fun remove(obj: O) {
         removeByName(obj.name.now)
         try {
-            obj.deactivate()
+            obj.onRemoved()
         } catch (e: Exception) {
             Logger.error("Error while deactivating $objectType '${obj.name.now}'", e)
         }

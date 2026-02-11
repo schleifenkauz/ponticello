@@ -39,8 +39,8 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
         listener.startListening()
     }
 
-    override fun deactivate() {
-        super<AudioFlow>.deactivate()
+    override fun onRemoved() {
+        super<AudioFlow>.onRemoved()
         listener.stopListening()
     }
 
