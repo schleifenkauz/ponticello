@@ -18,11 +18,13 @@ import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.control.ColorPicker
 import javafx.scene.control.Label
-import javafx.scene.control.TextArea
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.*
+import javafx.scene.layout.Background
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Pane
+import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import javafx.scene.robot.Robot
 import ponticello.impl.*
@@ -72,9 +74,6 @@ abstract class ScoreObjectView(
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
 
-    lateinit var memoTextArea: TextArea
-        private set
-
     protected var _inlineControls: HBox? = null
         private set
 
@@ -111,18 +110,8 @@ abstract class ScoreObjectView(
 
     open fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {}
 
-    override fun updatedMemoText(text: String) {
-        memoTextArea.text = text
-    }
-
     protected open fun initialize() {
         setupColorPicker()
-        memoTextArea = TextArea(obj.memoText) styleClass "memo-area"
-        memoTextArea.border = solidBorder(Color.BLACK)
-        VBox.setVgrow(memoTextArea, Priority.ALWAYS)
-        memoTextArea.textProperty().addListener { _, _, newText ->
-            obj.memoText = newText
-        }
         instance.addListener(this)
         obj.addListener(this)
         inlineNameLabel = label(obj.name)

@@ -64,12 +64,7 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         }
 
     @SerialName("text")
-    var memoText: String = ""
-        set(value) {
-            if (field == value) return
-            field = value
-            notifyListeners { this.updatedMemoText(value) }
-        }
+    val memoText: ReactiveVariable<String> = reactiveVariable("")
 
     @Transient
     var isCreatedInSuperCollider = false
@@ -257,7 +252,7 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         obj.duration = duration
         obj.height = height
         obj._associatedColor.now = associatedColor.now
-        obj.memoText = memoText
+        obj.memoText.now = memoText.now
         obj.setInitialName(newName)
         return obj
     }
@@ -335,8 +330,6 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         fun finishedResize(obj: ScoreObject, deltaDuration: Decimal, deltaHeight: Decimal, side: Side) {}
 
         fun updateIsSomeInstanceSelected(yesOrNo: Boolean) {}
-
-        fun updatedMemoText(text: String) {}
     }
 
     private class ResizeEdit(

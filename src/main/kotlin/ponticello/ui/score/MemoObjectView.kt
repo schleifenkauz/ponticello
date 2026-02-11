@@ -2,10 +2,9 @@ package ponticello.ui.score
 
 import fxutils.centerChildren
 import fxutils.styleClass
+import fxutils.textArea
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.value.ObservableValue
-import javafx.scene.control.Label
-import javafx.scene.control.TextArea
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
@@ -16,20 +15,22 @@ import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.score.MemoObject
 import ponticello.model.score.Score
 import ponticello.model.score.ScoreObjectInstance
+import reaktive.Observer
 import reaktive.value.ReactiveVariable
+import reaktive.value.forEach
+import reaktive.value.now
 
 class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
-    private val edit = TextArea(obj.memoText) styleClass "memo-area"
-    private val display = Label(obj.memoText) styleClass "memo-area"
-    private val computeSize = Text(obj.memoText)
+    private val edit = textArea(obj.memoText) styleClass "memo-area"
+    private val display = textArea(obj.memoText) styleClass "memo-area"
+    private val computeSize = Text()
+
+    private val autosize: Observer
 
     private var isEditing = false
 
     init {
         children.setAll(HBox(display).centerChildren())
-        edit.textProperty().addListener { _, _, text ->
-            obj.memoText = text
-        }
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
             if (isEditing) return@addEventFilter
             if (ev.clickCount >= 2) enterEdit() else selectView(addToSelection = ev.isShiftDown)
@@ -46,6 +47,11 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
         }
         edit.prefWidthProperty().bind(prefWidthProperty())
         edit.prefHeightProperty().bind(prefHeightProperty())
+
+        autosize = obj.memoText.forEach { text ->
+            computeSize.text = text
+            resizedObject(obj)
+        }
         computeSize.font = Font.font("Monospaced", 11.0)
     }
 
@@ -61,7 +67,7 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
         if (!isEditing) return
         children.setAll(HBox(display).centerChildren())
         isEditing = false
-        if (obj.memoText.isBlank()) {
+        if (obj.memoText.now.isBlank()) {
             instance.score!!.removeObject(instance, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
         }
     }
@@ -69,16 +75,6 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
     override fun getDisplayWidth(): Double = computeSize.prefWidth(-1.0) + 20
 
     override fun getDisplayHeight(): Double = computeSize.prefHeight(-1.0) + 10
-
-    override fun updatedMemoText(text: String) {
-        super.updatedMemoText(text)
-        if (text != edit.text) {
-            edit.text = text
-        }
-        display.text = text
-        computeSize.text = text
-        resizedObject(obj)
-    }
 
     override fun inlineControlsVisibilityCondition(
         controlsDisplay: ReactiveVariable<InlineControlsDisplay>,

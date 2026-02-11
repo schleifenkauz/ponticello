@@ -13,6 +13,7 @@ import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.StackPane
+import javafx.scene.paint.Color
 import javafx.stage.Popup
 import javafx.stage.Screen
 import javafx.stage.Window
@@ -135,10 +136,13 @@ class ScoreObjectDetailPane : ToolPane() {
             detailPane.addItem("Duration", durationLabel)
         }
         view.setupDetailPane(detailPane, midiContext)
+        val memoTextArea = textArea(obj.memoText) styleClass "memo-area"
+        memoTextArea.border = solidBorder(Color.BLACK)
+        setVgrow(memoTextArea, Priority.ALWAYS)
         detailPane.children.addAll(
             vspace(8.0),
             Label("Notes: "),
-            view.memoTextArea
+            memoTextArea
         )
         return detailPane
     }
