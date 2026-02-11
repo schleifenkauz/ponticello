@@ -328,7 +328,7 @@ abstract class ToolPane : VBox() {
         val w = window
         if (showing.now && w != null && w is Stage) {
             if (!isSetup) setup()
-            w.show()
+            w.showAndBringToFront()
         } else {
             if (toggleExclusive && currentMode() == Docked) {
                 isExclusive = !isExclusive

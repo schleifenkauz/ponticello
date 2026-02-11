@@ -344,7 +344,7 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Select parent") {
-            shortcut("Alt+P")
+            shortcut("Alt?+P")
             applicableOn<ScoreObjectView>()
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle

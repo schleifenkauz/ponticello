@@ -460,7 +460,7 @@ class ObjectListView<O : Any>(
             return getBox(obj).showSubWindow()
         } else {
             select(obj)
-            Platform.runLater {
+            runAfterLayout {
                 getBox(obj).content()?.requestFocus()
             }
             return null
