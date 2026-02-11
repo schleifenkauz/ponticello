@@ -93,6 +93,11 @@ class LauncherGrid private constructor(
         items: Array<GridItem> = Array(columns * columns) { GridItem.createDefault() }
     ) {
         banks.add(bankIndex, items)
+        for (item in items) {
+            if (!(item.initialized)) {
+                item.initialize(context, this)
+            }
+        }
         undoManager.record(LauncherGridEdit.AddBank(this, bankIndex))
         notifyViews { addedBank(bankIndex) }
         selectBank(bankIndex)
@@ -176,7 +181,7 @@ class LauncherGrid private constructor(
     fun deactivateAll() {
         for (item in banks.asSequence().flatMap { it.asSequence() }) {
             if (item.mode.now in setOf(GridItem.Mode.Toggle, GridItem.Mode.Gate)) {
-                item.target.deactivate()
+                item.target.onRemoved()
             }
         }
     }
