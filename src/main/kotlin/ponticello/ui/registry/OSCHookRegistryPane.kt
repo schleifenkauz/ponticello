@@ -40,7 +40,7 @@ class OSCHookRegistryPane(
     override val canDuplicate: Boolean get() = true
     override val canCreateNewObject: Boolean get() = true
     override val supportedModes: Collection<DisplayMode>
-        get() = setOf(DisplayMode.Collapsable, DisplayMode.Inline(false), DisplayMode.DetailsPane)
+        get() = setOf(DisplayMode.Collapsable, DisplayMode.DetailsPane)
 
     override val dataFormat: DataFormat
         get() = OSCHookObject.DATA_FORMAT

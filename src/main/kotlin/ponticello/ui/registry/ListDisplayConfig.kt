@@ -23,6 +23,7 @@ import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.getFrom
+import reaktive.Reactive
 import reaktive.value.now
 
 interface ListDisplayConfig<O : Any> {
@@ -66,6 +67,8 @@ interface ListDisplayConfig<O : Any> {
     fun getActions(box: ObjectBox<O>): List<ContextualizedAction> = emptyList()
 
     fun getContent(obj: O, box: ObjectBox<O>): Parent? = null
+
+    fun contentUpdate(obj: O): Reactive? = null
 
     fun configureBox(box: ObjectBox<O>, currentMode: ObjectListView.DisplayMode) {}
 

@@ -48,7 +48,7 @@ import java.util.*
 class ScoreObjectDetailPane : ToolPane() {
     private val detached = mutableMapOf<ScoreObject, SubWindow>()
     private val displayedObject: ReactiveVariable<ScoreObjectView?> = reactiveVariable(null)
-    private val detailPanes = WeakHashMap<ScoreObjectView, DetailPane>()
+    private val detailPanes = WeakHashMap<ScoreObject, DetailPane>()
 
     private lateinit var focusedViewObserver: Observer
     lateinit var midiContext: MidiContext
@@ -102,7 +102,7 @@ class ScoreObjectDetailPane : ToolPane() {
     }
 
     private fun getDetailPane(view: ScoreObjectView) =
-        detailPanes.getOrPut(view) { createDetailPane(view, midiContext) }
+        detailPanes.getOrPut(view.obj) { createDetailPane(view, midiContext) }
 
     private fun createDetailPane(view: ScoreObjectView, midiContext: MidiContext?): DetailPane {
         val obj = view.obj

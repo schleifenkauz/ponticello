@@ -202,10 +202,12 @@ class ObjectListView<O : Any>(
             if (!config.enableSelection) return@registerShortcuts
             val selected = selectedBox.now ?: return@registerShortcuts
             registerActions(config.getActions(selected))
-            val selectedContent = selected.content()
-            if (displayMode.now == DisplayMode.DetailsPane && selectedContent is ToolPane) {
-                val actionBar = selectedContent.actionBar
-                registerActions(actionBar.actions())
+            if (displayMode.now == DisplayMode.DetailsPane) {
+                val selectedContent = selected.content
+                if (selectedContent is ToolPane) {
+                    val actionBar = selectedContent.actionBar
+                    registerActions(actionBar.actions())
+                }
             }
         }
     }
@@ -249,7 +251,7 @@ class ObjectListView<O : Any>(
         }
         source.add(newObj)
         val box = getBox(newObj)
-        if (mode.now == DisplayMode.Collapsable) {
+        if (mode.now == DisplayMode.Inline) {
             box.toggleExpanded()
         }
         if (config.enableSelection) {

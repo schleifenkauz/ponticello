@@ -21,8 +21,11 @@ import ponticello.ui.controls.NameControl
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import reaktive.value.binding.*
+import reaktive.value.binding.and
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.`if`
 import reaktive.value.binding.impl.notNull
+import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -45,12 +48,13 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     private val expanded = reactiveVariable(false)
 
+    private val contentUpdateObserver =
+        config.contentUpdate(obj)?.observe { _ -> content = config.getContent(obj, this) }
+
     val isExpanded get() = expanded.now
 
     val isCollapsed by lazy {
-        binding(parent.mode, expanded) { mode, expanded ->
-            mode == DisplayMode.Collapsable && !expanded
-        }
+        parent.mode.equalTo(DisplayMode.Collapsable) and _content.notNull() and !expanded
     }
 
     private val nameDisplay: Region? = when {
@@ -91,27 +95,29 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     var content: Parent?
         get() = _content.now
-        set(value) {
+        private set(value) {
             _content.now = value
             if (value != null) {
-                val visible = (parent.mode.notEqualTo(DisplayMode.Collapsable) or expanded)
-                    .asObservableValue()
+                val visible = (!isCollapsed).asObservableValue()
                 value.visibleProperty().bind(visible)
                 value.managedProperty().bind(visible)
+            }
+            if (currentMode is DisplayMode.Inline) {
+                relayout()
             }
         }
 
     fun content(): Parent? {
         content?.let { return it }
-        content = (config.getContent(obj, this) ?: return null)
-        return content!!
+        content = config.getContent(obj, this)
+        return content
     }
 
     init {
         isFocusTraversable = true
         addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             parent.select(this)
-            if (ev.clickCount == 2 && currentMode == DisplayMode.Collapsable) {
+            if (ev.clickCount == 2 && currentMode == DisplayMode.Inline && content != null) {
                 toggleExpanded()
             }
             ev.consume()
@@ -140,15 +146,16 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     private fun relayout() {
         val root =
-            if (currentMode == DisplayMode.Collapsable && !expanded.now) config.collapsedLayout(this, header, content)
-            else config.boxLayout(obj, header, content)
+            if (currentMode == DisplayMode.Collapsable && content != null && !expanded.now)
+                config.collapsedLayout(this, header, content)
+            else
+                config.boxLayout(obj, header, content)
         updateInlineContentPseudoClass()
         setRoot(root)
     }
 
     private fun updateInlineContentPseudoClass() {
-        val inlineContent = content != null && currentMode == DisplayMode.Inline(collapsable = false)
-                || currentMode == DisplayMode.Collapsable && expanded.now
+        val inlineContent = content != null && currentMode == DisplayMode.Inline && (content == null || expanded.now)
         setPseudoClassState("inline-content", inlineContent)
     }
 
@@ -187,8 +194,9 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         if (dragTarget == prevDragTarget) return
         prevDragTarget = dragTarget
         dragTarget.setOnDragDetected { ev ->
-            val db = if (ev.isControlDown && obj is NamedObject && config.canDuplicate) this.startDragAndDrop(TransferMode.COPY)
-            else this.startDragAndDrop(TransferMode.MOVE, TransferMode.LINK)
+            val db =
+                if (ev.isControlDown && obj is NamedObject && config.canDuplicate) this.startDragAndDrop(TransferMode.COPY)
+                else this.startDragAndDrop(TransferMode.MOVE, TransferMode.LINK)
             if (obj is NamedObject) {
                 db.setContent(mapOf(config.dataFormat to obj.reference()))
             }

@@ -7,7 +7,6 @@ import fxutils.styleClass
 import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
-import javafx.scene.Parent
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
@@ -34,6 +33,7 @@ import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.registry.ParameterDefSelectorPrompt
+import reaktive.Reactive
 import reaktive.value.ReactiveValue
 import reaktive.value.binding.impl.notNull
 import reaktive.value.now
@@ -49,7 +49,7 @@ class ParameterControlsPane(
         get() = reactiveValue("Parameter controls")
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Inline(collapsable = true))
+        get() = setOf(DisplayMode.Collapsable)
 
     override val addSpaceBeforeActionBar: Boolean get() = false
 
@@ -160,7 +160,9 @@ class ParameterControlsPane(
         return listOf(editor)
     }
 
-    override fun getContent(obj: NamedParameterControl, box: ObjectBox<NamedParameterControl>): Parent? =
+    override fun contentUpdate(obj: NamedParameterControl): Reactive = obj.value()
+
+    override fun getContent(obj: NamedParameterControl, box: ObjectBox<NamedParameterControl>) =
         when (val ctrl = obj.now) {
             is ExprControl -> ScrollPane(ctrl.expr.control)
             is UGenControl -> ScrollPane(ctrl.expr.control)

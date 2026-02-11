@@ -36,7 +36,7 @@ class GlobalPatternRegistryPane(
         get() = true
 
     override val supportedModes: Set<DisplayMode>
-        get() = setOf(DisplayMode.Collapsable, DisplayMode.Inline(false), DisplayMode.DetailsPane)
+        get() = setOf(DisplayMode.Collapsable, DisplayMode.DetailsPane)
 
     private val plotPaneWindows = mutableMapOf<GlobalPatternObject, SubWindow>()
 
