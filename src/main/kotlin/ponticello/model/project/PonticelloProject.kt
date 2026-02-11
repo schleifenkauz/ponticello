@@ -49,7 +49,11 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         client = context[SuperColliderClient]
         for (comp in allComponents) {
             progressBar.increaseProgress(totalDeltaProgress / allComponents.size, "Initializing ${comp.name}")
-            get(comp).initialize(context)
+            try {
+                get(comp).initialize(context)
+            } catch (e: Exception) {
+                Logger.error("Error while initializing ${comp.name}!", e)
+            }
         }
     }
 
@@ -72,7 +76,6 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
         } catch (e: Exception) {
             Logger.error("Failed to save window states!", e)
         }
-        this.projectDirectory = projectDirectory
         dataDir.mkdirs()
         var savedAllComponents = true
         for ((component, _) in components) {

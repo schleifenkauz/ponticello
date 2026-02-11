@@ -23,7 +23,11 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
     override fun initialize(context: Context) {
         super.initialize(context)
         for (obj in objects) {
-            initializeObject(obj)
+            try {
+                initializeObject(obj)
+            } catch (e: Exception) {
+                Logger.error("Error while initializing $objectType $obj", e)
+            }
         }
     }
 
