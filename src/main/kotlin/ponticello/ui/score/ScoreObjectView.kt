@@ -533,6 +533,7 @@ abstract class ScoreObjectView(
     }
 
     override fun resizedObject(obj: ScoreObject) {
+        if (!isInitialized) return
         if (!parentPane.isRoot(obj)) {
             setPrefSize(getDisplayWidth(), getDisplayHeight())
         }

@@ -44,12 +44,6 @@ data object ExprControlType : ControlType<ExprControl>() {
         return ExprControl(root)
     }
 
-    override fun onSelected(namedControl: NamedParameterControl, control: ExprControl, view: ScoreObjectView?) {
-        val actions = actions.withContext(control)
-        val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
-        window.show()
-    }
-
     override fun actions(
         namedControl: NamedParameterControl,
         control: ExprControl,

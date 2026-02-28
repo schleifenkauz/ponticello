@@ -75,7 +75,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
 
     override fun sync() {
         if (!isActive.now || parentGroup?.isActive?.now != true) return
-        context[SuperColliderClient].run("$superColliderName.free")
+        context[SuperColliderClient].run("$superColliderName.release")
         val placement = parentGroup!!.getPlacement(this)
         val code = writeCode(placement)
         context[SuperColliderClient].run(code)

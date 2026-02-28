@@ -55,17 +55,6 @@ data object UGenControlType : ControlType<UGenControl>() {
         return UGenControl(root)
     }
 
-    override fun onSelected(
-        namedControl: ParameterControlList.NamedParameterControl,
-        control: UGenControl,
-        view: ScoreObjectView?,
-    ) {
-        val actions = actions.withContext(Pair(namedControl, null))
-        val window = makeCodePaneWindow(control.expr, control.context, namedControl, actions)
-        window.show()
-
-    }
-
     override fun actions(
         namedControl: ParameterControlList.NamedParameterControl,
         control: UGenControl,
@@ -109,7 +98,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         context[SuperColliderClient].run {
             append("var inst = ")
             if (absolutePosition != null) appendLine("SoundProcess.get('$processName').getInstanceAt($absolutePosition);")
-            else appendLine("SoundProcess.get($processName.getSingleInstance);")
+            else appendLine("SoundProcess.get($processName.getSingleInstance);") //TODO
             appendBlock("if (inst != nil)", endLine = false) {
                 appendBlock("AppClock.sched(0)") {
                     +"var index = inst.getControlBus('$parameter').index"

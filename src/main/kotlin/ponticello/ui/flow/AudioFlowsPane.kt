@@ -201,7 +201,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         private val groupActions = collectActions<ObjectBox<AudioFlowGroup>> {
             add(FlowGroupPane.toggleActiveAction) { box -> box.obj }
             addAll(ObjectListView.listActions.map { box: ObjectBox<AudioFlowGroup> ->
-                (box.content as? FlowGroupPane)?.flowsView
+                (box.content() as? FlowGroupPane)?.flowsView
             })
         }
     }
