@@ -79,6 +79,8 @@ sealed class BusObject : AbstractSuperColliderObject() {
 
         fun getLevel(channel: Int) = registry.getLevel(this, channel)
 
+        fun getLevels(): List<ReactiveValue<Double>> = registry.getLevels(this)
+
         override fun ScWriter.createObject() {
             when (busType) {
                 Type.Input -> {}
@@ -88,7 +90,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
                 }
             }
             for ((ch, id) in registry.registerLevelSends(this@AudioBus).withIndex()) {
-                +"~level_send_${name.now}_$ch = Synth(\\send_level, [bus: $superColliderName.index + $ch, id: $id])"
+                +"~level_send_${name.now}_$ch = Synth(\\level_send, [bus: $superColliderName.index + $ch, id: $id])"
             }
         }
 

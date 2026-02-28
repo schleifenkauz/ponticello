@@ -7,9 +7,7 @@ import com.illposed.osc.OSCMessage
 import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.Decimal
 import ponticello.impl.Logger
-import ponticello.impl.toDecimal
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.registry.SuperColliderObjectRegistry
@@ -48,31 +46,34 @@ class BusRegistry(
                 }
             }
         }
-        context[SuperColliderClient].addListener("bus_level") { _, msg -> receivedBusLevel(msg) }
+        context[SuperColliderClient].addListener("/bus_level") { _, msg -> receivedBusLevel(msg) }
     }
 
     private fun receivedBusLevel(msg: OSCMessage) {
-        val replyId = msg.getArgument<Int>(1, "replyId") ?: return
-        val level = msg.getArgument<Float>(2, "level") ?: return
+        val replyId = msg.getArgument<Int>(0, "replyID") ?: return
+        val level = msg.getArgument<Float>(1, "level") ?: return
         val channel = channelsByReplyId[replyId]
         if (channel == null) {
             Logger.warn("Received bus_level message: Channel '$replyId' not found.", Logger.Category.SuperCollider)
             return
         }
-        channel.level.set(level.toDouble().toDecimal())
+        channel.level.set(level.toDouble())
     }
 
-    fun getLevel(bus: BusObject.AudioBus, channel: Int): ReactiveValue<Decimal>? {
+    fun getLevels(bus: BusObject.AudioBus): List<ReactiveValue<Double>> =
+        channelsByBus[bus]?.map { ch -> ch.level } ?: emptyList()
+
+    fun getLevel(bus: BusObject.AudioBus, channel: Int): ReactiveVariable<Double>? {
         val channels = channelsByBus[bus] ?: return null
         return channels[channel].level
     }
 
-    fun registerLevelSends(bus: BusObject.AudioBus): List<Int> {
+    fun registerLevelSends(bus: BusObject.AudioBus): List<Int> { //TODO reuse existing BusChannels
         val channels = mutableListOf<BusChannel>()
         val replyIds = mutableListOf<Int>()
         for (channel in 0 until bus.channels.now) {
             val replyId = replyIdCounter++
-            val level = reactiveVariable(Decimal.NINF)
+            val level = reactiveVariable(Double.NEGATIVE_INFINITY)
             val channel = BusChannel(replyId, bus, channel, level)
             replyIds.add(replyId)
             channelsByReplyId[replyId] = channel
@@ -105,7 +106,7 @@ class BusRegistry(
         val replyId: Int,
         private val bus: BusObject.AudioBus,
         private val channel: Int,
-        val level: ReactiveVariable<Decimal>
+        val level: ReactiveVariable<Double>
     )
 
     companion object : PublicProperty<BusRegistry> by publicProperty("BusRegistry") {

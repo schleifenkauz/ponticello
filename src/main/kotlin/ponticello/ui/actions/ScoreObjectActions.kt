@@ -266,24 +266,33 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Unlink from original") {
-            shortcut("Alt?+U")
+            shortcut("Alt?+Shift?+U")
             icon(MaterialDesignL.LINK_OFF)
             enableWhen { ctx -> ctx.focusedView.map { focused -> focused == null || !focused.parentPane.isRoot(focused.obj) } }
             executes { ctx, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
                 if (ctx.selectedInstances.isEmpty()) return@executes
-                val obj = ctx.selectedObjects.singleOrNull()
-                if (obj == null) {
-                    Logger.warn("Cannot unlink from original: selected objects are not the same", Logger.Category.Score)
-                    return@executes
-                }
-                val name = ctx.context[ScoreObjectRegistry].nameForClone(obj, null) ?: return@executes
-                ctx.context.compoundEdit("Unlink from original") {
-                    val clone = obj.clone(name)
-                    for (oldInst in ctx.selectedInstances) {
-                        val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
-                        oldInst.score?.addObject(newInst, autoSelect = true)
-                        oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
+                if (ev.isShiftDown()) { //TODO deep unlink
+                    val hierarchies = ctx.selectedViews.map { v ->
+                        v.parentPane
+                    }
+                } else {
+                    val obj = ctx.selectedObjects.singleOrNull()
+                    if (obj == null) {
+                        Logger.warn(
+                            "Cannot unlink from original: selected objects are not the same",
+                            Logger.Category.Score
+                        )
+                        return@executes
+                    }
+                    val name = ctx.context[ScoreObjectRegistry].nameForClone(obj, null) ?: return@executes
+                    ctx.context.compoundEdit("Unlink from original") {
+                        val clone = obj.clone(name)
+                        for (oldInst in ctx.selectedInstances) {
+                            val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
+                            oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
+                            oldInst.score?.addObject(newInst, autoSelect = true)
+                        }
                     }
                 }
             }

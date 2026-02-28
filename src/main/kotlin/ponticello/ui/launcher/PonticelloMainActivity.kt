@@ -100,10 +100,14 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         runAfterLayout {
             appLayout.restorePaneSizes()
             runAfterLayout {
-                if (displayRange == null) mainScoreView.displayWholeScore().awaitFx {
-                    mainScoreView.isVisible = true
-                } else mainScoreView.display(displayRange.start, displayRange.endInclusive).awaitFx {
-                    mainScoreView.isVisible = true
+                if (displayRange == null || displayRange.start.isNaN() || displayRange.endInclusive.isNaN()) {
+                    mainScoreView.displayWholeScore().awaitFx {
+                        mainScoreView.isVisible = true
+                    }
+                } else {
+                    mainScoreView.display(displayRange.start, displayRange.endInclusive).awaitFx {
+                        mainScoreView.isVisible = true
+                    }
                 }
             }
         }

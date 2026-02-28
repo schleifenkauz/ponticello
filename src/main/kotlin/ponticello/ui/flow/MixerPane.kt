@@ -54,6 +54,7 @@ import ponticello.ui.misc.MidiDeviceSelectorPrompt
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
+import reaktive.Reactive
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.equalTo
@@ -237,9 +238,10 @@ class MixerPane(
         }
     }
 
-    override fun expandedLayout(obj: MixerFlow.MixerComponent, header: Region, content: Node?): Node {
-        return createFaderBox(obj.sourceBus, obj.volume, obj)
-    }
+    override fun expandedLayout(obj: MixerFlow.MixerComponent, header: Region, content: Node?): Node =
+        createFaderBox(obj.sourceBus, obj.volume, obj)
+
+    override fun contentUpdate(obj: MixerFlow.MixerComponent): Reactive = obj.sourceBus
 
     private fun createFaderBox(
         bus: ReactiveValue<BusReference>, volume: ReactiveVariable<Decimal>, obj: MixerFlow.MixerComponent?,
@@ -266,6 +268,14 @@ class MixerPane(
             }
         }
 
+        val levels = (bus.now.get()!! as BusObject.AudioBus).getLevels()
+        val meters = levels.map { v: ReactiveValue<Double> ->
+            val meter = LevelMeter(fader.heightProperty())
+            meter.userData = v.forEach(meter::setLevel)
+            meter
+        }
+        val metersBox = HBox(1.0, *meters.toTypedArray())
+
         val (top, bottom) =
             if (obj != null) createPanKnobAndMuteSoloActionsBar(obj)
             else createMasterMonoAndMuteButtons()
@@ -274,7 +284,7 @@ class MixerPane(
             Region() styleClass "fader-separator",
             scopeButton.centered(),
             volumeBox,
-            HBox(hspace(5.0), namePane, infiniteSpace(), fader, hspace(5.0)).alwaysVGrow(),
+            HBox(hspace(5.0), namePane, infiniteSpace(), metersBox, fader, hspace(5.0)).alwaysVGrow(),
             Region() styleClass "fader-separator",
             bottom
         ) styleClass "fader-layout"

@@ -10,7 +10,7 @@ SynthDef(\level_send) {
     arg bus, id;
     var sig = In.ar(bus, 1);
     var level = Amplitude.kr(sig, 0.01, 0.3).ampdb;
-    SendReply.kr(Impulse.kr(30), '/bus_level', level, replyId: id)
+    SendReply.kr(Impulse.kr(5), '/bus_level', level, replyID: id)
 }.add;
 SynthDef(\vst_plugin, {
     arg bus = 0;
@@ -198,9 +198,9 @@ OSCdef(\set_time_warp, { |msg|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][3];
 });
 OSCdef(\bus_level, { arg msg;
-    var replyId = msg[2];
+    var replyID = msg[2];
     var level = msg[3];
-    ~ponticello_addr.sendMsg('/bus_level', replyId, level);
+    ~ponticello_addr.sendMsg('/bus_level', replyID, level);
 }, '/bus_level');
 ~ponticello_addr.postln;
 ~ponticello_addr.sendMsg('/ready');
