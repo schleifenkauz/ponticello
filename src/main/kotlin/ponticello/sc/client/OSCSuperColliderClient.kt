@@ -49,11 +49,11 @@ class OSCSuperColliderClient(
         return observer
     }
 
-    override fun onTreeCleared(action: () -> Unit) {
+    override fun onTreeCleared(initially: Boolean, action: () -> Unit) {
         eventObservers.add(treeClear.stream.observe(action))
-/*        if (isReady && eval("s.hasBooted").get() == "true") {
+        if (isReady && initially && eval("s.hasBooted").get() == "true") {
             action()
-        }*/
+        }
     }
 
     override fun onClientReady(action: () -> Unit) {

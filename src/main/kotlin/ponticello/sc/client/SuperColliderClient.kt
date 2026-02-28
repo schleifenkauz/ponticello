@@ -16,7 +16,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun onServerBooted(action: () -> Unit): Observer
 
-    fun onTreeCleared(action: () -> Unit)
+    fun onTreeCleared(initially: Boolean = false, action: () -> Unit)
 
     fun onClientReady(action: () -> Unit)
 

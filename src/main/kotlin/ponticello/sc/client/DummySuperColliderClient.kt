@@ -27,7 +27,7 @@ class DummySuperColliderClient(
         return Observer.nothing
     }
 
-    override fun onTreeCleared(action: () -> Unit) {
+    override fun onTreeCleared(initially: Boolean, action: () -> Unit) {
     }
 
     override fun send(

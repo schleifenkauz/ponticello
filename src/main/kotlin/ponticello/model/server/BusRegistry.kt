@@ -39,10 +39,14 @@ class BusRegistry(
     override fun initialize(context: Context) {
         context[BusRegistry] = this
         super.initialize(context)
-        client.onTreeCleared {
+        client.onTreeCleared(initially = true) {
             client.run {
-                for (bus in all().filterIsInstance<BusObject.ControlBus>()) {
+                for (bus in filterIsInstance<BusObject.ControlBus>()) {
                     bus.run { setDefaultValue(skipIfZero = false) }
+                }
+                +"~group_level_send = Group.tail(Server.local)"
+                for (bus in filterIsInstance<BusObject.AudioBus>()) {
+                    bus.run { createLevelSendSynths() }
                 }
             }
         }

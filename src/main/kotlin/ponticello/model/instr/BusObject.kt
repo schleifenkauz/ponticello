@@ -89,8 +89,17 @@ sealed class BusObject : AbstractSuperColliderObject() {
                     +"$superColliderName = Bus.audio(s, ${channels.now})"
                 }
             }
+        }
+
+        override fun onAdded() {
+            client.run {
+                createLevelSendSynths()
+            }
+        }
+
+        fun ScWriter.createLevelSendSynths() {
             for ((ch, id) in registry.registerLevelSends(this@AudioBus).withIndex()) {
-                +"~level_send_${name.now}_$ch = Synth(\\level_send, [bus: $superColliderName.index + $ch, id: $id])"
+                +"~level_send_${name.now}_$ch = Synth.tail(~group_level_send, \\level_send, [bus: $superColliderName.index + $ch, id: $id])"
             }
         }
 
