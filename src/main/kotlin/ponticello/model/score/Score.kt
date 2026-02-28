@@ -261,12 +261,12 @@ open class Score(
     companion object {
         const val ROOT_SCORE_NAME = "<root>"
 
-        fun makeAuxiliaryScore(obj: ScoreObject) = when (obj) {
+        fun makeAuxiliaryScore(obj: ScoreObject, context: Context) = when (obj) {
             is ScoreObjectGroup -> obj.score
             else -> {
                 val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
                 val score = Score(mutableListOf(inst))
-                score.initialize(obj.context, parentObject = obj, auxiliary = true)
+                score.initialize(context, parentObject = obj, auxiliary = true)
                 score
             }
         }
