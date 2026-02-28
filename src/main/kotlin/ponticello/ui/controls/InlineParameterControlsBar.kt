@@ -122,6 +122,6 @@ class InlineParameterControlsBar(
             controls.associatedObject, spec, oldControl, parameterName, ev
         )
         controls.reassignControl(parameterName, newControl)
-        option.onSelected(control, newControl, view)
+        option.onSelected(control, newControl, view, null)
     }
 }

@@ -5,6 +5,7 @@ import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
 import fxutils.controls.CheckBox
 import fxutils.opacity
+import fxutils.runFXWithTimeout
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.serial.EditorRoot
@@ -16,7 +17,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec
@@ -25,6 +26,7 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
+import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
@@ -35,7 +37,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         spec is NumericalControlSpec
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: UGenControl,
         view: ScoreObjectView?,
     ): Node = Region()
@@ -56,14 +58,25 @@ data object UGenControlType : ControlType<UGenControl>() {
     }
 
     override fun actions(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: UGenControl,
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = actions.withContext(Pair(namedControl, view))
 
+    override fun onSelected(
+        namedControl: NamedParameterControl, control: UGenControl,
+        view: ScoreObjectView?, controlsPane: ParameterControlsPane?
+    ) {
+        if (controlsPane == null) return
+        controlsPane.listView.getBox(namedControl).setExpanded(true)
+        runFXWithTimeout {
+            control.expr.control.receiveFocus()
+        }
+    }
+
     override fun toString(): String = "UGen"
 
-    private val actions = collectActions<Pair<ParameterControlList.NamedParameterControl, ScoreObjectView?>> {
+    private val actions = collectActions<Pair<NamedParameterControl, ScoreObjectView?>> {
         addAction("Update") {
             icon(MaterialDesignS.SYNC)
             shortcut("Ctrl+U")

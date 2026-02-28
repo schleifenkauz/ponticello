@@ -8,6 +8,7 @@ import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.*
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
+import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 
 sealed class ControlType<C : ParameterControl> {
@@ -20,7 +21,11 @@ sealed class ControlType<C : ParameterControl> {
 
     abstract fun createDetailInput(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?): Node
 
-    open fun onSelected(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?) {}
+    open fun onSelected(
+        namedControl: NamedParameterControl, control: C,
+        view: ScoreObjectView?, controlsPane: ParameterControlsPane?
+    ) {
+    }
 
     open fun createSimpleInput(namedControl: NamedParameterControl, control: C): Node? = null
 

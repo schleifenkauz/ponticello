@@ -237,7 +237,7 @@ class MixerPane(
         }
     }
 
-    override fun boxLayout(obj: MixerFlow.MixerComponent, header: Region, content: Node?): Node {
+    override fun expandedLayout(obj: MixerFlow.MixerComponent, header: Region, content: Node?): Node {
         return createFaderBox(obj.sourceBus, obj.volume, obj)
     }
 

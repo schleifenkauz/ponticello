@@ -82,8 +82,7 @@ interface ListDisplayConfig<O : Any> {
         if (dragboard.hasContent(dataFormat)) {
             if (canDuplicate) TransferMode.COPY_OR_MOVE
             else arrayOf(TransferMode.MOVE)
-        }
-        else emptyArray()
+        } else emptyArray()
 
     fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<O>): List<O> {
         val format = dataFormat
@@ -130,9 +129,10 @@ interface ListDisplayConfig<O : Any> {
 
     fun onRemoved(obj: O) {}
 
-    fun boxLayout(obj: O, header: Region, content: Node?): Node =
+    fun expandedLayout(obj: O, header: Region, content: Node?): Node =
         if (content != null) VBox(header, content)
         else header
 
-    fun collapsedLayout(box: ObjectBox<O>, header: Region, content: Parent?): Node = boxLayout(box.obj, header, content)
+    fun collapsedLayout(box: ObjectBox<O>, header: Region, content: Parent?): Node =
+        expandedLayout(box.obj, header, content)
 }

@@ -11,10 +11,15 @@ import javafx.scene.Node
 import javafx.scene.layout.HBox
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
+import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
 
-class ControlAssignmentEditor(val control: NamedParameterControl, val view: ScoreObjectView?) : HBox() {
+class ControlAssignmentEditor(
+    val control: NamedParameterControl,
+    val view: ScoreObjectView?,
+    val controlsPane: ParameterControlsPane
+) : HBox() {
     private var selectedOption: ControlType<*>? = null
     private val optionButton = selectorButton()
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
@@ -56,7 +61,6 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
         val listView = SimpleSelectorPrompt(options, "Select control type")
         val option = listView.showPopup(ev, initialOption = selectedOption) ?: return
         updateControlType(option, ev)
-        detailEditor?.requestFocus()
     }
 
     private fun <T : ParameterControl> updateControlType(t: ControlType<T>, ev: Event?) {
@@ -66,7 +70,7 @@ class ControlAssignmentEditor(val control: NamedParameterControl, val view: Scor
             control.parentObject, control.spec.now, oldControl, control.name.now, ev
         )
         control.reassign(newControl)
-        t.onSelected(control, newControl, view)
+        t.onSelected(control, newControl, view, controlsPane)
     }
 
     fun setControl(newControl: ParameterControl) {

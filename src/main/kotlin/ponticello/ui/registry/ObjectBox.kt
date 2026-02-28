@@ -30,7 +30,6 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.reactiveVariable
-import reaktive.value.toggle
 
 class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() {
     var subWindow: SubWindow? = null
@@ -149,7 +148,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
             if (currentMode == DisplayMode.Collapsable && content != null && !expanded.now)
                 config.collapsedLayout(this, header, content)
             else
-                config.boxLayout(obj, header, content)
+                config.expandedLayout(obj, header, content)
         updateInlineContentPseudoClass()
         setRoot(root)
     }
@@ -174,7 +173,12 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
     }
 
     fun toggleExpanded() {
-        expanded.toggle()
+        setExpanded(!expanded.now)
+    }
+
+    fun setExpanded(value: Boolean) {
+        if (expanded.now == value) return
+        expanded.now = value
         relayout()
     }
 

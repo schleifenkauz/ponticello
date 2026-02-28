@@ -2,6 +2,7 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.runFXWithTimeout
 import hextant.serial.EditorRoot
 import javafx.event.Event
 import javafx.scene.Node
@@ -15,6 +16,7 @@ import ponticello.model.score.controls.ParameterControlList.NamedParameterContro
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander
+import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 
 data object ExprControlType : ControlType<ExprControl>() {
@@ -42,6 +44,19 @@ data object ExprControlType : ControlType<ExprControl>() {
             editor.setInitialText(oldControl.getNumericalValue().toString())
         } else editor.setInitialText("")
         return ExprControl(root)
+    }
+
+    override fun onSelected(
+        namedControl: NamedParameterControl,
+        control: ExprControl,
+        view: ScoreObjectView?,
+        controlsPane: ParameterControlsPane?
+    ) {
+        if (controlsPane == null) return
+        controlsPane.listView.getBox(namedControl).setExpanded(true)
+        runFXWithTimeout {
+            control.expr.control.receiveFocus()
+        }
     }
 
     override fun actions(

@@ -3,6 +3,7 @@ package ponticello.ui.score
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
+import fxutils.neverSquishVertically
 import fxutils.styleClass
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -155,7 +156,7 @@ class ParameterControlsPane(
     }
 
     override fun getHeaderContent(obj: NamedParameterControl): List<Node> {
-        val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view) }
+        val editor = editors.getOrPut(obj) { ControlAssignmentEditor(obj, view, this) }
         editor.setControl(obj.now)
         return listOf(editor)
     }
@@ -164,8 +165,8 @@ class ParameterControlsPane(
 
     override fun getContent(obj: NamedParameterControl, box: ObjectBox<NamedParameterControl>) =
         when (val ctrl = obj.now) {
-            is ExprControl -> ScrollPane(ctrl.expr.control)
-            is UGenControl -> ScrollPane(ctrl.expr.control)
+            is ExprControl -> ScrollPane(ctrl.expr.control).neverSquishVertically()
+            is UGenControl -> ScrollPane(ctrl.expr.control).neverSquishVertically()
             else -> null
         }
 
