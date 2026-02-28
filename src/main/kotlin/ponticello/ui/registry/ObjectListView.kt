@@ -90,6 +90,7 @@ class ObjectListView<O : Any>(
             if (!config.filter(obj)) continue
             val box = getBox(obj)
             boxes.add(box)
+            box.updateMode(oldMode = null, newMode = displayMode.now)
         }
         itemsScrollPane.isFitToWidth = true
         itemsScrollPane.isFitToHeight = true
@@ -223,9 +224,12 @@ class ObjectListView<O : Any>(
         if (scene?.window != null) {
             storedWindowSizes[displayMode.now] = Dimension2D(scene.window.width, scene.window.height)
         }
-        displayMode.now = mode
-        for (box in boxes) {
-            box.updateMode()
+        if (displayMode.now != mode) {
+            val oldMode = displayMode.now
+            displayMode.now = mode
+            for (box in boxes) {
+                box.updateMode(oldMode, mode)
+            }
         }
         updateRoot(mode)
         if (autoResizeScene && scene?.window != null && mode in storedWindowSizes) {
@@ -313,7 +317,7 @@ class ObjectListView<O : Any>(
         if (!config.filter(obj)) return@runLater
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
-        box.updateMode()
+        box.updateMode(oldMode = null, newMode = mode.now)
         boxes.add(j, box)
         itemsLayout.children.add(j, box)
         updateRoot(mode.now)

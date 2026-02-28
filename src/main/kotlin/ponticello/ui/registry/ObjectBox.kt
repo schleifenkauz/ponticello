@@ -108,8 +108,9 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         }
 
     fun content(): Parent? {
-        content?.let { return it }
-        content = config.getContent(obj, this)
+        if (content == null) {
+            content = config.getContent(obj, this)
+        }
         return content
     }
 
@@ -125,18 +126,17 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         styleClass(*config.boxStyle)
     }
 
-    fun updateMode() {
-        content = null
-        if (currentMode != DisplayMode.SubWindow) {
+    fun updateMode(oldMode: DisplayMode?, newMode: DisplayMode) {
+        if (newMode != DisplayMode.SubWindow) {
             subWindow?.let { w ->
                 w.hide()
                 w.scene.root = Region()
                 subWindow = null
             }
         }
-        if (currentMode is DisplayMode.Inline) {
-            content = config.getContent(obj, this)
-        }
+        content =
+            if (newMode is DisplayMode.Inline) config.getContent(obj, this)
+            else null
         relayout()
         if (config.dataFormat != null) {
             setupDragging()

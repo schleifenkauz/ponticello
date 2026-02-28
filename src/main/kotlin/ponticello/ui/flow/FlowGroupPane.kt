@@ -162,9 +162,7 @@ class FlowGroupPane(
         }
     }
 
-    override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> {
-        return flowActions.withContext(box.obj)
-    }
+    override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> = flowActions.withContext(box.obj)
 
     override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
         dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to obj.reference()))
