@@ -10,7 +10,6 @@ import ponticello.model.git.ProjectVersionControl
 import ponticello.model.obj.ContextualObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.UnresolvedScoreObject
-import ponticello.model.score.controls.EnvelopeControl
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
@@ -43,7 +42,6 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
 
     fun initialize(context: Context, progressBar: ProgressIndicator, totalDeltaProgress: Double) {
         _versionControl.now = ProjectGitRepository.get(projectDirectory)
-        EnvelopeControl.resetCounter()
         context[currentProject] = this
         this.context = context
         client = context[SuperColliderClient]

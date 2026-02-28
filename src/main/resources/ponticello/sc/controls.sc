@@ -198,9 +198,10 @@ EnvelopeControl : ParameterControl {
 		env = new_env;
 		if (this.sound_proc.type != \routine) {
 			this.defineSynth;
+			Server.local.sync;
 			this.updateInstances { |inst|
 				var bus = inst.getControlBus(this.name);
-				inst.replaceAuxilSynth(this.name, synth_def, [out: bus, cutoff: inst.cutoff])
+				inst.replaceAuxilSynth(this.name, synth_def, [out: bus, cutoff: inst.current_time])
 			};
 		}
 	}

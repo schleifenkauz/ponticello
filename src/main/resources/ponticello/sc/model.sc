@@ -179,7 +179,7 @@ SoundProcessInstance : AudioNode {
 
 	node { ^group }
 
-	current_time { ^TempoClock.beats - start_time + cutoff }
+	current_time { ^TempoClock.beats - start_time + cutoff - Server.local.latency }
 
 	isActive {
 	    ^running && (this.current_time < def.duration)

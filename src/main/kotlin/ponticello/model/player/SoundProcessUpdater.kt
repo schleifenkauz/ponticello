@@ -77,7 +77,7 @@ class SoundProcessUpdater<O>(
                 updateControl(parameter, "setRelease($rel)")
             }
 
-            is EnvelopeControl -> control.update.stream.observe { _ ->
+            is EnvelopeControl -> control.updated.observe { _ ->
                 val warp = (parameter.spec.now as? NumericalControlSpec)?.warp ?: Warp.Linear
                 val code = control.points.code(warp)
                 updateControl(parameter, "update($code)")

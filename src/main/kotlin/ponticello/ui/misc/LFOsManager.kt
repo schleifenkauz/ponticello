@@ -81,7 +81,7 @@ class LFOsManager : ParameterControlList.Listener {
 
             is EnvelopeControl -> {
                 lfoMap[obj] = EnvelopeLFO(ctrl.points)
-                observers[obj] = ctrl.update.stream.observe { _ -> updated(obj) }
+                observers[obj] = ctrl.updated.observe { _ -> updated(obj) }
             }
 
             else -> {}
