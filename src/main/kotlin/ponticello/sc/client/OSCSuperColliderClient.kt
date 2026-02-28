@@ -3,6 +3,7 @@ package ponticello.sc.client
 import com.illposed.osc.OSCMessage
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
+import com.illposed.osc.argument.OSCTimeTag64
 import com.illposed.osc.messageselector.JavaRegexAddressMessageSelector
 import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
@@ -20,8 +21,6 @@ import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
-import kotlin.collections.set
-import kotlin.concurrent.thread
 
 class OSCSuperColliderClient(
     process: Process,
@@ -74,6 +73,17 @@ class OSCSuperColliderClient(
 
     override fun addListener(listener: OSCMessageListener) {
         receiver.dispatcher.addListener(ALL_MESSAGES, listener)
+    }
+
+    override fun addListener(
+        address: String,
+        listener: (time: OSCTimeTag64, msg: OSCMessage) -> Unit
+    ) {
+        addListener { event ->
+            if (event.message.address == address) {
+                listener(event.time, event.message)
+            }
+        }
     }
 
     override fun sendAsync(address: String, arguments: List<Any>) {

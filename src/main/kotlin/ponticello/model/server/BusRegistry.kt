@@ -3,14 +3,24 @@ package ponticello.model.server
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import com.illposed.osc.OSCMessage
 import hextant.context.Context
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import ponticello.impl.Decimal
+import ponticello.impl.Logger
+import ponticello.impl.toDecimal
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.Rate
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.getArgument
 import ponticello.sc.client.run
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 class BusRegistry(
@@ -22,15 +32,60 @@ class BusRegistry(
     override val liveCycleType: SuperColliderObject.LiveCycleType
         get() = SuperColliderObject.LiveCycleType.ServerBoot
 
+    @Transient
+    private val channelsByReplyId = mutableMapOf<Int, BusChannel>()
+
+    @Transient
+    private val channelsByBus = mutableMapOf<BusObject.AudioBus, List<BusChannel>>()
+
     override fun initialize(context: Context) {
-        super.initialize(context)
         context[BusRegistry] = this
+        super.initialize(context)
         client.onTreeCleared {
             client.run {
                 for (bus in all().filterIsInstance<BusObject.ControlBus>()) {
                     bus.run { setDefaultValue(skipIfZero = false) }
                 }
             }
+        }
+        context[SuperColliderClient].addListener("bus_level") { _, msg -> receivedBusLevel(msg) }
+    }
+
+    private fun receivedBusLevel(msg: OSCMessage) {
+        val replyId = msg.getArgument<Int>(1, "replyId") ?: return
+        val level = msg.getArgument<Float>(2, "level") ?: return
+        val channel = channelsByReplyId[replyId]
+        if (channel == null) {
+            Logger.warn("Received bus_level message: Channel '$replyId' not found.", Logger.Category.SuperCollider)
+            return
+        }
+        channel.level.set(level.toDouble().toDecimal())
+    }
+
+    fun getLevel(bus: BusObject.AudioBus, channel: Int): ReactiveValue<Decimal>? {
+        val channels = channelsByBus[bus] ?: return null
+        return channels[channel].level
+    }
+
+    fun registerLevelSends(bus: BusObject.AudioBus): List<Int> {
+        val channels = mutableListOf<BusChannel>()
+        val replyIds = mutableListOf<Int>()
+        for (channel in 0 until bus.channels.now) {
+            val replyId = replyIdCounter++
+            val level = reactiveVariable(Decimal.NINF)
+            val channel = BusChannel(replyId, bus, channel, level)
+            replyIds.add(replyId)
+            channelsByReplyId[replyId] = channel
+            channels.add(channel)
+        }
+        channelsByBus[bus] = channels
+        return replyIds
+    }
+
+    fun clearBusChannels(bus: BusObject.AudioBus) {
+        val channels = channelsByBus.remove(bus) ?: return
+        for (ch in channels) {
+            channelsByReplyId.remove(ch.replyId)
         }
     }
 
@@ -46,7 +101,16 @@ class BusRegistry(
         b.rate == rate && b.channels.now == channels
     }
 
+    private class BusChannel(
+        val replyId: Int,
+        private val bus: BusObject.AudioBus,
+        private val channel: Int,
+        val level: ReactiveVariable<Decimal>
+    )
+
     companion object : PublicProperty<BusRegistry> by publicProperty("BusRegistry") {
         fun createDefault(): BusRegistry = BusRegistry(mutableListOf(BusObject.output, BusObject.input))
+
+        private var replyIdCounter = 0
     }
 }

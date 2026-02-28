@@ -13,7 +13,6 @@ import ponticello.impl.zero
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.withName
-import ponticello.model.registry.ObjectRegistry
 import ponticello.model.server.BusRegistry
 import ponticello.sc.*
 import ponticello.sc.Rate.Audio
@@ -34,10 +33,10 @@ sealed class BusObject : AbstractSuperColliderObject() {
     abstract val busType: Type
 
     override fun superColliderName(objectName: String) = when (busType) {
-            Type.Input -> "s.inputBus"
-            Type.Output -> "s.outputBus"
+        Type.Input -> "s.inputBus"
+        Type.Output -> "s.outputBus"
         Type.Regular -> "~bus_${objectName}"
-        }
+    }
 
     @Transient
     private lateinit var observer: Observer
@@ -48,7 +47,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
     override val canDelete: Boolean
         get() = busType == Type.Regular
 
-    override val registry: ObjectRegistry<*>?
+    override val registry: BusRegistry
         get() = context[BusRegistry]
 
     override fun initialize(context: Context) {
@@ -78,6 +77,8 @@ sealed class BusObject : AbstractSuperColliderObject() {
 
         override val rate: Rate get() = Audio
 
+        fun getLevel(channel: Int) = registry.getLevel(this, channel)
+
         override fun ScWriter.createObject() {
             when (busType) {
                 Type.Input -> {}
@@ -85,6 +86,29 @@ sealed class BusObject : AbstractSuperColliderObject() {
                 Type.Regular -> {
                     +"$superColliderName = Bus.audio(s, ${channels.now})"
                 }
+            }
+            for ((ch, id) in registry.registerLevelSends(this@AudioBus).withIndex()) {
+                +"~level_send_${name.now}_$ch = Synth(\\send_level, [bus: $superColliderName.index + $ch, id: $id])"
+            }
+        }
+
+        override fun onRename(oldName: String, newName: String) {
+            super.onRename(oldName, newName)
+            client.run {
+                for (i in 0 until channels.now) {
+                    +"~level_send_${newName}_$i = ~level_send_$oldName"
+                    +"~level_send_${oldName}_$i = nil"
+                }
+            }
+        }
+
+        override fun ScWriter.freeObject() {
+            registry.clearBusChannels(this@AudioBus)
+            +"$superColliderName.release"
+            +"$superColliderName = nil"
+            for (i in 0 until channels.now) {
+                +"~level_send_${name.now}_$i.release"
+                +"~level_send_${name.now}_$i = nil"
             }
         }
     }

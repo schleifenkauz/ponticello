@@ -6,6 +6,12 @@ SynthDef(\score_clock) {
     var clock = start + Sweep.kr(rate: In.kr(rate));
     Out.kr(out, clock);
 }.add;
+SynthDef(\level_send) {
+    arg bus, id;
+    var sig = In.ar(bus, 1);
+    var level = Amplitude.kr(sig, 0.01, 0.3).ampdb;
+    SendReply.kr(Impulse.kr(30), '/bus_level', level, replyId: id)
+}.add;
 SynthDef(\vst_plugin, {
     arg bus = 0;
     var dry = In.ar(bus, 2), snd, mix, dry_mix = \dry.kr(0), bypass = \bypass.kr(0);
@@ -191,7 +197,11 @@ OSCdef(\set_time_warp, { |msg|
 ~setupHandler.('controlStep', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][3];
 });
-
+OSCdef(\bus_level, { arg msg;
+    var replyId = msg[2];
+    var level = msg[3];
+    ~ponticello_addr.sendMsg('/bus_level', replyId, level);
+}, '/bus_level');
 ~ponticello_addr.postln;
 ~ponticello_addr.sendMsg('/ready');
 "Successfully setup OSC!";

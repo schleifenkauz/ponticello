@@ -2,7 +2,9 @@ package ponticello.sc.client
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import com.illposed.osc.OSCMessage
 import com.illposed.osc.OSCMessageListener
+import com.illposed.osc.argument.OSCTimeTag64
 import hextant.context.Context
 import reaktive.Observer
 import java.util.concurrent.CompletableFuture
@@ -23,6 +25,8 @@ interface SuperColliderClient : SuperColliderContext {
     fun sendAsync(address: String, arguments: List<Any> = emptyList())
 
     fun addListener(listener: OSCMessageListener)
+
+    fun addListener(address: String, listener: (time: OSCTimeTag64, msg: OSCMessage) -> Unit)
 
     fun quit()
 

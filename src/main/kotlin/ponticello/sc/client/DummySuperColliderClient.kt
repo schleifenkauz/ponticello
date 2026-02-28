@@ -1,10 +1,10 @@
 package ponticello.sc.client
 
+import com.illposed.osc.OSCMessage
 import com.illposed.osc.OSCMessageListener
+import com.illposed.osc.argument.OSCTimeTag64
 import hextant.context.Context
 import reaktive.Observer
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.util.concurrent.CompletableFuture
@@ -40,6 +40,12 @@ class DummySuperColliderClient(
     }
 
     override fun addListener(listener: OSCMessageListener) {
+    }
+
+    override fun addListener(
+        address: String,
+        listener: (time: OSCTimeTag64, msg: OSCMessage) -> Unit
+    ) {
     }
 
     override fun quit() {
