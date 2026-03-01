@@ -1,9 +1,10 @@
 SoundProcess {
-	classvar dict;
+	classvar dict, by_instrument;
 	var <>name, <instr, <>duration, <controls, control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
+		by_instrument = Dictionary.new;
 	}
 
 	* rename { |old_name, new_name|
@@ -19,11 +20,17 @@ SoundProcess {
 	* create { |name, instr, duration, controls|
 		var proc = super.new.init(name, instr, duration, controls);
 		dict[name] = proc;
+		if (by_instrument.includesKey(instr)) {
+			by_instrument[instr] = by_instrument[instr].add(proc);
+		} {
+			by_instrument[instr] = [proc];
+		};
 		^proc;
 	}
 
 	* remove { |name|
-		dict.removeAt(name); 
+		var proc = dict.removeAt(name);
+		by_instrument[proc.instr].remove(proc);
 	}
 
 	* get { |name| ^dict[name] }
@@ -42,6 +49,19 @@ SoundProcess {
 		dict.do { |proc|
 			proc.stopAllInstances(player_id)
 		}
+	}
+
+	* updatedInstrument { |instr|
+	    postf("Updated %\n", instr);
+	    if (by_instrument.includesKey(instr)) {
+	        by_instrument[instr].do { |proc|
+	            postf("Updating %\n", proc);
+	            proc.updateInstances { |inst|
+	                postf("Updating instance %\n", inst);
+	                inst.restart;
+	            }
+	        }
+	    }
 	}
 
 	stopAllInstances { |player_id|
@@ -267,7 +287,11 @@ SoundProcessInstance : AudioNode {
 	}
 
 	dispose {
-		if (disposed.not) {
+	    postf("Dispose %. Restarting: %\n", this, restarting);
+	    if (restarting) {
+	        restarting = false;
+	    };
+		if (disposed.not && restarting.not) {
 			control_buses.do (_.free);
 			control_buses = Dictionary.new;
 			if (group != nil) {
@@ -278,11 +302,9 @@ SoundProcessInstance : AudioNode {
 				}
 			};
 			on_dispose.do (_.value);
-			if (restarting.not) {
-				~ponticello_addr.sendMsg ('/stopped', -1, def.name, idx);
-				def.removeInstance(idx);
-				disposed = true;
-			}
+            ~ponticello_addr.sendMsg ('/stopped', -1, def.name, idx);
+            def.removeInstance(idx);
+            disposed = true;
 		}
 	}
 
@@ -301,40 +323,43 @@ SoundProcessInstance : AudioNode {
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) };
 		};
-		sound_obj = def.instr.create(this);
-		Server.local.sync;
-		def.controls.do { |ctrl|
-			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
-		};
-		if (run) {
-			Server.local.sync;
-			Server.local.makeBundle (latency) {
-				auxil_synths.do (_.run);
-				sound_obj.run(true, this);
-			}
-		}
+		this.prStart;
+	}
+
+	prStart {
+	    sound_obj = def.instr.create(this);
+        Server.local.sync;
+        def.controls.do { |ctrl|
+            if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
+        };
+        if (running) {
+            Server.local.sync;
+            Server.local.makeBundle (server_latency) {
+                auxil_synths.do (_.run);
+                sound_obj.run(true, this);
+            }
+        }
 	}
 
 	restart {
-		restarting = true;
-		this.release;
-		cutoff = this.current_time;
-		this.start(placement, 0, playerId, run: running);
-		restarting = false;
+        restarting = true;
+        postf("Restarting %\n", sound_obj);
+		sound_obj.release;
+		sound_obj = nil;
+		this.prStart;
 	}
 
 	run { |active|
 		running = active;
 		auxil_synths.do { |s| s.run(active) };
-		sound_obj.run (active, this);
+		sound_obj.run(active, this);
 	}
 
 	release {
-		if (sound_obj.isMemberOf (Synth) ) {
-			sound_obj.set (\gate, 0); //why does [release] not work here?
+		if (sound_obj.isMemberOf(Synth) ) {
+			sound_obj.set(\gate, 0); //why does [release] not work here?
 		} {
 			sound_obj.release;
-			this.dispose;
 		}
 	}
 }

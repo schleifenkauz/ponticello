@@ -14,9 +14,5 @@ sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
     override val superColliderName: String
         get() = "~synthdef_${name.now}"
 
-    override fun onUpdated() {
-        //TODO
-    }
-
     override fun instrumentReference(): InstrumentReference = InstrumentReference.UserDefined(this.reference())
 }

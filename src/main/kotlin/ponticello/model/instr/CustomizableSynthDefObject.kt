@@ -69,7 +69,7 @@ class CustomizableSynthDefObject(
         appendBlock("fork") {
             createObject()
             +"s.sync"
-            +"~ponticello_addr.sendMsg('/updated', 'synth_def', '${name.now}')"
+            +"SoundProcess.updatedInstrument($superColliderName)"
         }
     }
 
@@ -126,7 +126,7 @@ class CustomizableSynthDefObject(
         val graphFunc = ScFunction(emptyList(), block)
         graphFunc.code(this, context)
         appendLine(").add;")
-        +"$superColliderName = SynthInstrument(\\${name.now})"
+        +"if ($superColliderName.isNil) { $superColliderName = SynthInstrument(\\${name.now}) }"
     }
 
     override fun ScWriter.freeObject() {

@@ -53,8 +53,6 @@ sealed interface InstrumentObject : SuperColliderObject {
         return defaultControls(context, defaultBus)
     }
 
-    fun onUpdated() {}
-
     fun instrumentReference(): InstrumentReference
 
     companion object {
