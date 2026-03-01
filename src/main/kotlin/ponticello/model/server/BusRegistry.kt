@@ -12,13 +12,14 @@ import ponticello.model.instr.BusObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.registry.SuperColliderObjectRegistry
 import ponticello.sc.Rate
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument
 import ponticello.sc.client.run
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
+import reaktive.event.Event
+import reaktive.event.EventStream
+import reaktive.event.event
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 
 @Serializable
 class BusRegistry(
@@ -31,10 +32,13 @@ class BusRegistry(
         get() = SuperColliderObject.LiveCycleType.ServerBoot
 
     @Transient
-    private val channelsByReplyId = mutableMapOf<Int, BusChannel>()
+    private var replyIdCounter = 0
 
     @Transient
-    private val channelsByBus = mutableMapOf<BusObject.AudioBus, List<BusChannel>>()
+    private val levelEvents = mutableMapOf<Int, Event<List<Double>>>()
+
+    @Transient
+    private val availableLevelSendSynthDefs = mutableSetOf<Int>()
 
     override fun initialize(context: Context) {
         context[BusRegistry] = this
@@ -46,53 +50,65 @@ class BusRegistry(
                 }
                 +"~group_level_send = Group.tail(Server.local)"
                 for (bus in filterIsInstance<BusObject.AudioBus>()) {
-                    bus.run { createLevelSendSynths() }
+                    createLevelSendSynth(bus)
                 }
             }
         }
-        context[SuperColliderClient].addListener("/bus_level") { _, msg -> receivedBusLevel(msg) }
+        context[SuperColliderClient].addListener("/bus_levels") { _, msg -> receivedBusLevel(msg) }
+    }
+
+    fun reserveReplyId() = replyIdCounter++
+
+    private fun ScWriter.createLevelSendSynth(bus: BusObject.AudioBus) {
+        val channels = bus.channels.now
+        if (bus.replyId !in levelEvents) {
+            levelEvents[bus.replyId] = event()
+        }
+        if (channels !in availableLevelSendSynthDefs) {
+            /*appendBlock("SynthDef(\\level_send_$channels)", endLine = false) {
+                +"arg bus, id"
+                +"var sig = In.ar(bus, $channels)"
+                +"var level = Amplitude.kr(sig, 0.01, 0.3).ampdb"
+                +"SendReply.kr(Impulse.kr(10), '/bus_levels', level, id)"
+            }
+            appendLine(".add;")*/
+            +"~addLevelSendSynthDef.($channels)"
+            +"Server.local.sync"
+            availableLevelSendSynthDefs.add(channels)
+        }
+        val args = "[bus: ${bus.superColliderName}, id: ${bus.replyId}]"
+        +"~level_send_${bus.name.now} = Synth.tail(~group_level_send, \\level_send_$channels, $args)"
+    }
+
+    override fun onAdded(obj: BusObject, idx: Int) {
+        super.onAdded(obj, idx)
+        if (obj is BusObject.AudioBus) {
+            createLevelSendSynth(obj)
+        }
+    }
+
+    fun createLevelSendSynth(obj: BusObject.AudioBus) {
+        client.run {
+            createLevelSendSynth(obj)
+        }
     }
 
     private fun receivedBusLevel(msg: OSCMessage) {
         val replyId = msg.getArgument<Int>(0, "replyID") ?: return
-        val level = msg.getArgument<Float>(1, "level") ?: return
-        val channel = channelsByReplyId[replyId]
-        if (channel == null) {
-            Logger.warn("Received bus_level message: Channel '$replyId' not found.", Logger.Category.SuperCollider)
+        val levels = msg.arguments.drop(1).map { lvl -> (lvl as Float).toDouble() }
+        val event = levelEvents[replyId]
+        if (event == null) {
+            Logger.warn(
+                "Received bus_level message: Bus with replyID '$replyId' not found.",
+                Logger.Category.SuperCollider
+            )
             return
         }
-        channel.level.set(level.toDouble())
+        event.fire(levels)
     }
 
-    fun getLevels(bus: BusObject.AudioBus): List<ReactiveValue<Double>> =
-        channelsByBus[bus]?.map { ch -> ch.level } ?: emptyList()
-
-    fun getLevel(bus: BusObject.AudioBus, channel: Int): ReactiveVariable<Double>? {
-        val channels = channelsByBus[bus] ?: return null
-        return channels[channel].level
-    }
-
-    fun registerLevelSends(bus: BusObject.AudioBus): List<Int> { //TODO reuse existing BusChannels
-        val channels = mutableListOf<BusChannel>()
-        val replyIds = mutableListOf<Int>()
-        for (channel in 0 until bus.channels.now) {
-            val replyId = replyIdCounter++
-            val level = reactiveVariable(Double.NEGATIVE_INFINITY)
-            val channel = BusChannel(replyId, bus, channel, level)
-            replyIds.add(replyId)
-            channelsByReplyId[replyId] = channel
-            channels.add(channel)
-        }
-        channelsByBus[bus] = channels
-        return replyIds
-    }
-
-    fun clearBusChannels(bus: BusObject.AudioBus) {
-        val channels = channelsByBus.remove(bus) ?: return
-        for (ch in channels) {
-            channelsByReplyId.remove(ch.replyId)
-        }
-    }
+    fun levels(bus: BusObject.AudioBus): EventStream<List<Double>> =
+        levelEvents.getOrPut(bus.replyId) { event() }.stream
 
     override fun getDefault(): BusObject = getOutput()
 
@@ -106,16 +122,7 @@ class BusRegistry(
         b.rate == rate && b.channels.now == channels
     }
 
-    private class BusChannel(
-        val replyId: Int,
-        private val bus: BusObject.AudioBus,
-        private val channel: Int,
-        val level: ReactiveVariable<Double>
-    )
-
     companion object : PublicProperty<BusRegistry> by publicProperty("BusRegistry") {
         fun createDefault(): BusRegistry = BusRegistry(mutableListOf(BusObject.output, BusObject.input))
-
-        private var replyIdCounter = 0
     }
 }

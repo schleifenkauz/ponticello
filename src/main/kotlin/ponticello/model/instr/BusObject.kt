@@ -20,6 +20,7 @@ import ponticello.sc.Rate.Control
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.run
 import reaktive.Observer
+import reaktive.event.EventStream
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
@@ -77,9 +78,18 @@ sealed class BusObject : AbstractSuperColliderObject() {
 
         override val rate: Rate get() = Audio
 
-        fun getLevel(channel: Int) = registry.getLevel(this, channel)
+        @Transient
+        var replyId: Int = -1
+            private set
 
-        fun getLevels(): List<ReactiveValue<Double>> = registry.getLevels(this)
+        fun getLevels(): EventStream<List<Double>> = registry.levels(this)
+
+        override fun initialize(context: Context) {
+            super.initialize(context)
+            if (replyId == -1) {
+                replyId = registry.reserveReplyId()
+            }
+        }
 
         override fun ScWriter.createObject() {
             when (busType) {
@@ -91,35 +101,23 @@ sealed class BusObject : AbstractSuperColliderObject() {
             }
         }
 
-        override fun onAdded() {
-            client.run {
-                createLevelSendSynths()
-            }
+        override fun ScWriter.freeObject() {
+            +"$superColliderName.release"
+            +"$superColliderName = nil"
+            +"~level_send_${name.now}.free"
+            +"~level_send_${name.now} = nil"
         }
 
-        fun ScWriter.createLevelSendSynths() {
-            for ((ch, id) in registry.registerLevelSends(this@AudioBus).withIndex()) {
-                +"~level_send_${name.now}_$ch = Synth.tail(~group_level_send, \\level_send, [bus: $superColliderName.index + $ch, id: $id])"
-            }
+        override fun sync() {
+            super.sync()
+            registry.createLevelSendSynth(this)
         }
 
         override fun onRename(oldName: String, newName: String) {
             super.onRename(oldName, newName)
             client.run {
-                for (i in 0 until channels.now) {
-                    +"~level_send_${newName}_$i = ~level_send_$oldName"
-                    +"~level_send_${oldName}_$i = nil"
-                }
-            }
-        }
-
-        override fun ScWriter.freeObject() {
-            registry.clearBusChannels(this@AudioBus)
-            +"$superColliderName.release"
-            +"$superColliderName = nil"
-            for (i in 0 until channels.now) {
-                +"~level_send_${name.now}_$i.release"
-                +"~level_send_${name.now}_$i = nil"
+                +"~level_send_${newName} = ~level_send_$oldName"
+                +"~level_send_${oldName} = nil"
             }
         }
     }

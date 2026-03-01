@@ -6,12 +6,6 @@ SynthDef(\score_clock) {
     var clock = start + Sweep.kr(rate: In.kr(rate));
     Out.kr(out, clock);
 }.add;
-SynthDef(\level_send) {
-    arg bus, id;
-    var sig = In.ar(bus, 1);
-    var level = Amplitude.kr(sig, 0.01, 0.3).ampdb;
-    SendReply.kr(Impulse.kr(5), '/bus_level', level, replyID: id)
-}.add;
 SynthDef(\vst_plugin, {
     arg bus = 0;
     var dry = In.ar(bus, 2), snd, mix, dry_mix = \dry.kr(0), bypass = \bypass.kr(0);
@@ -197,11 +191,18 @@ OSCdef(\set_time_warp, { |msg|
 ~setupHandler.('controlStep', { |synthName, controlName|
 	SynthDescLib.global.synthDescs[synthName.asSymbol].specs[controlName][3];
 });
-OSCdef(\bus_level, { arg msg;
-    var replyID = msg[2];
-    var level = msg[3];
-    ~ponticello_addr.sendMsg('/bus_level', replyID, level);
-}, '/bus_level');
+
+~addLevelSendSynthDef = { |channels|
+    SynthDef("level_send_" ++ channels.asString) {
+        arg bus, id;
+        var sig = In.ar(bus, channels);
+        var level = Amplitude.kr(sig, 0.01, 0.3).ampdb;
+        SendReply.kr(Impulse.kr(10), '/bus_levels', level, replyID: id)
+    }.add;
+};
+OSCdef(\bus_levels, { arg msg;
+    ~ponticello_addr.sendMsg('/bus_levels', *msg[2..]);
+}, '/bus_levels');
 ~ponticello_addr.postln;
 ~ponticello_addr.sendMsg('/ready');
 "Successfully setup OSC!";

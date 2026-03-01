@@ -6,26 +6,34 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.paint.Color
 
 class LevelMeter(height: ReadOnlyDoubleProperty) : Canvas() {
-    private var level = Double.NEGATIVE_INFINITY
+    private var levels = emptyList<Double>()
 
     init {
-        width = 8.0
         heightProperty().bind(height)
-        height.addListener { setLevel(level) }
+        height.addListener { setLevels(levels) }
         graphicsContext2D.fill = Color.GREEN
     }
 
-    fun setLevel(lvl: Double) = Platform.runLater {
-        level = lvl
-        graphicsContext2D.fill = Color.gray(0.08)
-        graphicsContext2D.fillRect(0.0, 0.0, width, height)
-        graphicsContext2D.fill = when {
-            lvl == Double.NEGATIVE_INFINITY -> return@runLater
-            lvl > 0.0 -> Color.RED
-            lvl > -6.0 -> Color.YELLOW
-            else -> Color.GREEN
+    fun setLevels(levels: List<Double>) = Platform.runLater {
+        this.levels = levels
+        width = METER_WIDTH * levels.size
+        for ((ch, lvl) in levels.withIndex()) {
+            val x = ch * METER_WIDTH
+            graphicsContext2D.fill = Color.gray(0.08)
+            graphicsContext2D.fillRect(x, 0.0, METER_WIDTH - 1, height)
+
+            graphicsContext2D.fill = when {
+                lvl == Double.NEGATIVE_INFINITY -> return@runLater
+                lvl > 0.0 -> Color.RED
+                lvl > -6.0 -> Color.YELLOW
+                else -> Color.GREEN
+            }
+            val y = (1.0 - ((lvl + 60) / 84)) * height
+            graphicsContext2D.fillRect(x, y, METER_WIDTH - 1, height - y)
         }
-        val y = (1.0 - ((lvl + 60) / 84)) * height
-        graphicsContext2D.fillRect(0.0, y, width, height - y)
+    }
+
+    companion object {
+        private const val METER_WIDTH = 8.0
     }
 }

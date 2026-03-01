@@ -24,10 +24,7 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import org.kordamp.ikonli.materialdesign2.MaterialDesignV
-import ponticello.impl.Decimal
-import ponticello.impl.Logger
-import ponticello.impl.unaryMinus
-import ponticello.impl.withPrecision
+import ponticello.impl.*
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.MixerFlow
@@ -55,14 +52,11 @@ import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
 import reaktive.Reactive
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
+import reaktive.value.*
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import reaktive.value.forEach
 import reaktive.value.fx.asObservableValue
-import reaktive.value.now
 import javax.sound.midi.MidiDevice
 import javax.sound.midi.MidiSystem
 
@@ -268,14 +262,12 @@ class MixerPane(
             }
         }
 
-        val levels = (bus.now.get()!! as BusObject.AudioBus).getLevels()
-        val meters = levels.map { v: ReactiveValue<Double> ->
-            val meter = LevelMeter(fader.heightProperty())
-            meter.userData = v.forEach(meter::setLevel)
-            meter
+        val levelsStream = (bus.now.get()!! as BusObject.AudioBus).getLevels()
+        val meter = LevelMeter(fader.heightProperty())
+        val volume = obj?.volume ?: reactiveValue(zero)
+        meter.userData = levelsStream.observe { _, levels ->
+            meter.setLevels(levels.map { lvl -> lvl + volume.now.toDouble() })
         }
-        val metersBox = HBox(1.0, *meters.toTypedArray())
-
         val (top, bottom) =
             if (obj != null) createPanKnobAndMuteSoloActionsBar(obj)
             else createMasterMonoAndMuteButtons()
@@ -284,7 +276,7 @@ class MixerPane(
             Region() styleClass "fader-separator",
             scopeButton.centered(),
             volumeBox,
-            HBox(hspace(5.0), namePane, infiniteSpace(), metersBox, fader, hspace(5.0)).alwaysVGrow(),
+            HBox(hspace(5.0), namePane, infiniteSpace(), meter, fader, hspace(5.0)).alwaysVGrow(),
             Region() styleClass "fader-separator",
             bottom
         ) styleClass "fader-layout"
