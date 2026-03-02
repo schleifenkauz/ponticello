@@ -135,7 +135,7 @@ class ObjectListView<O : Any>(
                     ev.consume()
                     val objects = config.getDroppedObjects(ev, this)
                     if (objects.isNotEmpty()) {
-                        val idx = getBoxIndexFromY(ev.screenX, ev.screenY, boxes.filter { b -> b.obj != objects })
+                        val idx = getBoxIndexFromY(ev.screenX, ev.screenY, boxes.filter { b -> b.obj !in objects })
                         val single = objects.singleOrNull()
                         if (single != null && single in source) {
                             source.move(single, idx)

@@ -1,7 +1,6 @@
 package ponticello.model.player
 
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.obj.SuperColliderObject
 import ponticello.model.score.controls.*
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
@@ -16,8 +15,7 @@ import reaktive.value.observe
 
 class SoundProcessUpdater<O>(
     private val obj: O
-) : ParameterControlList.Listener
-        where O : ParameterizedObject, O : SuperColliderObject {
+) : ParameterControlList.Listener where O : ParameterizedObject {
     private val controlObservers = mutableMapOf<ParameterControl, Observer>()
     private lateinit var instrumentObserver: Observer
 
@@ -127,7 +125,7 @@ class SoundProcessUpdater<O>(
 
     private fun updateSoundProcess(message: String) {
         if (obj.isCreatedInSuperCollider) {
-            client.run("${obj.superColliderName}.$message")
+            client.run("SoundProcess.get('${obj.soundProcessName}').$message")
         }
     }
 

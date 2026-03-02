@@ -193,11 +193,6 @@ class FlowGroupPane(
 
     override fun filter(obj: AudioFlow): Boolean = parent?.filter(obj) ?: true
 
-    override fun dropObject(obj: AudioFlow, idx: Int, list: ObjectList<AudioFlow>, from: ObjectList<AudioFlow>?) {
-        obj.parentGroup = group
-        super.dropObject(obj, idx, list, from)
-    }
-
     private class FlowNamePrompt(
         private val takenFlowNames: Set<String>,
         title: String, initialText: String,

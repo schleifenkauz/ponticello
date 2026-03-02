@@ -32,6 +32,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
 
     @Transient
     var parentGroup: AudioFlowGroup? = null
+        private set
 
     override val registry: AudioFlowGroup.AudioFlowList
         get() = parentGroup!!.flows
@@ -64,12 +65,19 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
         context[SuperColliderClient].run("$superColliderName.run($active)")
     }
 
-    fun addToServer(placement: NodePlacement): CompletableFuture<String> {
+    fun addToGroup(group: AudioFlowGroup, placement: NodePlacement): CompletableFuture<String> {
+        parentGroup = group
         val code = writeCode(placement)
         return context[SuperColliderClient].eval(code, "activating flow ${name.now}")
     }
 
-    fun removeFromServer() {
+    fun moveToGroup(group: AudioFlowGroup, placement: NodePlacement) {
+        parentGroup = group
+        client.run("${superColliderName}.${placement.moveMethod}(${placement.target})")
+    }
+
+    fun release() {
+        parentGroup = null
         context[SuperColliderClient].run("${superColliderName}.release")
     }
 

@@ -17,6 +17,7 @@ sealed class ParameterControl : AbstractContextualObject() {
     abstract fun copy(): ParameterControl
 
     open fun initialize(context: Context, namedControl: NamedParameterControl) {
+        if (initialized) return
         super.initialize(context)
     }
 

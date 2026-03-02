@@ -92,7 +92,7 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
         Logger.info("Moving $obj to $idx", Logger.Category.Registries)
         if (oldIdx == -1) error("Object $obj not found in $this")
         objects.removeAt(oldIdx)
-        objects.add(idx, obj) //TODO there is something wrong here. THINK HARD ABOUT THIS!
+        objects.add(idx, obj)
         onMoved(obj, oldIdx, idx)
         context[UndoManager].record(ListEdit.MoveObject(this@ObjectList, obj, oldIdx, idx))
         listeners.notifyListeners { moved(obj, idx) }
