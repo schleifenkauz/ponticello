@@ -11,14 +11,12 @@ import fxutils.undo.VariableEdit
 import javafx.application.Platform
 import javafx.geometry.Insets
 import javafx.geometry.Orientation
-import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.input.*
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
 import javafx.scene.shape.Polygon
 import javafx.scene.text.Text
 import org.kordamp.ikonli.Ikon
@@ -233,7 +231,7 @@ class MixerPane(
         }
     }
 
-    override fun expandedLayout(box: ObjectBox<MixerFlow.MixerComponent>, header: Region, content: Node?): Node {
+    override fun expandedLayout(box: ObjectBox<MixerFlow.MixerComponent>): Node {
         val bus = box.obj
         return createFaderBox(bus.sourceBus, bus.volume, bus)
     }
@@ -342,11 +340,7 @@ class MixerPane(
     private fun createVerticalNameLabel(bus: ReactiveValue<BusReference>): StackPane {
         val nameLabel = Text()
         nameLabel.textProperty().bind(bus.flatMap(BusReference::name).asObservableValue())
-        nameLabel.fill = Color.WHITE
-        nameLabel.rotate = -90.0
-        StackPane.setAlignment(nameLabel, Pos.BOTTOM_CENTER)
-        val namePane = StackPane(nameLabel).setFixedWidth(15.0)
-        nameLabel.translateYProperty().bind(nameLabel.textProperty().map { -nameLabel.prefWidth(-1.0) / 2 })
+        val namePane = makeVerticalLabel(nameLabel).setFixedWidth(15.0)
         return namePane
     }
 

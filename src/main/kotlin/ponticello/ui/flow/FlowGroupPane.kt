@@ -6,7 +6,9 @@ import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.TextPrompt
 import javafx.event.Event
+import javafx.geometry.Orientation
 import javafx.geometry.Point2D
+import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Slider
 import javafx.scene.control.Tooltip
@@ -16,11 +18,9 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignE
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import javafx.scene.text.Text
+import org.kordamp.ikonli.codicons.Codicons
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.model.flow.*
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.InstrumentRegistry
@@ -44,6 +44,7 @@ import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.SoundProcessView
 import reaktive.value.binding.binding
+import reaktive.value.binding.flatMap
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
@@ -60,6 +61,10 @@ class FlowGroupPane(
 
     init {
         flowsView.itemsScrollPane.neverSquishHorizontally()
+        flowsView.alwaysVGrow()
+        alwaysVGrow()
+        val addFlowButton = addFlowAction.withContext(this).makeButton("small-icon-button")
+        val layout = HBox(VBox(infiniteSpace(), addFlowButton, infiniteSpace()), flowsView).alwaysVGrow()
         if (parent == null) {
             val nameControl = NameControl(group).setFixedWidth(150.0)
             val colorPicker = colorPicker(group.associatedColor).setFixedWidth(30.0)
@@ -67,22 +72,25 @@ class FlowGroupPane(
             val actionBar = ActionBar(actions, buttonStyle = "medium-icon-button")
             val header = HBox(5.0, nameControl, colorPicker, infiniteSpace(), actionBar).centerChildren()
             flowsView.autoResizeScene = true
-            children.addAll(header, flowsView)
+            children.addAll(header, layout)
         } else {
-            children.add(flowsView)
+            children.add(layout)
         }
     }
 
     private val context get() = group.context
 
     override val nameDisplayWidth: Double
-        get() = 160.0
+        get() = 130.0
 
     override val canDuplicate: Boolean
         get() = true
 
     override val buttonStyle: String
         get() = "small-icon-button"
+
+    override val inlineOrientation: Orientation
+        get() = Orientation.HORIZONTAL
 
     override val supportedModes: Set<DisplayMode>
         get() = setOf(DisplayMode.Collapsable, DisplayMode.DetailsPane)
@@ -128,6 +136,8 @@ class FlowGroupPane(
         }
     }
 
+    override fun defaultInsertionIndex(source: List<AudioFlow>): Int = 0
+
     override fun getContent(obj: AudioFlow, box: ObjectBox<AudioFlow>): Parent = when (obj) {
         is CodeFlow -> obj.codeEditor.control
         is SendFlow -> SendFlowView(obj)
@@ -135,6 +145,29 @@ class FlowGroupPane(
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView.create(obj)
         is VSTPluginFlow -> VSTPluginFlowView(obj)
+    }
+
+    override fun collapsedLayout(box: ObjectBox<AudioFlow>): Node {
+        val nameLabel = Text()
+        nameLabel.textProperty().bind(box.obj.name.asObservableValue())
+        val namePane = makeVerticalLabel(nameLabel).alwaysVGrow()
+        val actions = listOf(
+            expandFlowAction.withContext(box),
+            removeFlowAction.withContext(box)
+        ) + getActions(box).reversed()
+        val actionBar = ActionBar(actions, "small-icon-button")
+        actionBar.setOrientation(Orientation.VERTICAL)
+        nameLabel.setOnMouseClicked { ev ->
+            if (ev.clickCount == 2) {
+                box.toggleExpanded()
+            }
+        }
+        return VBox(actionBar, namePane).pad(3.0)
+    }
+
+    override fun createSeparatorNode(box: ObjectBox<AudioFlow>): VBox {
+        val actionBar = ActionBar(separatorBarActions.withContext(box), "small-icon-button")
+        return VBox(infiniteSpace(), actionBar, infiniteSpace())
     }
 
     private fun midiContext(obj: AudioFlow): MidiContext? {
@@ -218,14 +251,50 @@ class FlowGroupPane(
             executes { grp -> grp.toggleActive() }
         }
 
+        private val expandFlowAction = action<ObjectBox<AudioFlow>>("Expand") {
+            icon(MaterialDesignC.CHEVRON_RIGHT)
+            executes { box -> box.setExpanded(true) }
+        }
+
+        private val separatorBarActions = collectActions<ObjectBox<AudioFlow>> {
+            addAction("Insert flow") {
+                icon(MaterialDesignP.PLUS)
+                executes { box, ev ->
+                    val flowsView = box.getParent<FlowGroupPane>()?.flowsView ?: return@executes
+                    val idx = flowsView.source.indexOf(box.obj) + 1
+                    flowsView.addObject(ev, idx)
+                }
+            }
+        }
+
+        private val addFlowAction = action<FlowGroupPane>("Add flow") {
+            icon(MaterialDesignP.PLUS)
+            executes { pane, ev ->
+                pane.flowsView.addObject(ev, idx = 0)
+            }
+        }
+
+        private val removeFlowAction = action<ObjectBox<AudioFlow>>("Remove") {
+            icon(MaterialDesignC.CLOSE_CIRCLE_OUTLINE)
+            shortcut("DELETE")
+            executes { box -> box.parent.source.remove(box.obj) }
+        }
+
         private val flowActions = collectActions<AudioFlow> {
             addAction("Show VST editor") {
                 icon(MaterialDesignE.EYE)
                 executesOn<VSTPluginFlow> { flow -> flow.showEditor() }
             }
             addAction("View Instrument") {
-                icon(Material2AL.CODE)
+                icon(Codicons.CODE)
                 shortcut("Alt+I")
+                description { flow ->
+                    if (flow is InstrumentFlow)
+                        flow.instrumentSelector.result.flatMap { instr ->
+                            instr.name.map { n -> "View instrument: $n" }
+                        }
+                    else reactiveValue("<no instrument>")
+                }
                 enableWhen { flow ->
                     if (flow !is InstrumentFlow) reactiveValue(false)
                     else flow.instrumentSelector.isResolved

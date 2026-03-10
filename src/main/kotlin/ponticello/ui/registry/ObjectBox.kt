@@ -146,9 +146,9 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
     private fun relayout() {
         val root =
             if (currentMode == DisplayMode.Collapsable && content != null && !expanded.now)
-                config.collapsedLayout(this, header)
+                config.collapsedLayout(this)
             else
-                config.expandedLayout(this, header, content)
+                config.expandedLayout(this)
         updateInlineContentPseudoClass()
         setRoot(root)
     }

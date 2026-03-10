@@ -62,7 +62,7 @@ class ObjectListView<O : Any>(
     private var itemsLayout: Pane = Pane()
         set(value) {
             field = value
-            value.children.addAll(boxes)
+            value.children.addAll(boxes.map(::wrapBox))
             setupDropArea(value)
             if (scrollable) {
                 itemsScrollPane.content = value
@@ -319,9 +319,21 @@ class ObjectListView<O : Any>(
         val box = getBox(obj)
         box.updateMode(oldMode = null, newMode = mode.now)
         boxes.add(j, box)
-        itemsLayout.children.add(j, box)
+        val wrapper = wrapBox(box)
+        itemsLayout.children.add(j, wrapper)
         updateRoot(mode.now)
         autoResize()
+    }
+
+    private fun wrapBox(box: ObjectBox<O>): Region {
+        val separatorNode = config.createSeparatorNode(box)
+        val wrapper = when {
+            separatorNode == null -> box
+            orientation == Orientation.HORIZONTAL -> HBox(box, separatorNode)
+            orientation == Orientation.VERTICAL -> VBox(box, separatorNode)
+            else -> throw AssertionError()
+        }
+        return wrapper
     }
 
     private fun getInsertionIndex(idx: Int): Int {
@@ -364,7 +376,7 @@ class ObjectListView<O : Any>(
         //TODO we could use isManaged/isVisible here.
         boxes.clear()
         source.filter(config::filter).mapTo(boxes) { obj -> getBox(obj) }
-        itemsLayout.children.setAll(boxes)
+        itemsLayout.children.setAll(boxes.map(::wrapBox))
         if (boxes.isNotEmpty() && config.enableSelection) select(0)
         autoResize()
     }

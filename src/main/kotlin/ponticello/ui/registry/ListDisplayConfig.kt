@@ -12,7 +12,6 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
@@ -71,6 +70,8 @@ interface ListDisplayConfig<O : Any> {
     fun contentUpdate(obj: O): Reactive? = null
 
     fun configureBox(box: ObjectBox<O>, currentMode: ObjectListView.DisplayMode) {}
+
+    fun createSeparatorNode(box: ObjectBox<O>): Node? = null
 
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 
@@ -131,9 +132,9 @@ interface ListDisplayConfig<O : Any> {
 
     fun onRemoved(obj: O) {}
 
-    fun expandedLayout(box: ObjectBox<O>, header: Region, content: Node?): Node =
-        if (content != null) VBox(header, content)
-        else header
+    fun expandedLayout(box: ObjectBox<O>): Node =
+        if (box.content != null) VBox(box.header, box.content)
+        else box.header
 
-    fun collapsedLayout(box: ObjectBox<O>, header: Region): Node = header
+    fun collapsedLayout(box: ObjectBox<O>): Node = box.header
 }

@@ -5,19 +5,16 @@ import fxutils.actions.button
 import fxutils.actions.collectActions
 import fxutils.actions.makeButton
 import fxutils.centerChildren
+import fxutils.makeVerticalLabel
 import fxutils.prompt.SelectorPrompt
 import fxutils.setFixedWidth
 import fxutils.vspace
 import hextant.context.Context
 import javafx.geometry.Orientation
-import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
-import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -35,7 +32,6 @@ import ponticello.model.server.BusRegistry
 import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectBox
-import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -123,14 +119,10 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         is FilterOption.Bus -> flow.usesBus(filter.bus)
     }
 
-    override fun collapsedLayout(box: ObjectBox<AudioFlowGroup>, header: Region): Node {
+    override fun collapsedLayout(box: ObjectBox<AudioFlowGroup>): Node {
         val nameLabel = Text()
         nameLabel.textProperty().bind(box.obj.name.asObservableValue())
-        nameLabel.fill = Color.WHITE
-        nameLabel.rotate = -90.0
-        StackPane.setAlignment(nameLabel, Pos.BOTTOM_CENTER)
-        val namePane = StackPane(nameLabel).setFixedWidth(15.0)
-        nameLabel.translateYProperty().bind(nameLabel.textProperty().map { -nameLabel.prefWidth(-1.0) / 2 })
+        val namePane = makeVerticalLabel(nameLabel).setFixedWidth(15.0)
         setVgrow(namePane, Priority.ALWAYS)
 
         val expandAction = MaterialDesignC.CHEVRON_RIGHT.button("Expand", "medium-icon-button") { _ ->
@@ -200,9 +192,6 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
 
         private val groupActions = collectActions<ObjectBox<AudioFlowGroup>> {
             add(FlowGroupPane.toggleActiveAction) { box -> box.obj }
-            addAll(ObjectListView.listActions.map { box: ObjectBox<AudioFlowGroup> ->
-                (box.content() as? FlowGroupPane)?.flowsView
-            })
         }
     }
 }
