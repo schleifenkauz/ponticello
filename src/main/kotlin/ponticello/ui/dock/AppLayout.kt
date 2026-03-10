@@ -15,7 +15,6 @@ import javafx.geometry.Orientation
 import javafx.scene.control.Button
 import javafx.scene.control.SplitPane
 import javafx.scene.image.ImageView
-import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import ponticello.impl.Logger
@@ -26,8 +25,8 @@ import ponticello.model.project.get
 import ponticello.model.registry.ObjectList
 import ponticello.ui.actions.*
 import ponticello.ui.dock.Side.*
-import ponticello.ui.flow.AudioFlowsPane
 import ponticello.ui.flow.MixerPane
+import ponticello.ui.flow.TabbedAudioFlowsPane
 import ponticello.ui.launcher.Activity
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.launcher.PonticelloMainActivity
@@ -386,8 +385,12 @@ class AppLayout(
             val expanded = pane?.scene != null
             SideBarState(side, dividerPos, toolPanes, dividerPositions, expanded)
         }
-        state.toolPaneStates = allToolPaneTypes.map { type ->
-            val toolPane = getToolPane(type) ?: error("$type not found")
+        state.toolPaneStates = allToolPaneTypes.mapNotNull { type ->
+            val toolPane = getToolPane(type)
+            if (toolPane == null) {
+                Logger.warn("ToolPane $type not found", Logger.Category.Layout)
+                return@mapNotNull null
+            }
             val s = toolPane.initialState ?: toolPane.defaultState()
             if (toolPane.isSetup) toolPane.saveState(s)
             s
@@ -454,7 +457,8 @@ class AppLayout(
             add(HelpBrowser)
 
             //default bottom
-            add(AudioFlowsPane)
+//            add(AudioFlowsPane)
+            add(TabbedAudioFlowsPane)
             add(MixerPane)
             add(ScoreObjectViewPane)
             add(ConsoleOutputPane)

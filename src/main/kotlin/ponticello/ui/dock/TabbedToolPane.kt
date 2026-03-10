@@ -1,10 +1,12 @@
 package ponticello.ui.dock
 
-import fxutils.alwaysHGrow
 import fxutils.button
+import fxutils.styleClass
 import javafx.css.PseudoClass
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.ScrollPane
+import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -29,7 +31,11 @@ abstract class TabbedToolPane<T : NamedObject>(protected val items: ObjectList<T
 
     protected val itemsLayout = HBox(3.0)
 
-    override val headerContent = itemsLayout.alwaysHGrow()
+    override val headerContent: Node = ScrollPane(itemsLayout)
+
+    protected fun cachedViews(): Collection<Node> = cachedViews.values
+
+    override fun defaultState(): ToolPaneState = TabbedToolPaneState.default()
 
     override fun doSetup() {
         super.doSetup()
@@ -51,7 +57,13 @@ abstract class TabbedToolPane<T : NamedObject>(protected val items: ObjectList<T
     }
 
     override fun added(obj: T, idx: Int) {
-        val box = createItemBox(obj)
+        val box = createItemBox(obj) styleClass "tabbed-pane-item"
+        box.setOnMouseClicked { ev ->
+            if (ev.button == MouseButton.PRIMARY) {
+                select(obj)
+                ev.consume()
+            }
+        }
         itemBoxes[obj] = box
         itemsLayout.children.add(idx, box)
     }
@@ -79,6 +91,8 @@ abstract class TabbedToolPane<T : NamedObject>(protected val items: ObjectList<T
         selectedBox?.pseudoClassStateChanged(SELECTED, true)
         selectedObject = obj?.reference() ?: ObjectReference.none()
     }
+
+    protected fun getItemBox(obj: T): Node? = itemBoxes[obj]
 
     protected fun content(obj: T): Parent = cachedViews.getOrPut(obj) { getContent(obj) }
 

@@ -60,7 +60,6 @@ class FlowGroupPane(
     private var midiContexts: MutableMap<AudioFlow, MidiContext?>? = null
 
     init {
-        flowsView.itemsScrollPane.neverSquishHorizontally()
         flowsView.alwaysVGrow()
         alwaysVGrow()
         val addFlowButton = addFlowAction.withContext(this).makeButton("small-icon-button")
@@ -162,6 +161,7 @@ class FlowGroupPane(
                 box.toggleExpanded()
             }
         }
+        box.setupDragging(dragTarget = box)
         return VBox(actionBar, namePane).pad(3.0)
     }
 

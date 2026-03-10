@@ -8,7 +8,6 @@ import fxutils.drag.TypedDataFormat
 import javafx.geometry.Side.BOTTOM
 import javafx.scene.Parent
 import javafx.scene.control.Label
-import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.Ikon
@@ -30,7 +29,9 @@ import ponticello.model.record.LoudnessThreshold
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.ui.controls.Knob
-import ponticello.ui.dock.*
+import ponticello.ui.dock.Side
+import ponticello.ui.dock.TabbedToolPane
+import ponticello.ui.dock.ToolPane
 import reaktive.value.binding.greaterThan
 import reaktive.value.now
 
@@ -45,10 +46,8 @@ class LiveBuffersPane(
     private val controlBar = HBox(5.0).centerChildren().alwaysHGrow()
 
     override val headerContent = HBox(
-        5.0, itemsLayout, addBufferButton, controlBar
+        5.0, super.headerContent, addBufferButton, controlBar
     ).centerChildren().alwaysHGrow()
-
-    override fun defaultState(): ToolPaneState = TabbedToolPaneState.default()
 
     override fun doSetup() {
         super.doSetup()
@@ -70,12 +69,6 @@ class LiveBuffersPane(
         val box = HBox(toggleBtn, label) styleClass "live-buffer-item"
         val contextMenuButton = showContextMenu.withContext(Pair(obj, box)).makeButton("medium-icon-button")
         box.children.add(contextMenuButton)
-        label.setOnMouseClicked { ev ->
-            if (ev.button == MouseButton.PRIMARY) {
-                select(obj)
-                ev.consume()
-            }
-        }
         return box
     }
 

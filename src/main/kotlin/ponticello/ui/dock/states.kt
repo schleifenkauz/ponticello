@@ -1,6 +1,7 @@
 package ponticello.ui.dock
 
 import kotlinx.serialization.Serializable
+import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.MixerFlow
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectReference
@@ -111,14 +112,31 @@ class BrowserPaneState private constructor() : ListToolPaneState() {
     }
 }
 
-@Serializable
-class TabbedToolPaneState private constructor() : ListToolPaneState() {
-    lateinit var selected: ObjectReference<*>
+interface TabbedToolPaneState {
+    var selected: ObjectReference<*>
 
     companion object {
-        fun default() = TabbedToolPaneState().apply {
+        fun default() = TabbedToolPaneStateImpl().apply {
             mode = ToolPaneMode.Docked
             selected = ObjectReference.none<NamedObject>()
+        }
+    }
+}
+
+@Serializable
+class TabbedToolPaneStateImpl : TabbedToolPaneState, ToolPaneState() {
+    override lateinit var selected: ObjectReference<*>
+}
+
+@Serializable
+class TabbedFlowPaneState private constructor() : ListToolPaneState(), TabbedToolPaneState {
+    override lateinit var selected: ObjectReference<*>
+    var expandedFlows = emptyList<Int>()
+
+    companion object {
+        fun default() = TabbedFlowPaneState().apply {
+            mode = ToolPaneMode.Docked
+            selected = ObjectReference.none<AudioFlowGroup>()
         }
     }
 }

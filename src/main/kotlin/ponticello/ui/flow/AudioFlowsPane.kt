@@ -108,7 +108,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
     }
 
     override fun getActions(box: ObjectBox<AudioFlowGroup>): List<ContextualizedAction> =
-        groupActions.withContext(box)
+        groupActions.withContext(box.obj)
 
     override fun getContent(obj: AudioFlowGroup, box: ObjectBox<AudioFlowGroup>): Parent =
         FlowGroupPane(obj, parent = this)
@@ -180,7 +180,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         }
     }
 
-    companion object : Type(uid = 13, "Flows") {
+    companion object : Type(uid = 130, "Flows") {
         override val icon: Ikon get() = MaterialDesignT.TUNE
 
         override val defaultSide: Side
@@ -190,8 +190,8 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
 
         override fun createToolPane(project: PonticelloProject): ToolPane = AudioFlowsPane(project.flows)
 
-        private val groupActions = collectActions<ObjectBox<AudioFlowGroup>> {
-            add(FlowGroupPane.toggleActiveAction) { box -> box.obj }
+        val groupActions = collectActions<AudioFlowGroup> {
+            add(FlowGroupPane.toggleActiveAction)
         }
     }
 }

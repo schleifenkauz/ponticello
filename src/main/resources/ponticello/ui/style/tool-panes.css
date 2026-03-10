@@ -162,3 +162,18 @@ Button.filter-tag-button:selected {
     -fx-border-width: 1px;
     -fx-padding: 3px;
 }
+
+.tabbed-pane-item {
+    -fx-padding: 2px;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    /*-fx-background-color: rgba(0, 0, 0, 0.5);*/
+    -fx-spacing: 3px;
+    -fx-alignment: center-left;
+}
+
+.tabbed-pane-item:selected {
+    -fx-background-color: #501717 !important;
+}

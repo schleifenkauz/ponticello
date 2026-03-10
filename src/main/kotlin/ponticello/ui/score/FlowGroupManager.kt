@@ -4,7 +4,6 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import fxutils.drag.setupDragging
 import fxutils.modifiers
-import fxutils.setPseudoClassState
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.beans.value.ObservableValue
@@ -18,7 +17,7 @@ import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.registry.ObjectList
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.flow.AudioFlowsPane
+import ponticello.ui.flow.TabbedAudioFlowsPane
 import reaktive.Observer
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
@@ -32,7 +31,7 @@ class FlowGroupManager(
     private val lines = mutableMapOf<AudioFlowGroup, Line>()
     private val tooltip = Label()
 
-    private val audioFlowsPane by lazy { pane.context[AppLayout].get<AudioFlowsPane>(setup = false) }
+    private val audioFlowsPane by lazy { pane.context[AppLayout].get<TabbedAudioFlowsPane>(setup = false) }
 
     init {
         flows.addListener(this)
@@ -44,7 +43,8 @@ class FlowGroupManager(
                 line.strokeWidth = 2.0
                 val flowsPane = audioFlowsPane
                 if (flowsPane.isSetup) {
-                    flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", false)
+//                    flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", false)
+                    flowsPane.setHover(group, false)
                 }
             }
             val entry = lines.entries.find { (_, l) -> (l.startY - ev.y).absoluteValue < 3.0 }
@@ -57,7 +57,8 @@ class FlowGroupManager(
                 tooltip.relocate(ev.x + 12.0, ev.y + 12.0)
                 val flowsPane = audioFlowsPane
                 if (flowsPane.isShowing.now) {
-                    flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", true)
+                    flowsPane.setHover(group, true)
+//                    flowsPane.listView.getBox(group).setPseudoClassState("flow-group-hover", true)
                 }
             }
         }
@@ -94,9 +95,10 @@ class FlowGroupManager(
     fun showFlowGroup(group: AudioFlowGroup) {
         val flowsPane = audioFlowsPane
         flowsPane.setShowing(true)
-        val box = flowsPane.listView.getBox(group)
-        if (box.isCollapsed.now) box.toggleExpanded()
-        flowsPane.listView.select(group)
+        flowsPane.select(group)
+//        val box = flowsPane.listView.getBox(group)
+//        box.setExpanded(true)
+//        flowsPane.listView.select(group)
     }
 
     private fun getLineY(group: AudioFlowGroup): ObservableValue<Double>? {

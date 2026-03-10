@@ -8,6 +8,7 @@ import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.layout.Region
+import ponticello.impl.Logger
 import ponticello.model.registry.ObjectList
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
@@ -55,7 +56,12 @@ abstract class ReorderableActionBar<O : Any>(
     protected abstract fun getAction(obj: O): ContextualizedAction
 
     override fun getContent(obj: O, box: ObjectBox<O>): Parent? {
-        val action = getAction(obj)
+        val action = try {
+            getAction(obj)
+        } catch (e: Exception) {
+            Logger.error("Error getting action for $obj", e)
+            return null
+        }
         return action.makeButton(style)
     }
 

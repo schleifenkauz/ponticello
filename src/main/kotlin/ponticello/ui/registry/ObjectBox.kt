@@ -197,6 +197,10 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         val dragTarget = config.getDragTarget(this)
         if (dragTarget == prevDragTarget) return
         prevDragTarget = dragTarget
+        setupDragging(dragTarget)
+    }
+
+    fun setupDragging(dragTarget: Node) {
         dragTarget.setOnDragDetected { ev ->
             val db =
                 if (ev.isControlDown && obj is NamedObject && config.canDuplicate) this.startDragAndDrop(TransferMode.COPY)
