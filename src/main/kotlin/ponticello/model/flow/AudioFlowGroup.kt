@@ -141,6 +141,15 @@ class AudioFlowGroup(
         }
     }
 
+    override fun rename(newName: String) {
+        val oldName = name.now
+        super.rename(newName)
+        client.run {
+            +"~flows_$newName = ~flows_$oldName"
+            +"~flows_$oldName = nil"
+        }
+    }
+
     @Serializable
     @SerialName("AudioFlowList")
     class AudioFlowList(
