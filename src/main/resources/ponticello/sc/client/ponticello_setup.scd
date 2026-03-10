@@ -38,6 +38,7 @@ ServerBoot.add {
 	}.play;
 };
 ServerTree.add {
+    AudioNodeOrder.clear;
     ~ponticello_addr.sendMsg('/cleared');
 };
 
