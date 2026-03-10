@@ -239,6 +239,7 @@ LFOControl : ParameterControl {
 			var sig = ugen_func.value(cutoff);
 			Out.kr(out, sig);
 		}.add;
+		Server.local.sync;
 	}
 
 	getUGen { |inst| ^inst.getControlBus(super.name).kr }
