@@ -288,7 +288,7 @@ class LauncherGridPane(
                 applicableIf { target -> target.targetObject != null }
                 executes { target ->
                     val obj = target.targetObject!!
-                    obj.context[ScoreObjectDuplicator].enterDuplicateMode(obj, clone = false)
+                    obj.context[ScoreObjectDuplicator].enterDuplicateMode(obj)
                 }
             }
             addAction("Set velocity parameter") {

@@ -162,9 +162,8 @@ class LauncherGrid private constructor(
                     Logger.warn("Invalid target object: ${item.target}", Logger.Category.Midi)
                     return
                 }
-                val clone = ModifierKeyTracker.isShiftDown.now
                 Platform.runLater {
-                    context[ScoreObjectDuplicator].enterDuplicateMode(targetObject, clone)
+                    context[ScoreObjectDuplicator].enterDuplicateMode(targetObject)
                 }
             }
 

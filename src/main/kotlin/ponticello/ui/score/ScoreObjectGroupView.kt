@@ -26,7 +26,7 @@ class ScoreObjectGroupView(
 
     override fun initialize() {
         super.initialize()
-        scorePane = SubScorePane(instance, obj, parentPane, context)
+        scorePane = SubScorePane(instance, obj, this, context)
         scorePane.prefWidthProperty().bind(prefWidthProperty())
         scorePane.prefHeightProperty().bind(prefHeightProperty())
         scorePane.backgroundProperty().bind(backgroundColor.map { color ->

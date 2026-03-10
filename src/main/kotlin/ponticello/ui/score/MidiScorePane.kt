@@ -28,7 +28,7 @@ import kotlin.math.roundToInt
 class MidiScorePane(
     private val instance: ScoreObjectInstance,
     private val obj: MidiObject,
-    private val parentPane: ScorePane,
+    override val associatedView: MidiObjectView,
     context: Context,
 ) : ScorePane(obj.score, context) {
     private val orientationLines = mutableListOf<Line>()
@@ -36,6 +36,8 @@ class MidiScorePane(
     val pixelsPerPitch get() = prefHeight / (obj.highestPitch - obj.lowestPitch + 1)
     private val cursorNode = Rectangle()
     private val isCreatingNode = reactiveVariable(false)
+
+    val parentPane get() = associatedView.parentPane
 
     override val root: ScorePane
         get() = parentPane.root

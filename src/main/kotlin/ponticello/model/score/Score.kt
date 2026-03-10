@@ -93,7 +93,7 @@ open class Score(
     fun deepClone(): Score {
         val clonedObjects = objects.associateWith { obj ->
             val newName = context[ScoreObjectRegistry].nameForClone(obj)
-            obj.clone(newName)
+            obj.deepClone(newName)
         }
         val instances = instances.mapTo(mutableListOf()) { inst ->
             val obj = clonedObjects.getValue(inst.obj)
@@ -102,7 +102,7 @@ open class Score(
         return Score(instances)
     }
 
-    fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate(inst.position) })
+    fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate() })
 
     fun addObject(inst: ScoreObjectInstance, autoSelect: Boolean) {
         if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {

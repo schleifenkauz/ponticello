@@ -28,7 +28,7 @@ abstract class RootScorePane(
     val playHead: PlayHead = PlayHead(),
     val timeCodeView: TimeCodeView = TimeCodeView(),
     val playHeadStyle: String? = null,
-) : RegularScorePane(score, context) {
+) : AbstractScorePane(score, context) {
     private val positionTracker = Line() styleClass "mouse-tracker-line"
 
     private var latestRepaintTrigger = 0L
@@ -40,7 +40,9 @@ abstract class RootScorePane(
 
     final override val root: ScorePane
         get() = this
-    final override val associatedObject: ScoreObject?
+    final override val associatedObject: AbstractScoreObjectGroup?
+        get() = null
+    override val associatedView: AbstractScoreObjectGroupView?
         get() = null
     final override var pixelsPerSecond: Double = Double.NaN
         private set

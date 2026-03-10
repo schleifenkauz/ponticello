@@ -48,6 +48,13 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
 
     protected abstract fun cloneWith(score: Score): AbstractScoreObjectGroup
 
+    fun clone(newName: String, score: Score): AbstractScoreObjectGroup {
+        val clone = cloneWith(score)
+        copyBasicPropertiesTo(clone)
+        clone.setInitialName(newName)
+        return clone
+    }
+
     override fun ScWriter.createInSuperCollider() {
 //        SoundProcess.createSoundProcessObject(writer, this, duration)
     }
@@ -183,4 +190,6 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
     }
 
     override fun doClone(): ScoreObject = cloneWith(score.clone())
+
+    override fun deepClone(): ScoreObject = cloneWith(score.deepClone())
 }

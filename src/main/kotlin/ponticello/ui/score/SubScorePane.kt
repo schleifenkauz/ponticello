@@ -1,34 +1,28 @@
 package ponticello.ui.score
 
 import hextant.context.Context
-import javafx.geometry.Side
-import ponticello.impl.Decimal
-import ponticello.impl.DecimalRange
-import ponticello.impl.asTime
-import ponticello.impl.div
-import ponticello.impl.rangeTo
-import ponticello.impl.times
-import ponticello.impl.zero
+import ponticello.impl.*
 import ponticello.model.score.ObjectPosition
-import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.ScoreObjectInstance
 
 class SubScorePane(
     private val instance: ScoreObjectInstance,
-    private val obj: ScoreObjectGroup,
-    private val parentPane: ScorePane,
+    override val associatedObject: ScoreObjectGroup,
+    override val associatedView: ScoreObjectGroupView,
     context: Context,
-) : RegularScorePane(obj.score, context) {
+) : AbstractScorePane(associatedObject.score, context) {
+    val parentPane get() = associatedView.parentPane
+
     override val root: ScorePane
         get() = parentPane.root
     override val displayStart: Decimal
         get() = 0.0.asTime
     override val displayEnd: Decimal
-        get() = obj.duration
+        get() = associatedObject.duration
 
     override val yRange: DecimalRange
-        get() = zero..obj.height
+        get() = zero..associatedObject.height
 
     override val pixelsPerSecond: Double
         get() = parentPane.pixelsPerSecond
@@ -36,15 +30,12 @@ class SubScorePane(
     override val absolutePosition: ObjectPosition
         get() = parentPane.absolutePosition + instance.position
 
-    override val associatedObject: ScoreObject
-        get() = obj
-
     fun initialize() {
         listenForEvents()
-        obj.score.addListener(this)
+        associatedObject.score.addListener(this)
     }
 
-    override fun getScreenY(scoreY: Decimal): Double = scoreY.value * (this.prefHeight / obj.height.value)
+    override fun getScreenY(scoreY: Decimal): Double = scoreY.value * (this.prefHeight / associatedObject.height.value)
 
-    override fun getScoreY(screenY: Double): Decimal = screenY * (obj.height / this.prefHeight)
+    override fun getScoreY(screenY: Double): Decimal = screenY * (associatedObject.height / this.prefHeight)
 }

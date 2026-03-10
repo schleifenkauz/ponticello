@@ -247,14 +247,27 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
 
     protected abstract fun doClone(): ScoreObject
 
+    protected open fun deepClone(): ScoreObject = doClone()
+
     fun clone(newName: String): ScoreObject {
         val obj = doClone()
+        copyBasicPropertiesTo(obj)
+        obj.setInitialName(newName)
+        return obj
+    }
+
+    fun deepClone(newName: String): ScoreObject {
+        val obj = deepClone()
+        copyBasicPropertiesTo(obj)
+        obj.setInitialName(newName)
+        return obj
+    }
+
+    protected fun copyBasicPropertiesTo(obj: ScoreObject) {
         obj.duration = duration
         obj.height = height
         obj._associatedColor.now = associatedColor.now
         obj.memoText.now = memoText.now
-        obj.setInitialName(newName)
-        return obj
     }
 
     protected open fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject? {
@@ -298,8 +311,12 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
 
     fun addedToScore(score: Score) {
         if (this is UnresolvedScoreObject) return
+        check(initialized) { "$this was not initialized" }
         val registry = context[ScoreObjectRegistry]
-        if (!registry.has(this)) { //TODO what if there is a naming conflict?
+        if (!registry.has(this)) {
+            if (registry.has(this.name.now)) {
+                _name!!.set(registry.nameForClone(this))
+            }
             registry.context.withoutUndo { registry.add(this) }
         }
         if (!score.isAuxiliary) {

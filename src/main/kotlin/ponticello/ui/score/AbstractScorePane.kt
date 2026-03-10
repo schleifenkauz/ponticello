@@ -17,7 +17,7 @@ import ponticello.model.score.ScoreObjectInstance
 import ponticello.model.server.BufferRegistry
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 
-abstract class RegularScorePane(score: Score, context: Context) : ScorePane(score, context) {
+abstract class AbstractScorePane(score: Score, context: Context) : ScorePane(score, context) {
     override fun acceptObject(obj: ScoreObject): ScoreObject? = obj
 
     override fun rightClicked(ev: MouseEvent) {

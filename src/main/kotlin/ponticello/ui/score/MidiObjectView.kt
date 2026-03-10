@@ -40,7 +40,7 @@ class MidiObjectView(
 
     override fun initialize() {
         super.initialize()
-        scorePane = MidiScorePane(instance, obj, parentPane, context)
+        scorePane = MidiScorePane(instance, obj, this, context)
         scorePane.prefWidthProperty().bind(prefWidthProperty())
         scorePane.prefHeightProperty().bind(prefHeightProperty())
         scorePane.initialize()

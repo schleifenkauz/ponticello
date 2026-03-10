@@ -262,8 +262,6 @@ class MixerPane(
             Region() styleClass "fader-separator",
             bottom
         ) styleClass "fader-layout"
-//        layout.prefWidthProperty().bind(meter.widthProperty().add(20))
-//        layout.minWidthProperty().bind(layout.prefWidthProperty())
         return layout
     }
 

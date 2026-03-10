@@ -39,7 +39,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     abstract val yRange: DecimalRange
 
-    abstract val associatedObject: ScoreObject?
+    abstract val associatedObject: AbstractScoreObjectGroup?
+    abstract val associatedView: AbstractScoreObjectGroupView?
 
     abstract val pixelsPerSecond: Double
 
@@ -200,7 +201,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 var obj = duplicator.clipboardObject!!
                 obj = acceptObject(obj) ?: return
                 if (obj.height > score.maxY || obj.duration > score.maxTime) return
-                if (duplicator.isCloneMode) {
+                if (ev.isShiftDown) {
                     val name = context[ScoreObjectRegistry].nameForClone(obj, ev) ?: return
                     obj = obj.clone(name)
                 }

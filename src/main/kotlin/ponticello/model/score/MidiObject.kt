@@ -125,8 +125,6 @@ class MidiObject(
     override fun cloneWith(score: Score): MidiObject =
         MidiObject(instrument.copy(), lowestPitch, highestPitch, score, controls.copy(), latencyMs.copy())
 
-    override fun doClone(): ScoreObject = cloneWith(score.deepClone())
-
     override fun duration(): ReactiveValue<Decimal> = super<AbstractScoreObjectGroup>.duration()
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)

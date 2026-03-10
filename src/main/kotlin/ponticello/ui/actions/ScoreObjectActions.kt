@@ -2,6 +2,7 @@ package ponticello.ui.actions
 
 import fxutils.actions.*
 import fxutils.prompt.IntegerPrompt
+import fxutils.runAfterLayout
 import fxutils.sourceWindow
 import hextant.context.Context
 import hextant.context.compoundEdit
@@ -251,7 +252,7 @@ object ScoreObjectActions {
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 view.context[ScoreObjectSelectionManager].deselectAll()
                 val duplicator = view.context[ScoreObjectDuplicator]
-                duplicator.enterDuplicateMode(view.obj, view, clone = false)
+                duplicator.enterDuplicateMode(view.obj, view)
             }
         }
         addObjectAction("Clone object") {
@@ -261,8 +262,8 @@ object ScoreObjectActions {
                 view.context[ScoreObjectSelectionManager].deselectAll()
                 val duplicator = view.context[ScoreObjectDuplicator]
                 val newName = view.context[ScoreObjectRegistry].nameForClone(view.obj, ev) ?: return@executeSingle
-                val clone = view.obj.clone(newName)
-                duplicator.enterDuplicateMode(clone, view, clone = ev.isShiftDown())
+                val clone = if (ev.isShiftDown()) view.obj.deepClone(newName) else view.obj.clone(newName)
+                duplicator.enterDuplicateMode(clone, view)
             }
         }
         addObjectAction("Unlink from original") {
@@ -272,28 +273,30 @@ object ScoreObjectActions {
             executes { ctx, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
                 if (ctx.selectedInstances.isEmpty()) return@executes
-                if (ev.isShiftDown()) { //TODO deep unlink
-                    val hierarchies = ctx.selectedViews.map { v ->
-                        v.parentPane
-                    }
-                } else {
-                    val obj = ctx.selectedObjects.singleOrNull()
-                    if (obj == null) {
-                        Logger.warn(
-                            "Cannot unlink from original: selected objects are not the same",
-                            Logger.Category.Score
-                        )
+                val obj = ctx.selectedObjects.singleOrNull()
+                if (obj == null) {
+                    Logger.warn(
+                        "Cannot unlink from original: selected objects are not the same",
+                        Logger.Category.Score
+                    )
+                    return@executes
+                }
+                if (ev.isShiftDown()) {
+                    val parentPane = ctx.selectedViews.map { it.parentPane }.singleOrNull()
+                    if (parentPane == null) {
+                        Logger.warn("Cannot unlink: multiple sub scores selected", Logger.Category.Score)
                         return@executes
                     }
-                    val name = ctx.context[ScoreObjectRegistry].nameForClone(obj, null) ?: return@executes
-                    ctx.context.compoundEdit("Unlink from original") {
-                        val clone = obj.clone(name)
-                        for (oldInst in ctx.selectedInstances) {
-                            val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
-                            oldInst.score?.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
-                            oldInst.score?.addObject(newInst, autoSelect = true)
-                        }
+                    val newName = ctx.context[ScoreObjectRegistry].nameForClone(obj, ev) ?: return@executes
+                    val clone = obj.clone(newName)
+                    ctx.context.compoundEdit("Deep unlink") {
+                        deepUnlink(clone, ctx.selectedInstances, parentPane)
                     }
+                    runAfterLayout {
+
+                    }
+                } else {
+                    unlinkObject(obj, ctx.selectedInstances)
                 }
             }
         }
@@ -306,7 +309,7 @@ object ScoreObjectActions {
                 inst.score?.removeObject(inst, Score.RegistryOption.KEEP_IN_REGISTRY)
                 val duplicator = view.context[ScoreObjectDuplicator]
                 view.context[ScoreObjectSelectionManager].deselectAll()
-                duplicator.enterDuplicateMode(inst.obj, view, clone = ev.isShiftDown())
+                duplicator.enterDuplicateMode(inst.obj, view)
             }
         }
 
@@ -417,5 +420,44 @@ object ScoreObjectActions {
                 }
             }
         }
+    }
+
+    private fun unlinkObject(obj: ScoreObject, instances: Set<ScoreObjectInstance>) {
+        val name = obj.context[ScoreObjectRegistry].nameForClone(obj)
+        obj.context.compoundEdit("Unlink") {
+            val clone = obj.clone(name)
+            replaceInstancesWith(instances, clone, autoSelect = true)
+        }
+    }
+
+    private fun replaceInstancesWith(instances: Set<ScoreObjectInstance>, clone: ScoreObject, autoSelect: Boolean) {
+        for (oldInst in instances) {
+            val newInst = ScoreObjectInstance(clone, oldInst.position, oldInst.muted.copy())
+            val score = oldInst.score ?: continue
+            score.removeObject(oldInst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
+            score.addObject(newInst, autoSelect)
+        }
+    }
+
+    private fun deepUnlink(obj: ScoreObject, instances: Set<ScoreObjectInstance>, pane: ScorePane) {
+        val parentObj = pane.associatedObject
+        val parentView = pane.associatedView
+        if (parentObj == null || parentView == null) {
+            replaceInstancesWith(instances, obj, autoSelect = false)
+        } else {
+            val newScore = Score(pane.score.objectInstances.mapTo(mutableListOf()) { inst ->
+                if (inst in instances) ScoreObjectInstance(obj, inst.position, inst.muted.copy())
+                else inst.duplicate()
+            })
+            val newName = pane.context[ScoreObjectRegistry].nameForClone(parentObj)
+            val clone = parentObj.clone(newName, newScore)
+            deepUnlink(clone, setOf(parentView.instance), parentView.parentPane)
+        }
+    }
+
+    private fun deepUnlink(pane: ScorePane): Score {
+        val associatedView = pane.associatedView ?: return pane.score
+        val score = deepUnlink(associatedView.parentPane)
+        return score
     }
 }

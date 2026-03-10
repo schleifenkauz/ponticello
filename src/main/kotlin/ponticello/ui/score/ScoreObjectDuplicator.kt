@@ -25,9 +25,6 @@ class ScoreObjectDuplicator { //TODO replace snapshots with deactivated ScoreObj
     var clipboardObject: ScoreObject? = null
         private set
 
-    var isCloneMode: Boolean = false
-        private set
-
     private val panes = mutableListOf<ScorePane>()
     private val imageViews = mutableMapOf<ScorePane, ImageView>()
 
@@ -37,29 +34,28 @@ class ScoreObjectDuplicator { //TODO replace snapshots with deactivated ScoreObj
         repaintObservers.add(observer)
     }
 
-    fun enterDuplicateMode(obj: ScoreObject, view: ScoreObjectView, clone: Boolean) {
+    fun enterDuplicateMode(obj: ScoreObject, view: ScoreObjectView) {
         val parameters = SnapshotParameters()
         view.snapshot(parameters, null)
         val image = view.snapshot(parameters, null)
-        enterDuplicateMode(obj, image, view, clone)
+        enterDuplicateMode(obj, image, view)
     }
 
-    fun enterDuplicateMode(obj: ScoreObject, clone: Boolean) {
+    fun enterDuplicateMode(obj: ScoreObject) {
         val inst = ScoreObjectInstance(obj, ObjectPosition.ZERO)
         val view = ScorePane.createObjectView(obj, inst)
         val mainScorePane = obj.context[PonticelloMainActivity].mainScoreView
         view.initialize(mainScorePane)
         view.setPrefSize(view.getDisplayWidth(), view.getDisplayHeight())
         view.rescale()
-        enterDuplicateMode(obj, view, clone)
+        enterDuplicateMode(obj, view)
     }
 
-    private fun enterDuplicateMode(obj: ScoreObject, image: Image, view: ScoreObjectView?, clone: Boolean) {
+    private fun enterDuplicateMode(obj: ScoreObject, image: Image, view: ScoreObjectView?) {
         if (clipboardObject != null) {
             exitDuplicateMode()
         }
         clipboardObject = obj
-        isCloneMode = clone
         for (pane in panes) {
             val imageView = ImageView(image)
             imageView.opacity = 0.3
@@ -84,7 +80,7 @@ class ScoreObjectDuplicator { //TODO replace snapshots with deactivated ScoreObj
         val image = Image(sample.spectrogramFile.inputStream())
         val instrument = sample.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
         val obj = sample.createSoundProcess(instrument) ?: return
-        enterDuplicateMode(obj, image, null, clone = false)
+        enterDuplicateMode(obj, image, null)
     }
 
     private fun resizeImageView(view: ImageView, pane: ScorePane) {

@@ -41,7 +41,7 @@ object SelectionRelatedActions {
         on("Shift?+G") { ev ->
             if (ev.isTargetTextInput) return@on
             val selection = RectangleSelection.get()
-            if (selection != null && selection.pane is RegularScorePane) {
+            if (selection != null && selection.pane is AbstractScorePane) {
                 selection.pane.addNewGroup(ev, selection)
                 RectangleSelection.clear()
             } else {
