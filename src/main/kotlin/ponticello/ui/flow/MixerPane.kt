@@ -8,6 +8,7 @@ import fxutils.drag.setupDropArea
 import fxutils.prompt.SelectorPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
+import javafx.application.Platform
 import javafx.geometry.Insets
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
@@ -15,10 +16,10 @@ import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
 import javafx.scene.control.Label
-import javafx.scene.control.Slider
 import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
+import javafx.scene.shape.Polygon
 import javafx.scene.text.Text
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
@@ -144,7 +145,7 @@ class MixerPane(
             return if (channelsList == null) mixerSelector
             else {
                 HBox(
-                    5.0, mixerSelector,
+                    THUMB_SIZE, mixerSelector,
                     Label("MIDI:"), deviceSelector,
                     toggleFiltersAction.withContext(selectedMixer.force()).makeButton("medium-icon-button"),
                     ActionBar(channelsList!!.actions, "medium-icon-button")
@@ -241,45 +242,60 @@ class MixerPane(
         bus: ReactiveValue<BusReference>, volume: ReactiveVariable<Decimal>, obj: MixerFlow.MixerComponent?,
     ): VBox {
         val namePane = createVerticalNameLabel(bus)
-        val fader = createFader(volume)
         val volumeBox = createVolumeBox(volume, bus)
         val scopeButton = ServerActions.scopeBus.withContext(bus).makeButton("medium-icon-button")
 
-        fader.focusedProperty().addListener { _, _, focused ->
-            if (focused) {
-                if (obj != null) {
-                    channelsList!!.select(obj)
-                    channelsList!!.getBox(obj).requestFocus()
-                } else {
-                    masterFaderBox!!.requestFocus()
-                }
-            }
-        }
-        fader.showTickLabelsProperty().addListener { _, _, showTickLabels ->
-            if (!showTickLabels) {
-                fader.isShowTickLabels = true
-                fader.isShowTickMarks = true
-            }
-        }
-
-        val levelsStream = (bus.now.get()!! as BusObject.AudioBus).getLevels()
-        val meter = LevelMeter(fader.heightProperty())
-        val volume = obj?.volume ?: reactiveValue(zero)
-        meter.userData = levelsStream.observe { _, levels ->
-            meter.setLevels(levels.map { lvl -> lvl + volume.now.toDouble() })
-        }
+        val audioBus = bus.now.get()!! as BusObject.AudioBus
+        val meter = LevelMeter(audioBus, offset = obj?.volume ?: reactiveValue(zero), meterWidth = 8.0)
+        val thumb = createFaderThumb(meter, volume)
+        val faderContainer = Pane(meter, thumb)
+        meter.heightProperty().bind(faderContainer.heightProperty())
         val (top, bottom) =
             if (obj != null) createPanKnobAndMuteSoloActionsBar(obj)
             else createMasterMonoAndMuteButtons()
-        return VBox(
+        val layout = VBox(
             HBox(infiniteSpace(), top, infiniteSpace()),
             Region() styleClass "fader-separator",
             scopeButton.centered(),
             volumeBox,
-            HBox(hspace(5.0), namePane, infiniteSpace(), meter, fader, hspace(5.0)).alwaysVGrow(),
+            HBox(hspace(THUMB_SIZE), namePane, infiniteSpace(), faderContainer).alwaysVGrow(),
             Region() styleClass "fader-separator",
             bottom
         ) styleClass "fader-layout"
+//        layout.prefWidthProperty().bind(meter.widthProperty().add(20))
+//        layout.minWidthProperty().bind(layout.prefWidthProperty())
+        return layout
+    }
+
+    private fun createFaderThumb(meter: LevelMeter, volume: ReactiveVariable<Decimal>): Polygon {
+        val triangle = Polygon(0.0, -THUMB_SIZE / 2, 0.0, THUMB_SIZE / 2, THUMB_SIZE, 0.0).styleClass("fader-thumb")
+        triangle.userData = volume.forEach { v ->
+            Platform.runLater {
+                triangle.layoutY = meter.levelToY(v.toDouble())
+            }
+        }
+        triangle.layoutX = meter.nChannels * meter.meterWidth
+        triangle.setOnMouseClicked { ev ->
+            triangle.requestFocus()
+            ev.consume()
+        }
+        var startY = Double.NaN
+        var startVolume = volume.now
+        triangle.setOnMousePressed { ev ->
+            startVolume = volume.now
+            startY = ev.screenY
+            ev.consume()
+        }
+        triangle.setOnMouseDragged { ev ->
+            if (startY.isNaN()) return@setOnMouseDragged
+            val deltaY = ev.screenY - startY
+            val deltaVolume = deltaY * -(LevelMeter.LEVEL_RANGE / meter.height)
+            val newVolume = (startVolume + deltaVolume)
+                .coerceIn(LevelMeter.MIN_LEVEL.toDecimal(), LevelMeter.MAX_LEVEL.toDecimal())
+            setVolume(volume, newVolume)
+            ev.consume()
+        }
+        return triangle
     }
 
     private fun createMasterMonoAndMuteButtons(): Pair<HBox, StackPane> {
@@ -331,17 +347,6 @@ class MixerPane(
         return namePane
     }
 
-    private fun createFader(volume: ReactiveVariable<Decimal>): Slider {
-        val fader = Slider(MixerFlow.MIN_VOLUME, MixerFlow.MAX_VOLUME, 0.0) styleClass "volume-fader"
-        fader.userData = volume.forEach { v ->
-            fader.value = v.toDouble()
-        }
-        fader.valueProperty().addListener { _, _, v ->
-            setVolume(volume, v.toDouble().withPrecision(1))
-        }
-        return fader
-    }
-
     override fun getContent(obj: MixerFlow.MixerComponent, box: ObjectBox<MixerFlow.MixerComponent>): Parent = Region()
 
     override fun getDragTarget(box: ObjectBox<MixerFlow.MixerComponent>): Node = box
@@ -378,6 +383,8 @@ class MixerPane(
 
         override val shortcut: String
             get() = "F10"
+
+        private const val THUMB_SIZE = 10.0
 
         override fun createToolPane(project: PonticelloProject): ToolPane =
             MixerPane(MixerComponentListConfig())

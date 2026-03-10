@@ -155,3 +155,10 @@ Button.filter-tag-button:selected {
 .parameter-mapping-arrow:active {
     -fx-icon-color: green;
 }
+
+.level-meter-popup {
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+    -fx-border-color: gray;
+    -fx-border-width: 1px;
+    -fx-padding: 3px;
+}

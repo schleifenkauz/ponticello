@@ -1,15 +1,13 @@
 package ponticello.ui.registry
 
+import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.addAfter
 import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
-import fxutils.label
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.SimpleSelectorPrompt
-import fxutils.styleClass
 import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -23,6 +21,7 @@ import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP
+import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.impl.toDecimal
 import ponticello.model.instr.BusObject
 import ponticello.model.project.BUSSES
@@ -37,6 +36,7 @@ import ponticello.ui.dock.BusRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.flow.LevelMeter
 import ponticello.ui.midi.ControlBusesMidiContext
 import ponticello.ui.midi.MidiContext
 import reaktive.ObserverMap
@@ -106,12 +106,13 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         val channelsSpinner = IntSpinner(obj.channels, 1, 12).minColumns(2)
             .setupUndo("Bus Channels", obj.context[UndoManager])
         channelsSpinner.isDisable = obj.busType != BusObject.Type.Regular
-        add(channelsSpinner)
+        //add(channelsSpinner)
         val rateString = when (obj.rate) {
             Rate.Audio -> "ar"
             Rate.Control -> "kr"
         }
         add(label(rateString) styleClass "rate-label")
+        add(label(obj.channels.map { n -> " x $n" }))
         if (obj is BusObject.ControlBus) {
             val defaultValue = reactiveVariable(obj.spec.now?.defaultValue?.get() ?: 0.0.toDecimal())
             val name = obj.name.map { n -> "Default value for $n" }
@@ -148,8 +149,8 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         return if (box.obj is BusObject.ControlBus) {
             @Suppress("UNCHECKED_CAST")
             val cast = box as ObjectBox<BusObject.ControlBus>
-            controlBusActions.withContext(cast) + actions.withContext(box)
-        } else actions.withContext(box)
+            controlBusActions.withContext(cast) + actions.withContext(box.obj)
+        } else actions.withContext(box.obj)
     }
 
     override fun extraHeaderActions(): List<ContextualizedAction> =
@@ -177,12 +178,22 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
         override fun createToolPane(project: PonticelloProject): ToolPane = BusRegistryPane(project.busses)
 
-        private val actions = collectActions<ObjectBox<BusObject>> {
+        private val actions = collectActions<BusObject> {
             addAction("Monitor bus") {
                 icon(MaterialDesignP.PULSE)
-                executes { box ->
-                    val bus = box.obj
+                executes { bus ->
                     bus.context[SuperColliderClient].run("{ ${bus.superColliderName}.scope }.defer;")
+                }
+            }
+            addAction("Show level meter") {
+                icon(MaterialDesignT.THERMOMETER)
+                executesOn<BusObject.AudioBus> { bus, ev ->
+                    val meter = LevelMeter(bus, meterWidth = 20.0)
+                    meter.height = 250.0
+                    val layout = HBox(
+                        meter
+                    ) styleClass "level-meter-popup"
+                    popup(layout).show(ev)
                 }
             }
         }
