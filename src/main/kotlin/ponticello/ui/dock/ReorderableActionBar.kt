@@ -59,7 +59,7 @@ abstract class ReorderableActionBar<O : Any>(
         return action.makeButton(style)
     }
 
-    override fun expandedLayout(obj: O, header: Region, content: Node?): Node = content ?: Region()
+    override fun expandedLayout(box: ObjectBox<O>, header: Region, content: Node?): Node = content ?: Region()
 
     companion object {
         operator fun invoke(style: String, actions: ObjectList<ContextualizedAction>) =

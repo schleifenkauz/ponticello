@@ -123,7 +123,7 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         is FilterOption.Bus -> flow.usesBus(filter.bus)
     }
 
-    override fun collapsedLayout(box: ObjectBox<AudioFlowGroup>, header: Region, content: Parent?): Node {
+    override fun collapsedLayout(box: ObjectBox<AudioFlowGroup>, header: Region): Node {
         val nameLabel = Text()
         nameLabel.textProperty().bind(box.obj.name.asObservableValue())
         nameLabel.fill = Color.WHITE

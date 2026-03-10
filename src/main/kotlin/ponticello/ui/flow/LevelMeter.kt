@@ -43,7 +43,7 @@ class LevelMeter(
         for ((ch, lvl) in levels.withIndex()) {
             val x = ch * meterWidth
             graphicsContext2D.fill = Color.gray(0.08)
-            graphicsContext2D.fillRect(x, 0.0, meterWidth - 1, height)
+            graphicsContext2D.fillRect(x, VERTICAL_PADDING, meterWidth - 1, height - VERTICAL_PADDING * 2)
 
             graphicsContext2D.fill = when {
                 lvl == Double.NEGATIVE_INFINITY -> continue
@@ -85,7 +85,7 @@ class LevelMeter(
         const val MIN_LEVEL = -60
         const val MAX_LEVEL = 24
         const val LEVEL_RANGE = MAX_LEVEL - MIN_LEVEL
-        private const val VERTICAL_PADDING = 5.0
+        private const val VERTICAL_PADDING = 7.0
         private val stepPossibilities = listOf(3, 6, 12, 24)
     }
 }

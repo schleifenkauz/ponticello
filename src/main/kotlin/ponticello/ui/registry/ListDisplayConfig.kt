@@ -121,6 +121,8 @@ interface ListDisplayConfig<O : Any> {
 
     fun createNewObject(name: String, ev: Event?): O? = null
 
+    fun defaultInsertionIndex(source: List<O>) = source.size
+
     fun onCreated(obj: O, box: ObjectBox<O>) {}
 
     fun onSelected(obj: O) {}
@@ -129,10 +131,9 @@ interface ListDisplayConfig<O : Any> {
 
     fun onRemoved(obj: O) {}
 
-    fun expandedLayout(obj: O, header: Region, content: Node?): Node =
+    fun expandedLayout(box: ObjectBox<O>, header: Region, content: Node?): Node =
         if (content != null) VBox(header, content)
         else header
 
-    fun collapsedLayout(box: ObjectBox<O>, header: Region, content: Parent?): Node =
-        expandedLayout(box.obj, header, content)
+    fun collapsedLayout(box: ObjectBox<O>, header: Region): Node = header
 }

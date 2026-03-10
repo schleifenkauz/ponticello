@@ -247,13 +247,13 @@ class ObjectListView<O : Any>(
         return if (config.centerAddObjectButton) VBox(button).centerChildren() else button
     }
 
-    private fun addObject(ev: Event? = null) {
+    fun addObject(ev: Event? = null, idx: Int = config.defaultInsertionIndex(source)) {
         val newObj = config.createNewObject(ev, source) ?: return
         if (source is NamedObjectList && newObj is NamedObject && source.has(newObj.name.now)) {
             val prompt = YesNoPrompt("Overwrite ${source.objectType} ${newObj.name.now}?")
             if (prompt.showDialog(ev) != true) return
         }
-        source.add(newObj)
+        source.add(newObj, idx)
         val box = getBox(newObj)
         if (mode.now == DisplayMode.Inline) {
             box.toggleExpanded()

@@ -233,8 +233,10 @@ class MixerPane(
         }
     }
 
-    override fun expandedLayout(obj: MixerFlow.MixerComponent, header: Region, content: Node?): Node =
-        createFaderBox(obj.sourceBus, obj.volume, obj)
+    override fun expandedLayout(box: ObjectBox<MixerFlow.MixerComponent>, header: Region, content: Node?): Node {
+        val bus = box.obj
+        return createFaderBox(bus.sourceBus, bus.volume, bus)
+    }
 
     override fun contentUpdate(obj: MixerFlow.MixerComponent): Reactive = obj.sourceBus
 
@@ -258,7 +260,7 @@ class MixerPane(
             Region() styleClass "fader-separator",
             scopeButton.centered(),
             volumeBox,
-            HBox(hspace(THUMB_SIZE), namePane, infiniteSpace(), faderContainer).alwaysVGrow(),
+            HBox(hspace(3.0), namePane, infiniteSpace(), faderContainer).alwaysVGrow(),
             Region() styleClass "fader-separator",
             bottom
         ) styleClass "fader-layout"
@@ -271,6 +273,9 @@ class MixerPane(
             Platform.runLater {
                 triangle.layoutY = meter.levelToY(v.toDouble())
             }
+        }
+        meter.heightProperty().addListener {
+            triangle.layoutY = meter.levelToY(volume.now.toDouble())
         }
         triangle.layoutX = meter.nChannels * meter.meterWidth
         triangle.setOnMouseClicked { ev ->
