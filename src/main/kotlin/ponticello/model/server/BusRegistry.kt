@@ -65,18 +65,11 @@ class BusRegistry(
             levelEvents[bus.replyId] = event()
         }
         if (channels !in availableLevelSendSynthDefs) {
-            /*appendBlock("SynthDef(\\level_send_$channels)", endLine = false) {
-                +"arg bus, id"
-                +"var sig = In.ar(bus, $channels)"
-                +"var level = Amplitude.kr(sig, 0.01, 0.3).ampdb"
-                +"SendReply.kr(Impulse.kr(10), '/bus_levels', level, id)"
-            }
-            appendLine(".add;")*/
             +"~addLevelSendSynthDef.($channels)"
-            +"Server.local.sync"
             availableLevelSendSynthDefs.add(channels)
         }
-        val args = "[bus: ${bus.superColliderName}, id: ${bus.replyId}]"
+        +"Server.local.sync"
+        val args = "[bus: ${bus.superColliderName}, id: ${bus.replyId}, rate: 10, lag: 0.05]"
         +"~level_send_${bus.name.now} = Synth.tail(~group_level_send, \\level_send_$channels, $args)"
     }
 

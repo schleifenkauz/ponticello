@@ -23,7 +23,7 @@ class LevelMeter(height: ReadOnlyDoubleProperty) : Canvas() {
             graphicsContext2D.fillRect(x, 0.0, METER_WIDTH - 1, height)
 
             graphicsContext2D.fill = when {
-                lvl == Double.NEGATIVE_INFINITY -> return@runLater
+                lvl == Double.NEGATIVE_INFINITY -> continue
                 lvl > 0.0 -> Color.RED
                 lvl > -6.0 -> Color.YELLOW
                 else -> Color.GREEN
