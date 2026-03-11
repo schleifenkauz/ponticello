@@ -207,8 +207,9 @@ class MixerFlow(
                 }
             }
             +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
+            val initialVolume = if (masterMute.now) "0" else "${masterVolume.now}.dbamp"
             val masterVolume =
-                "\\master_volume.kr(${masterVolume.now}.dbamp, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
+                "\\master_volume.kr($initialVolume, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
             val mix = if (components.size > 1) "sources.sum" else "sources"
             +"snd = (snd + $mix) * $masterVolume * Linen.kr(\\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf)"
             if (sink.channels.now == 2) {
