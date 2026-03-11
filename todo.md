@@ -45,6 +45,7 @@
 - option to put documentation browser into fixed window
 - make the quit button nicer
 - don't squish the item cell list in detail pane mode
+- special layout for lambdas as function arguments
 
 ### Support for patterns
 

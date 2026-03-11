@@ -310,6 +310,17 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "def".expand(Expander<*, *>::isStatementInBlock) { _ -> FunctionDefEditor().defaultState() }
             "in".expand { InExprEditor().defaultState() }
             "out".expand { OutExprEditor().defaultState() }
+            expandInContext("transform", PonticelloContext.SynthDef::class) { _, _ ->
+                TransformSignalEditor(
+                    bus = ScExprExpander().defaultState(),
+                    mix = ScExprExpander("1"),
+                    signalVar = IdentifierEditor("sig"),
+                    body = CodeBlockEditor(
+                        variables = IdentifierListEditor().defaultState(),
+                        statements = ScExprListEditor(ScExprExpander("sig"))
+                    )
+                )
+            }
         }
     }
 }

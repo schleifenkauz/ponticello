@@ -167,6 +167,31 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
+    registerControlFactory { editor: TransformSignalEditor, args ->
+        CompoundEditorControl(editor, args) {
+            vertical {
+                styleClass("compound-expr")
+                horizontal {
+                    keyword("transform")
+                    space()
+                    view(editor.bus)
+                    operator("(")
+                    keyword("mix")
+                    operator("=")
+                    view(editor.mix)
+                    operator(")")
+                    space()
+                    view(editor.signalVar)
+                    space()
+                    operator("->")
+                }
+                indented {
+                    view(editor.body)
+                }
+            }
+        }
+    }
+
     registerControlFactory { editor: PlayObjectEditor, args ->
         CompoundEditorControl(editor, args) {
             horizontal {

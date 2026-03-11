@@ -36,6 +36,10 @@ fun functionDef(name: Identifier, parameters: List<Identifier>, body: CodeBlock)
     Assignment(Identifier("~${name.text}"), ScFunction(parameters, body))
 
 @Compound(nodeType = ScExpr::class)
+fun transformSignal(bus: ScExpr, mix: ScExpr, signalVar: Identifier, body: CodeBlock): ScExpr =
+    bus.send("transformSignal", mix, ScFunction(listOf(signalVar), body))
+
+@Compound(nodeType = ScExpr::class)
 data class PlayObject(val scoreObjectNameExpr: ScExpr) : ScExpr {
     override val isValid: Boolean
         get() = scoreObjectNameExpr.isValid
