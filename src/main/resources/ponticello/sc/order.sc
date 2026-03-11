@@ -3,6 +3,8 @@ AudioNode {
 
 	node {  }
 
+	nodeID { ^this.node.nodeID }
+
 	group { ^this.node }
 
 	asTarget { ^this.node }
