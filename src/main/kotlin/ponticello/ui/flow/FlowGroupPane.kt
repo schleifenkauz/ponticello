@@ -160,8 +160,9 @@ class FlowGroupPane(
                 box.toggleExpanded()
             }
         }
-        box.setupDragging(dragTarget = box)
-        return VBox(actionBar, namePane).pad(3.0)
+        val layout = VBox(actionBar, namePane)
+        box.setupDragging(dragTarget = layout)
+        return layout.pad(3.0)
     }
 
     override fun expandedLayout(box: ObjectBox<AudioFlow>): Node = when (box.obj) {
