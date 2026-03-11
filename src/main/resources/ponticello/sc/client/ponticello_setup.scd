@@ -201,6 +201,8 @@ OSCdef(\set_time_warp, { |msg|
         levels = Amplitude.kr(sig, 0.01, 0.3).ampdb;
         levels = levels.lag(\lag.kr(0.05));
 
+        FreeSelf.kr(1 - \gate.kr(1));
+
         SendReply.kr(Impulse.kr(\rate.kr(10)), '/bus_levels', levels, replyID: id)
     }.add;
 };

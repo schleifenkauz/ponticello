@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
 import ponticello.impl.zero
+import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.withName
@@ -82,7 +83,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
         var replyId: Int = -1
             private set
 
-        fun getLevels(): EventStream<List<Double>> = registry.levels(this)
+        fun getLevels(): EventStream<List<Double>> = registry.levels(replyId)
 
         override fun initialize(context: Context) {
             super.initialize(context)
@@ -110,7 +111,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
 
         override fun sync() {
             super.sync()
-            registry.createLevelSendSynth(this)
+            registry.createLevelSendSynth(this, NodePlacement.tail("~group_level_send"))
         }
 
         override fun onRename(oldName: String, newName: String) {

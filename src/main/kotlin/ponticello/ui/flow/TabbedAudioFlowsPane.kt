@@ -22,6 +22,7 @@ import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectListView
 
+//TODO how to group by bus?
 class TabbedAudioFlowsPane(private val flows: AudioFlows) : TabbedToolPane<AudioFlowGroup>(flows) {
     override val type: Type
         get() = TabbedAudioFlowsPane
@@ -68,7 +69,6 @@ class TabbedAudioFlowsPane(private val flows: AudioFlows) : TabbedToolPane<Audio
                 box.toggleExpanded()
             }
         }
-
     }
 
     companion object : Type(uid = 13, "Flows") {

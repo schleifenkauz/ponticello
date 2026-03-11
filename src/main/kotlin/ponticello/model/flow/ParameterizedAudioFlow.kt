@@ -52,10 +52,8 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     override fun onRename(oldName: String, newName: String) {
         client.run {
             +"SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')"
-            val oldSuperColliderName = superColliderName(oldName)
-            +"$superColliderName = $oldSuperColliderName"
-            +"$oldSuperColliderName = nil"
         }
+        super.onRename(oldName, newName)
     }
 
     override fun writeCode(placement: NodePlacement): String = writeCode {

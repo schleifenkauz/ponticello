@@ -8,6 +8,7 @@ import hextant.context.Context
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
+import ponticello.model.flow.NodePlacement
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.registry.SuperColliderObjectRegistry
@@ -49,40 +50,53 @@ class BusRegistry(
                     bus.run { setDefaultValue(skipIfZero = false) }
                 }
                 +"~group_level_send = Group.tail(Server.local)"
+                val placement = NodePlacement.tail("~group_level_send")
                 for (bus in filterIsInstance<BusObject.AudioBus>()) {
-                    createLevelSendSynth(bus)
+                    createLevelSendSynth(this, bus, placement)
                 }
             }
         }
         context[SuperColliderClient].addListener("/bus_levels") { _, msg -> receivedBusLevel(msg) }
     }
 
-    fun reserveReplyId() = replyIdCounter++
+    fun reserveReplyId(): Int {
+        val id = replyIdCounter++
+        levelEvents[id] = event()
+        return id
+    }
 
-    private fun ScWriter.createLevelSendSynth(bus: BusObject.AudioBus) {
-        val channels = bus.channels.now
+    private fun createLevelSendSynth(writer: ScWriter, bus: BusObject.AudioBus, placement: NodePlacement) {
         if (bus.replyId !in levelEvents) {
             levelEvents[bus.replyId] = event()
         }
+        createLevelSendSynth(writer, bus, placement, bus.replyId, "~level_send_${bus.name.now}")
+    }
+
+    fun createLevelSendSynth(
+        writer: ScWriter, bus: BusObject.AudioBus,
+        placement: NodePlacement, id: Int, synthVar: String
+    ) = writer.run {
+        val channels = bus.channels.now
         if (channels !in availableLevelSendSynthDefs) {
             +"~addLevelSendSynthDef.($channels)"
             availableLevelSendSynthDefs.add(channels)
         }
         +"Server.local.sync"
-        val args = "[bus: ${bus.superColliderName}, id: ${bus.replyId}, rate: 10, lag: 0.05]"
-        +"~level_send_${bus.name.now} = Synth.tail(~group_level_send, \\level_send_$channels, $args)"
+        val args = "[bus: ${bus.superColliderName}, id: $id, rate: 10, lag: 0.05]"
+        +"$synthVar = Synth(\\level_send_$channels, $args, ${placement.code})"
     }
 
     override fun onAdded(obj: BusObject, idx: Int) {
         super.onAdded(obj, idx)
         if (obj is BusObject.AudioBus) {
-            createLevelSendSynth(obj)
+            val placement = NodePlacement.tail("~group_level_send")
+            createLevelSendSynth(obj, placement)
         }
     }
 
-    fun createLevelSendSynth(obj: BusObject.AudioBus) {
+    fun createLevelSendSynth(obj: BusObject.AudioBus, placement: NodePlacement) {
         client.run {
-            createLevelSendSynth(obj)
+            createLevelSendSynth(this, obj, placement)
         }
     }
 
@@ -92,7 +106,7 @@ class BusRegistry(
         val event = levelEvents[replyId]
         if (event == null) {
             Logger.warn(
-                "Received bus_level message: Bus with replyID '$replyId' not found.",
+                "Received bus_level message: Event with replyID '$replyId' not found.",
                 Logger.Category.SuperCollider
             )
             return
@@ -100,8 +114,9 @@ class BusRegistry(
         event.fire(levels)
     }
 
-    fun levels(bus: BusObject.AudioBus): EventStream<List<Double>> =
-        levelEvents.getOrPut(bus.replyId) { event() }.stream
+    fun levels(replyId: Int): EventStream<List<Double>> = levelEvents.getValue(replyId).stream
+
+    fun levels(bus: BusObject.AudioBus): EventStream<List<Double>> = levels(bus.replyId)
 
     override fun getDefault(): BusObject = getOutput()
 

@@ -17,6 +17,7 @@ import kotlin.math.floor
 
 class LevelMeter(
     private val bus: BusObject.AudioBus,
+    private val replyId: Int = bus.replyId,
     offset: ReactiveValue<Decimal> = reactiveValue(zero),
     val meterWidth: Double
 ) : Canvas() {
@@ -33,7 +34,7 @@ class LevelMeter(
             updateLevels(levels)
         }
         paintScale()
-        observer = bus.getLevels().observe { _, levels ->
+        observer = bus.registry.levels(replyId).observe { _, levels ->
             updateLevels(levels.map { lvl -> lvl + offset.now.toDouble() })
         }
     }

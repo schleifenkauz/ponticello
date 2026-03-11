@@ -33,6 +33,7 @@ import ponticello.model.registry.ListEdit
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.ui.dock.ToolPane
+import ponticello.ui.registry.ObjectListView.DisplayMode.Companion.Collapsable
 import reaktive.value.*
 import reaktive.value.binding.map
 import reaktive.value.binding.notEqualTo
@@ -318,6 +319,9 @@ class ObjectListView<O : Any>(
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
         box.updateMode(oldMode = null, newMode = mode.now)
+        if (mode.now == Collapsable && config.expandNewItem(obj)) {
+            box.setExpanded(true)
+        }
         boxes.add(j, box)
         val wrapper = wrapBox(box)
         itemsLayout.children.add(j, wrapper)
@@ -353,7 +357,7 @@ class ObjectListView<O : Any>(
         val box = boxesCache[obj] ?: return@runLater
         val idx = boxes.indexOf(box)
         boxes.removeAt(idx)
-        itemsLayout.children.remove(box)
+        itemsLayout.children.removeAt(idx)
         box.subWindow?.hide()
         if (selectedBox.now == box) {
             val nextToSelect = boxes.getOrNull(idx) ?: boxes.getOrNull(idx - 1)

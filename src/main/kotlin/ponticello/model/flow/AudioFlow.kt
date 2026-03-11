@@ -94,6 +94,12 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
     override fun canRenameTo(newName: String): Boolean =
         context.project.flows.allFlows().none { f -> f.name.now == newName }
 
+    override fun onRename(oldName: String, newName: String) {
+        if (parentGroup?.isActive?.now == true) {
+            super.onRename(oldName, newName)
+        }
+    }
+
     abstract override fun copy(): AudioFlow
 
     open fun usesBus(bus: BusObject): Boolean = false

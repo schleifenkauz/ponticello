@@ -4,12 +4,12 @@ import fxutils.*
 import fxutils.actions.*
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.SimpleSelectorPrompt
-import fxutils.prompt.TextPrompt
 import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.Label
 import javafx.scene.control.Slider
 import javafx.scene.control.Tooltip
 import javafx.scene.input.DataFormat
@@ -29,7 +29,6 @@ import ponticello.model.obj.resolve
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
-import ponticello.sc.Identifier
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
@@ -144,6 +143,7 @@ class FlowGroupPane(
         is UtilityFlow -> Slider(-60.0, +6.0, 0.0) styleClass "volume-fader"
         is MixerFlow -> MixerFlowView.create(obj)
         is VSTPluginFlow -> VSTPluginFlowView(obj)
+        is LevelMeterFlow -> LevelMeterFlowView(obj)
     }
 
     override fun collapsedLayout(box: ObjectBox<AudioFlow>): Node {
@@ -151,8 +151,7 @@ class FlowGroupPane(
         nameLabel.textProperty().bind(box.obj.name.asObservableValue())
         val namePane = makeVerticalLabel(nameLabel).alwaysVGrow()
         val actions = listOf(
-            expandFlowAction.withContext(box),
-            removeFlowAction.withContext(box)
+            expandFlowAction.withContext(box)
         ) + getActions(box).reversed()
         val actionBar = ActionBar(actions, "small-icon-button")
         actionBar.setOrientation(Orientation.VERTICAL)
@@ -163,6 +162,19 @@ class FlowGroupPane(
         }
         box.setupDragging(dragTarget = box)
         return VBox(actionBar, namePane).pad(3.0)
+    }
+
+    override fun expandedLayout(box: ObjectBox<AudioFlow>): Node = when (box.obj) {
+        is LevelMeterFlow -> {
+            val header = HBox(
+                Label("Meter"),
+                infiniteSpace(),
+                removeFlowAction.withContext(box).makeButton("small-icon-button")
+            )
+            VBox(3.0, header, box.content).pad(3.0)
+        }
+
+        else -> super.expandedLayout(box)
     }
 
     override fun createSeparatorNode(box: ObjectBox<AudioFlow>): VBox {
@@ -195,7 +207,8 @@ class FlowGroupPane(
         }
     }
 
-    override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> = flowActions.withContext(box.obj)
+    override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> =
+        flowActions.withContext(box.obj) + removeFlowAction.withContext(box)
 
     override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
         dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to obj.reference()))
@@ -213,11 +226,8 @@ class FlowGroupPane(
     override fun createNewObject(ev: Event?, list: ObjectList<AudioFlow>): AudioFlow? {
         val options = FlowOption.getOptions(context)
         val option = SimpleSelectorPrompt(options, "Add flow").showPopup(ev) ?: return null
-        val defaultName = option.defaultName()
         val takenFlowNames = context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
-        val idx = (1..Int.MAX_VALUE).first { idx -> "${defaultName}_$idx" !in takenFlowNames }
-        val name = FlowNamePrompt(takenFlowNames, "Flow name", "${defaultName}_$idx")
-            .showDialog(ev) ?: return null
+        val name = option.getNameForFlow(takenFlowNames, ev) ?: return null
         val anchor = ev.popupAnchor()
         val flow = option.createFlow(context, anchor) ?: return null
         flow.setInitialName(name)
@@ -225,13 +235,6 @@ class FlowGroupPane(
     }
 
     override fun filter(obj: AudioFlow): Boolean = parent?.filter(obj) ?: true
-
-    private class FlowNamePrompt(
-        private val takenFlowNames: Set<String>,
-        title: String, initialText: String,
-    ) : TextPrompt<String>(title, initialText) {
-        override fun convert(text: String): String? = text.takeIf { Identifier.isValid(it) && it !in takenFlowNames }
-    }
 
     companion object {
         val toggleActiveAction = action<AudioFlowGroup>("Toggle activated") {
@@ -260,7 +263,7 @@ class FlowGroupPane(
             addAction("Insert flow") {
                 icon(MaterialDesignP.PLUS)
                 executes { box, ev ->
-                    val flowsView = box.getParent<FlowGroupPane>()?.flowsView ?: return@executes
+                    val flowsView = box.getParent<ObjectListView<*>>() ?: return@executes
                     val idx = flowsView.source.indexOf(box.obj) + 1
                     flowsView.addObject(ev, idx)
                 }
@@ -317,6 +320,7 @@ class FlowGroupPane(
                         }
                     }
                 }
+                applicableIf { flow -> flow !is LevelMeterFlow }
                 executes { flow, ev ->
                     if (!flow.isValid.now) {
                         InfoPrompt("Cannot activate flow").showDialog(ev) //TODO better error description
@@ -328,7 +332,7 @@ class FlowGroupPane(
             addAction("Reload") {
                 icon(MaterialDesignS.SYNC)
                 shortcut("Ctrl+U")
-                enableWhen { flow -> flow.isActive }
+                enableWhen { flow -> if (flow is LevelMeterFlow) reactiveValue(false) else flow.isActive }
                 executes { flow -> flow.sync() }
             }
         }

@@ -2,11 +2,13 @@ package ponticello.ui.flow
 
 import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
+import javafx.event.Event
 import javafx.geometry.Point2D
 import ponticello.model.flow.*
 import ponticello.model.instr.*
 import ponticello.model.server.BusRegistry
 import ponticello.sc.Identifier
+import ponticello.sc.Rate
 import ponticello.ui.registry.BusSelectorPrompt
 import ponticello.ui.score.SoundProcessView
 import reaktive.value.now
@@ -15,6 +17,19 @@ sealed interface FlowOption {
     fun createFlow(context: Context, anchor: Point2D): AudioFlow?
 
     fun defaultName(): String
+
+    fun getNameForFlow(takenFlowNames: Set<String>, ev: Event?): String? {
+        val initialName = getDefaultName(takenFlowNames)
+        return FlowNamePrompt(takenFlowNames, "Flow name", initialName)
+            .showDialog(ev)
+    }
+
+    fun getDefaultName(takenFlowNames: Set<String>): String {
+        val defaultName = defaultName()
+        val idx = (1..Int.MAX_VALUE).first { idx -> "${defaultName}_$idx" !in takenFlowNames }
+        val initialName = "${defaultName}_$idx"
+        return initialName
+    }
 
     data object Send : FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
@@ -54,6 +69,21 @@ sealed interface FlowOption {
         override fun defaultName(): String = "mixer"
     }
 
+    //TODO option on BusControls to add meter before/after
+    data object LevelMeter : FlowOption {
+        override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
+            val target = BusSelectorPrompt(context[BusRegistry], "Target bus", rate = Rate.Audio)
+                .showPopup(anchor) ?: return null
+            return LevelMeterFlow.create(target)
+        }
+
+        override fun toString(): String = "Meter"
+
+        override fun defaultName(): String = "meter"
+
+        override fun getNameForFlow(takenFlowNames: Set<String>, ev: Event?): String = getDefaultName(takenFlowNames)
+    }
+
     data class VSTPlugin(val pluginName: String) : FlowOption {
         override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
             val presets = VSTPlugins.globalPresetList(context, pluginName)
@@ -89,7 +119,7 @@ sealed interface FlowOption {
     }
 
     companion object {
-        private val simpleOptions = listOf(Code, Send, Utility, Mixer)
+        private val simpleOptions = listOf(Code, Send, Utility, Mixer, LevelMeter)
 
         fun getOptions(context: Context): List<FlowOption> {
             val vstOptions = VSTPlugins.availablePlugins(context).map(::VSTPlugin)

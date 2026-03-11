@@ -137,4 +137,6 @@ interface ListDisplayConfig<O : Any> {
         else box.header
 
     fun collapsedLayout(box: ObjectBox<O>): Node = box.header
+
+    fun expandNewItem(obj: O): Boolean = true
 }
