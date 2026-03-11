@@ -186,7 +186,7 @@ data class BusControlSpec(
         get() = ParameterType.Bus
 
     override val code: String
-        get() = "kr"
+        get() = "kr.${rate.name.lowercase()}Bus($channels)"
 
     override fun toString(): String = "bus: [$channels x $rate]"
 }
