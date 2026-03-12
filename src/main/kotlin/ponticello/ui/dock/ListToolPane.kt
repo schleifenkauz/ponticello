@@ -7,14 +7,13 @@ import fxutils.addAfter
 import fxutils.registerShortcuts
 import javafx.scene.Parent
 import javafx.stage.Window
-import ponticello.model.obj.ContextualObject
 import ponticello.model.registry.ObjectList
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.Companion.modeChangeActions
 import reaktive.value.now
 
-abstract class ListToolPane<O : ContextualObject>(
+abstract class ListToolPane<O : Any>(
     private val list: ObjectList<O>, private val scrollable: Boolean = true,
 ): ToolPane(), ListDisplayConfig<O> {
     lateinit var listView: ObjectListView<O>

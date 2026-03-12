@@ -72,7 +72,13 @@ class OSCSuperColliderClient(
     }
 
     override fun addListener(listener: OSCMessageListener) {
-        receiver.dispatcher.addListener(ALL_MESSAGES, listener)
+        receiver.dispatcher.addListener(ALL_MESSAGES) { ev ->
+            try {
+                listener.acceptMessage(ev)
+            } catch (e: Exception) {
+                Logger.error("Error while processing OSC message /${ev.message.address}", e)
+            }
+        }
     }
 
     override fun addListener(
@@ -81,11 +87,7 @@ class OSCSuperColliderClient(
     ) {
         addListener { event ->
             if (event.message.address == address) {
-                try {
-                    listener(event.time, event.message)
-                } catch (e: Exception) {
-                    Logger.error("Error while processing OSC message", e)
-                }
+                listener(event.time, event.message)
             }
         }
     }

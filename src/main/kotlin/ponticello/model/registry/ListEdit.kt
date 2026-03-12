@@ -75,4 +75,19 @@ sealed class ListEdit<O>(protected val registry: ObjectList<O>) : AbstractEdit()
             config.dropObject(obj, sourceIdx, source, target)
         }
     }
+
+    class Cleared<O>(private val target: ObjectList<O>, private val objects: List<O>) : ListEdit<O>(target) {
+        override val actionDescription: String
+            get() = "Clear ${registry.objectType}s"
+
+        override fun doRedo() {
+            target.clear()
+        }
+
+        override fun doUndo() {
+            for (obj in objects) {
+                target.add(obj)
+            }
+        }
+    }
 }

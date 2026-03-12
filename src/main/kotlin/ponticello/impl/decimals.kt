@@ -130,6 +130,7 @@ fun String.parseDecimal(): Decimal? {
 }
 
 fun Double.toDecimal() = toString().parseDecimal()!!
+fun Float.toDecimal() = toString().parseDecimal()!!
 fun Int.toDecimal() = Decimal(toDouble(), 0)
 
 fun Double.snap(grid: Decimal): Decimal {

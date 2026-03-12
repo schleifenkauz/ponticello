@@ -25,7 +25,7 @@ class PlaybackMessageListener(
                 val absoluteY = event.message.getArgument<Float>(3, "absoluteY") ?: return@execute
                 val playerId = event.message.getArgument<Int>(4, "playerId") ?: return@execute
                 val player = ScorePlayer.getById(playerId)
-                playObject(name, timestamp.toDouble().asTime, absoluteY.toDouble().toDecimal(), player)
+                playObject(name, timestamp.toDouble().asTime, absoluteY.toDecimal(), player)
             }
 
             "/pause" -> { //TODO add the corresponding expression types

@@ -48,20 +48,26 @@ AudioNodeOrder {
 		nodes = [];
 	}
 
-	* insert { |node|
+	* insert { |node, done|
 		var idx = AudioNodeOrder.binarySearch(node.score_y);
+		var prev = idx - 1;
 		//postf("Inserting node (score_y = %) at index %\n", node.score_y, idx);
 		nodes = nodes.insert(idx, node);
-		idx = idx - 1;
-		while { (nodes[idx] != nil) && { (nodes[idx].node == nil) || { nodes[idx].isActive.not } } } {
-            nodes.removeAt(idx);
-		    idx = idx - 1;
+		while { (nodes[prev] != nil) && { (nodes[prev].node == nil) || { nodes[prev].isActive.not } } } {
+            nodes.removeAt(prev);
+		    prev = prev - 1;
 		};
-		^if (idx < 0) {
+		if (node.isKindOf(SoundProcessInstance)) {
+			~ponticello_addr.sendMsg('/inserted_instance', idx, node.def.name, node.pos.t, node.pos.y);
+		};
+		if (done != nil) {
+			done.value(idx);
+		}
+		^if (prev < 0) {
 			(target: Server.local.defaultGroup, addAction: \addToHead);
 		} {
-			(target: nodes[idx].node, addAction: \addAfter);
-		}
+			(target: nodes[prev].node, addAction: \addAfter);
+		};
 	}
 
 	* insertSynth { |score_y, def, args|
@@ -80,9 +86,11 @@ AudioNodeOrder {
 		^synth;
 	}
 
-	* insertGroup { |score_y|
+	* insertFlowGroup { |score_y, name|
 		var node = SimpleAudioNode.new(score_y);
-		var placement = this.insert(node);
+		var placement = this.insert(node) { |idx|
+			~ponticello_addr.sendMsg('/inserted_flow_group', idx, name);
+		};
 		var group = Group.new(placement.target, placement.addAction);
 		node.node = group;
 		^node
@@ -100,15 +108,19 @@ AudioNodeOrder {
             } {
                 var prev = nodes[new_idx - 1];
                 node.moveAfter(prev.node);
-            }
+            };
+			~ponticello_addr.sendMsg('/moved_node', old_idx, new_idx);
 		}
 	}
 
 	* remove { |node|
-		nodes.remove(node);
+		var idx = nodes.indexOf(node);
+		nodes.removeAt(idx);
+		~ponticello_addr.sendMsg('/removed_node', idx);
 	}
 
 	* clear {
+		~ponticello_addr.sendMsg('/cleared_node_tree');
 		nodes = [];
 	}
 }

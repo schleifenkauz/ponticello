@@ -2,6 +2,7 @@ package ponticello.model.registry
 
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import hextant.context.compoundEdit
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
@@ -96,6 +97,14 @@ abstract class ObjectList<O> : List<O>, AbstractContextualObject() {
         onMoved(obj, oldIdx, idx)
         context[UndoManager].record(ListEdit.MoveObject(this@ObjectList, obj, oldIdx, idx))
         listeners.notifyListeners { moved(obj, idx) }
+    }
+
+    fun clear() {
+        context.compoundEdit("Clear ${objectType}s") {
+            for (obj in objects.toList().asReversed()) {
+                remove(obj)
+            }
+        }
     }
 
     fun addListener(listener: Listener<O>, initialize: Boolean = true) {

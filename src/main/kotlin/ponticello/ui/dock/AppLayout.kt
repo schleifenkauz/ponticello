@@ -23,6 +23,7 @@ import ponticello.model.project.PonticelloProject
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.registry.ObjectList
+import ponticello.model.tree.NodeTreePane
 import ponticello.ui.actions.*
 import ponticello.ui.dock.Side.*
 import ponticello.ui.flow.MixerPane
@@ -114,7 +115,7 @@ class AppLayout(
             savedDividerPositions[side] = size
             restorePaneSize(side, size)
             val pane = getSidePane(side) ?: continue
-            pane.setDividerPositions(*dividerPositions.toDoubleArray())
+            pane.dividerPositions = dividerPositions.toDoubleArray()
         }
     }
 
@@ -453,6 +454,7 @@ class AppLayout(
             add(LiveObjectRegistryPane)
             add(ScriptRegistryPane)
             add(OSCHookRegistryPane)
+            add(NodeTreePane)
 
             add(HelpBrowser)
 

@@ -114,7 +114,7 @@ class AudioFlowGroup(
     fun createGroupOnServer() {
         val scoreY = yPosition.now
         client.eval(description = "creating group $audioNodeName") {
-            +"$audioNodeName = AudioNodeOrder.insertGroup(score_y: $scoreY)"
+            +"$audioNodeName = AudioNodeOrder.insertFlowGroup(score_y: $scoreY, name: '${name.now}')"
         }.join()
         createFlows()
     }

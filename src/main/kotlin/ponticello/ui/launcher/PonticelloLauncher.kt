@@ -38,6 +38,7 @@ import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.*
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
+import ponticello.model.tree.AudioNodeTree
 import ponticello.sc.client.ConsoleMonitor
 import ponticello.sc.client.DummySuperColliderClient
 import ponticello.sc.client.OSCSuperColliderClient
@@ -123,8 +124,7 @@ class PonticelloLauncher {
 
     fun openProject(folder: File, askSync: Boolean) {
         maybeSyncRepository(folder, askSync) {
-            val context = rootContext.extend()
-            context[UndoManager] = UndoManager.newInstance()
+            val context = createProjectContext()
             val progressBar = getOrLaunchLoadingScreen()
             setupSuperCollider(
                 context,
@@ -211,8 +211,7 @@ class PonticelloLauncher {
     }
 
     private fun createNewProject(location: File) {
-        val context = rootContext.extend()
-        context[UndoManager] = UndoManager.newInstance()
+        val context = createProjectContext()
         val progressBar = getOrLaunchLoadingScreen()
         setupSuperCollider(
             context,
@@ -226,6 +225,12 @@ class PonticelloLauncher {
                 progressBar.displayProgress(0.95, "Created new project...")
                 openProject(project)
             })
+    }
+
+    private fun createProjectContext(): Context {
+        val context = rootContext.extend()
+        context[UndoManager] = UndoManager.newInstance()
+        return context
     }
 
     fun cloneRepository() {
@@ -339,6 +344,7 @@ class PonticelloLauncher {
                     progressBar.displayProgress(0.1, "SuperCollider started, booting server...")
                     try {
                         context[SuperColliderClient] = client
+                        AudioNodeTree().initialize(context)
                         context[ScoreObjectScheduler] = ScoreObjectScheduler(context)
                         context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
                         context[Recorder] = Recorder(context)
