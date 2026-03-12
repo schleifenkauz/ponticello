@@ -124,7 +124,16 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     }
 
     protected open fun ScWriter.createInSuperCollider() {
-        if (affectsPlayback) throw NotImplementedError("createObject not implemented for ${this@ScoreObject}")
+        if (affectsPlayback) {
+            Logger.warn("createInSuperCollider not implemented for $this", Logger.Category.Playback)
+        }
+    }
+
+    fun createInSuperCollider() {
+        client.eval {
+            createInSuperCollider()
+        }.join()
+        isCreatedInSuperCollider = true
     }
 
     protected open fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
@@ -134,10 +143,7 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     fun startNewInstance(info: ObjectPlaybackInfo): String {
         if (!affectsPlayback) return ""
         if (!isCreatedInSuperCollider) {
-            client.eval {
-                createInSuperCollider()
-            }.join()
-            isCreatedInSuperCollider = true
+            createInSuperCollider()
         }
         return writeCode { startNewInstance(info) }
     }

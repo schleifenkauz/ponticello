@@ -20,16 +20,9 @@ data class MeterExpr(
             writer.append("nil /*unknown meter ${meterReference.getName()}*/")
             return
         }
-        val meterDict = meter.superColliderName
-        val expr = when (type) {
-            BarDur -> "(60 / $meterDict[\\bpm] * $meterDict[\\bpb])"
-            BeatDur -> "(60 / $meterDict[\\bpm])"
-            TickDur -> "(60 / $meterDict[\\bpm] / $meterDict[\\tpb])"
-            BarsPerSecond -> "($meterDict[\\bpm] / 60 / $meterDict[\\bpb])"
-            BeatsPerSecond -> "($meterDict[\\bpm] / 60)"
-            TicksPerSecond -> "($meterDict[\\bpm] / 60 * $meterDict[\\tpb])"
-        }
-        writer.append(expr)
+        val meterVar = meter.superColliderName
+        val method = type.name.replaceFirstChar { it.lowercase() }
+        writer.append(meterVar, ".", method)
     }
 
     override fun getLfo(): LFO? {
@@ -38,15 +31,15 @@ data class MeterExpr(
             BarDur -> meter.getDuration(TimeUnit.Bars)
             BeatDur -> meter.getDuration(TimeUnit.Beats)
             TickDur -> meter.getDuration(TimeUnit.Ticks)
-            BarsPerSecond -> 1 / meter.getDuration(TimeUnit.Bars)
-            BeatsPerSecond -> 1 / meter.getDuration(TimeUnit.Beats)
-            TicksPerSecond -> 1 / meter.getDuration(TimeUnit.Ticks)
+            BarsRate -> 1 / meter.getDuration(TimeUnit.Bars)
+            BeatRate -> 1 / meter.getDuration(TimeUnit.Beats)
+            TickRate -> 1 / meter.getDuration(TimeUnit.Ticks)
         }
         return ConstantLFO(value.value)
     }
 
     enum class Type {
         BarDur, BeatDur, TickDur,
-        BarsPerSecond, BeatsPerSecond, TicksPerSecond;
+        BarsRate, BeatRate, TickRate;
     }
 }

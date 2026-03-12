@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import bundles.getOrNull
 import hextant.core.Editor
 import hextant.core.editor.Expander
 import hextant.core.editor.ExpanderConfig
@@ -23,7 +24,10 @@ fun <C : PonticelloContext, E : Editor<*>> ExpanderConfig<E>.expandInContext(
     keyword: String, ctxClass: KClass<C>, create: (Expander<*, *>, ctx: C) -> E?
 ) {
     keyword.expand(
-        condition = { exp -> ctxClass.isInstance(exp.context[PonticelloContext]) },
+        condition = { exp ->
+            val ctx = exp.context.getOrNull(PonticelloContext)
+            ctxClass.isInstance(ctx)
+        },
         create = { exp ->
             val ctx = ctxClass.cast(exp.context[PonticelloContext])
             create(exp, ctx)

@@ -62,7 +62,7 @@ class ScoreObjectSelectionManager(val context: Context, private val rootPane: Sc
         }
     }
 
-    fun select(view: ScoreObjectView, addToSelection: Boolean) {
+    fun select(view: ScoreObjectView, addToSelection: Boolean = false) {
         if (!addToSelection) {
             val selectedBefore = selectedViews.toSet()
             _selectedViews.clear()

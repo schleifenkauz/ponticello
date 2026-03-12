@@ -59,7 +59,7 @@ ServerTree.add {
             };
         } { |error|
 			~ponticello_addr.sendMsg('/error', id, error.what);
-			error.throw;
+			error.reportError;
         }
 	}, address);
 };
@@ -71,17 +71,12 @@ OSCdef('eval', {
     if (fct == nil) { ~ponticello_addr.sendMsg('error', id, "Compilation error") } {
         fork {
 			cond.wait;
-			cond.test = false;
-            try {
+			try {
                 answer = fct.value;
 				~ponticello_addr.sendMsg('/reply', id, answer.asString);
-				cond.test = true;
-				cond.signal;
-            } { |error|
+			} { |error|
                 ~ponticello_addr.sendMsg('/error', id, error.what);
-				cond.test = true;
-				cond.signal;
-                error.throw;
+			    error.reportError;
             }
         }
 	}
@@ -101,7 +96,7 @@ OSCdef('run', { |msg|
 			~ponticello_addr.sendMsg('/error', -1, error.what);
 			cond.test = true;
 			cond.signal;
-			error.throw;
+			error.reportError;
 		}
 	}
 }, 'run');
@@ -126,7 +121,7 @@ OSCdef('schedule', {
     abs_time = if (absolute) { time } { time + (my_play_start ? SystemClock.beats) };
     //postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = %, current time = %\n", info, player_id, my_play_start, time, abs_time, TempoClock.beats);
 	fct = this.compile(code.asString);
-	if (fct == nil) { "Compilation error".throw };
+	if (fct == nil) { Exception("Compilation error").reportError };
     SystemClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             fork {
@@ -137,7 +132,7 @@ OSCdef('schedule', {
                     ~ponticello_addr.sendMsg('/reply', id, answer.asString);
                 } { |error|
                     ~ponticello_addr.sendMsg('/error', id, error.what);
-                    error.throw;
+                    error.reportError;
                 }
             }
         } {
@@ -156,7 +151,7 @@ OSCdef(\save_plugin_state, { |msg|
             }
         } { |error|
             ~ponticello_addr.sendMsg('/error', id, error.what);
-            error.throw;
+            error.reportError;
         }
     } { ~ponticello_addr.sendMsg('/reply', id, "false") }
 }, \save_plugin_state);

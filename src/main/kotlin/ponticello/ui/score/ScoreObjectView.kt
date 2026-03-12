@@ -170,9 +170,9 @@ abstract class ScoreObjectView(
         }
     }
 
-    fun selectView(addToSelection: Boolean) {
+    fun selectView(addToSelection: Boolean = false) {
         toFront()
-        context[ScoreObjectSelectionManager].select(this, addToSelection = addToSelection)
+        context[ScoreObjectSelectionManager].select(this, addToSelection)
         requestFocus()
     }
 

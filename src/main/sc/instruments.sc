@@ -5,26 +5,37 @@ Instrument {
 
 RoutineInstrument : Instrument {
 	var name, func, parameterDefaults;
+	classvar dict;
 
-	* new {| name, func, parameterDefaults |
-		^super.new.init(name, parameterDefaults, func);
+	* initClass {
+		dict = Dictionary.new;
+	}
+
+	* new {| name, parameterDefaults, func |
+		^if (dict.includesKey(name)) {
+			var instr = dict[name];
+			instr.update(parameterDefaults, func)
+		} {
+			var instr = super.newCopyArgs(name, func, parameterDefaults);
+			dict[name] = instr;
+			instr
+		}
+	}
+
+	* remove { |name| dict.remove(name) }
+
+	* get { |name| ^dict[name] }
+
+	update { |defaults, fn|
+		parameterDefaults = defaults;
+		func = fn;
 	}
 
 	type { ^\routine }
 
-	init {| n, defaults, f |
-		name = n;
-		parameterDefaults = defaults;
-		func = f;
-	}
-
 	getDefaultValue {| param | ^parameterDefaults[param]}
 
-	create {| inst |
-		^Task {
-			func.value(inst, inst.def.duration ? inf);
-		}
-	}
+	create {| inst | ^RoutineInstance(inst, func) }
 
 	asString { ^"Routine %".format(name) }
 }
@@ -98,33 +109,27 @@ MIDIInstrument : Instrument {
 }
 
 MIDINote {
-	var vst, midinote, velocity, channel, playing;
+	var vst, midinote, velocity, channel, playing, instance;
 
-	*
-	new {| vst, midinote, velocity = 64, channel = 0 |
-		^super.new.init(vst, midinote, velocity, channel)
+	* new {| vst, midinote, velocity = 64, channel = 0, instance |
+		^super.new.init(vst, midinote, velocity, channel, instance)
 	}
 
-	init {| v, n, vel, c |
+	init {| v, n, vel, c, inst |
 		vst = v;
 		midinote = n;
 		velocity = vel;
 		channel = c;
+		instance = inst;
 	}
 
-	run { | active, inst |
+	run { | active |
 		if (playing != active) {
 			playing = active;
 			if (active) {
-				SystemClock.sched(inst.server_latency + 0.001) { //minimal offset to ensure that not on occurs after note off
+				SystemClock.sched(instance.server_latency + 0.001) { //minimal offset to ensure that not on occurs after note off
 					vst.midi.noteOn(channel, midinote, velocity);
 				};
-				if (inst.notNil && inst.def.duration.notNil) {
-					TempoClock.sched(inst.server_latency + inst.def.duration - inst.cutoff) {
-						this.run(false);
-						inst.dispose;
-					}
-				}
 			} {
 				vst.midi.noteOff(channel, midinote);
 			}
@@ -139,22 +144,32 @@ MIDINote {
 		vst.map(parameter, bus);
 	}
 
+    release {
+        vst.midi.noteOff(channel, midinote);
+        instance.dispose;
+    }
 }
 
-+Task {
-	run { | active, inst |
-		if (active) {
-			this.play;
-			if (inst.notNil && inst.def.duration.notNil) {
-				TempoClock.sched(inst.def.duration - inst.cutoff) {
-					this.run(false);
-					inst.dispose;
-				}
-			}
-		} { this.pause; }
-	}
+RoutineInstance {
+    var task, instance;
 
-	release {
-		this.stop;
-	}
+    * new { |instance, func|
+		var task = Task({
+			try {
+				func.value(instance, instance.def.duration ? inf)
+			} { |error|
+				error.reportError;
+			}
+		}, SystemClock);
+         ^super.newCopyArgs(task, instance);
+    }
+
+    run { | active |
+	    if (active) { task.play } { task.pause }
+    }
+
+    release {
+        task.stop;
+        instance.dispose;
+    }
 }

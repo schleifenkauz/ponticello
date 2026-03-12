@@ -3,6 +3,7 @@ package ponticello.model.registry
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import com.illposed.osc.OSCMessage
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.event.Event
@@ -13,6 +14,8 @@ import ponticello.model.obj.project
 import ponticello.model.project.UIState
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.UnresolvedScoreObject
+import ponticello.sc.client.getArgument
+import ponticello.sc.client.run
 import ponticello.ui.controls.NamePrompt
 import reaktive.value.now
 
@@ -29,6 +32,25 @@ class ScoreObjectRegistry(
     override fun initialize(context: Context) {
         context[ScoreObjectRegistry] = this
         super.initialize(context)
+        client.addListener("/sync_sound_proc") { _, msg ->
+            syncSoundProcess(msg)
+        }
+    }
+
+    private fun syncSoundProcess(msg: OSCMessage) {
+        val name = msg.getArgument<String>(0, "name") ?: return
+        val proc = getOrNull(name)
+        if (proc == null) {
+            client.run {
+                +"SoundProcess.undefined('$name')"
+            }
+        } else {
+            if (!(proc.affectsPlayback)) {
+                Logger.warn("SoundProcess '$name' does not affect playback", Logger.Category.Playback)
+                return
+            }
+            proc.createInSuperCollider()
+        }
     }
 
     override fun add(obj: ScoreObject, idx: Int) {

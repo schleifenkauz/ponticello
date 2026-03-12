@@ -14,6 +14,7 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
+import ponticello.model.ctx.PonticelloContext
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectRegistry
@@ -38,7 +39,7 @@ class RoutineDefObject(
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
-    override fun superColliderName(objectName: String) = "~rout_${objectName}"
+    override fun superColliderName(objectName: String) = "RoutineInstrument.get('${name.now}')"
 
     override val registry: ObjectRegistry<*>
         get() = context[InstrumentRegistry]
@@ -63,15 +64,15 @@ class RoutineDefObject(
             "time" to { Identifier("inst").send("current_time") }
         )
         val processBody = body.editor.result.now
-        val substitutedBody = processBody.substitute(parameterMap + extraMap)
+        val substitutedBody = processBody.substitute(parameterMap + extraMap) as CodeBlock
         val defaultValueMap = parameters.filter { p -> p.spec.now is NumericalControlSpec }
             .joinToString(", ", "(", ")") { param ->
                 val spec = param.spec.now as NumericalControlSpec
                 "${param.name.now}: ${spec.defaultValue.text}"
             }
-        appendBlock("$superColliderName = RoutineInstrument('${name.now}', $defaultValueMap)") {
-            append("arg inst, duration")
-            substitutedBody.code(this, context)
+        appendBlock("RoutineInstrument('${name.now}', $defaultValueMap)") {
+            +"arg inst, duration"
+            substitutedBody.writeCode(this, context)
         }
     }
 
@@ -81,13 +82,14 @@ class RoutineDefObject(
     }
 
     override fun ScWriter.freeObject() {
-        +"$superColliderName = nil"
+        "RoutineInstrument.remove('${name.now}')"
     }
 
     override fun initialize(context: Context) {
         if (initialized) return
         val myContext = context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
+            set(PonticelloContext, PonticelloContext.RoutineDef(this@RoutineDefObject))
         }
         super.initialize(myContext)
         parameters.initialize(myContext)

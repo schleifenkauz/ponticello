@@ -269,9 +269,13 @@ class LauncherGridPane(
                         is ItemTarget.Object -> {
                             val obj = target.ref.get() ?: return@executes
                             val objectsPane = obj.context[AppLayout].get<ScoreObjectViewPane>()
-                            objectsPane.showContent(obj)
                             val focusedView = objectsPane.playerPane?.scorePane?.getSingleObjectView()
                             obj.context[AppLayout].get<ScoreObjectDetailPane>().viewDetails(focusedView)
+                            if (focusedView != null) {
+                                objectsPane.showContent(focusedView)
+                            } else {
+                                objectsPane.showContent(obj)
+                            }
                         }
 
                         is ItemTarget.Script -> {

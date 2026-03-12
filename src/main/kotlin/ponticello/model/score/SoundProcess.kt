@@ -65,7 +65,7 @@ class SoundProcess(
     override val type: String
         get() = "synth"
 
-    override fun soundProcessName(objectName: String): String = "proc_${objectName}"
+    override fun soundProcessName(objectName: String): String = objectName
 
     override fun superColliderName(objectName: String): String = "SoundProcess.get('${soundProcessName}')"
 

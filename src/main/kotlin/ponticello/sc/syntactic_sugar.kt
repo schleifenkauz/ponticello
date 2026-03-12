@@ -45,7 +45,7 @@ data class PlayObject(val scoreObjectNameExpr: ScExpr) : ScExpr {
         get() = scoreObjectNameExpr.isValid
 
     override fun code(writer: ScWriter, context: Context) {
-        val timestamp = "SystemClock.beats"
-        writer.append("~ponticello_addr.sendMsg(\\play, -1, ${scoreObjectNameExpr.code(context)}, $timestamp, player_id)")
+        val scoreObjectName = scoreObjectNameExpr.code(context)
+        writer.append("inst.startChildInstance(SoundProcess.get($scoreObjectName))")
     }
 }

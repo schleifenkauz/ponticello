@@ -14,7 +14,7 @@ sealed class PonticelloContext {
 
     data class SynthDef(override val def: CustomizableSynthDefObject) : InstrumentDef()
 
-    data class ProcessDef(override val def: RoutineDefObject) : InstrumentDef()
+    data class RoutineDef(override val def: RoutineDefObject) : InstrumentDef()
 
     data class Control(val control: ParameterControlList.NamedParameterControl) : PonticelloContext()
 

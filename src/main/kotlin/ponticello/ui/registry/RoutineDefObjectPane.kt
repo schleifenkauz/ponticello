@@ -5,7 +5,7 @@ import javafx.scene.Node
 import ponticello.model.instr.RoutineDefObject
 import ponticello.ui.misc.CodePane
 
-class ProcessDefObjectPane(
+class RoutineDefObjectPane(
     def: RoutineDefObject, enableActions: Boolean,
 ) : ParameterizedObjectDefPane<RoutineDefObject>(def) {
     override fun getContent(def: RoutineDefObject): Node {

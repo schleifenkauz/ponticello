@@ -5,6 +5,7 @@ import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.replace
+import fxutils.runAfterLayout
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.layout.Region
@@ -73,9 +74,11 @@ class ScoreObjectViewPane : ToolPane() {
     }
 
     fun showContent(focusedView: ScoreObjectView) {
+        if (playerPane?.scorePane?.getSingleObjectView() == focusedView) return
         val obj = focusedView.obj
         showContent(obj)
-        playerPane!!.scorePane.positionInMainScore = focusedView::absolutePosition
+        playerPane!!.scorePane.positionInMainScore = { focusedView.absolutePosition }
+        runAfterLayout { focusedView.selectView() }
     }
 
     fun showContent(liveObject: LiveScoreObject) {

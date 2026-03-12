@@ -34,7 +34,7 @@ class MeterObject private constructor(
     override fun superColliderName(objectName: String) = "~meter_${objectName}"
 
     override fun ScWriter.createObject() {
-        +"$superColliderName = MeterObject(${beatsPerMinute.now}, ${beatsPerBar.now}, ${ticksPerBeat.now})"
+        +"$superColliderName = Meter(${beatsPerMinute.now}, ${beatsPerBar.now}, ${ticksPerBeat.now})"
     }
 
     override fun ScWriter.sync() {

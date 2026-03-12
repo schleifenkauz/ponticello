@@ -59,7 +59,7 @@ class InstrumentRegistryPane(
 
         is RoutineDefObject -> {
             val enableActions = box.currentMode == DisplayMode.SubWindow
-            ProcessDefObjectPane(obj, enableActions)
+            RoutineDefObjectPane(obj, enableActions)
         }
 
         is ReferencedSynthDefObject -> ScrollPane(ParameterInfoPane(obj.parameters.toReactiveList()))

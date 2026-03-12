@@ -255,7 +255,6 @@ LFOControl : ParameterControl {
 	apply { |inst|
 		var bus = inst.getControlBus(this.name);
 		if (inst.restarting.not) {
-			postf("Creating LFO Synth writing to %", bus);
 			this.prCreateSynth(inst, bus, replace: false);
 		};
 		inst.mapParameter(this.name, bus);

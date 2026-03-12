@@ -1,10 +1,11 @@
 SoundProcess {
-	classvar dict, by_instrument;
+	classvar dict, by_instrument, conds;
 	var <>name, <instr, <duration, <controls, control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
 		by_instrument = Dictionary.new;
+		conds = Dictionary.new;
 	}
 
 	* rename { |old_name, new_name|
@@ -20,6 +21,11 @@ SoundProcess {
 	* create { |name, instr, duration, controls|
 		var proc = super.new.init(name, instr, duration, controls);
 		dict[name] = proc;
+		if (conds.includesKey(name)) {
+			var cond = conds.removeAt(name);
+			cond.test = true;
+			cond.signal;
+		};
 		if (by_instrument.includesKey(instr)) {
 			by_instrument[instr] = by_instrument[instr].add(proc);
 		} {
@@ -33,9 +39,30 @@ SoundProcess {
 		by_instrument[proc.instr].remove(proc);
 	}
 
+	* includesKey { |name| ^dict.includesKey(name) }
+
+	* undefined { |name|
+		var cond = conds[name];
+		if (cond.notNil) {
+			cond.test = true;
+			cond.signal;
+		} {
+			postf("Warning: SoundProcess % was not queried");
+		};
+	}
+
 	* get { |name|
-		var proc = dict[name];
-		if (proc.isNil) { "SoundProcess % not found".format(name) }.throw;
+		var proc;
+		if (dict.includesKey(name).not) {
+			var cond = Condition.new;
+			conds[name] = cond;
+			~ponticello_addr.sendMsg('/sync_sound_proc', name);
+			cond.wait;
+		};
+		proc = dict[name.asSymbol];
+		if (proc.isNil) {
+			Exception("SoundProcess % not found".format(name)).throw;
+		};
 		^proc;
 	}
 

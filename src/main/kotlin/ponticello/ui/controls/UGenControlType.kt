@@ -14,6 +14,7 @@ import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import ponticello.impl.Logger
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.controls.ParameterControl
@@ -79,10 +80,11 @@ data object UGenControlType : ControlType<UGenControl>() {
     private val actions = collectActions<Pair<NamedParameterControl, ScoreObjectView?>> {
         addAction("Update") {
             icon(MaterialDesignS.SYNC)
-            shortcut("Ctrl+ENTER")
+            shortcut("Ctrl+Shift+U")
             executes { (ctrl) ->
                 val ugen = ctrl.now as UGenControl
                 ugen.update.fire()
+                Logger.confirm("Updating control '${ctrl.name.now}'", Logger.Category.Playback)
             }
         }
         addAction("Scope") {

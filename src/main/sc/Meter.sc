@@ -2,9 +2,9 @@ Meter {
 	var <>beatsPerMinute, <>beatsPerBar, <>ticksPerBeat;
 
 	* new { |bpm, bpb, tpb|
-		if (bpm <= 0) { "Invalid BPM: %".format(bpm).throw };
-		if (bpb <= 0 || bpb.round != bpb) { "Invalid beats per bar: %".format(bpb).throw };
-		if (tpb <= 0 || tpb.round != tpb) { "Invalid ticks per bar: %".format(tpb).throw };
+		if (bpm <= 0) { Exception("Invalid BPM: %".format(bpm)).throw };
+		if (bpb <= 0 || bpb.round != bpb) { Exception("Invalid beats per bar: %".format(bpb)).throw };
+		if (tpb <= 0 || tpb.round != tpb) { Exception("Invalid ticks per bar: %".format(tpb)).throw };
 		^Meter.newCopyArgs(bpm, bpb, tpb);
 	}
 

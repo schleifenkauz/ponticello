@@ -5,7 +5,7 @@ SoundProcessInstance : AudioNode {
 	<extra_args, <playerId,
 	<server_latency, start_time, placement, group,
 	running = false, <restarting = false, disposed = false,
-	<initial_args, control_buses, auxil_synths, sound_obj,
+	<initial_args, control_buses, auxil_synths, sound_obj, children,
 	on_dispose;
 
 	* new {| def, idx, pos, cutoff = 0, extra_args |
@@ -60,7 +60,7 @@ SoundProcessInstance : AudioNode {
 
 	createAuxilSynth { |param_name, synth_def, args, replace = false|
 		var auxil_synth, target, addAction;
-		if (sound_obj == nil) {Error ("Cannot create auxiliary synth because sound_obj = nil.").throw};
+		if (sound_obj == nil) { Error("Cannot create auxiliary synth because sound_obj = nil.").throw };
 		target = if (sound_obj.isMemberOf(Synth)) { sound_obj } { group };
 		addAction = if (sound_obj.isMemberOf(Synth)) { \addBefore } { \addToTail };
 		auxil_synth = if (running) {
@@ -182,7 +182,7 @@ SoundProcessInstance : AudioNode {
                 if (restarting.not) {
 					auxil_synths.do (_.run);
 				};
-				sound_obj.run(true, this);
+				sound_obj.run(true);
             };
 			running = true;
         }
@@ -201,10 +201,24 @@ SoundProcessInstance : AudioNode {
 	}
 
 	release {
+		children.do(_.release);
 		if (sound_obj.isMemberOf(Synth) ) {
 			sound_obj.set(\gate, 0); //why does [release] not work here?
 		} {
 			sound_obj.release;
-		}
+		};
+	}
+
+	startChildInstance { |proc, extra_args|
+		var inst, placement, p;
+		if (this.type != \routine) {
+			Exception("Attempt to call .startChildInstance on %".format(this)).throw;
+		};
+		p = (t: pos.t + this.current_time, y: pos.y);
+		inst = proc.createInstance(p, 0, extra_args ? ());
+		placement = (addAction: \addToTail, target: group);
+		inst.start(placement, Server.local.latency, playerId);
+		children = children.add(inst);
+		^inst
 	}
 }
