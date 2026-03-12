@@ -1,4 +1,6 @@
 (
+var cond = Condition.new(true);
+
 ~ponticello_addr = NetAddr("localhost", 7775);
 
 SynthDef(\score_clock) {
@@ -68,11 +70,17 @@ OSCdef('eval', {
 	fct = this.compile(code.asString);
     if (fct == nil) { ~ponticello_addr.sendMsg('error', id, "Compilation error") } {
         fork {
+			cond.wait;
+			cond.test = false;
             try {
                 answer = fct.value;
-                ~ponticello_addr.sendMsg('/reply', id, answer.asString);
+				~ponticello_addr.sendMsg('/reply', id, answer.asString);
+				cond.test = true;
+				cond.signal;
             } { |error|
                 ~ponticello_addr.sendMsg('/error', id, error.what);
+				cond.test = true;
+				cond.signal;
                 error.throw;
             }
         }
@@ -83,8 +91,16 @@ OSCdef('run', { |msg|
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-		try { fct.value } { |error|
+		cond.wait;
+		cond.test = false;
+		try {
+			fct.value;
+			cond.test = true;
+			cond.signal;
+		} { |error|
 			~ponticello_addr.sendMsg('/error', -1, error.what);
+			cond.test = true;
+			cond.signal;
 			error.throw;
 		}
 	}
@@ -92,7 +108,7 @@ OSCdef('run', { |msg|
 OSCdef('start_play', { |msg|
     var player_id = msg[2].asInteger, start_time = msg[3].asFloat;
     "START_PLAY ".post; msg.postln;
-	~play_start[player_id] = TempoClock.beats;
+	~play_start[player_id] = SystemClock.beats;
 	"Start time: ".post; start_time.postln;
 	~score_time_counter = Synth(\score_clock, [start: start_time, rate: ~time_warp_bus, out: ~score_time_bus]);
 }, '/start_play');
@@ -107,11 +123,11 @@ OSCdef('schedule', {
 	arg msg;
 	var id = msg[1], absolute = msg[2], time = msg[3].asFloat, player_id = msg[4], code = msg[5], info = msg[6], fct, my_play_start, abs_time;
 	my_play_start = ~play_start[player_id];
-    abs_time = if (absolute) { time } { time + (my_play_start ?? TempoClock.beats) };
+    abs_time = if (absolute) { time } { time + (my_play_start ? SystemClock.beats) };
     //postf("SCHEDULE %: player_id = %, my_play_start = %, time = %, abs_time = %, current time = %\n", info, player_id, my_play_start, time, abs_time, TempoClock.beats);
 	fct = this.compile(code.asString);
 	if (fct == nil) { "Compilation error".throw };
-    TempoClock.schedAbs(abs_time) {
+    SystemClock.schedAbs(abs_time) {
         if (my_play_start.isNil || (my_play_start == ~play_start[player_id])) {
             fork {
                 //postf("EXECUTE %\n", info);
