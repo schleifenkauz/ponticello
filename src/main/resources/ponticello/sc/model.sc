@@ -131,13 +131,12 @@ SoundProcess {
 				inst.freeControlBus(parameter);
 			};
 		};
-		if (new_ctrl.allocatesBus && old_ctrl.allocatesBus.not) {
-			this.updateInstances { |inst|
-				new_ctrl.prepare(inst);
-			}
+		this.updateInstances { |inst|
+			new_ctrl.prepare(inst);
 		};
 		old_ctrl.dispose;
 		this.updateInstances { |inst|
+			postf("Updating %\n", inst);
 			new_ctrl.apply(inst);
 		}
 	}
@@ -205,10 +204,16 @@ SoundProcessInstance : AudioNode {
 	}
 
 	createControlBus { |name, initial_value|
-		var bus = Bus.control(Server.local, 1);
-		bus.set(initial_value);
-		control_buses[name] = bus;
-		^bus
+		^if (control_buses.includesKey(name).not) {
+			var bus = Bus.control(Server.local, 1);
+			bus.set(initial_value);
+			control_buses[name] = bus;
+			bus
+		} {
+			var bus = control_buses[name];
+			if (initial_value.notNil) { bus.set(initial_value) };
+			bus
+		}
 	}
 
 	getControl { |name|
@@ -227,11 +232,13 @@ SoundProcessInstance : AudioNode {
 	}
 
 	createAuxilSynth { |param_name, synth_def, args, replace = false|
-		var auxil_synth;
+		var auxil_synth, target, addAction;
 		if (sound_obj == nil) {Error ("Cannot create auxiliary synth because sound_obj = nil.").throw};
-		auxil_synth = if (sound_obj.isMemberOf (Synth) ) {
-			Synth.newPaused (synth_def, args, target: sound_obj, addAction: \addBefore)
-		} { Synth.newPaused(synth_def, args, target: group, addAction: \addToTail) };
+		target = if (sound_obj.isMemberOf(Synth)) { sound_obj } { group };
+		addAction = if (sound_obj.isMemberOf(Synth)) { \addBefore } { \addToTail };
+		auxil_synth = if (running) {
+			Synth(synth_def, args, target, addAction);
+		} { Synth.newPaused(synth_def, args, target, addAction) };
 		auxil_synths[param_name] = auxil_synth;
 		^auxil_synth
 	}
@@ -292,7 +299,7 @@ SoundProcessInstance : AudioNode {
 		{ disposed } { postf("Warning: % already disposed", this) }
 		{ restarting } {
 			{
-				this.prStart;
+				this.prStart(running);
 				restarting = false;
 			}.fork;
 		}
@@ -319,7 +326,6 @@ SoundProcessInstance : AudioNode {
 		start_time = TempoClock.beats;
 		server_latency = latency;
 		playerId = player_id;
-		running = run;
 		if (placement != nil) {
 			Server.local.sync;
 			group = Group.new(placement.target, placement.addAction);
@@ -328,23 +334,24 @@ SoundProcessInstance : AudioNode {
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) };
 		};
-		this.prStart;
+		this.prStart(run);
 	}
 
-	prStart {
+	prStart { |run|
 	    sound_obj = def.instr.create(this);
 		Server.local.sync;
 		def.controls.do { |ctrl|
 			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
 		};
-        if (running) {
+        if (run) {
             Server.local.sync;
             Server.local.makeBundle(server_latency) {
                 if (restarting.not) {
 					auxil_synths.do (_.run);
 				};
 				sound_obj.run(true, this);
-            }
+            };
+			running = true;
         }
 	}
 

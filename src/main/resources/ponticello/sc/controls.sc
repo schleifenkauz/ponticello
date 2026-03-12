@@ -181,7 +181,7 @@ EnvelopeControl : ParameterControl {
 	getUGen { |inst| ^inst.getControlBus(super.name).kr }
 
 	prepare { |inst|
-		var initial_value = env.at(inst.cutoff);
+		var initial_value = env.at(inst.current_time);
 		inst.createControlBus(this.name, initial_value);
 		inst.putArgument(this.name, initial_value);
 	}
@@ -255,6 +255,7 @@ LFOControl : ParameterControl {
 	apply { |inst|
 		var bus = inst.getControlBus(this.name);
 		if (inst.restarting.not) {
+			postf("Creating LFO Synth writing to %", bus);
 			this.prCreateSynth(inst, bus, replace: false);
 		};
 		inst.mapParameter(this.name, bus);

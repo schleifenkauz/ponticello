@@ -62,7 +62,7 @@ SynthInstrument : Instrument {
 		^synth
 	}
 
-	asString { ^"SynthDef \\%".format(synthDefName) }
+	asString { ^"SynthDef %".format(synthDefName) }
 }
 
 MIDIInstrument : Instrument {
