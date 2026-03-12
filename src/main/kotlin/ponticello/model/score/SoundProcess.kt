@@ -241,7 +241,7 @@ class SoundProcess(
         if (midiObject != null) {
             val midinote = info.instance.y
             extraArgs["midinote"] = midinote
-            if (def is SynthDefObject || def is ProcessDefObject) {
+            if (def is SynthDefObject || def is RoutineDefObject) {
                 val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
                 extraArgs["freq"] = freq
             }

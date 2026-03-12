@@ -49,7 +49,7 @@ class InstrumentRegistryPane(
     override fun defaultState(): ToolPaneState = ListToolPaneState.window
 
     override fun detailWindowIcon(obj: InstrumentObject): Ikon =
-        if (obj is CustomizableSynthDefObject || obj is ProcessDefObject) Material2AL.CODE
+        if (obj is CustomizableSynthDefObject || obj is RoutineDefObject) Material2AL.CODE
         else MaterialDesignE.EYE
 
     override fun getContent(obj: InstrumentObject, box: ObjectBox<InstrumentObject>): Parent? = when (obj) {
@@ -57,7 +57,7 @@ class InstrumentRegistryPane(
             SynthDefObjectPane(obj)
         }
 
-        is ProcessDefObject -> {
+        is RoutineDefObject -> {
             val enableActions = box.currentMode == DisplayMode.SubWindow
             ProcessDefObjectPane(obj, enableActions)
         }
@@ -96,7 +96,7 @@ class InstrumentRegistryPane(
                 else -> CustomizableSynthDefObject.create(name)
             }
 
-            InstrumentType.ProcessDef -> ProcessDefObject.newEmpty(name)
+            InstrumentType.ProcessDef -> RoutineDefObject.newEmpty(name)
         }
     }
 

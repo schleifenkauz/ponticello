@@ -110,7 +110,7 @@ sealed interface FlowOption {
 
         override fun toString(): String = when (def) {
             is SynthDefObject -> "SynthDef ${def.name.now}"
-            is ProcessDefObject -> "Process ${def.name.now}"
+            is RoutineDefObject -> "Process ${def.name.now}"
             is VSTInstrumentObject -> "VST: ${def.name.now}"
             is NoInstrument -> throw AssertionError("NoInstrument should not be here")
         }

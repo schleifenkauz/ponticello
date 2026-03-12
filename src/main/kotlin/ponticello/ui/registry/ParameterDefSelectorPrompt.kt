@@ -3,12 +3,8 @@ package ponticello.ui.registry
 import fxutils.SubWindow
 import fxutils.prompt.SimpleSelectorPrompt
 import javafx.geometry.Point2D
-import ponticello.model.instr.InstrumentObject
-import ponticello.model.instr.ParameterDefObject
-import ponticello.model.instr.ParameterizedObject
-import ponticello.model.instr.ProcessDefObject
-import ponticello.model.instr.SynthDefObject
-import ponticello.model.obj.*
+import ponticello.model.instr.*
+import ponticello.model.obj.withName
 import ponticello.sc.Identifier
 import ponticello.sc.ParameterType
 import ponticello.ui.controls.ControlSpecPrompt
@@ -33,7 +29,7 @@ class ParameterDefSelectorPrompt(
         if (!Identifier.isValid(text)) return null
         val availableParameterTypes = when (instrumentObject) {
             null -> ParameterType.regularTypes
-            is ProcessDefObject -> ParameterType.regularTypes
+            is RoutineDefObject -> ParameterType.regularTypes
             is SynthDefObject -> ParameterType.regularTypes - ParameterType.Expr
             else -> emptyList()
         }

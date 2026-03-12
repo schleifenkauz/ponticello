@@ -4,15 +4,16 @@ Instrument {
 
 
 RoutineInstrument : Instrument {
-	var func, parameterDefaults;
+	var name, func, parameterDefaults;
 
-	* new {| func, parameterDefaults |
-		^ super.new.init (parameterDefaults, func);
+	* new {| name, func, parameterDefaults |
+		^super.new.init(name, parameterDefaults, func);
 	}
 
 	type { ^\routine }
 
-	init {| defaults, f |
+	init {| n, defaults, f |
+		name = n;
 		parameterDefaults = defaults;
 		func = f;
 	}
@@ -25,7 +26,7 @@ RoutineInstrument : Instrument {
 		}
 	}
 
-	asString { ^"<routine>" }
+	asString { ^"Routine %".format(name) }
 }
 
 SynthInstrument : Instrument {
@@ -115,7 +116,7 @@ MIDINote {
 		if (playing != active) {
 			playing = active;
 			if (active) {
-				TempoClock.sched(inst.server_latency + 0.001) { //minimal offset to ensure that not on occurs after note off
+				SystemClock.sched(inst.server_latency + 0.001) { //minimal offset to ensure that not on occurs after note off
 					vst.midi.noteOn(channel, midinote, velocity);
 				};
 				if (inst.notNil && inst.def.duration.notNil) {

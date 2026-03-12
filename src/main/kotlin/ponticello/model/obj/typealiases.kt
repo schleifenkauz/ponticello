@@ -9,7 +9,7 @@ import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.ParameterDefObject
-import ponticello.model.instr.ProcessDefObject
+import ponticello.model.instr.RoutineDefObject
 import ponticello.model.instr.SynthDefObject
 import ponticello.model.live.LiveObject
 import ponticello.model.live.LiveTaskObject
@@ -23,7 +23,7 @@ import ponticello.model.server.BufferObject
 import reaktive.value.now
 
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
-typealias ProcessDefReference = ObjectReference<@Contextual ProcessDefObject>
+typealias ProcessDefReference = ObjectReference<@Contextual RoutineDefObject>
 typealias BusReference = ObjectReference<@Contextual BusObject>
 typealias BufferReference = ObjectReference<@Contextual BufferObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>

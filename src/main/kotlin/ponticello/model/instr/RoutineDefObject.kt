@@ -28,8 +28,9 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
+@SerialName("Routine")
 @Serializable
-class ProcessDefObject(
+class RoutineDefObject(
     override val color: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color>,
     override val parameters: ParameterDefList,
     val body: EditorRoot<@Contextual CodeBlockEditor> = EditorRoot(CodeBlockEditor().defaultState()),
@@ -37,14 +38,14 @@ class ProcessDefObject(
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
-    override fun superColliderName(objectName: String) = "~proc_${objectName}"
+    override fun superColliderName(objectName: String) = "~rout_${objectName}"
 
     override val registry: ObjectRegistry<*>
         get() = context[InstrumentRegistry]
 
     override fun supports(type: ParameterType): Boolean = true
 
-    override fun copy(): ProcessDefObject = ProcessDefObject(
+    override fun copy(): RoutineDefObject = RoutineDefObject(
         color.copy(),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy().withName(p.name.now) }),
         body.clone(context)
@@ -55,20 +56,22 @@ class ProcessDefObject(
     }
 
     override fun ScWriter.createObject() {
-        val subst = body.editor.result.now.transform<ParameterReference> { ref ->
-            Identifier("inst").send("getControlValue", SymbolLiteral(ref.parameter.getName()))
-        }.substitute(
-            mapOf(
+        val parameterMap = parameters.associate { p ->
+            p.name.now to { Identifier("inst").send("getControlValue", SymbolLiteral(p.name.now)) }
+        }
+        val extraMap = mapOf(
             "time" to { Identifier("inst").send("current_time") }
-        ))
+        )
+        val processBody = body.editor.result.now
+        val substitutedBody = processBody.substitute(parameterMap + extraMap)
         val defaultValueMap = parameters.filter { p -> p.spec.now is NumericalControlSpec }
             .joinToString(", ", "(", ")") { param ->
                 val spec = param.spec.now as NumericalControlSpec
                 "${param.name.now}: ${spec.defaultValue.text}"
             }
-        appendBlock("$superColliderName = RoutineInstrument($defaultValueMap)") {
+        appendBlock("$superColliderName = RoutineInstrument('${name.now}', $defaultValueMap)") {
             append("arg inst, duration")
-            subst.code(this, context)
+            substitutedBody.code(this, context)
         }
     }
 
@@ -98,7 +101,7 @@ class ProcessDefObject(
     override fun instrumentReference() = InstrumentReference.UserDefined(this.reference())
 
     companion object {
-        fun newEmpty(name: String) = ProcessDefObject(
+        fun newEmpty(name: String) = RoutineDefObject(
             color = reactiveVariable(randomColor()),
             parameters = ParameterDefList(),
             body = EditorRoot(CodeBlockEditor().defaultState())
