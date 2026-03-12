@@ -1,8 +1,10 @@
 package ponticello.sc.client
 
 import com.illposed.osc.OSCMessage
+import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.model.obj.playbackSettings
+import ponticello.model.player.ScorePlayer
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
@@ -68,4 +70,17 @@ fun SuperColliderClient.eval(description: String? = null, writeCode: ScWriter.()
     val command = ponticello.impl.writeCode(group = true, writeCode)
     if (command.isNotBlank()) return eval(command, description ?: "evaluating $command")
     return CompletableFuture.completedFuture("")
+}
+
+fun SuperColliderClient.schedule(
+    description: String, time: Decimal, absolute: Boolean,
+    player: ScorePlayer, code: String
+): CompletableFuture<String> {
+    val args = listOf(absolute, time.toString(), player.id, code)
+    if (context.playbackSettings.logScCode.now) {
+        println("Schedule $description at $time, player_id = ${player.id}:")
+        println(code)
+        println("################ END #################")
+    }
+    return send("schedule", args, description)
 }

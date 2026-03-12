@@ -5,14 +5,21 @@ import bundles.publicProperty
 import hextant.context.Context
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
-import ponticello.impl.zero
+import ponticello.impl.unaryMinus
+import ponticello.impl.writeCode
+import ponticello.model.instr.RoutineDefObject
+import ponticello.model.instr.VSTInstrumentObject
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.SoundProcess
 import ponticello.model.score.TempoGridObject
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
+import ponticello.sc.client.schedule
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 
@@ -38,11 +45,7 @@ class ScoreObjectScheduler(val context: Context) {
 
                 ScoreEvent.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
-                    if (obj.duration == zero) continue
-                    if (obj is TempoGridObject && obj.meter.isResolved.now) {
-                        val meter = obj.meter.force()
-                        player.getClock().detach(player, meter)
-                    }
+                    objectEnd(obj, player, position)
                 }
 
                 else -> {}
@@ -50,14 +53,49 @@ class ScoreObjectScheduler(val context: Context) {
         }
     }
 
+    private fun objectEnd(obj: ScoreObject, player: ScorePlayer, pos: ObjectPosition) {
+        when (obj) {
+            is TempoGridObject -> {
+                if (obj.meter.isResolved.now) {
+                    val meter = obj.meter.force()
+                    player.getClock().detach(player, meter)
+                }
+            }
+
+            is SoundProcess -> {
+                when (obj.def) {
+                    is RoutineDefObject, is VSTInstrumentObject -> {
+                        val time = pos.time + player.timeOffset
+                        val objectStart = pos.plusTime(-obj.duration)
+                        val code = writeCode {
+                            releaseObject(obj, objectStart)
+                        }
+                        val description = "stop ${obj.name.now}"
+                        client.schedule(description, time, absolute = false, player, code)
+                    }
+
+                    else -> {}
+                }
+            }
+
+            else -> {}
+        }
+    }
+
     //Only inside on ScorePlayer.execute
-    fun stopPlayBackInstantly(obj: ScoreObject, pos: ObjectPosition) {
-        client.run("${obj.superColliderName}.getInstanceAt($pos).release")
+    fun stopObjectInstantly(obj: ScoreObject, pos: ObjectPosition) {
+        client.run {
+            releaseObject(obj, pos)
+        }
     }
 
     //Only inside on ScorePlayer.execute
     fun stopObjectInstantly(obj: ScoreObject, instanceId: Int) {
         client.run("${obj.superColliderName}.getInstance($instanceId).release")
+    }
+
+    private fun ScWriter.releaseObject(obj: ScoreObject, pos: ObjectPosition) {
+        +"${obj.superColliderName}.getInstanceAt($pos).release"
     }
 
     //Only inside ScorePlayer.execute
@@ -88,17 +126,13 @@ class ScoreObjectScheduler(val context: Context) {
             obj.startNewInstance(info)
         } catch (e: Exception) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
+            return null
         }
         if (code == "") return null
         try {
-            val description = "Schedule ${obj.name.now}"
-            val args = listOf(absolute, scheduledTime.toString(), info.player.id, code)
-            if (playbackSettings.logScCode.now) {
-                println("Schedule ${obj.name.now} at $scheduledTime, player_id = ${info.player.id}:")
-                println(code)
-                println("################ END #################")
-            }
-            return client.send("schedule", args, description).thenApply(String::toIntOrNull)
+            val description = "start ${obj.name.now}"
+            return client.schedule(description, scheduledTime, absolute, info.player, code)
+                .thenApply(String::toIntOrNull)
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
             return null
