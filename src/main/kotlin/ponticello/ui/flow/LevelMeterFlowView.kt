@@ -5,7 +5,7 @@ import fxutils.drag.setupDropArea
 import fxutils.widthAtLeast
 import javafx.scene.control.Label
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.Pane
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import ponticello.model.flow.LevelMeterFlow
@@ -48,7 +48,7 @@ class LevelMeterFlowView(private val flow: LevelMeterFlow) : VBox() {
 
     private fun createLevelMeterCanvas(initialBus: BusObject.AudioBus): Region {
         val meter = LevelMeter(initialBus, flow.replyId, meterWidth = 12.0)
-        val pane = Pane(meter)
+        val pane = BorderPane(meter)
         meter.heightProperty().bind(pane.heightProperty())
         return pane.alwaysVGrow()
     }

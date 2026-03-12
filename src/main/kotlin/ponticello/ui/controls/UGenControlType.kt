@@ -79,7 +79,7 @@ data object UGenControlType : ControlType<UGenControl>() {
     private val actions = collectActions<Pair<NamedParameterControl, ScoreObjectView?>> {
         addAction("Update") {
             icon(MaterialDesignS.SYNC)
-            shortcut("Ctrl+U")
+            shortcut("Ctrl+ENTER")
             executes { (ctrl) ->
                 val ugen = ctrl.now as UGenControl
                 ugen.update.fire()

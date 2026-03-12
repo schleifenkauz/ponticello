@@ -70,7 +70,7 @@ data object ExprControlType : ControlType<ExprControl>() {
     private val actions = collectActions<ExprControl> {
         addAction("Update") {
             icon(MaterialDesignS.SYNC)
-            shortcut("Ctrl+U")
+            shortcut("Ctrl+ENTER")
             executes { ctrl -> ctrl.update.fire() }
         }
     }
