@@ -40,12 +40,14 @@ fun transformSignal(bus: ScExpr, mix: ScExpr, signalVar: Identifier, body: CodeB
     bus.send("transformSignal", mix, ScFunction(listOf(signalVar), body))
 
 @Compound(nodeType = ScExpr::class)
-data class PlayObject(val scoreObjectNameExpr: ScExpr) : ScExpr {
+data class PlayObject(val scoreObjectNameExpr: ScExpr, val extraArgs: List<ScExpr>) : ScExpr {
     override val isValid: Boolean
         get() = scoreObjectNameExpr.isValid
 
     override fun code(writer: ScWriter, context: Context) {
         val scoreObjectName = scoreObjectNameExpr.code(context)
-        writer.append("inst.startChildInstance(SoundProcess.get($scoreObjectName))")
+        writer.append("inst.startChildInstance(SoundProcess.get(", scoreObjectName, "), (")
+        writer.appendList(extraArgs, separator = ", ", context)
+        writer.append("))")
     }
 }

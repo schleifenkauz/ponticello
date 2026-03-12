@@ -197,6 +197,8 @@ internal fun PluginBuilder.registerControlFactories() {
             horizontal {
                 keyword("play ")
                 view(editor.scoreObjectNameExpr)
+                space()
+                viewHorizontal(editor.extraArgs).root.centerChildren().styleClass("compound-expr", "arguments")
                 root.centerChildren()
             }
         }

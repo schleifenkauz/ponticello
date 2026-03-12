@@ -203,8 +203,8 @@ OSCdef(\set_time_warp, { |msg|
         rms = Amplitude.kr(sig, 0.01, 0.3).ampdb;
         rms = rms.lag(\lag.kr(0.05));
 
-		peak= PeakFollower.kr(sig, 0.999).ampdb;
-		peak= peak.lag(\lag.kr(0.05));
+		peak = PeakFollower.kr(sig, 0.999).ampdb;
+		peak = peak.lag(\lag.kr(0.05));
 
         FreeSelf.kr(1 - \gate.kr(1));
 
