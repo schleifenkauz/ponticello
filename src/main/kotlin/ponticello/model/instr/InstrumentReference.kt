@@ -15,14 +15,20 @@ import ponticello.model.project.flows
 import ponticello.model.project.instruments
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
+import reaktive.value.ReactiveString
+import reaktive.value.reactiveValue
 
 @Serializable(with = InstrumentReference.Serializer::class)
 sealed interface InstrumentReference {
+    val name: ReactiveString
+
     fun getName(): String
 
     fun get(): InstrumentObject?
 
     data class UserDefined(val reference: ObjectReference<InstrumentObject>) : InstrumentReference {
+        override val name: ReactiveString get() = reference.name
+
         override fun getName(): String = reference.getName()
 
         override fun get(): InstrumentObject? = reference.get()
@@ -31,6 +37,8 @@ sealed interface InstrumentReference {
     data class VST(val flow: VSTPluginReference) : InstrumentReference {
         override fun getName(): String = flow.getName()
 
+        override val name: ReactiveString get() = flow.name
+
         override fun get(): InstrumentObject? {
             val flow = flow.get() ?: return null
             return VSTInstrumentObject(flow)
@@ -38,6 +46,8 @@ sealed interface InstrumentReference {
     }
 
     data object None : InstrumentReference {
+        override val name: ReactiveString get() = reactiveValue("none")
+
         override fun getName(): String = "None"
 
         override fun get(): InstrumentObject? = null
