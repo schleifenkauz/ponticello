@@ -1,6 +1,6 @@
 SoundProcess {
 	classvar dict, by_instrument;
-	var <>name, <instr, <>duration, <controls, control_map, instances, byPosition, instance_ctr;
+	var <>name, <instr, <duration, <controls, control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
@@ -33,7 +33,11 @@ SoundProcess {
 		by_instrument[proc.instr].remove(proc);
 	}
 
-	* get { |name| ^dict[name] }
+	* get { |name|
+		var proc = dict[name];
+		if (proc.isNil) { "SoundProcess % not found".format(name) }.throw;
+		^proc;
+	}
 
 	init { |n, i, dur, ctrls|
 		name = n; instr = i; duration = dur; controls = ctrls;
@@ -74,6 +78,11 @@ SoundProcess {
 		instances.do { |inst|
 			inst.restart;
 		}
+	}
+
+	duration_ { |dur|
+		duration = dur;
+		this.updateInstances { |inst| inst.updateDuration(dur) };
 	}
 
 	getInstance { |idx| ^instances[idx] }

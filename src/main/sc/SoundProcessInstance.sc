@@ -115,6 +115,12 @@ SoundProcessInstance : AudioNode {
 		^extra_args[name] ?? {def.getControl(name) !? { |ctrl| ctrl.getUGen(this) }}
 	}
 
+	updateDuration { |dur|
+		if (sound_obj.isKindOf(Synth)) {
+			sound_obj.set(\duration, dur);
+		}
+	}
+
 	asString { ^"Instance #% of % [running: %, disposed: %]".format(idx, def, running, disposed) }
 
 	onDispose { |func|

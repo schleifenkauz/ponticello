@@ -105,7 +105,7 @@ class CustomizableSynthDefObject(
             extraStatements.add(
                 "env_ = Env.asr(attack, 1, release)" +
                         ".kr(Done.freeSelf, gate: (gate_env_ * \\gate.kr(1)), timeScale: ~time_warp_bus.kr)"
-            )
+            ) //TODO does this react to updates to the \duration control?
             for ((param, spec) in attackReleaseParameters) {
                 spec as NumericalControlSpec
                 extraStatements.add("$param = env_.${spec.warp.mappingFunction(spec.min.text, param)}")
