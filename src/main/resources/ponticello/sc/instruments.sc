@@ -9,7 +9,7 @@ RoutineInstrument : Instrument {
 	* new {| func, parameterDefaults |
 		^ super.new.init (parameterDefaults, func);
 	}
-	
+
 	type { ^\routine }
 
 	init {| defaults, f |
@@ -24,6 +24,8 @@ RoutineInstrument : Instrument {
 			func.value(inst, inst.def.duration ? inf);
 		}
 	}
+
+	asString { ^"<routine>" }
 }
 
 SynthInstrument : Instrument {
@@ -50,15 +52,17 @@ SynthInstrument : Instrument {
         };
 		args = List[duration: duration];
 		inst.getInitialArguments.keysValuesDo {| p, v | args = args.addAll([p, v]) };
-		postf("Creating synth % with args %\n", synthDefName, args);
+		//postf("Creating synth % with args %\n", synthDefName, args);
 		synth = Synth.newPaused(synthDefName, args, inst.node, \addToTail);
 		//synth.register(assumePlaying: true);
 		synth.onFree {
-		    postf("Synth % freed, disposing instance\n", synth);
+		    //postf("Synth % freed, disposing instance\n", synth);
 		    inst.dispose;
         };
 		^synth
 	}
+
+	asString { ^"SynthDef \\%".format(synthDefName) }
 }
 
 MIDIInstrument : Instrument {
@@ -70,7 +74,7 @@ MIDIInstrument : Instrument {
 	}
 
 	* new {| vst |
-		^super.new.init (vst);
+		^super.new.init(vst);
 	}
 
 	type { ^\vst_midi }
@@ -81,13 +85,15 @@ MIDIInstrument : Instrument {
 		var velocity = inst.getControlValue(\velocity) ? 64;
 		var channel = inst.getControlValue(\channel) ? 0;
 		var midinote = inst.getControlValue(\midinote);
-		inst.getInitialArguments.keysValuesDo { |p, v| 
+		inst.getInitialArguments.keysValuesDo { |p, v|
 			if (reserved_names.includes(p).not) {
 				vst.set(p, v);
 			}
 		};
 		^MIDINote(vst, midinote, velocity, channel);
 	}
+
+	asString { ^"VST MIDI: %".format(vst.info.name) }
 }
 
 MIDINote {

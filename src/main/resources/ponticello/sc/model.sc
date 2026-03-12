@@ -52,12 +52,9 @@ SoundProcess {
 	}
 
 	* updatedInstrument { |instr|
-	    postf("Updated %\n", instr);
 	    if (by_instrument.includesKey(instr)) {
 	        by_instrument[instr].do { |proc|
-	            postf("Updating %\n", proc);
 	            proc.updateInstances { |inst|
-	                postf("Updating instance %\n", inst);
 	                inst.restart;
 	            }
 	        }
@@ -91,7 +88,7 @@ SoundProcess {
 	}
 
 	getControl { | parameter |
-		^control_map[parameter] 
+		^control_map[parameter]
 		?? { instr.getDefaultValue(parameter) !? {| default | ValueControl.new(default) } }
 	}
 
@@ -173,13 +170,15 @@ SoundProcess {
 	}
 
 	clearAll {}
+
+	asString { ^"SoundProcess '%' [instr: %, duration: %]".format(name, instr, duration) }
 }
 
 SoundProcessInstance : AudioNode {
-	var <def, <idx, <cutoff, <pos, 
-	<extra_args, <playerId, 
+	var <def, <idx, <cutoff, <pos,
+	<extra_args, <playerId,
 	<server_latency, start_time, placement, group,
-	running = false, restarting = false, disposed = false,
+	running = false, <restarting = false, disposed = false,
 	<initial_args, control_buses, auxil_synths, sound_obj,
 	on_dispose;
 
@@ -189,7 +188,7 @@ SoundProcessInstance : AudioNode {
 
 	init { |d, i, p, offset, extra|
 		def = d; idx = i; pos = p; cutoff = offset; extra_args = extra;
-		initial_args = Dictionary.new; control_buses = Dictionary.new; auxil_synths = Dictionary.new; 
+		initial_args = Dictionary.new; control_buses = Dictionary.new; auxil_synths = Dictionary.new;
 		on_dispose = [];
 	}
 
@@ -282,16 +281,22 @@ SoundProcessInstance : AudioNode {
 		^extra_args[name] ?? {def.getControl(name) !? { |ctrl| ctrl.getUGen(this) }}
 	}
 
+	asString { ^"Instance #% of % [running: %, disposed: %]".format(idx, def, running, disposed) }
+
 	onDispose { |func|
 		on_dispose = on_dispose.add(func);
 	}
 
 	dispose {
-	    postf("Dispose %. Restarting: %\n", this, restarting);
-	    if (restarting) {
-	        restarting = false;
-	    };
-		if (disposed.not && restarting.not) {
+		case
+		{ disposed } { postf("Warning: % already disposed", this) }
+		{ restarting } {
+			{
+				this.prStart;
+				restarting = false;
+			}.fork;
+		}
+		{ true } {
 			control_buses.do (_.free);
 			control_buses = Dictionary.new;
 			if (group != nil) {
@@ -328,25 +333,25 @@ SoundProcessInstance : AudioNode {
 
 	prStart {
 	    sound_obj = def.instr.create(this);
-        Server.local.sync;
-        def.controls.do { |ctrl|
-            if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
-        };
+		Server.local.sync;
+		def.controls.do { |ctrl|
+			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
+		};
         if (running) {
             Server.local.sync;
-            Server.local.makeBundle (server_latency) {
-                auxil_synths.do (_.run);
-                sound_obj.run(true, this);
+            Server.local.makeBundle(server_latency) {
+                if (restarting.not) {
+					auxil_synths.do (_.run);
+				};
+				sound_obj.run(true, this);
             }
         }
 	}
 
 	restart {
         restarting = true;
-        postf("Restarting %\n", sound_obj);
 		sound_obj.release;
 		sound_obj = nil;
-		this.prStart;
 	}
 
 	run { |active|

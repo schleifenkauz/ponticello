@@ -189,7 +189,9 @@ EnvelopeControl : ParameterControl {
 	apply { |inst|
 		if (inst.type != \routine) {
 			var bus = inst.getControlBus(this.name);
-			inst.createAuxilSynth(this.name, synth_def, [out: bus, cutoff: inst.cutoff]);
+			if (inst.restarting.not) {
+				inst.createAuxilSynth(this.name, synth_def, [out: bus, cutoff: inst.cutoff]);
+			};
 			inst.mapParameter(this.name, bus);
 		}
 	}
@@ -252,7 +254,9 @@ LFOControl : ParameterControl {
 
 	apply { |inst|
 		var bus = inst.getControlBus(this.name);
-		this.prCreateSynth(inst, bus, replace: false);
+		if (inst.restarting.not) {
+			this.prCreateSynth(inst, bus, replace: false);
+		};
 		inst.mapParameter(this.name, bus);
 	}
 
@@ -273,7 +277,7 @@ LFOControl : ParameterControl {
 					synth.set (ref, ctrl.getValue (inst) );
 				}
 			} {
-				postf ("Could not resolve control % on SoundProcess %", ref, inst.def.name);
+				postf("Could not resolve control % on SoundProcess %", ref, inst.def.name);
 			}
 		}
 	}
