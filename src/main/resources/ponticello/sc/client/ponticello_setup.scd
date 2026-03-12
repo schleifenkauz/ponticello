@@ -198,14 +198,17 @@ OSCdef(\set_time_warp, { |msg|
 ~addLevelSendSynthDef = { |channels|
     SynthDef("level_send_" ++ channels.asString) {
         arg bus, id;
-        var sig = In.ar(bus, channels), levels;
+        var sig = In.ar(bus, channels), rms, peak;
 
-        levels = Amplitude.kr(sig, 0.01, 0.3).ampdb;
-        levels = levels.lag(\lag.kr(0.05));
+        rms = Amplitude.kr(sig, 0.01, 0.3).ampdb;
+        rms = rms.lag(\lag.kr(0.05));
+
+		peak= PeakFollower.kr(sig, 0.999).ampdb;
+		peak= peak.lag(\lag.kr(0.05));
 
         FreeSelf.kr(1 - \gate.kr(1));
 
-        SendReply.kr(Impulse.kr(\rate.kr(10)), '/bus_levels', levels, replyID: id)
+        SendReply.kr(Impulse.kr(\rate.kr(10)), '/bus_levels', rms ++ peak, replyID: id)
     }.add;
 };
 OSCdef(\bus_levels, { arg msg;

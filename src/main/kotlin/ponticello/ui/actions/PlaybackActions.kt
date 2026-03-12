@@ -105,7 +105,7 @@ object PlaybackActions {
                     liveObject.pause()
                 }
                 p.context.project[LAUNCHER_GRID].deactivateAll()
-                p.context[SuperColliderClient].run("s.freeAll;") //TODO
+                p.context[SuperColliderClient].run("SoundProcess.stopAllProcesses; s.freeAll;") //TODO
                 p.pause()
             }
         }

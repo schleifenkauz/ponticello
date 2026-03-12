@@ -14,6 +14,7 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.withName
+import ponticello.model.server.BusLevel
 import ponticello.model.server.BusRegistry
 import ponticello.sc.*
 import ponticello.sc.Rate.Audio
@@ -83,7 +84,7 @@ sealed class BusObject : AbstractSuperColliderObject() {
         var replyId: Int = -1
             private set
 
-        fun getLevels(): EventStream<List<Double>> = registry.levels(replyId)
+        fun getLevels(): EventStream<BusLevel> = registry.levels(replyId)
 
         override fun initialize(context: Context) {
             super.initialize(context)

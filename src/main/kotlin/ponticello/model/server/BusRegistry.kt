@@ -36,7 +36,7 @@ class BusRegistry(
     private var replyIdCounter = 0
 
     @Transient
-    private val levelEvents = mutableMapOf<Int, Event<List<Double>>>()
+    private val levelEvents = mutableMapOf<Int, Event<BusLevel>>()
 
     @Transient
     private val availableLevelSendSynthDefs = mutableSetOf<Int>()
@@ -82,7 +82,7 @@ class BusRegistry(
             availableLevelSendSynthDefs.add(channels)
         }
         +"Server.local.sync"
-        val args = "[bus: ${bus.superColliderName}, id: $id, rate: 10, lag: 0.05]"
+        val args = "[bus: ${bus.superColliderName}, id: $id, rate: 10, lag: 0.0]"
         +"$synthVar = Synth(\\level_send_$channels, $args, ${placement.code})"
     }
 
@@ -102,7 +102,6 @@ class BusRegistry(
 
     private fun receivedBusLevel(msg: OSCMessage) {
         val replyId = msg.getArgument<Int>(0, "replyID") ?: return
-        val levels = msg.arguments.drop(1).map { lvl -> (lvl as Float).toDouble() }
         val event = levelEvents[replyId]
         if (event == null) {
             Logger.warn(
@@ -111,12 +110,15 @@ class BusRegistry(
             )
             return
         }
-        event.fire(levels)
+        val values = msg.arguments.drop(1)
+        val channels = values.size / 2
+        val rms = values.take(channels).map { lvl -> (lvl as Float).toDouble() }
+        val peak = values.takeLast(channels).map { lvl -> (lvl as Float).toDouble() }
+        val level = BusLevel(rms, peak)
+        event.fire(level)
     }
 
-    fun levels(replyId: Int): EventStream<List<Double>> = levelEvents.getValue(replyId).stream
-
-    fun levels(bus: BusObject.AudioBus): EventStream<List<Double>> = levels(bus.replyId)
+    fun levels(replyId: Int): EventStream<BusLevel> = levelEvents.getValue(replyId).stream
 
     override fun getDefault(): BusObject = getOutput()
 

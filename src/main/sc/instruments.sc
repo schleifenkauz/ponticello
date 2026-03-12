@@ -159,7 +159,8 @@ RoutineInstance {
 				func.value(instance, instance.def.duration ? inf)
 			} { |error|
 				error.reportError;
-			}
+			};
+			instance.dispose;
 		}, SystemClock);
          ^super.newCopyArgs(task, instance);
     }

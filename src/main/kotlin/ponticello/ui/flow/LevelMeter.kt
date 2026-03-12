@@ -9,6 +9,7 @@ import javafx.scene.text.FontWeight
 import ponticello.impl.Decimal
 import ponticello.impl.zero
 import ponticello.model.instr.BusObject
+import ponticello.model.server.BusLevel
 import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.now
@@ -21,7 +22,7 @@ class LevelMeter(
     offset: ReactiveValue<Decimal> = reactiveValue(zero),
     val meterWidth: Double
 ) : Canvas() {
-    private var levels = emptyList<Double>()
+    private var levels: BusLevel? = null
 
     private val observer: Observer
 
@@ -31,29 +32,37 @@ class LevelMeter(
         width = meterWidth * nChannels + TICK_WIDTH + NUMBER_WIDTH
         heightProperty().addListener {
             paintScale()
-            updateLevels(levels)
+            levels?.let { level -> updateLevels(level) }
         }
         paintScale()
         observer = bus.registry.levels(replyId).observe { _, levels ->
-            updateLevels(levels.map { lvl -> lvl + offset.now.toDouble() })
+            updateLevels(levels + offset.now.toDouble())
         }
     }
 
-    private fun updateLevels(levels: List<Double>) = Platform.runLater {
-        this.levels = levels
-        for ((ch, lvl) in levels.withIndex()) {
+    private fun updateLevels(level: BusLevel) = Platform.runLater {
+        this.levels = level
+        for (ch in level.channels) {
+            val rms = level.rms[ch]
+            val peak = level.peak[ch]
             val x = ch * meterWidth
             graphicsContext2D.fill = Color.gray(0.08)
             graphicsContext2D.fillRect(x, VERTICAL_PADDING, meterWidth - 1, height - VERTICAL_PADDING * 2)
 
-            graphicsContext2D.fill = when {
-                lvl == Double.NEGATIVE_INFINITY -> continue
-                lvl > 0.0 -> Color.RED
-                lvl > -6.0 -> Color.YELLOW
+            val color = when {
+                rms < -60.0 || rms.isNaN() -> continue
+                rms > 0.0 -> Color.RED
+                rms > -6.0 -> Color.YELLOW
                 else -> Color.GREEN
             }
-            val y = levelToY(lvl)
-            graphicsContext2D.fillRect(x, y, meterWidth - 1, height - y)
+            graphicsContext2D.fill = color
+            val rmsY = levelToY(rms)
+            val peakY = levelToY(peak)
+            graphicsContext2D.fillRect(x, rmsY, meterWidth - 1, height - rmsY - VERTICAL_PADDING)
+            if (peakY < rmsY) {
+                graphicsContext2D.fill = color.darker()
+                graphicsContext2D.fillRect(x, peakY, meterWidth - 1, rmsY - peakY)
+            }
         }
     }
 

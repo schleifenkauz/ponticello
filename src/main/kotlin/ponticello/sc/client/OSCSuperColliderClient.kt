@@ -58,9 +58,9 @@ class OSCSuperColliderClient(
 
     override fun onClientReady(action: () -> Unit) {
         eventObservers.add(ready.stream.observe(action))
-/*        if (isReady) {
-            action()
-        }*/
+        /*        if (isReady) {
+                    action()
+                }*/
     }
 
     override var sampleRate: Double = -1.0
@@ -81,7 +81,11 @@ class OSCSuperColliderClient(
     ) {
         addListener { event ->
             if (event.message.address == address) {
-                listener(event.time, event.message)
+                try {
+                    listener(event.time, event.message)
+                } catch (e: Exception) {
+                    Logger.error("Error while processing OSC message", e)
+                }
             }
         }
     }
@@ -122,52 +126,64 @@ class OSCSuperColliderClient(
         }
     }
 
+    private fun addPonticelloToClientList() {
+        val serverPort = eval("s.addr.port").get().toInt()
+        val addr = InetAddress.getLoopbackAddress()
+        val server = OSCPortOut(addr, serverPort)
+        server.send(OSCMessage("/notify", listOf(1)))
+    }
+
     override fun acceptMessage(event: OSCMessageEvent) {
-        val address = event.message.address
-        when (address) {
-            "/ready" -> eventExecutor.execute {
-                ready.fire()
-                isReady = true
-            }
-
-            "/booted" -> eventExecutor.execute {
-                sampleRate = eval("s.sampleRate").get().toDouble()
-                serverBoot.fire()
-            }
-
-            "/cleared" -> eventExecutor.execute {
-                treeClear.fire()
-            }
-
-            "/reply" -> {
-                val id = event.message.id
-                val result = event.message.getArgument<String>(1, "result")
-                Logger.fine("Completed id: $id, result: $result", Logger.Category.SuperCollider)
-                val request = waitingForReply.remove(id)
-                if (request == null) {
-                    Logger.warn("Wasn't waiting for a reply for id $id", Logger.Category.SuperCollider)
-                    return
+        try {
+            val address = event.message.address
+            when (address) {
+                "/ready" -> eventExecutor.execute {
+                    ready.fire()
+                    isReady = true
+                    //addPonticelloToClientList()
                 }
-                if (request.description != null) {
-                    println("Completed ${request.description}")
-                }
-                request.future.complete(result)
-            }
 
-            "/error" -> {
-                val message = event.message.getArgument<String>(1, "message") ?: "<unknown>"
-                val id = event.message.id
-                Logger.warn(message, Logger.Category.SuperCollider)
-                if (id != null && id != -1) {
+                "/booted" -> eventExecutor.execute {
+                    sampleRate = eval("s.sampleRate").get().toDouble()
+                    serverBoot.fire()
+                }
+
+                "/cleared" -> eventExecutor.execute {
+                    treeClear.fire()
+                }
+
+                "/reply" -> {
+                    val id = event.message.id
+                    val result = event.message.getArgument<String>(1, "result")
+                    Logger.fine("Completed id: $id, result: $result", Logger.Category.SuperCollider)
                     val request = waitingForReply.remove(id)
                     if (request == null) {
-                        Logger.error("Wasn't waiting for a reply for id $id")
+                        Logger.warn("Wasn't waiting for a reply for id $id", Logger.Category.SuperCollider)
                         return
                     }
-                    val exception = SuperColliderException(request.description, request.oscMessage, message)
-                    request.future.completeExceptionally(exception)
+                    if (request.description != null) {
+                        println("Completed ${request.description}")
+                    }
+                    request.future.complete(result)
+                }
+
+                "/error" -> {
+                    val message = event.message.getArgument<String>(1, "message") ?: "<unknown>"
+                    val id = event.message.id
+                    Logger.warn(message, Logger.Category.SuperCollider)
+                    if (id != null && id != -1) {
+                        val request = waitingForReply.remove(id)
+                        if (request == null) {
+                            Logger.error("Wasn't waiting for a reply for id $id")
+                            return
+                        }
+                        val exception = SuperColliderException(request.description, request.oscMessage, message)
+                        request.future.completeExceptionally(exception)
+                    }
                 }
             }
+        } catch (e: Exception) {
+            Logger.error("Error while processing OSC message", e)
         }
     }
 
