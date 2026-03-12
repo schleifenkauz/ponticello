@@ -49,8 +49,6 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) : ScoreObj
     private fun setupActionHandlers() {
         val objectView = scorePane.getSingleObjectView()
         objectView?.setOnMouseClicked { ev ->
-//            borderPane.requestFocus()
-            context[AppLayout].get<ScoreObjectDetailPane>().viewDetails(objectView)
             objectView.selectView(false)
             val (time, _) = scorePane.snapToGrid(ev.x, ev.y)
             playHead.movePlayHead(time)

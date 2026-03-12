@@ -1,6 +1,4 @@
 (
-var cond = Condition.new(true);
-
 ~ponticello_addr = NetAddr("localhost", 7775);
 
 SynthDef(\score_clock) {
@@ -70,7 +68,6 @@ OSCdef('eval', {
 	fct = this.compile(code.asString);
     if (fct == nil) { ~ponticello_addr.sendMsg('error', id, "Compilation error") } {
         fork {
-			cond.wait;
 			try {
                 answer = fct.value;
 				~ponticello_addr.sendMsg('/reply', id, answer.asString);
@@ -86,16 +83,10 @@ OSCdef('run', { |msg|
 	fct = this.compile(code.asString);
 	if (fct == nil) { ~ponticello_addr.sendMsg('error', "Compilation error") };
 	fork {
-		cond.wait;
-		cond.test = false;
 		try {
 			fct.value;
-			cond.test = true;
-			cond.signal;
 		} { |error|
 			~ponticello_addr.sendMsg('/error', -1, error.what);
-			cond.test = true;
-			cond.signal;
 			error.reportError;
 		}
 	}

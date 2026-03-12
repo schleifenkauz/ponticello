@@ -108,11 +108,17 @@ SoundProcessInstance : AudioNode {
 	}
 
 	getControlValue { |name|
-		^extra_args[name] ?? {(def.getControl(name) !? { |ctrl| ctrl.getValue(this) })}
+		^extra_args[name] ?? {
+		    var ctrl = def.getControl(name);
+		    if (ctrl.notNil) { ctrl.getValue(this) } { def.instr.getDefaultValue(name) }
+		}
 	}
 
 	getControlUGen { |name|
-		^extra_args[name] ?? {def.getControl(name) !? { |ctrl| ctrl.getUGen(this) }}
+		^extra_args[name] ?? {
+		    var ctrl = def.getControl(name);
+		    if (ctrl.notNil) { ctrl.getUGen(this) } { def.instr.getDefaultValue(name) }
+		}
 	}
 
 	updateDuration { |dur|
@@ -218,6 +224,7 @@ SoundProcessInstance : AudioNode {
 		inst = proc.createInstance(p, 0, extra_args ? ());
 		placement = (addAction: \addToTail, target: group);
 		inst.start(placement, Server.local.latency, playerId);
+		inst.onDispose { children.remove(inst) };
 		children = children.add(inst);
 		^inst
 	}

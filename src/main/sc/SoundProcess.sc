@@ -53,6 +53,7 @@ SoundProcess {
 
 	* get { |name|
 		var proc;
+		name = name.asSymbol;
 		if (dict.includesKey(name).not) {
 			var cond = Condition.new;
 			conds[name] = cond;

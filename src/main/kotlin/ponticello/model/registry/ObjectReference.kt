@@ -77,7 +77,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
 
     override fun code(writer: ScWriter, context: Context) {
         val obj = get()
-        if (obj is ScoreObject) writer.append("\"${obj.name.now}\"")
+        if (obj is ScoreObject) writer.append("'${obj.name.now}'")
         else writer.append(superColliderName)
     }
 

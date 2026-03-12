@@ -74,10 +74,11 @@ class ScoreObjectViewPane : ToolPane() {
     }
 
     fun showContent(focusedView: ScoreObjectView) {
-        if (playerPane?.scorePane?.getSingleObjectView() == focusedView) return
-        val obj = focusedView.obj
-        showContent(obj)
-        playerPane!!.scorePane.positionInMainScore = { focusedView.absolutePosition }
+        if (playerPane?.scorePane?.getSingleObjectView() != focusedView) {
+            val obj = focusedView.obj
+            showContent(obj)
+            playerPane!!.scorePane.positionInMainScore = { focusedView.absolutePosition }
+        }
         runAfterLayout { focusedView.selectView() }
     }
 
