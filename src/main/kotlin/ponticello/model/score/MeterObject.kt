@@ -33,19 +33,12 @@ class MeterObject private constructor(
 
     override fun superColliderName(objectName: String) = "~meter_${objectName}"
 
-    private val bpmProperty get() = "$superColliderName[\\bpm]"
-    private val bpbProperty get() = "$superColliderName[\\bpb]"
-    private val tpbProperty get() = "$superColliderName[\\tpb]"
-
     override fun ScWriter.createObject() {
-        +"$superColliderName = ()"
-        sync()
+        +"$superColliderName = MeterObject(${beatsPerMinute.now}, ${beatsPerBar.now}, ${ticksPerBeat.now})"
     }
 
     override fun ScWriter.sync() {
-        +"$bpmProperty = ${beatsPerMinute.now}"
-        +"$bpbProperty = ${beatsPerBar.now}"
-        +"$tpbProperty = ${ticksPerBeat.now}"
+        createObject()
     }
 
     override fun ScWriter.freeObject() {
@@ -55,11 +48,11 @@ class MeterObject private constructor(
     override fun initialize(context: Context) {
         super.initialize(context)
         syncObserver = beatsPerMinute.observe { _, _, new ->
-            client.run("$bpmProperty = $new")
+            client.run("${superColliderName}.beatsPerMinute = $new")
         } and beatsPerBar.observe { _, _, new ->
-            client.run("$bpbProperty = $new")
+            client.run("${superColliderName}.beatsPerBar = $new")
         } and ticksPerBeat.observe { _, _, new ->
-            client.run("$tpbProperty = $new")
+            client.run("${superColliderName}.ticksPerBeat = $new")
         }
     }
 

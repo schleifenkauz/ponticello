@@ -299,6 +299,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             "block".expand(Expander<*, *>::isStatementInBlock) { CodeBlockEditor().defaultState() }
             "lambda".expand { _ -> ScFunctionEditor().defaultState() }
             "bus".expand { BusSelector().defaultState() }
+            "meter".expand { MeterSelector().defaultState() }
             "buf".expand { BufferSelector().defaultState() }
             "obj".expand { ScoreObjectSelector().defaultState() }
             "pattern".expand { GlobalPatternSelector().defaultState() }
