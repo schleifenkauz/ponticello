@@ -120,6 +120,8 @@ SoundProcessInstance : AudioNode {
 		}
 	}
 
+	get { |name| ^this.getControlValue(name) }
+
 	getControlUGen { |name|
 		^extra_args[name] ?? {
 		    var ctrl = def.getControl(name);

@@ -3,6 +3,7 @@ package ponticello.ui.registry
 import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
+import fxutils.actions.action
 import fxutils.actions.collectActions
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -83,7 +84,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     val header by lazy {
         val box = HBox() styleClass "object-box-header"
-        if (nameDisplay != null) box.children.add(nameDisplay)
+        if (nameDisplay != null && config.displayName) box.children.add(nameDisplay)
         box.children.addAll(config.getHeaderContent(obj))
         if (config.addSpaceBeforeActionBar) box.children.add(infiniteSpace())
         box.children.add(actionBar)
@@ -182,6 +183,10 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
         relayout()
     }
 
+    fun removeObject() {
+        parent.source.remove(obj)
+    }
+
     fun showSubWindow(): SubWindow? {
         if (subWindow == null) {
             subWindow = createSubWindow()
@@ -234,7 +239,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
                     box.showSubWindow()
                 }
             }
-            addAction("Expand/Collapse") {
+            addAction("                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     Expand/Collapse") {
                 description { box ->
                     `if`(box.expanded, then = { "Collapse" }, otherwise = { "Expand" })
                 }
@@ -251,6 +256,12 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 executes { box, _ -> box.toggleExpanded() }
             }
+        }
+
+        val removeObjectAction = action<ObjectBox<*>>("Remove") {
+            icon(MaterialDesignC.CLOSE_CIRCLE_OUTLINE)
+            shortcut("DELETE")
+            executes { box -> box.removeObject() }
         }
     }
 }

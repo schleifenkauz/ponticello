@@ -11,6 +11,9 @@ sealed interface SynthDefObject : InstrumentObject, SuperColliderObject {
     override val registry: ObjectRegistry<*>?
         get() = context[InstrumentRegistry]
 
+    override val instrumentType: String
+        get() = "SynthDef"
+
     override val superColliderName: String
         get() = "~synthdef_${name.now}"
 

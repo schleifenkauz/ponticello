@@ -39,6 +39,9 @@ class RoutineDefObject(
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
+    override val instrumentType: String
+        get() = "Routine"
+
     override fun superColliderName(objectName: String) = "RoutineInstrument.get('${name.now}')"
 
     override val registry: ObjectRegistry<*>

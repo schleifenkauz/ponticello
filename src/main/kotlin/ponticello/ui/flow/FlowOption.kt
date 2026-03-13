@@ -118,8 +118,16 @@ sealed interface FlowOption {
         override fun defaultName(): String = def.name.now
     }
 
+    data object MidiTrack : FlowOption {
+        override fun createFlow(context: Context, anchor: Point2D): AudioFlow = MidiTrackFlow()
+
+        override fun toString(): String = "MIDI Track"
+
+        override fun defaultName(): String = "midi"
+    }
+
     companion object {
-        private val simpleOptions = listOf(Code, Send, Utility, Mixer, LevelMeter)
+        private val simpleOptions = listOf(Code, Send, Utility, Mixer, LevelMeter, MidiTrack)
 
         fun getOptions(context: Context): List<FlowOption> {
             val vstOptions = VSTPlugins.availablePlugins(context).map(::VSTPlugin)

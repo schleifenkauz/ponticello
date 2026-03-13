@@ -5,7 +5,6 @@ import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
 import fxutils.drag.DropHandler
-import fxutils.drag.setupDropArea
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.UndoManager
 import hextant.context.compoundEdit
@@ -17,7 +16,6 @@ import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
-import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.Tooltip
 import javafx.scene.input.*
@@ -267,19 +265,10 @@ class ObjectListView<O : Any>(
         }
     }
 
-    private fun emptyDisplay(): VBox {
-        val objectType = plural(source.objectType)
-        val emptyDisplay = VBox(Label("No $objectType to display")) styleClass "empty-display"
-        emptyDisplay.centerChildren()
-        emptyDisplay.setPadding(10.0)
-        emptyDisplay.setupDropArea(EmptyListDropHandler())
-        return emptyDisplay
-    }
-
     private fun updateRoot(mode: DisplayMode) {
         if (boxes.isEmpty()) {
             if (config.enableAddObjectButton) setRoot(addObjectButton())
-            else setRoot(emptyDisplay())
+            else setRoot(config.emptyDisplay(this))
         } else {
             if (mode == DisplayMode.DetailsPane) {
                 displayContent(selectedBox.now)
@@ -497,6 +486,8 @@ class ObjectListView<O : Any>(
         val box = boxesCache[obj] ?: return
         box.content()
     }
+
+    fun emptyListDropHandler(): DropHandler = EmptyListDropHandler()
 
     private inner class EmptyListDropHandler : DropHandler {
         override fun acceptedTransferModes(event: DragEvent): Array<TransferMode> =

@@ -18,9 +18,11 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import javafx.scene.text.Text
 import org.kordamp.ikonli.codicons.Codicons
-import org.kordamp.ikonli.materialdesign2.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.model.flow.*
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.InstrumentRegistry
@@ -32,12 +34,17 @@ import ponticello.model.registry.reference
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
+import ponticello.ui.flow.MidiTrackFlowView.MidiDeviceSelectorPrompt
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.impl.getFrom
 import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.MidiDeviceSpec
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ListDisplayConfig
+import ponticello.ui.registry.ListDisplayConfig.Companion.addObjectAction
+import ponticello.ui.registry.ListDisplayConfig.Companion.insertObjectAction
 import ponticello.ui.registry.ObjectBox
+import ponticello.ui.registry.ObjectBox.Companion.removeObjectAction
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
@@ -50,6 +57,7 @@ import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import java.util.*
+import kotlin.reflect.KClass
 
 class FlowGroupPane(
     private val group: AudioFlowGroup,
@@ -61,7 +69,7 @@ class FlowGroupPane(
     init {
         flowsView.alwaysVGrow()
         alwaysVGrow()
-        val addFlowButton = addFlowAction.withContext(this).makeButton("small-icon-button")
+        val addFlowButton = addObjectAction.withContext(flowsView).makeButton("small-icon-button")
         val layout = HBox(VBox(infiniteSpace(), addFlowButton, infiniteSpace()), flowsView).alwaysVGrow()
         if (parent == null) {
             val nameControl = NameControl(group).setFixedWidth(150.0)
@@ -127,7 +135,7 @@ class FlowGroupPane(
                 val controls = SoundProcessView.getInitialControls(
                     def, context, defaultBus = null, anchor
                 ) ?: return emptyList()
-                return listOf(InstrumentFlow.create(def, controls))
+                listOf(InstrumentFlow.create(def, controls))
             }
 
             else -> emptyList()
@@ -144,25 +152,18 @@ class FlowGroupPane(
         is MixerFlow -> MixerFlowView.create(obj)
         is VSTPluginFlow -> VSTPluginFlowView(obj)
         is LevelMeterFlow -> LevelMeterFlowView(obj)
+        is MidiTrackFlow -> MidiTrackFlowView(obj)
+        else -> createView(obj)
     }
 
-    override fun collapsedLayout(box: ObjectBox<AudioFlow>): Node {
-        val nameLabel = Text()
-        nameLabel.textProperty().bind(box.obj.name.asObservableValue())
-        val namePane = makeVerticalLabel(nameLabel).alwaysVGrow()
-        val actions = listOf(
-            expandFlowAction.withContext(box)
-        ) + getActions(box).reversed()
-        val actionBar = ActionBar(actions, "small-icon-button")
-        actionBar.setOrientation(Orientation.VERTICAL)
-        nameLabel.setOnMouseClicked { ev ->
-            if (ev.clickCount == 2) {
-                box.toggleExpanded()
-            }
+    override fun getHeaderContent(obj: AudioFlow): List<Node> = when (obj) {
+        is MidiTrackFlow -> {
+            val selectorButton = MidiDeviceSelectorPrompt(MidiDeviceSpec.Type.SOURCE, obj.context)
+                .selectorButton(obj.sourceDevice)
+            listOf(selectorButton)
         }
-        val layout = VBox(actionBar, namePane)
-        box.setupDragging(dragTarget = layout)
-        return layout.pad(3.0)
+
+        else -> emptyList()
     }
 
     override fun expandedLayout(box: ObjectBox<AudioFlow>): Node = when (box.obj) {
@@ -170,7 +171,7 @@ class FlowGroupPane(
             val header = HBox(
                 Label("Meter"),
                 infiniteSpace(),
-                removeFlowAction.withContext(box).makeButton("small-icon-button")
+                removeObjectAction.withContext(box).makeButton("small-icon-button")
             )
             VBox(3.0, header, box.content).pad(3.0)
         }
@@ -179,8 +180,8 @@ class FlowGroupPane(
     }
 
     override fun createSeparatorNode(box: ObjectBox<AudioFlow>): VBox {
-        val actionBar = ActionBar(separatorBarActions.withContext(box), "small-icon-button")
-        return VBox(infiniteSpace(), actionBar, infiniteSpace())
+        val button = insertObjectAction.withContext(box).makeButton("small-icon-button")
+        return VBox(infiniteSpace(), button, infiniteSpace())
     }
 
     private fun midiContext(obj: AudioFlow): MidiContext? {
@@ -209,7 +210,7 @@ class FlowGroupPane(
     }
 
     override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> =
-        flowActions.withContext(box.obj) + removeFlowAction.withContext(box)
+        flowActions.withContext(box.obj) + removeObjectAction.withContext(box)
 
     override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
         dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to obj.reference()))
@@ -238,6 +239,19 @@ class FlowGroupPane(
     override fun filter(obj: AudioFlow): Boolean = parent?.filter(obj) ?: true
 
     companion object {
+        private val viewFactories = mutableMapOf<KClass<out AudioFlow>, (AudioFlow) -> Parent>()
+
+        fun <F : AudioFlow> registerViewFactory(clazz: KClass<F>, factory: (F) -> Parent) {
+            @Suppress("UNCHECKED_CAST")
+            viewFactories[clazz] = factory as (AudioFlow) -> Parent
+        }
+
+        private fun createView(flow: AudioFlow): Parent {
+            val factory = viewFactories[flow::class]
+                ?: throw IllegalArgumentException("Unsupported flow type: ${flow::class.java.name}")
+            return factory.invoke(flow)
+        }
+
         val toggleActiveAction = action<AudioFlowGroup>("Toggle activated") {
             description { grp ->
                 `if`(
@@ -253,35 +267,6 @@ class FlowGroupPane(
                 }
             }
             executes { grp -> grp.toggleActive() }
-        }
-
-        private val expandFlowAction = action<ObjectBox<AudioFlow>>("Expand") {
-            icon(MaterialDesignC.CHEVRON_RIGHT)
-            executes { box -> box.setExpanded(true) }
-        }
-
-        private val separatorBarActions = collectActions<ObjectBox<AudioFlow>> {
-            addAction("Insert flow") {
-                icon(MaterialDesignP.PLUS)
-                executes { box, ev ->
-                    val flowsView = box.getParent<ObjectListView<*>>() ?: return@executes
-                    val idx = flowsView.source.indexOf(box.obj) + 1
-                    flowsView.addObject(ev, idx)
-                }
-            }
-        }
-
-        private val addFlowAction = action<FlowGroupPane>("Add flow") {
-            icon(MaterialDesignP.PLUS)
-            executes { pane, ev ->
-                pane.flowsView.addObject(ev, idx = 0)
-            }
-        }
-
-        private val removeFlowAction = action<ObjectBox<AudioFlow>>("Remove") {
-            icon(MaterialDesignC.CLOSE_CIRCLE_OUTLINE)
-            shortcut("DELETE")
-            executes { box -> box.parent.source.remove(box.obj) }
         }
 
         private val flowActions = collectActions<AudioFlow> {

@@ -21,6 +21,9 @@ class VSTInstrumentObject(val flow: VSTPluginFlow) : InstrumentObject { //TODO i
     override val initialized: Boolean
         get() = flow.initialized
 
+    override val instrumentType: String
+        get() = "VST"
+
     override fun initialize(context: Context) {
     }
 

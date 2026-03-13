@@ -17,13 +17,15 @@ import ponticello.model.score.controls.ParameterControlList.NamedParameterContro
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander
+import ponticello.ui.midi.MidiInstrument
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
 
 data object ExprControlType : ControlType<ExprControl>() {
-    override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = obj is ScoreObject &&
-            (spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec || spec is ExprControlSpec)
+    override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
+        (obj is ScoreObject || obj is MidiInstrument) &&
+                (spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec || spec is ExprControlSpec)
 
     override fun createDetailInput(
         namedControl: NamedParameterControl, control: ExprControl, view: ScoreObjectView?,

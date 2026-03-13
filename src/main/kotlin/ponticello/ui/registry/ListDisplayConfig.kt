@@ -2,19 +2,26 @@
 
 package ponticello.ui.registry
 
-import fxutils.SubWindow
+import fxutils.*
+import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.action
+import fxutils.drag.setupDropArea
 import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
+import javafx.scene.control.Label
 import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.VBox
+import javafx.scene.text.Text
 import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import ponticello.model.obj.NamedObject
 import ponticello.model.obj.RenamableObject
 import ponticello.model.obj.withName
@@ -23,6 +30,7 @@ import ponticello.model.registry.ObjectList
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.impl.getFrom
 import reaktive.Reactive
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
 interface ListDisplayConfig<O : Any> {
@@ -41,6 +49,8 @@ interface ListDisplayConfig<O : Any> {
     val canCreateNewObject: Boolean get() = true
 
     val buttonStyle: String get() = "medium-icon-button"
+
+    val displayName: Boolean get() = true
 
     val nameDisplayWidth: Double get() = 150.0
 
@@ -72,6 +82,15 @@ interface ListDisplayConfig<O : Any> {
     fun configureBox(box: ObjectBox<O>, currentMode: ObjectListView.DisplayMode) {}
 
     fun createSeparatorNode(box: ObjectBox<O>): Node? = null
+
+    fun emptyDisplay(view: ObjectListView<O>): Node {
+        val objectType = plural(view.source.objectType)
+        val emptyDisplay = VBox(Label("No $objectType to display")) styleClass "empty-display"
+        emptyDisplay.centerChildren()
+        emptyDisplay.setPadding(10.0)
+        emptyDisplay.setupDropArea(view.emptyListDropHandler())
+        return emptyDisplay
+    }
 
     fun configureDragboard(obj: O, dragboard: Dragboard) {}
 
@@ -136,7 +155,51 @@ interface ListDisplayConfig<O : Any> {
         if (box.content != null) VBox(box.header, box.content)
         else box.header
 
-    fun collapsedLayout(box: ObjectBox<O>): Node = box.header
+    fun collapsedLayout(box: ObjectBox<O>): Node = when (inlineOrientation) {
+        Orientation.VERTICAL -> box.header
+        Orientation.HORIZONTAL -> {
+            val obj = box.obj
+            val nameLabel = Text()
+            if (obj is NamedObject) {
+                nameLabel.textProperty().bind(obj.name.asObservableValue())
+                val namePane = makeVerticalLabel(nameLabel).alwaysVGrow()
+                val actions = listOf(expandAction.withContext(box)) + getActions(box).reversed()
+                val actionBar = ActionBar(actions, "small-icon-button")
+                actionBar.setOrientation(Orientation.VERTICAL)
+                nameLabel.setOnMouseClicked { ev ->
+                    if (ev.clickCount == 2) {
+                        box.toggleExpanded()
+                    }
+                }
+                val layout = VBox(actionBar, namePane)
+                box.setupDragging(dragTarget = layout)
+                layout.pad(3.0)
+            } else box.header
+        }
+    }
 
     fun expandNewItem(obj: O): Boolean = true
+
+    companion object {
+        private val expandAction = action<ObjectBox<*>>("Expand") {
+            icon(MaterialDesignC.CHEVRON_RIGHT)
+            executes { box -> box.setExpanded(true) }
+        }
+
+        val insertObjectAction = action<ObjectBox<*>>("Insert flow") {
+            icon(MaterialDesignP.PLUS)
+            executes { box, ev ->
+                val listView = box.getParent<ObjectListView<*>>() ?: return@executes
+                val idx = listView.source.indexOf(box.obj) + 1
+                listView.addObject(ev, idx)
+            }
+        }
+
+        val addObjectAction = action<ObjectListView<*>>("Add object") {
+            icon(MaterialDesignP.PLUS)
+            executes { view, ev ->
+                view.addObject(ev, idx = 0)
+            }
+        }
+    }
 }

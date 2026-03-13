@@ -24,6 +24,8 @@ import reaktive.value.reactiveVariable
 sealed interface InstrumentObject : SuperColliderObject {
     val color: ReactiveValue<Color>
 
+    val instrumentType: String
+
     val parameters: List<ParameterDefObject>
 
     fun allParameters(): List<ParameterDefObject> = parameters

@@ -1,25 +1,16 @@
 package ponticello.ui.flow
 
 import fxutils.actions.ContextualizedAction
-import fxutils.actions.button
 import fxutils.actions.collectActions
-import fxutils.actions.makeButton
-import fxutils.centerChildren
-import fxutils.makeVerticalLabel
 import fxutils.prompt.SelectorPrompt
 import fxutils.setFixedWidth
-import fxutils.vspace
 import hextant.context.Context
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
-import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
-import javafx.scene.text.Text
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.impl.Logger
 import ponticello.model.flow.AudioFlow
@@ -33,7 +24,6 @@ import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView.DisplayMode
-import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
 class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flows) {
@@ -119,19 +109,21 @@ class AudioFlowsPane(flows: AudioFlows) : SearchableToolPane<AudioFlowGroup>(flo
         is FilterOption.Bus -> flow.usesBus(filter.bus)
     }
 
-    override fun collapsedLayout(box: ObjectBox<AudioFlowGroup>): Node {
-        val nameLabel = Text()
-        nameLabel.textProperty().bind(box.obj.name.asObservableValue())
-        val namePane = makeVerticalLabel(nameLabel).setFixedWidth(15.0)
-        setVgrow(namePane, Priority.ALWAYS)
+    /*
+        override fun collapsedLayout(box: ObjectBox<AudioFlowGroup>): Node {
+            val nameLabel = Text()
+            nameLabel.textProperty().bind(box.obj.name.asObservableValue())
+            val namePane = makeVerticalLabel(nameLabel).setFixedWidth(15.0)
+            setVgrow(namePane, Priority.ALWAYS)
 
-        val expandAction = MaterialDesignC.CHEVRON_RIGHT.button("Expand", "medium-icon-button") { _ ->
-            box.toggleExpanded()
+            val expandAction = MaterialDesignC.CHEVRON_RIGHT.button("Expand", "medium-icon-button") { _ ->
+                box.toggleExpanded()
+            }
+            val toggleActive = FlowGroupPane.toggleActiveAction.withContext(box.obj).makeButton("medium-icon-button")
+            return VBox(expandAction, toggleActive, vspace(20.0), namePane)
+                .centerChildren().setFixedWidth(30.0)
         }
-        val toggleActive = FlowGroupPane.toggleActiveAction.withContext(box.obj).makeButton("medium-icon-button")
-        return VBox(expandAction, toggleActive, vspace(20.0), namePane)
-            .centerChildren().setFixedWidth(30.0)
-    }
+    */
 
     override fun onDeselected(obj: AudioFlowGroup) {
         val groupPane = listView.getBox(obj).content as? FlowGroupPane ?: return
