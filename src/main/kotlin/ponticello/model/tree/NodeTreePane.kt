@@ -43,7 +43,7 @@ class NodeTreePane(list: AudioNodeTree) : ListToolPane<AudioNode>(list) {
             val instrumentName = obj.process.instrumentRef.flatMap(InstrumentReference::name)
             add(button(instrumentName) {
                 val pane = obj.context[AppLayout].get<InstrumentRegistryPane>()
-                pane.showContent(obj.process.def)
+                pane.showContent(obj.process.getInstrument())
             })
         }
     }

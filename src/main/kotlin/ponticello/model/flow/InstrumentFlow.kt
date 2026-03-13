@@ -32,8 +32,7 @@ class InstrumentFlow(
     lateinit var instrumentSelector: InstrumentSelector
         private set
 
-    override val def: InstrumentObject
-        get() = defRef.now.get() ?: NoInstrument()
+    override fun getInstrument(): InstrumentObject = defRef.now.get() ?: NoInstrument()
 
     override val instrumentChanged: Reactive get() = defRef
 

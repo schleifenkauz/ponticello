@@ -80,7 +80,7 @@ class MultiObjectControlPopup(
                             if (obj.controls.has(name)) {
                                 obj.controls.reassignControl(name, ctrl)
                             } else {
-                                val customSpec = if (obj.def.hasParameter(name)) null else obj.getSpec(name)
+                                val customSpec = if (obj.getInstrument().hasParameter(name)) null else obj.getSpec(name)
                                 obj.controls.addControl(name, ctrl, customSpec)
                             }
                         }

@@ -307,7 +307,7 @@ class FlowGroupPane(
                 executes { flow ->
                     flow as InstrumentFlow
                     val pane = flow.context[AppLayout].get<InstrumentRegistryPane>()
-                    pane.showContent(flow.def)
+                    pane.showContent(flow.getInstrument())
                 }
             }
             add(ServerActions.scopeBus) { f -> (f as? MixerFlow)?.targetBus }

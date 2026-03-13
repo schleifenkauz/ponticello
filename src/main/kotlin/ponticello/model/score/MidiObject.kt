@@ -12,6 +12,7 @@ import ponticello.impl.*
 import ponticello.model.instr.*
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
+import reaktive.Reactive
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.orElse
@@ -53,18 +54,20 @@ class MidiObject(
 
     val pitchRange get() = lowestPitch..highestPitch
 
+    override val instrumentChanged: Reactive
+        get() = instrument
+
     override val associatedColor: ReactiveValue<Color?>
         get() = super.associatedColor.orElse(instrument.flatMap { instr ->
             if (instr is InstrumentReference.UserDefined) instr.reference.get()?.color ?: reactiveValue(null)
             else reactiveValue(null)
         })
 
-    override val def: InstrumentObject
-        get() = when (val instr = instrument.now) {
-            is InstrumentReference.UserDefined -> instr.reference.get() ?: NoInstrument()
-            is InstrumentReference.VST -> instr.flow.get()?.let { f -> VSTInstrumentObject(f) } ?: NoInstrument()
-            InstrumentReference.None -> NoInstrument()
-        }
+    override fun getInstrument(): InstrumentObject = when (val instr = instrument.now) {
+        is InstrumentReference.UserDefined -> instr.reference.get() ?: NoInstrument()
+        is InstrumentReference.VST -> instr.flow.get()?.let { f -> VSTInstrumentObject(f) } ?: NoInstrument()
+        InstrumentReference.None -> NoInstrument()
+    }
 
     @Transient
     private var pixelsPerPitch: Double = -1.0

@@ -10,17 +10,17 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
 import ponticello.impl.json
-import ponticello.model.server.BufferObject
-import ponticello.model.instr.BusObject
 import ponticello.model.code.GlobalPatternObject
-import ponticello.model.instr.ParameterizedObject
-import ponticello.model.server.BufferRegistry
-import ponticello.model.server.BusRegistry
 import ponticello.model.code.GlobalPatternRegistry
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
+import ponticello.model.instr.BusObject
+import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ExprControl
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
+import ponticello.model.server.BufferObject
+import ponticello.model.server.BufferRegistry
+import ponticello.model.server.BusRegistry
 import ponticello.sc.ControlSpec
 import ponticello.sc.editor.GlobalPatternSelector
 import ponticello.sc.editor.MessageSendEditor
@@ -89,7 +89,7 @@ class ParameterizedObjectDropHandler(
         obj.controls
             .filter { ctrl -> predicate(ctrl.spec.now) }
             .mapTo(controlOptions) { ctrl -> ctrl.name.now }
-        obj.def.parameters
+        obj.getInstrument().parameters
             .filter { p -> predicate(p.spec.now) }
             .mapTo(controlOptions) { p -> p.name.now }
 

@@ -196,14 +196,14 @@ class SoundProcessView(
         }
 
         fun showNewEnvelopePopup(obj: SoundProcess, ev: Event?) {
-            val possibleParameters = obj.def.allParameters()
+            val possibleParameters = obj.getInstrument().allParameters()
                 .filter { p -> p.spec.now is NumericalControlSpec }
                 .filter { p ->
                     val control = obj.controls.controlMap[p.name.now]
                     control !is EnvelopeControl || !control.display.now
                 } + obj.controls
                 .filter { ctrl -> ctrl.spec.now is NumericalControlSpec && ctrl.now !is EnvelopeControl }
-                .filter { ctrl -> !obj.def.hasParameter(ctrl.name.now) }
+                .filter { ctrl -> !obj.getInstrument().hasParameter(ctrl.name.now) }
                 .map { ctrl -> ParameterDefObject(ctrl.name.now, ctrl.spec.now!!) }
             val listView = ParameterDefSelectorPrompt(
                 possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
@@ -218,7 +218,7 @@ class SoundProcessView(
                 display = reactiveVariable(true)
             )
             val customSpec = spec.takeIf {
-                it != obj.def.getSpec(param.name.now)?.now
+                it != obj.getInstrument().getSpec(param.name.now)?.now
             }
             if (name !in obj.controls.controlMap) obj.controls.addControl(name, control, customSpec)
             else obj.controls.reassignControl(name, control)

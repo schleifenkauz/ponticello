@@ -62,7 +62,7 @@ fun missingSpecOptionsBar(control: NamedParameterControl): HBox = HBox(
     button("Sync") { ev ->
         val success = control.useSpecFromDefinition()
         if (!success) {
-            InfoPrompt("No spec found in '${control.parentObject.def.name.now}'").showDialog(ev)
+            InfoPrompt("No spec found in '${control.parentObject.getInstrument().name.now}'").showDialog(ev)
         }
     },
     button("Custom") { ev ->

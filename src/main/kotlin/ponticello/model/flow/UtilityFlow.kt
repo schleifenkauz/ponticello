@@ -17,6 +17,7 @@ import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.ValueControl
 import reaktive.Observer
+import reaktive.Reactive
 import reaktive.value.*
 import reaktive.value.binding.flatMap
 
@@ -30,8 +31,10 @@ class UtilityFlow(
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
-    @Transient
-    override val def: InstrumentObject = ReferencedSynthDefObject.get("utility")
+    override fun getInstrument(): InstrumentObject = ReferencedSynthDefObject.get("utility")
+
+    override val instrumentChanged: Reactive
+        get() = reactiveVariable(Unit)
 
     @Transient
     private val actualVolume = reactiveVariable(volumeDb.now)
@@ -47,7 +50,7 @@ class UtilityFlow(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        def.initialize(context)
+        getInstrument().initialize(context)
         muteObserver = muted.forEach { mute ->
             actualVolume.now = if (mute) MUTED_VOLUME else volumeDb.now
         }

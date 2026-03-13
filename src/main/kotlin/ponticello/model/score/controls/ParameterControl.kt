@@ -27,7 +27,7 @@ sealed class ParameterControl : AbstractContextualObject() {
 
     fun hasOwnSynth(obj: ParameterizedObject): Boolean = when (this) {
         is UGenControl -> true
-        is EnvelopeControl -> obj.def is SynthDefObject
+        is EnvelopeControl -> obj.getInstrument() is SynthDefObject
         else -> false
     }
 

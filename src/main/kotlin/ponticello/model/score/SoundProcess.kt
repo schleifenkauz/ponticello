@@ -75,8 +75,7 @@ class SoundProcess(
     @Transient
     private var bufferPositionBeforeResize = zero
 
-    override val def: InstrumentObject
-        get() = instrumentRef.now.get() ?: NoInstrument()
+    override fun getInstrument(): InstrumentObject = instrumentRef.now.get() ?: NoInstrument()
 
     override fun validate(): Boolean = controls.validate()
 
@@ -241,7 +240,7 @@ class SoundProcess(
         if (midiObject != null) {
             val midinote = info.instance.y
             extraArgs["midinote"] = midinote
-            if (def is SynthDefObject || def is RoutineDefObject) {
+            if (getInstrument() is SynthDefObject || getInstrument() is RoutineDefObject) {
                 val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
                 extraArgs["freq"] = freq
             }
@@ -264,7 +263,7 @@ class SoundProcess(
         fun createSoundProcessObject(writer: ScWriter, obj: ParameterizedObject, duration: Decimal?) =
             writer.appendGroup("SoundProcess.create") {
                 appendLine("name: '${obj.soundProcessName}',")
-                appendLine("instr: ${obj.def.superColliderName},")
+                appendLine("instr: ${obj.getInstrument().superColliderName},")
                 appendLine("duration: ${duration ?: "nil"},")
                 append("controls: [")
                 indented {

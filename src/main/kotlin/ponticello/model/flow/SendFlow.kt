@@ -16,13 +16,11 @@ import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.ValueControl
 import ponticello.model.server.BusRegistry
-import reaktive.value.ReactiveValue
-import reaktive.value.ReactiveVariable
+import reaktive.Reactive
+import reaktive.value.*
 import reaktive.value.binding.and
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
-import reaktive.value.now
-import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("SendFlow")
@@ -42,8 +40,10 @@ class SendFlow(
     lateinit var targetBus: ReactiveValue<BusObject?>
         private set
 
-    @Transient
-    override val def: InstrumentObject = ReferencedSynthDefObject.get("send")
+    override val instrumentChanged: Reactive
+        get() = reactiveValue(Unit)
+
+    override fun getInstrument(): InstrumentObject = ReferencedSynthDefObject.get("send")
 
     @Transient
     override lateinit var controls: ParameterControlList
@@ -59,7 +59,7 @@ class SendFlow(
         targetBus = targetRef.map { ref -> ref.get() }
         sourceRef.now.resolve(context[BusRegistry])
         sourceBus = sourceRef.map { ref -> ref.get() }
-        def.initialize(context)
+        getInstrument().initialize(context)
         controls = ParameterControlList.create(
             "in" to BusControl(sourceRef),
             "out" to BusControl(targetRef),

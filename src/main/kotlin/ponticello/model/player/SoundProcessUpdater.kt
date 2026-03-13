@@ -27,7 +27,7 @@ class SoundProcessUpdater<O>(
             observeControl(control, control.now)
         }
         instrumentObserver = obj.instrumentChanged.observe { _ ->
-            updateSoundProcess("setInstrument(${obj.def.superColliderName})")
+            updateSoundProcess("setInstrument(${obj.getInstrument().superColliderName})")
         }
     }
 

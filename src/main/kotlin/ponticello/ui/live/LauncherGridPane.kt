@@ -322,7 +322,7 @@ class LauncherGridPane(
                                 obj.getSpec(name)?.let { spec -> ParameterDefObject(name, spec) }
                             }
                             val newVelocityParam = ParameterDefSelectorPrompt(
-                                obj.def.allParameters(), "Select velocity parameter",
+                                obj.getInstrument().allParameters(), "Select velocity parameter",
                                 fixedParameterType = ParameterType.Numerical
                             ).showPopup(ev, initialOption = oldVelocityParam) ?: return@executes
                             if (newVelocityParam != oldVelocityParam) {

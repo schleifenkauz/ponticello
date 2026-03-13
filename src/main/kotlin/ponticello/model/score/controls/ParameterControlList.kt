@@ -53,7 +53,7 @@ class ParameterControlList(
     @Transient
     private lateinit var validationObserver: Observer
 
-    private val def: InstrumentObject get() = associatedObject.def
+    private val def: InstrumentObject get() = associatedObject.getInstrument()
 
     private val parameterObservers = mutableMapOf<ParameterDefObject, Observer>()
 
@@ -100,7 +100,7 @@ class ParameterControlList(
 
         fun initialize(controls: ParameterControlList) {
             this.controls = controls
-            updateSpec(customSpec ?: parentObject.def.getSpec(name.now)?.now)
+            updateSpec(customSpec ?: parentObject.getInstrument().getSpec(name.now)?.now)
             value.now.initialize(context, this)
             isValid = binding(_spec, value) { spec, ctrl -> spec != null && ctrl.validate(spec, parentObject) }
         }
@@ -279,7 +279,7 @@ class ParameterControlList(
                     move(get(name), idx)
                 }
             } else {
-                val customSpec = spec.takeIf { it != associatedObject.def.getSpec(name)?.now }
+                val customSpec = spec.takeIf { it != associatedObject.getInstrument().getSpec(name)?.now }
                 addControl(name, control, customSpec, idx)
             }
         }

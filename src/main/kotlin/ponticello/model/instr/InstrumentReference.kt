@@ -34,7 +34,7 @@ sealed interface InstrumentReference {
         override fun get(): InstrumentObject? = reference.get()
     }
 
-    data class VST(val flow: VSTPluginReference) : InstrumentReference {
+    data class VST(val flow: VSTPluginReference) : InstrumentReference { //TODO is this needed?
         override fun getName(): String = flow.getName()
 
         override val name: ReactiveString get() = flow.name
@@ -46,7 +46,7 @@ sealed interface InstrumentReference {
     }
 
     data object None : InstrumentReference {
-        override val name: ReactiveString get() = reactiveValue("none")
+        override val name: ReactiveString get() = reactiveValue("None")
 
         override fun getName(): String = "None"
 

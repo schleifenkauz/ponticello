@@ -36,7 +36,7 @@ class GridItem(
             grid.notifyViews { updateItem(this@GridItem) }
             if (value is ItemTarget.Object) {
                 val target = value.targetObject
-                if (target is SoundProcess && target.def.hasParameter("level")) {
+                if (target is SoundProcess && target.getInstrument().hasParameter("level")) {
                     value.velocityParameter.now = "level"
                 }
             }

@@ -154,7 +154,7 @@ object ScoreObjectActions {
             applicableIf { ctx -> ctx.selectedObjects.all { obj -> obj is ParameterizedObject } }
             executes { ctx, ev ->
                 val commonInstrument = ctx.selectedObjects
-                    .map { obj -> (obj as ParameterizedObject).def }
+                    .map { obj -> (obj as ParameterizedObject).getInstrument() }
                     .singleOrNull()?.instrumentReference()
                 val newInstrument = InstrumentSelectorPopup(ctx.context)
                     .selectInitialOption(commonInstrument)
@@ -193,7 +193,7 @@ object ScoreObjectActions {
                     return@executes
                 }
                 when (obj) {
-                    is SoundProcess -> showInstrumentDef(obj.def, obj.context)
+                    is SoundProcess -> showInstrumentDef(obj.getInstrument(), obj.context)
                     is MidiObject -> showInstrument(obj.instrument.now, obj.context)
                     else -> {}
                 }

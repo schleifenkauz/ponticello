@@ -9,7 +9,7 @@ import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveValue
 import reaktive.value.reactiveValue
 
-class VSTInstrumentObject(val flow: VSTPluginFlow) : InstrumentObject {
+class VSTInstrumentObject(val flow: VSTPluginFlow) : InstrumentObject { //TODO is this needed?
     override val color: ReactiveValue<Color>
         get() = reactiveValue(Color.BLACK)
     override val parameters: ParameterDefList

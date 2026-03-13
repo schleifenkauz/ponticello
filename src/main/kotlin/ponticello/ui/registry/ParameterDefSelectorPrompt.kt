@@ -13,7 +13,7 @@ import reaktive.value.now
 class ParameterDefSelectorPrompt(
     options: List<ParameterDefObject>, title: String,
     private val parentObject: ParameterizedObject? = null,
-    private val instrumentObject: InstrumentObject? = parentObject?.def,
+    private val instrumentObject: InstrumentObject? = parentObject?.getInstrument(),
     private val fixedParameterType: ParameterType? = null,
 ) : SimpleSelectorPrompt<ParameterDefObject>(options, title) {
     override val canCreateItem: Boolean get() = true

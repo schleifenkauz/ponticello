@@ -37,7 +37,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
 
     private fun confirmAndSync() {
         val spec = confirm()
-        parentObject!!.def.setSpec(parameterName, spec)
+        parentObject!!.getInstrument().setSpec(parameterName, spec)
         parentObject.controls.get(parameterName).setCustomSpec(null)
         commit(spec)
     }
@@ -45,7 +45,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
     private fun confirmAndAdd() {
         val spec = confirm()
         val param = ParameterDefObject(parameterName, spec)
-        val def = parentObject!!.def as ConfigurableInstrumentObject
+        val def = parentObject!!.getInstrument() as ConfigurableInstrumentObject
         def.parameters.add(param)
         commit(spec)
     }
@@ -60,8 +60,8 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
 
     override fun extraButtons(): List<Button> = when {
         parentObject == null -> emptyList()
-        parentObject.def !is ConfigurableInstrumentObject -> emptyList()
-        parentObject.def.hasParameter(parameterName) -> listOf(confirmAndSyncBtn, resetBtn)
+        parentObject.getInstrument() !is ConfigurableInstrumentObject -> emptyList()
+        parentObject.getInstrument().hasParameter(parameterName) -> listOf(confirmAndSyncBtn, resetBtn)
         else -> listOf(confirmAndAddBtn)
     }
 

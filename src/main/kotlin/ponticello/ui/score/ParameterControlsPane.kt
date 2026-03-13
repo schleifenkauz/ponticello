@@ -79,7 +79,7 @@ class ParameterControlsPane(
     private fun createNewControl(ev: Event?): NamedParameterControl? {
         val context = obj.context
         val defaultParameters = context[GlobalSettings].defaultParametersDefs
-        val synthParameters = obj.def.allParameters()
+        val synthParameters = obj.getInstrument().allParameters()
         val unassignedParameters = (synthParameters + defaultParameters)
             .filter { param -> param.name.now !in obj.controls.controlMap }
             .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
@@ -87,7 +87,7 @@ class ParameterControlsPane(
             .showPopup(ev) ?: return null
         val parameter = option.name.now
         val spec = option.spec.now
-        val customSpec = spec.takeIf { !obj.def.hasParameter(parameter) }
+        val customSpec = spec.takeIf { !obj.getInstrument().hasParameter(parameter) }
         val type = spec.defaultControlType()
         val control =
             if (!type.supportsDialogInput()) option.defaultControl()
@@ -129,7 +129,7 @@ class ParameterControlsPane(
     override fun configureDragboard(obj: NamedParameterControl, dragboard: Dragboard) {
         val copy = obj.copy()
         if (copy.customSpec() == null) {
-            val defaultSpec = obj.parentObject.def.getSpec(copy.name.now)?.now
+            val defaultSpec = obj.parentObject.getInstrument().getSpec(copy.name.now)?.now
             copy.setCustomSpec(defaultSpec)
         }
         val jsonString = json.encodeToString(NamedParameterControl.serializer(), obj)

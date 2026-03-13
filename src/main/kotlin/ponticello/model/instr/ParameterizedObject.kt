@@ -7,12 +7,11 @@ import ponticello.sc.ControlSpec
 import reaktive.Reactive
 import reaktive.value.ReactiveValue
 import reaktive.value.now
-import reaktive.value.reactiveValue
 
 interface ParameterizedObject : NamedObject {
-    val def: InstrumentObject
+    fun getInstrument(): InstrumentObject
 
-    val instrumentChanged: Reactive get() = reactiveValue(Unit)
+    val instrumentChanged: Reactive
 
     val isCreatedInSuperCollider: Boolean
 
@@ -25,10 +24,10 @@ interface ParameterizedObject : NamedObject {
     fun duration(): ReactiveValue<Decimal>? = null
 
     fun getSpec(parameter: String): ControlSpec? =
-        controls.getOrNull(parameter)?.spec?.now ?: def.getSpec(parameter)?.now
+        controls.getOrNull(parameter)?.spec?.now ?: getInstrument().getSpec(parameter)?.now
 
     fun addControlsForAllObjectParameters() {
-        for (param in def.allParameters()) {
+        for (param in getInstrument().allParameters()) {
             val name = param.name.now
             if (name !in controls.controlMap) {
                 controls.addControl(name, param.defaultControl())
