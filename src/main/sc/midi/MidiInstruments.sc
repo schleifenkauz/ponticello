@@ -7,12 +7,12 @@ SoundProcessMidiInstrument {
 
 	noteOn { |chan, num, val, track, src|
 		if (enabled) {
-		var proc = SoundProcess.get(procName);
-		var inst = proc.createInstance(nil, 0, (pitch: num, velocity: val));
-		inst.setupMidi(track, (latency: src.latency, player_id: src.player_id, instr: this));
-		inst.onDispose { instancesByNote[num].remove(inst) };
-		inst.start((addAction: \addToTail, target: track.group), src.latency, src.player_id);
-		instancesByNote[num] = instancesByNote[num].add(inst);
+            var proc = SoundProcess.get(procName);
+            var inst = proc.createInstance(nil, 0, (pitch: num, velocity: val));
+            inst.setupMidi(track, (latency: src.latency, player_id: src.player_id, instr: this));
+            inst.onDispose { instancesByNote[num].remove(inst) };
+            inst.start((addAction: \addToTail, target: track.group), src.latency, src.player_id);
+            instancesByNote[num] = instancesByNote[num].add(inst);
 		}
 	}
 

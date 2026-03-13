@@ -11,10 +11,7 @@ ExprControl : ParameterControl {
 
 	getUGen { |inst| ^this.getValue(inst) }
 
-	prepare { |inst|
-	    var value = func.value(inst, 0);
-		inst.putArgument(this.name, value);
-	}
+	getSynthArgument { |inst| ^func.value(inst) }
 
 	update { |new_func|
 		func = new_func;

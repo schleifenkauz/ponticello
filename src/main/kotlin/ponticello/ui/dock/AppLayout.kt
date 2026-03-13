@@ -115,7 +115,8 @@ class AppLayout(
             savedDividerPositions[side] = size
             restorePaneSize(side, size)
             val pane = getSidePane(side) ?: continue
-            pane.dividerPositions = dividerPositions.toDoubleArray()
+            @Suppress("UsePropertyAccessSyntax")
+            pane.setDividerPositions(*dividerPositions.toDoubleArray())
         }
     }
 

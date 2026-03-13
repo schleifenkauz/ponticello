@@ -27,6 +27,12 @@ SynthInstrument : Instrument {
         };
 		args = List[duration: duration];
 		inst.getInitialArguments.keysValuesDo {| p, v | args = args.addAll([p, v]) };
+		inst.def.controls.do { |ctrl|
+		    var argument = ctrl.getSynthArgument(inst);
+		    if (argument != nil) {
+		        args = args.addAll([ctrl.name, argument]);
+		    };
+		};
 		//postf("Creating synth % with args %\n", synthDefName, args);
 		synth = Synth.newPaused(synthDefName, args, inst.node, \addToTail);
 		//synth.register(assumePlaying: true);

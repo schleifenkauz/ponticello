@@ -15,6 +15,8 @@ ParameterControl {
 
 	getUGen { |inst| ^nil }
 
+	getSynthArgument { |inst| ^nil }
+
 	prepare { |inst| }
 
 	apply { |inst| }

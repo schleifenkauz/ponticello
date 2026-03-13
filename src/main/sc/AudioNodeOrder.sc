@@ -17,7 +17,7 @@ AudioNodeOrder {
 	}
 
 	* initClass {
-		nodes = [];
+		nodes = List[];
 	}
 
 	* insert { |node, done|

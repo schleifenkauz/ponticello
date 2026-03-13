@@ -13,13 +13,7 @@ BusControl : ParameterControl {
 
 	getUGen { |inst| ^bus.kr }
 
-	prepare { |inst|
-		inst.putArgument(this.name, bus.getSynchronous);
-	}
-
-	apply { |inst|
-		inst.mapParameter(this.name, bus);
-	}
+    getSynthArgument { |inst| ^bus }
 
 	update { |new_bus|
 		bus = new_bus;

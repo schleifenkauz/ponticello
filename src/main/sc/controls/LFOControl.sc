@@ -32,12 +32,13 @@ LFOControl : ParameterControl {
 		inst.createControlBus(this.name);
 	}
 
+	getSynthArgument { |inst| ^inst.getControlBus(this.name).asMap }
+
 	apply { |inst|
 		var bus = inst.getControlBus(this.name);
 		if (inst.restarting.not) {
 			this.prCreateSynth(inst, bus, replace: false);
 		};
-		inst.mapParameter(this.name, bus);
 	}
 
 	prCreateSynth { |inst, bus, replace|

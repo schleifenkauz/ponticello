@@ -1,11 +1,9 @@
-
-
 SoundProcessInstance : AudioNode {
 	var <def, <idx, <cutoff, <pos,
 	<extra_args, <playerId,
 	<server_latency, start_time, placement, group,
 	running = false, <restarting = false, disposed = false,
-	<initial_args, control_buses, auxil_synths, sound_obj, children,
+	initial_args, control_buses, auxil_synths, sound_obj, children,
 	<midiTrack, <midiSrc,
 	on_dispose;
 

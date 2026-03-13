@@ -29,8 +29,9 @@ EnvelopeControl : ParameterControl {
 	prepare { |inst|
 		var initial_value = env.at(inst.current_time);
 		inst.createControlBus(this.name, initial_value);
-		inst.putArgument(this.name, initial_value);
 	}
+
+	getSynthArgument { |inst| ^inst.getControlBus(this.name).asMap }
 
 	apply { |inst|
 		if (inst.type != \routine) {
@@ -38,7 +39,6 @@ EnvelopeControl : ParameterControl {
 			if (inst.restarting.not) {
 				inst.createAuxilSynth(this.name, synth_def, [out: bus, cutoff: inst.cutoff]);
 			};
-			inst.mapParameter(this.name, bus);
 		}
 	}
 

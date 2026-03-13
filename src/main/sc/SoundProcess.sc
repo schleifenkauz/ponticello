@@ -173,7 +173,6 @@ SoundProcess {
 		};
 		old_ctrl.dispose;
 		this.updateInstances { |inst|
-			postf("Updating %\n", inst);
 			new_ctrl.apply(inst);
 		}
 	}

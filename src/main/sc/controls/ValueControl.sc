@@ -58,20 +58,17 @@ ValueControl : ParameterControl {
 		};
 	}
 
+	getSynthArgument { |inst|
+	    ^if (this.allocatesBus) {
+	        (bus ? inst.getControlBus(this.name)).asMap
+        } { value }
+    }
+
 	prepare { |inst|
-		inst.putArgument(this.name, this.getValue(inst));
 		if (this.allocatesBus) {
 			var initial_value = this.getValue(inst);
 			inst.createControlBus(this.name, initial_value);
 		}
-	}
-
-	apply { |inst|
-		if (inst.type != \routine) {
-			if (this.allocatesBus) {
-				inst.mapParameter(this.name, bus ? inst.getControlBus(this.name));
-			}
-		};
 	}
 
 	update { |val|

@@ -22,6 +22,23 @@ MIDIInstrument : Instrument {
 		var velocity = inst.getControlValue(\velocity) ? 64;
 		var channel = inst.getControlValue(\channel) ? 0;
 		var midinote = inst.getControlValue(\midinote);
+		inst.def.controls.do { |ctrl|
+		    var argument = ctrl.getSynthArgument(inst);
+		    case
+		    { argument.isKindOf(Number) } { vst.set(ctrl.name, argument) }
+		    { argument.isKindOf(Symbol) && argument.asString[0] == 'a' } {
+		        var index = argument.asString.drop(1).asInteger;
+		        if (index != 0 || argument == 'a0') {
+		            vst.map(ctrl.name, Bus(\audio, index, 1, Server.local));
+		        }
+            }
+		    { argument.isKindOf(Symbol) && argument.asString[0] == 'c' } {
+		        var index = argument.asString.drop(1).asInteger;
+		        if (index != 0 || argument == 'c0') {
+		            vst.map(ctrl.name, Bus(\control, index, 1, Server.local));
+                }
+		    }
+		};
 		inst.getInitialArguments.keysValuesDo { |p, v|
 			if (reserved_names.includes(p).not) {
 				vst.set(p, v);
