@@ -4,19 +4,19 @@ Instrument {
 
 
 RoutineInstrument : Instrument {
-	var name, func, parameterDefaults;
+	var name, func, onFinished, parameterDefaults;
 	classvar dict;
 
 	* initClass {
 		dict = Dictionary.new;
 	}
 
-	* new {| name, parameterDefaults, func |
+	* new {| name, parameterDefaults, func, onFinished |
 		^if (dict.includesKey(name)) {
 			var instr = dict[name];
-			instr.update(parameterDefaults, func)
+			instr.update(parameterDefaults, func, onFinished)
 		} {
-			var instr = super.newCopyArgs(name, func, parameterDefaults);
+			var instr = super.newCopyArgs(name, func, onFinished, parameterDefaults);
 			dict[name] = instr;
 			instr
 		}
@@ -26,33 +26,39 @@ RoutineInstrument : Instrument {
 
 	* get { |name| ^dict[name] }
 
-	update { |defaults, fn|
+	update { |defaults, fn, finished|
 		parameterDefaults = defaults;
 		func = fn;
+		onFinished = finished;
 	}
 
 	type { ^\routine }
 
 	getDefaultValue {| param | ^parameterDefaults[param]}
 
-	create {| inst | ^RoutineInstance(inst, func) }
+	create {| inst | ^RoutineInstance(inst, func, onFinished) }
 
 	asString { ^"Routine %".format(name) }
 }
 
 SynthInstrument : Instrument {
 	var synthDefName, synthDesc;
+	classvar byName;
+
+	* initClass {
+		byName = Dictionary.new;
+	}
 
 	* new {| synthDef |
-		^super.new.init (synthDef);
+		^byName[synthDef] ?? {
+			var desc = SynthDescLib.global.at(synthDef);
+			var instr = super.newCopyArgs(synthDef, desc);
+			byName[synthDef] = instr;
+			^instr
+		};
 	}
 
 	type { ^\synth }
-
-	init {| defName |
-		synthDefName = defName;
-		synthDesc = SynthDescLib.global.at(synthDefName);
-    }
 
 	getDefaultValue {| param | ^synthDesc.controlDict[param] !? { |ctrl| ctrl.defaultValue }}
 
@@ -151,19 +157,36 @@ MIDINote {
 }
 
 RoutineInstance {
-    var task, instance;
+    var func, instance, onFinished, env, task;
 
-    * new { |instance, func|
-		var task = Task({
+    * new { |instance, func, onFinished|
+		var env = EnvironmentRedirect(currentEnvironment);
+         ^super.newCopyArgs(func, instance, onFinished, env).prCreateTask;
+    }
+
+	prCreateTask {
+		task = Task({
 			try {
-				func.value(instance, instance.def.duration ? inf)
+				env.use {
+					func.value(instance, instance.def.duration ? inf)
+				}
 			} { |error|
 				error.reportError;
 			};
-			instance.dispose;
+			fork { this.prFinished }
 		}, SystemClock);
-         ^super.newCopyArgs(task, instance);
-    }
+	}
+
+	prFinished {
+		protect {
+			env.use {
+				postf("Running on finished %\n", onFinished);
+				onFinished.value(instance);
+			};
+		} {
+			instance.dispose;
+		}
+	}
 
     run { | active |
 	    if (active) { task.play } { task.pause }
@@ -171,6 +194,6 @@ RoutineInstance {
 
     release {
         task.stop;
-        instance.dispose;
+		this.prFinished;
     }
 }

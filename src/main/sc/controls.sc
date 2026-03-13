@@ -308,7 +308,7 @@ ExprControl : ParameterControl {
 
 	init { |f| func = f }
 
-	getValue { |inst| ^func.value(inst.current_time) }
+	getValue { |inst| ^func.value(inst) }
 
 	getUGen { |inst| ^this.getValue(inst) }
 
@@ -321,7 +321,7 @@ ExprControl : ParameterControl {
 		func = new_func;
 		if (this.sound_proc.type != \routine) {
 			this.updateInstances { |inst|
-				inst.putArgument(func.value(inst, inst.current_time));
+				inst.putArgument(func.value(inst));
 			}
 		}
 	}
