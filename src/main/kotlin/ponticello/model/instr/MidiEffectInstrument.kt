@@ -1,11 +1,15 @@
 package ponticello.model.instr
 
+import bundles.set
 import hextant.context.Context
+import hextant.context.SelectionDistributor
+import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import ponticello.model.ctx.PonticelloContext
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
 import ponticello.sc.*
@@ -40,9 +44,13 @@ class MidiEffectInstrument(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        parameters.initialize(context)
+        val subContext = context.extend {
+            set(SelectionDistributor, SelectionDistributor.newInstance())
+            set(PonticelloContext, PonticelloContext.MidiEffect(this@MidiEffectInstrument))
+        }
+        parameters.initialize(subContext)
         for (component in listOf(start, stop, noteOn, noteOff, cc)) {
-            component.initialize(context)
+            component.initialize(subContext)
         }
     }
 

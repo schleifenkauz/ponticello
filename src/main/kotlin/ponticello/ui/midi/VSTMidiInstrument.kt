@@ -14,7 +14,7 @@ import reaktive.value.now
 @SerialName("VSTMidiInstrument")
 @Serializable
 class VSTMidiInstrument(
-    private val flow: VSTPluginFlow,
+    val flow: VSTPluginFlow,
 ) : MidiInstrument() {
     val vst: VSTPluginFlow get() = flow
 

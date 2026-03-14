@@ -8,6 +8,7 @@ import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.midi.VSTMidiInstrument
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -44,7 +45,15 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         addedToServer = true
     }
 
-    fun allFlows() = objects.flatMap { grp -> grp.flows }
+    fun allFlows(): List<AudioFlow> = objects.flatMap { grp ->
+        grp.flows + grp.flows
+            .filterIsInstance<MidiTrackFlow>()
+            .flatMap { track ->
+                track.instruments
+                    .filterIsInstance<VSTMidiInstrument>()
+                    .map { it.flow }
+            }
+    }
 
     fun getFlow(name: String): AudioFlow? {
         for (grp in objects) {

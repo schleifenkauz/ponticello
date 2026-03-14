@@ -31,7 +31,7 @@ MidiEffectInstrument {
 
 	update { |defaults, strt, stp, on, off, cc|
 		parameterDefaults = defaults;
-		start = strt; stop = stp;
+		start = strt; stop = stp; //TODO restart tasks
 		noteOn = on; noteOff = off; control = cc;
 	}
 
@@ -54,21 +54,41 @@ MidiEffect {
 
 	noteOn { |chan, num, val, track, src|
 		^if (enabled) {
-			var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
-			env.use { instr.noteOn.value(num, val, chan, track, controls, mySrc) };
+			try {
+				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
+				env.use { instr.noteOn.value(num, val, chan, track, controls, mySrc) };
+			} { |error|
+				//postf("Error during noteOn handling of MidiEffect % (%, %)\n", instr.name, num, val);
+				error.reportError;
+				false;
+			}
 		} { true }
 	}
 
 	noteOff { |chan, num, val, track, src|
-		var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
-		^env.use { instr.noteOff.value(num, val, chan, track, controls, mySrc) };
+		^if (enabled) {
+			try {
+				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
+				env.use { instr.noteOff.value(num, val, chan, track, controls, mySrc) };
+			} { |error|
+				//postf("Error during noteOff handling of MidiEffect % (%, %)\n", instr.name, num, val);
+				error.reportError;
+				true;
+			}
+		} { true }
 	}
 
 	control { |chan, num, val, track, src|
-		if (enabled) {
-			var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
-			^env.use { instr.control.value(num, val, chan, track, controls, mySrc) };
-		}
+		^if (enabled) {
+			try {
+				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
+				^env.use { instr.control.value(num, val, chan, track, controls, mySrc) };
+			} { |error|
+				//postf("Error during cc handling of MidiEffect % (%, %)\n", instr.name, num, val);
+				error.reportError;
+				false;
+			}
+		} { true }
 	}
 
 	prCreateTask {

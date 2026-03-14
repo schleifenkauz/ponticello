@@ -22,10 +22,10 @@ SynthInstrument : Instrument {
 	create {| inst |
 		var duration = inst.def.duration !? {| dur | dur - inst.cutoff}, args, synth;
 		if (duration == inf || duration == nil) {
-            args.addAll([\auto_release, 0]);
-            duration = 0.1;
-        };
-		args = List[duration: duration];
+            args = List[auto_release: 0, duration: 0.1];
+        } {
+			args = List[duration: duration];
+		};
 		inst.getInitialArguments.keysValuesDo {| p, v | args = args.addAll([p, v]) };
 		inst.def.controls.do { |ctrl|
 		    var argument = ctrl.getSynthArgument(inst);
