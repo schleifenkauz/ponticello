@@ -5,13 +5,13 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 
 object VSTPlugins {
-    fun availablePlugins(context: Context) = context[SuperColliderClient]
+    fun availablePlugins(context: Context, midi: Boolean = false) = context[SuperColliderClient]
         .eval(
-            "var str = \"\"; VSTPlugin.pluginList.do { |p| str = str ++ \", \" ++ p.key }; str;",
+            "VSTPlugin.pluginListString(midi: $midi)",
             description = "getting list of available plugins"
         ).get()
-        .removePrefix(", ")
-        .split(", ")
+        .removeSuffix(",")
+        .split(",")
         .toSet()
 
     fun globalPresetList(context: Context, pluginName: String): List<String> {

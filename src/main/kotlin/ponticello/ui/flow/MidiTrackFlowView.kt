@@ -32,9 +32,11 @@ import ponticello.ui.score.ParameterControlsPane
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
 import reaktive.value.reactiveValue
+import java.util.*
 
 class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayConfig<MidiInstrument> {
     private val instrumentsView = ObjectListView(flow.instruments, this)
+    private var midiContexts: MutableMap<MidiInstrument, MidiContext?>? = null
 
     init {
         val addInstrButton = addObjectAction.withContext(instrumentsView).makeButton("small-icon-button")
@@ -48,7 +50,7 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
     override val supportedModes: Collection<ObjectListView.DisplayMode>
         get() = listOf(ObjectListView.DisplayMode.Collapsable)
 
-    override val displayName: Boolean get() = false
+    override fun displayName(obj: MidiInstrument): Boolean = false
 
     override fun emptyDisplay(view: ObjectListView<MidiInstrument>): Node = Region()
 
@@ -57,9 +59,14 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
 
     override val buttonStyle: String get() = "small-icon-button"
 
+    private fun midiContext(obj: MidiInstrument): MidiContext? {
+        if (midiContexts == null) midiContexts = WeakHashMap()
+        return midiContexts!!.getOrPut(obj) { obj.midiContext() }
+    }
+
     override fun getContent(obj: MidiInstrument, box: ObjectBox<MidiInstrument>): Parent? = when (val obj = box.obj) {
-        is SoundProcessMidiInstrument -> ParameterControlsPane(obj).pad(3.0) //TODO midi context
-        is VSTMidiInstrument -> null //TODO something?
+        is SoundProcessMidiInstrument -> ParameterControlsPane(obj, midiContext = midiContext(obj)).pad(3.0)
+        is VSTMidiInstrument -> VSTPluginFlowView(obj.vst, showPluginSelector = false)
     }
 
     override fun getHeaderContent(obj: MidiInstrument): List<Node> = when (obj) {
@@ -67,17 +74,16 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
             val selectorButton = InstrumentSelectorPopup(obj.context).selectorButton(obj.reference)
             listOf(
                 label(obj.reference.map { it.get()?.instrumentType ?: "<unresolved>" }),
+                hspace(1.0),
                 selectorButton
             )
         }
 
-        is VSTMidiInstrument -> {
-            val selectorButton = VSTInstrumentSelectorPrompt(obj.context).selectorButton(obj::flow)
-            listOf(
-                Label("VST: "),
-                selectorButton
-            )
-        }
+        is VSTMidiInstrument -> listOf(
+            Label("VST"),
+            hspace(1.0),
+            VSTPluginFlowView.createPluginSelectorBar(obj.vst)
+        )
     }
 
     /* TODO remove
@@ -97,9 +103,8 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
     }
 
     override fun createNewObject(ev: Event?, list: ObjectList<MidiInstrument>): MidiInstrument? =
-        MidiInstrumentSelectorPrompt(flow.context, "Insert instrument")
-            .showPopup(ev)
-            ?.createInstrument()
+        NewMidiInstrumentPrompt(flow.context, "Insert instrument")
+            .showPopup(ev)?.createInstrument(flow.context, ev)
 
     class MidiDeviceSelectorPrompt(
         private val type: MidiDeviceSpec.Type,

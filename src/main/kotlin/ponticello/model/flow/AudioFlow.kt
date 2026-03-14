@@ -65,8 +65,12 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
         context[SuperColliderClient].run("$superColliderName.run($active)")
     }
 
-    fun addToGroup(group: AudioFlowGroup, placement: NodePlacement): CompletableFuture<String> {
+    fun setFlowGroup(group: AudioFlowGroup) {
         parentGroup = group
+    }
+
+    fun addToGroup(group: AudioFlowGroup, placement: NodePlacement): CompletableFuture<String> {
+        setFlowGroup(group)
         val code = writeCode(placement)
         return context[SuperColliderClient].eval(code, "activating flow ${name.now}")
     }

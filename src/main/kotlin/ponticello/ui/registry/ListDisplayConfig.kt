@@ -50,8 +50,6 @@ interface ListDisplayConfig<O : Any> {
 
     val buttonStyle: String get() = "medium-icon-button"
 
-    val displayName: Boolean get() = true
-
     val nameDisplayWidth: Double get() = 150.0
 
     val inlineOrientation: Orientation get() = Orientation.VERTICAL
@@ -66,6 +64,8 @@ interface ListDisplayConfig<O : Any> {
     val showDragHandle: Boolean get() = dataFormat != null
 
     val dataFormat: DataFormat? get() = null
+
+    fun displayName(obj: O): Boolean = true
 
     fun filter(obj: O): Boolean = true
 

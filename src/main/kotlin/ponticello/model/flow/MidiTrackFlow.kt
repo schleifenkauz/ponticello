@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
+import ponticello.impl.writeCode
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.sc.client.ScWriter
@@ -54,8 +55,13 @@ class MidiTrackFlow(
         }
     }
 
-    override fun writeCode(placement: NodePlacement): String =
-        "$superColliderName = $trackVariable.addToServer($placement)"
+    override fun writeCode(placement: NodePlacement): String = writeCode {
+        +"$superColliderName = $trackVariable.addToServer($placement)"
+        for (instr in instruments) {
+            val placement = NodePlacement.tail(superColliderName)
+            +instr.addToTrack(this@MidiTrackFlow, placement)
+        }
+    }
 
     override fun copy(): AudioFlow = MidiTrackFlow(sourceDevice.copy(), instruments.copy())
 
@@ -88,11 +94,14 @@ class MidiTrackFlow(
         }
 
         override fun onAdded(obj: MidiInstrument, idx: Int) {
-            track.client.run("${track.trackVariable}.instruments.insert($idx, ${obj.superColliderName})")
+            track.client.run {
+                +obj.addToTrack(track, NodePlacement.tail(track.superColliderName))
+                +"${track.trackVariable}.instruments.insert($idx, ${obj.superColliderName})"
+            }
         }
 
         override fun onRemoved(obj: MidiInstrument, idx: Int) {
-            track.client.run("${track.trackVariable}.instruments.removeAt($idx)")
+            track.client.run { +"${track.trackVariable}.instruments.removeAt($idx)" }
         }
 
         override fun onMoved(obj: MidiInstrument, oldIdx: Int, newIdx: Int) {

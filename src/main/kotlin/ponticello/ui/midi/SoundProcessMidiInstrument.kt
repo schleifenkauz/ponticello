@@ -71,4 +71,6 @@ class SoundProcessMidiInstrument(
     }
 
     override fun copy(): MidiInstrument = SoundProcessMidiInstrument(reference.copy(), controls.copy())
+
+    override fun midiContext(): MidiContext = ParameterControlsMidiContext(controls)
 }

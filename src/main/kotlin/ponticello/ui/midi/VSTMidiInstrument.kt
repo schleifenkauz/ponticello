@@ -3,10 +3,9 @@ package ponticello.ui.midi
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ponticello.model.flow.MidiTrackFlow
+import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.VSTPluginFlow
-import ponticello.model.obj.VSTPluginReference
-import ponticello.model.obj.project
-import ponticello.model.project.flows
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import reaktive.value.now
@@ -14,41 +13,42 @@ import reaktive.value.now
 @SerialName("VSTMidiInstrument")
 @Serializable
 class VSTMidiInstrument(
-    @SerialName("flow")
-    private var _flow: VSTPluginReference,
-) : MidiInstrument() { //TODO is this needed?
-    var flow
-        get() = _flow
-        set(value) {
-            _flow = value
-            resolveFlow()
-            context[SuperColliderClient.Companion] //TODO update
-        }
-
-    var vst: VSTPluginFlow? = null
-        private set
+    private val flow: VSTPluginFlow,
+) : MidiInstrument() {
+    val vst: VSTPluginFlow get() = flow
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        resolveFlow()
+        flow.setInitialName(this.name.now)
+        flow.initialize(context)
     }
 
     override fun toString(): String {
-        val flowName = flow.getName()
+        val flowName = flow.name.now
         return "VSTMidiInstrument <$flowName>"
-    }
-
-    private fun resolveFlow() {
-        val vstFlows = context.project.flows.allFlows().filterIsInstance<VSTPluginFlow>()
-        vst = flow.resolve(vstFlows)
     }
 
     override fun activate() {
         context[SuperColliderClient].run {
-            +"~${name.now} = VSTMidiInstrument({${vst?.controllerVar}}, enabled: ${isEnabled.now})"
+            +"~${name.now} = VSTMidiInstrument({${vst.controllerVar}}, enabled: ${isEnabled.now})"
         }
-        super.activate()
+    }
+
+    override fun addToTrack(track: MidiTrackFlow, placement: NodePlacement): String {
+        flow.setFlowGroup(track.parentGroup!!)
+        return flow.writeCode(placement)
+    }
+
+    override fun onRemoved() {
+        super.onRemoved()
+        flow.release()
     }
 
     override fun copy(): MidiInstrument = VSTMidiInstrument(flow)
+
+    companion object {
+        fun create(pluginName: String) {
+
+        }
+    }
 }

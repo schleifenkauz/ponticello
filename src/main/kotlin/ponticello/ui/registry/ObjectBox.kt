@@ -84,7 +84,7 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
 
     val header by lazy {
         val box = HBox() styleClass "object-box-header"
-        if (nameDisplay != null && config.displayName) box.children.add(nameDisplay)
+        if (nameDisplay != null && config.displayName(obj)) box.children.add(nameDisplay)
         box.children.addAll(config.getHeaderContent(obj))
         if (config.addSpaceBeforeActionBar) box.children.add(infiniteSpace())
         box.children.add(actionBar)
