@@ -112,8 +112,8 @@ sealed interface FlowOption {
             is SynthDefObject -> "SynthDef ${def.name.now}"
             is RoutineDefObject -> "Process ${def.name.now}"
             is VSTInstrumentObject -> "VST: ${def.name.now}"
-            is MidiEffectInstrument -> throw AssertionError("MidiEffectInstrument should not be here")
-            is NoInstrument -> throw AssertionError("NoInstrument should not be here")
+            is MidiEffectInstrument, MidiInstrument, is NoInstrument ->
+                throw AssertionError("$def should not be an option")
         }
 
         override fun defaultName(): String = def.name.now

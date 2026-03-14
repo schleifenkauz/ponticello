@@ -38,6 +38,4 @@ class NoInstrument : InstrumentObject, AbstractContextualObject() {
 
     override fun sync() {
     }
-
-    override fun instrumentReference(): InstrumentReference = InstrumentReference.None
 }

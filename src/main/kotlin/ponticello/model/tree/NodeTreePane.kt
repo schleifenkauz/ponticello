@@ -10,7 +10,7 @@ import javafx.scene.Node
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
-import ponticello.model.instr.InstrumentReference
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.project.PonticelloProject
 import ponticello.ui.dock.*
 import ponticello.ui.flow.TabbedAudioFlowsPane

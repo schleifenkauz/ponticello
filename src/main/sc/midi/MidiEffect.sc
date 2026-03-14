@@ -52,7 +52,8 @@ MidiEffect {
 		^super.newCopyArgs(name, instr, controls, env, enabled);
 	}
 
-	noteOn { |chan, num, val, track, src|
+	noteOn { |num, val, chan, track, src|
+		postf("Note on %, %, %. Enabled: %\n", num, val, chan, enabled);
 		^if (enabled) {
 			try {
 				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
@@ -65,7 +66,7 @@ MidiEffect {
 		} { true }
 	}
 
-	noteOff { |chan, num, val, track, src|
+	noteOff { |num, val, chan, track, src|
 		^if (enabled) {
 			try {
 				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
@@ -78,7 +79,7 @@ MidiEffect {
 		} { true }
 	}
 
-	control { |chan, num, val, track, src|
+	control { |num, val, chan, track, src|
 		^if (enabled) {
 			try {
 				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
@@ -114,6 +115,7 @@ MidiEffect {
 	}
 
 	enabled_ { |v|
+		enabled = v;
 		if (v) {
 			task.play;
 		} {

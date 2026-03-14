@@ -167,6 +167,7 @@ data class NumericalControlSpec(
         )
 
         val VELOCITY = NumericalControlSpec(64.0, 0.0, 127.0, one, warp = Warp.Linear)
+        val PITCH = NumericalControlSpec(60.0, 0.0, 127.0, one, warp = Warp.Linear)
         val CHANNEL = NumericalControlSpec(0.0, 0.0, 127.0, one, warp = Warp.Linear)
 
         val DURATION = NumericalControlSpec(0.0, 0.0, Double.POSITIVE_INFINITY, 0.01.toDecimal())

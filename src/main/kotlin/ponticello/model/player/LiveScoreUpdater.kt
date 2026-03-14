@@ -132,7 +132,7 @@ class LiveScoreUpdater(
             val posEnd = position + ObjectPosition(obj.duration, zero)
             val player = player
             if (player != null && player.isPlaying.now && player.playHead.currentTime in position.time..posEnd.time) {
-                scheduler.stopObjectInstantly(obj, position)
+                scheduler.stopObjectInstantly(inst, position)
             }
         }
     }

@@ -6,6 +6,7 @@ import ponticello.model.code.GlobalPatternObject
 import ponticello.model.code.ScriptObject
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
+import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.instr.*
 import ponticello.model.live.LiveObject
@@ -19,9 +20,11 @@ import ponticello.model.score.ScoreObject
 import ponticello.model.server.BufferObject
 import reaktive.value.now
 
+typealias InstrumentReference = ObjectReference<@Contextual InstrumentObject>
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
 typealias ProcessDefReference = ObjectReference<@Contextual RoutineDefObject>
 typealias MidiEffectInstrumentReference = ObjectReference<@Contextual MidiEffectInstrument>
+typealias MidiTrackReference = ObjectReference<@Contextual MidiTrackFlow>
 typealias BusReference = ObjectReference<@Contextual BusObject>
 typealias BufferReference = ObjectReference<@Contextual BufferObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>

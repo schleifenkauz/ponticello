@@ -24,7 +24,7 @@ SynthDef(\vsti) { arg out = 0;
 		~last_pitch = ~last_pitch + interval;
 		velocity = velocity - decay;
 		postf("ON: %\n", ~last_pitch);
-		inst.midiTrack.noteOn(velocity, ~last_pitch, src: inst.midiSrc);
+		inst.midiTrack.noteOn(~last_pitch, velocity, src: inst.midiSrc);
 	};
 	inf.wait;
 }, onFinished: { |inst|

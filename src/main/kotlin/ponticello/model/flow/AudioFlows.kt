@@ -45,15 +45,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         addedToServer = true
     }
 
-    fun allFlows(): List<AudioFlow> = objects.flatMap { grp ->
-        grp.flows + grp.flows
-            .filterIsInstance<MidiTrackFlow>()
-            .flatMap { track ->
-                track.instruments
-                    .filterIsInstance<VSTMidiInstrument>()
-                    .map { it.flow }
-            }
-    }
+    fun allFlows(): List<AudioFlow> = objects.flatMap { grp -> grp.flows } + midiVSTFlows()
 
     fun getFlow(name: String): AudioFlow? {
         for (grp in objects) {
@@ -74,6 +66,16 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         } catch (e: TimeoutException) {
             Logger.error("Timeout writing VST plugin states", e, Logger.Category.VSTPlugins)
         }
+    }
+
+    fun allMidiTracks(): List<MidiTrackFlow> = flatMap { grp ->
+        grp.flows.filterIsInstance<MidiTrackFlow>()
+    }
+
+    private fun midiVSTFlows() = allMidiTracks().flatMap { track ->
+        track.instruments
+            .filterIsInstance<VSTMidiInstrument>()
+            .map { it.flow }
     }
 
     companion object : PublicProperty<AudioFlows> by publicProperty("AudioFlows") {

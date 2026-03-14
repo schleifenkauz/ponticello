@@ -32,7 +32,7 @@ class ParameterDefSelectorPrompt(
             is RoutineDefObject -> ParameterType.regularTypes
             is SynthDefObject -> ParameterType.regularTypes - ParameterType.Expr
             is MidiEffectInstrument -> ParameterType.regularTypes - ParameterType.BufferPosition
-            is VSTInstrumentObject, is NoInstrument -> throw AssertionError()
+            is VSTInstrumentObject, is NoInstrument, MidiInstrument -> throw AssertionError()
         }
         val type = fixedParameterType ?: SimpleSelectorPrompt(availableParameterTypes, "Parameter type")
             .showPopup(content, initialOption = ParameterType.Numerical) ?: return null

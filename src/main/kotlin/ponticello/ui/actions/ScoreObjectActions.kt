@@ -18,13 +18,14 @@ import ponticello.impl.copy
 import ponticello.impl.times
 import ponticello.impl.zero
 import ponticello.model.instr.InstrumentObject
-import ponticello.model.instr.InstrumentReference
 import ponticello.model.instr.NoInstrument
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.live.LiveObjectRegistry
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
+import ponticello.model.registry.reference
 import ponticello.model.score.*
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.MultiObjectControlPopup
@@ -155,14 +156,13 @@ object ScoreObjectActions {
             executes { ctx, ev ->
                 val commonInstrument = ctx.selectedObjects
                     .map { obj -> (obj as ParameterizedObject).getInstrument() }
-                    .singleOrNull()?.instrumentReference()
+                    .singleOrNull()?.reference()
                 val newInstrument = InstrumentSelectorPopup(ctx.context)
                     .selectInitialOption(commonInstrument)
                     .showDialog(ev) ?: return@executes
                 for (obj in ctx.selectedObjects) {
                     when (obj) {
                         is SoundProcess -> obj.instrumentRef.set(newInstrument)
-                        is MidiObject -> obj.instrument.set(newInstrument)
                         else -> Logger.warn("Cannot set instrument for $obj", Logger.Category.Score)
                     }
                 }
@@ -194,7 +194,6 @@ object ScoreObjectActions {
                 }
                 when (obj) {
                     is SoundProcess -> showInstrumentDef(obj.getInstrument(), obj.context)
-                    is MidiObject -> showInstrument(obj.instrument.now, obj.context)
                     else -> {}
                 }
             }
@@ -380,11 +379,7 @@ object ScoreObjectActions {
     }
 
     private fun showInstrument(instrument: InstrumentReference, context: Context) {
-        when (instrument) {
-            InstrumentReference.None -> Logger.warn("No instrument", Logger.Category.Score)
-            is InstrumentReference.UserDefined -> showInstrumentDef(instrument.reference.force(), context)
-            is InstrumentReference.VST -> instrument.flow.force().showEditor()
-        }
+        showInstrumentDef(instrument.force(), context)
     }
 
     private fun showInstrumentDef(def: InstrumentObject, context: Context) {

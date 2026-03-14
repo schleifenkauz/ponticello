@@ -3,19 +3,14 @@ package ponticello.model.player
 import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
-import ponticello.impl.Decimal
-import ponticello.impl.Logger
-import ponticello.impl.unaryMinus
-import ponticello.impl.writeCode
+import ponticello.impl.*
+import ponticello.model.instr.MidiInstrument
 import ponticello.model.instr.RoutineDefObject
 import ponticello.model.instr.VSTInstrumentObject
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
-import ponticello.model.score.ObjectPosition
-import ponticello.model.score.ScoreObject
-import ponticello.model.score.SoundProcess
-import ponticello.model.score.TempoGridObject
+import ponticello.model.score.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
@@ -45,7 +40,7 @@ class ScoreObjectScheduler(val context: Context) {
 
                 ScoreEvent.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
-                    objectEnd(obj, player, position)
+                    objectEnd(obj, player, position, inst)
                 }
 
                 else -> {}
@@ -53,7 +48,7 @@ class ScoreObjectScheduler(val context: Context) {
         }
     }
 
-    private fun objectEnd(obj: ScoreObject, player: ScorePlayer, pos: ObjectPosition) {
+    private fun objectEnd(obj: ScoreObject, player: ScorePlayer, pos: ObjectPosition, instance: ScoreObjectInstance) {
         when (obj) {
             is TempoGridObject -> {
                 if (obj.meter.isResolved.now) {
@@ -63,15 +58,27 @@ class ScoreObjectScheduler(val context: Context) {
             }
 
             is SoundProcess -> {
+                val time = pos.time + player.timeOffset
                 when (obj.getInstrument()) {
                     is RoutineDefObject, is VSTInstrumentObject -> {
-                        val time = pos.time + player.timeOffset
                         val objectStart = pos.plusTime(-obj.duration)
                         val code = writeCode {
                             releaseObject(obj, objectStart)
                         }
                         val description = "stop ${obj.name.now}"
                         client.schedule(description, time, absolute = false, player, code)
+                    }
+
+                    is MidiInstrument -> {
+                        val parent = instance.score?.parentObject
+                        if (parent is MidiObject) {
+                            val midinote = instance.y
+                            val code = writeCode {
+                                val track = parent.track.now.get() ?: return@writeCode
+                                track.run { sendNoteOff(midinote, obj.controls, serverLatency) }
+                            }
+                            client.schedule("noteOff $midinote", time, absolute = false, player, code)
+                        }
                     }
 
                     else -> {}
@@ -83,9 +90,17 @@ class ScoreObjectScheduler(val context: Context) {
     }
 
     //Only inside on ScorePlayer.execute
-    fun stopObjectInstantly(obj: ScoreObject, pos: ObjectPosition) {
+    fun stopObjectInstantly(instance: ScoreObjectInstance, pos: ObjectPosition) {
+        val parentObject = instance.score?.parentObject
+        val obj = instance.obj
         client.run {
-            releaseObject(obj, pos)
+            if (parentObject is MidiObject && obj is SoundProcess && obj.getInstrument() is MidiInstrument) {
+                val track = parentObject.track.now.get() ?: return@run
+                val midinote = instance.y
+                track.run { sendNoteOff(midinote, obj.controls, latency = zero) }
+            } else {
+                releaseObject(obj, pos)
+            }
         }
     }
 

@@ -9,23 +9,28 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.instr.*
+import ponticello.model.flow.AudioFlows
+import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.MidiInstrument
+import ponticello.model.instr.ParameterizedObject
+import ponticello.model.obj.MidiTrackReference
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
 import reaktive.Reactive
 import reaktive.value.*
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.orElse
 
 @Serializable
 @SerialName("MidiObject")
 class MidiObject(
-    val instrument: ReactiveVariable<InstrumentReference>,
+    val track: ReactiveVariable<MidiTrackReference>,
     @SerialName("lowestPitch") private var _lowestPitch: Int,
     @SerialName("highestPitch") private var _highestPitch: Int,
     override val score: Score,
     override val controls: ParameterControlList,
     val latencyMs: ReactiveVariable<Int> = reactiveVariable(0),
+    override val associatedColor: ReactiveVariable<
+            @Serializable(with = ColorSerializer::class) Color
+            > = reactiveVariable(Color.WHITE),
 ) : AbstractScoreObjectGroup(), ParameterizedObject {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -54,29 +59,19 @@ class MidiObject(
 
     val pitchRange get() = lowestPitch..highestPitch
 
-    override val instrumentChanged: Reactive
-        get() = instrument
-
-    override val associatedColor: ReactiveValue<Color?>
-        get() = super.associatedColor.orElse(instrument.flatMap { instr ->
-            if (instr is InstrumentReference.UserDefined) instr.reference.get()?.color ?: reactiveValue(null)
-            else reactiveValue(null)
-        })
-
-    override fun getInstrument(): InstrumentObject = when (val instr = instrument.now) {
-        is InstrumentReference.UserDefined -> instr.reference.get() ?: NoInstrument()
-        is InstrumentReference.VST -> instr.flow.get()?.let { f -> VSTInstrumentObject(f) } ?: NoInstrument()
-        InstrumentReference.None -> NoInstrument()
-    }
-
     @Transient
     private var pixelsPerPitch: Double = -1.0
 
     private val notes get() = score.objectInstances
 
+    override fun getInstrument(): InstrumentObject = MidiInstrument
+
+    override val instrumentChanged: Reactive
+        get() = reactiveValue(false)
+
     override fun initialize(context: Context) {
         super.initialize(context)
-        instrument.now.resolve(context)
+        track.now.resolve(context[AudioFlows].allMidiTracks())
         controls.initialize(context, this)
     }
 
@@ -92,6 +87,7 @@ class MidiObject(
             resizeSide == Side.TOP -> objects.maxOf { n ->
                 (pixelsPerPitch * (n.y - lowestPitch)) + pixelsPerPitch
             }
+
             else -> zero(ObjectPosition.Y_PRECISION)
         }
     }
@@ -126,9 +122,12 @@ class MidiObject(
     }
 
     override fun cloneWith(score: Score): MidiObject =
-        MidiObject(instrument.copy(), lowestPitch, highestPitch, score, controls.copy(), latencyMs.copy())
+        MidiObject(
+            track.copy(), lowestPitch, highestPitch,
+            score, controls.copy(), latencyMs.copy(), associatedColor.copy()
+        )
 
-    override fun duration(): ReactiveValue<Decimal> = super<AbstractScoreObjectGroup>.duration()
+    override fun duration(): ReactiveValue<Decimal> = super.duration()
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 

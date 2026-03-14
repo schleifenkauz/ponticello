@@ -8,13 +8,13 @@ MidiTrack {
 			MIDIClient.init(1, 1, verbose: false);
 			tracksBySource = Dictionary.new;
 			noteOn = MIDIFunc.noteOn { |val, num, chan, src|
-				MidiTrack.dispatchEvent(src) { |track| track.noteOn(val, num, chan, defaultSrc) }
+				MidiTrack.dispatchEvent(src) { |track| track.noteOn(num, val, chan, defaultSrc) }
 			}.permanent_(true);
 			noteOff = MIDIFunc.noteOff { |val, num, chan, src|
-				MidiTrack.dispatchEvent(src) { |track| track.noteOff(val, num, chan, defaultSrc) }
+				MidiTrack.dispatchEvent(src) { |track| track.noteOff(num, val, chan, defaultSrc) }
 			}.permanent_(true);
 			cc = MIDIFunc.cc { |val, num, chan, src|
-				MidiTrack.dispatchEvent(src) { |track| track.control(val, num, chan, defaultSrc) }
+				MidiTrack.dispatchEvent(src) { |track| track.control(num, val, chan, defaultSrc) }
 			}.permanent_(true);
 			initialized = true;
 		}
@@ -166,32 +166,32 @@ MidiTrack {
 		}
 	}
 
-	noteOn { |val, num, chan=0, src|
+	noteOn { |num, val, chan=0, src|
 		postf("Note On: %, %\n", num, val);
 		activeNotes[num] = val;
 		notesInPedal.remove(num);
 		this.perform(src) { |instr|
-			instr.noteOn(chan, num, val, this, src)
+			instr.noteOn(num, val, chan, this, src)
 		}
 	}
 
-	noteOff { |val, num, chan=0, src|
+	noteOff { |num, val, chan=0, src|
 		if (this.isPedalDown.not) {
 			activeNotes.removeAt(num);
-			this.perform(src) { |instr| instr.noteOff(chan, num, val, this, src) }
+			this.perform(src) { |instr| instr.noteOff(num, val, chan, this, src) }
 		} {
 			notesInPedal = notesInPedal.add(num);
 		}
 	}
 
-	control { |val, num, chan=0, src|
+	control { |num, val, chan=0, src|
 		controlValues[num] = val;
 		if (num == 64 && val == 0) {
 			notesInPedal.do { |num|
-				this.noteOff(0, num, 0, src);
+				this.noteOff(num, val, chan, src);
 			}
 		};
-		this.perform(src) { |instr| instr.control(chan, num, val, this, src) }
+		this.perform(src) { |instr| instr.control(num, val, chan, this, src) }
 	}
 
 	isPedalDown { ^(controlValues[64] ? 0) > 0 }

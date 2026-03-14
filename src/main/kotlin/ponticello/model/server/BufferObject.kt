@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.toDecimal
 import ponticello.model.instr.InstrumentObject
-import ponticello.model.instr.InstrumentReference
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.project
@@ -40,12 +39,11 @@ sealed class BufferObject : AbstractSuperColliderObject() {
         val buf = controls["buf"] as? BufferControl ?: return null
         buf.sample.now = reference()
         val name = context[ScoreObjectRegistry].availableName(name.now)
-        val instrument = InstrumentReference.UserDefined(synthDef.reference())
         val djMode = context.project[PLAYBACK_SETTINGS].djMode
         if (synthDef.hasParameter("out") && djMode.activated.now && djMode.selectedBus != null) {
             controls["out"] = BusControl(reactiveVariable(djMode.selectedBus!!))
         }
-        val obj = SoundProcess.create(name, instrument, ParameterControlList.from(controls))
+        val obj = SoundProcess.create(name, synthDef.reference(), ParameterControlList.from(controls))
         val initialHeight = if (djMode.activated.now) 0.1 else 0.02
         obj.setInitialSize(duration().now, initialHeight.toDecimal())
         return obj

@@ -18,6 +18,7 @@ import kotlinx.serialization.json.JsonNames
 import ponticello.impl.*
 import ponticello.model.instr.*
 import ponticello.model.obj.BufferReference
+import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.withName
 import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.model.player.SoundProcessUpdater
@@ -33,7 +34,6 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
-import kotlin.math.pow
 
 @Serializable
 @SerialName("SoundProcess")
@@ -93,8 +93,6 @@ class SoundProcess(
 
     val bufferStretchFactor: ReactiveVariable<Decimal>?
         get() = getStretchControl()?.first?.value
-
-    override fun duration(): ReactiveValue<Decimal> = super<ScoreObject>.duration()
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
@@ -207,14 +205,16 @@ class SoundProcess(
     override fun initialize(context: Context) {
         if (initialized) return
         super.initialize(context)
-        instrumentRef.now.resolve(context)
+        instrumentRef.now.resolve(context[InstrumentRegistry])
         controls.initialize(this.context, this)
         updater = SoundProcessUpdater(this)
         lfosManager = LFOsManager()
     }
 
     override fun ScWriter.createInSuperCollider() {
-        createSoundProcessObject(this@SoundProcess, duration)
+        if (getInstrument() !is MidiInstrument) {
+            createSoundProcessObject(this@SoundProcess, duration)
+        }
     }
 
     override fun ScWriter.freeObject() {
@@ -235,23 +235,20 @@ class SoundProcess(
             val valueCtrl = ctrl as? ValueControl ?: error("Expected ValueControl for $param")
             param.name.now to valueCtrl.value.now
         }
-        var latency = info.serverLatency
-        val midiObject = info.instance?.score?.parentObject as? MidiObject
-        if (midiObject != null) {
+        val parentObject = info.instance?.score?.parentObject
+        if (parentObject is MidiObject && getInstrument() is MidiInstrument) {
             val midinote = info.instance.y
-            extraArgs["midinote"] = midinote
-            if (getInstrument() is SynthDefObject || getInstrument() is RoutineDefObject) {
-                val freq = (440 * 2.0.pow((midinote.value - 69) / 12)).toDecimal()
-                extraArgs["freq"] = freq
-            }
-            latency -= (midiObject.latencyMs.now / 1000.toDecimal())
+            val track = parentObject.track.now.get() ?: return
+            track.run { sendNoteOn(midinote, controls, info.serverLatency, info.player) }
+        } else {
+            val latency = info.serverLatency
+            val extraArgsString = extraArgs.entries.joinToString(", ", "(", ")") { (name, value) -> "$name: $value" }
+            append(
+                superColliderName, ".startNewInstance(",
+                info.pos, ",", info.cutoff, ",", extraArgsString, ",",
+                latency, ",", info.player.id, ")"
+            )
         }
-        val extraArgsString = extraArgs.entries.joinToString(", ", "(", ")") { (name, value) -> "$name: $value" }
-        append(
-            superColliderName, ".startNewInstance(",
-            info.pos, ",", info.cutoff, ",", extraArgsString, ",",
-            latency, ",", info.player.id, ")"
-        )
     }
 
     companion object {

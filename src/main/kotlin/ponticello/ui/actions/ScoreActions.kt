@@ -22,6 +22,7 @@ import ponticello.ui.actions.ScoreActions.createSoundObject
 import ponticello.ui.actions.ScoreActions.getScorePaneAtCursor
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.NamePrompt
+import ponticello.ui.midi.MidiTrackSelectorPrompt
 import ponticello.ui.registry.MeterSelectorPrompt
 import ponticello.ui.score.*
 import reaktive.value.now
@@ -118,9 +119,8 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
             val pane = selection.pane as? AbstractScorePane ?: return@executes
             val context = pane.context
             val anchor = Robot().mousePosition
-            val midiInstrument = InstrumentSelectorPopup(context)
-                .showPopup(anchor, pane.scene.window) ?: return@executes
-            val midiObj = MidiObjectView.createNewMidiObjectDialog(midiInstrument, context)
+            val track = MidiTrackSelectorPrompt(context).showPopup(anchor, pane.scene.window) ?: return@executes
+            val midiObj = MidiObjectView.createNewMidiObjectDialog(track, context)
                 .showDialog(pane.scene.window, anchor) ?: return@executes
             RectangleSelection.clear()
             pane.addObject(midiObj, selection)

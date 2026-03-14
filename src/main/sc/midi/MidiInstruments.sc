@@ -6,7 +6,7 @@ SoundProcessMidiInstrument {
 		^super.newCopyArgs(name, Dictionary.new, enabled)
 	}
 
-	noteOn { |chan, num, val, track, src|
+	noteOn { |num, val, chan, track, src|
 		if (enabled) {
             var proc = SoundProcess.get(procName);
             var inst = proc.createInstance(nil, 0, (pitch: num, velocity: val));
@@ -18,12 +18,12 @@ SoundProcessMidiInstrument {
 		^true
 	}
 
-	noteOff { |chan, num, val, track, src|
-		instancesByNote[num].copy.do(_.release);
+	noteOff { |num, val, chan, track, src|
+		instancesByNote[num].copy.do { |inst| inst.release(src.latency) };
 		^true
 	}
 
-	control { |chan, num, val, track, src|
+	control { |num, val, chan, track, src|
 		^true
 	}
 
@@ -52,25 +52,32 @@ VSTMidiInstrument {
 		}
 	}
 
-	noteOn { |chan, num, val|
+	noteOn { |num, val, chan, track, src|
 		if (enabled) {
+			var latency = src.latency ? 0;
 			this.prResolve;
-			vst.midi.noteOn(chan, num, val)
+			SystemClock.sched(latency) {
+				vst.midi.noteOn(chan, num, val)
+			}
 		}
 		^true
 	}
 
-	noteOff { |chan, num, val|
+	noteOff { |num, val, chan, track, src|
 		if (vst.notNil) {
-			vst.midi.noteOff(chan, num, val)
+			SystemClock.sched(src.latency ? 0) {
+				vst.midi.noteOff(chan, num, val);
+			}
 		}
 		^true
 	}
 
-	control { |chan, num, val|
+	control { |num, val, chan, track, src|
 		if (enabled) {
 			this.prResolve;
-			vst.midi.control(chan, num, val);
+			SystemClock.sched(src.latency ? 0) {
+				vst.midi.control(chan, num, val);
+			}
 		}
 		^true
 	}

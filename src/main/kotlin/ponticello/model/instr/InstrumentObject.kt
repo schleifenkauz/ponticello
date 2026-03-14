@@ -58,8 +58,6 @@ sealed interface InstrumentObject : SuperColliderObject {
         return defaultControls(context, defaultBus)
     }
 
-    fun instrumentReference(): InstrumentReference = InstrumentReference.UserDefined(this.reference())
-
     companion object {
         val DATA_FORMAT = TypedDataFormat<ObjectReference<InstrumentObject>>("ponticello:instrument")
     }

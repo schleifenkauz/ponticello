@@ -11,7 +11,6 @@ import javafx.scene.Node
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.impl.asY
-import ponticello.model.instr.InstrumentReference
 import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.project.mainScore
@@ -113,8 +112,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
             if (outBus is BusControl) {
                 outBus.bus.now = (ctrl.now as BusValueControl).bus.now
             }
-            val instrument = InstrumentReference.UserDefined(instrumentDef.reference())
-            val synthObj = SoundProcess.create(name, instrument, ParameterControlList.from(controls))
+            val synthObj = SoundProcess.create(name, instrumentDef.reference(), ParameterControlList.from(controls))
             synthObj.setInitialSize(obj.duration, height = 0.05.asY)
             context.compoundEdit("Add automation synth") {
                 for (inst in context[PonticelloLauncher.currentProject].mainScore.instancesOf(obj).toList()) {

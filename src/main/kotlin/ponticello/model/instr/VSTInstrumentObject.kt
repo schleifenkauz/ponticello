@@ -3,7 +3,6 @@ package ponticello.model.instr
 import hextant.context.Context
 import javafx.scene.paint.Color
 import ponticello.model.flow.VSTPluginFlow
-import ponticello.model.registry.reference
 import ponticello.sc.client.ScWriter
 import ponticello.ui.registry.ParameterDefList
 import reaktive.value.ReactiveValue
@@ -43,6 +42,4 @@ class VSTInstrumentObject(val flow: VSTPluginFlow) : InstrumentObject { //TODO i
 
     override fun sync() {
     }
-
-    override fun instrumentReference(): InstrumentReference = InstrumentReference.VST(flow.reference())
 }

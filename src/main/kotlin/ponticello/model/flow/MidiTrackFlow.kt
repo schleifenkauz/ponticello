@@ -4,10 +4,15 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import ponticello.impl.Decimal
 import ponticello.impl.copy
+import ponticello.impl.toDecimal
 import ponticello.impl.writeCode
+import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectListSerializer
+import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.run
 import ponticello.ui.midi.MidiDeviceSpec
@@ -80,6 +85,25 @@ class MidiTrackFlow(
             +"$trackVariable.release"
             +"$trackVariable = nil"
         }
+    }
+
+    fun ScWriter.sendNoteOn(
+        midinote: Decimal, controls: ParameterControlList,
+        latency: Decimal, player: ScorePlayer
+    ) {
+        val velocity = controls.getOrNull("velocity")?.now?.getNumericalValue() ?: 64.toDecimal()
+        val channel = controls.getOrNull("channel")?.now?.getNumericalValue() ?: 0
+        val src = "(latency: $latency, player_id: ${player.id})"
+        append(trackVariable, ".noteOn(", midinote, ",", velocity, ",", channel, ",", src, ")")
+        appendLine(";")
+    }
+
+    fun ScWriter.sendNoteOff(midinote: Decimal, controls: ParameterControlList, latency: Decimal) {
+        val channel = controls.getOrNull("channel")?.now?.getNumericalValue() ?: 0
+        val velocity = "0"
+        val src = "(latency: $latency)"
+        append(trackVariable, ".noteOff(", midinote, ",", velocity, ",", channel, ",", src, ")")
+        appendLine(";")
     }
 
     @Serializable(with = InstrumentList.Serializer::class)

@@ -44,3 +44,47 @@ RoutineInstrument : Instrument { //TODO common superclass with MidiEffectInstrum
 
 	asString { ^"Routine %".format(name) }
 }
+
+RoutineInstance {
+    var func, instance, onFinished, env, task;
+
+    * new { |instance, func, onFinished|
+		var env = EnvironmentRedirect(currentEnvironment);
+         ^super.newCopyArgs(func, instance, onFinished, env).prCreateTask;
+    }
+
+	prCreateTask {
+		task = Task({
+			try {
+				env.use {
+					func.value(instance, instance.def.duration ? inf)
+				}
+			} { |error|
+				error.reportError;
+			};
+			fork { this.prFinished }
+		}, SystemClock);
+	}
+
+	prFinished {
+		protect {
+			env.use {
+				postf("Running on finished %\n", onFinished);
+				onFinished.value(instance);
+			};
+		} {
+			instance.dispose;
+		}
+	}
+
+    run { | active |
+	    if (active) { task.play } { task.pause }
+    }
+
+    release { |latency=0|
+		SystemClock.sched(latency) {
+			task.stop;
+			this.prFinished;
+		}
+    }
+}

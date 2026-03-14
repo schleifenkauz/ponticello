@@ -21,7 +21,7 @@ interface ParameterizedObject : NamedObject {
 
     val soundProcessName: String? get() = soundProcessName(name.now)
 
-    fun duration(): ReactiveValue<Decimal>? = null
+    fun duration(): ReactiveValue<Decimal>?
 
     fun getSpec(parameter: String): ControlSpec? =
         controls.getOrNull(parameter)?.spec?.now ?: getInstrument().getSpec(parameter)?.now

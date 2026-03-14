@@ -5,7 +5,6 @@ import hextant.core.HextantCore
 import io.mockk.mockk
 import ponticello.impl.asTime
 import ponticello.impl.toDecimal
-import ponticello.model.instr.InstrumentReference
 import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
