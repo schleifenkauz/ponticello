@@ -1,4 +1,4 @@
-SynthInstrument : Instrument {
+SynthInstrument {
 	var synthDefName, synthDesc;
 	classvar byName;
 

@@ -6,7 +6,6 @@ import hextant.context.Context
 import ponticello.impl.*
 import ponticello.model.instr.MidiInstrument
 import ponticello.model.instr.RoutineDefObject
-import ponticello.model.instr.VSTInstrumentObject
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
@@ -60,7 +59,7 @@ class ScoreObjectScheduler(val context: Context) {
             is SoundProcess -> {
                 val time = pos.time + player.timeOffset
                 when (obj.getInstrument()) {
-                    is RoutineDefObject, is VSTInstrumentObject -> {
+                    is RoutineDefObject -> {
                         val objectStart = pos.plusTime(-obj.duration)
                         val code = writeCode {
                             releaseObject(obj, objectStart)

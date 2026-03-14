@@ -61,7 +61,7 @@ class InstrumentRegistryPane(
         }
 
         is ReferencedSynthDefObject -> ScrollPane(ParameterInfoPane(obj.parameters.toReactiveList()))
-        is VSTInstrumentObject, MidiInstrument, is NoInstrument -> null
+        MidiInstrument, is NoInstrument -> null
     }
 
     override val dataFormat: DataFormat

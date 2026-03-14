@@ -1,4 +1,4 @@
-RoutineInstrument : Instrument { //TODO common superclass with MidiEffectInstrument
+RoutineInstrument { //TODO common superclass with MidiEffectInstrument
 	var <>name, func, onFinished, parameterDefaults;
 	classvar dict;
 

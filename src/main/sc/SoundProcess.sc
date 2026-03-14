@@ -189,7 +189,7 @@ SoundProcess {
 
 	startNewInstance { |pos, cutoff, extra_args, server_latency, player_id|
 		var inst = this.createInstance(pos, cutoff, extra_args);
-		var placement = if (this.type != \vst_midi) { AudioNodeOrder.insert(inst) };
+		var placement = AudioNodeOrder.insert(inst);
 		//postf("Placement for %: %\n", name, placement);
 		inst.start(placement, server_latency, player_id);
 		^inst.idx;
