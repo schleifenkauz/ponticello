@@ -19,10 +19,7 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.codicons.Codicons
-import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import org.kordamp.ikonli.materialdesign2.MaterialDesignE
-import org.kordamp.ikonli.materialdesign2.MaterialDesignR
-import org.kordamp.ikonli.materialdesign2.MaterialDesignS
+import org.kordamp.ikonli.materialdesign2.*
 import ponticello.model.flow.*
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.InstrumentRegistry
@@ -209,8 +206,11 @@ class FlowGroupPane(
         }
     }
 
-    override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> =
-        flowActions.withContext(box.obj) + removeObjectAction.withContext(box)
+    override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> = buildList {
+        addAll(flowActions.withContext(box.obj))
+        if (box.obj is MidiTrackFlow) add(midiRecordAction.withContext(box.obj))
+        add(removeObjectAction.withContext(box))
+    }
 
     override fun configureDragboard(obj: AudioFlow, dragboard: Dragboard) {
         dragboard.setContent(mapOf(AudioFlow.DATA_FORMAT to obj.reference()))
@@ -267,6 +267,24 @@ class FlowGroupPane(
                 }
             }
             executes { grp -> grp.toggleActive() }
+        }
+
+        private val midiRecordAction = action<MidiTrackFlow>("Record MIDI") {
+            icon { track ->
+                `if`(
+                    track.isRecording,
+                    then = { MaterialDesignM.MICROPHONE },
+                    otherwise = { MaterialDesignM.MICROPHONE_OUTLINE }
+                )
+            }
+            description {
+                `if`(
+                    it.isRecording,
+                    then = { "Finish recording MIDI" },
+                    otherwise = { "Start recording MIDI" }
+                )
+            }
+            executes { track -> track.toggleRecording() }
         }
 
         private val flowActions = collectActions<AudioFlow> {

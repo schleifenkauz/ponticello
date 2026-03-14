@@ -26,17 +26,24 @@ SoundProcess {
 			cond.test = true;
 			cond.signal;
 		};
-		if (by_instrument.includesKey(instr)) {
-			by_instrument[instr] = by_instrument[instr].add(proc);
-		} {
-			by_instrument[instr] = [proc];
+		if (instr.notNil) {
+			if (by_instrument.includesKey(instr)) {
+				by_instrument[instr] = by_instrument[instr].add(proc);
+			} {
+				by_instrument[instr] = [proc];
+			};
 		};
 		^proc;
 	}
 
 	* remove { |name|
 		var proc = dict.removeAt(name);
-		by_instrument[proc.instr].remove(proc);
+		if (proc.isNil) {
+			Exception("SoundProcess '%' not found".format(name)).throw;
+		};
+		if (proc.instr.notNil) {
+			by_instrument[proc.instr].remove(proc);
+		}
 	}
 
 	* includesKey { |name| ^dict.includesKey(name) }

@@ -17,6 +17,7 @@ import ponticello.sc.client.ScWriter
 import ponticello.sc.client.run
 import ponticello.ui.midi.MidiDeviceSpec
 import ponticello.ui.midi.MidiInstrument
+import ponticello.ui.midi.MidiRecorder
 import reaktive.Observer
 import reaktive.value.*
 
@@ -31,7 +32,12 @@ class MidiTrackFlow(
     @Transient
     private var sourceDeviceObserver: Observer? = null
 
-    private val trackVariable get() = "~track_${name.now}"
+    @Transient
+    private val recording = reactiveVariable(false)
+
+    val isRecording: ReactiveValue<Boolean> get() = recording
+
+    val trackVariable get() = "~track_${name.now}"
 
     override val isValid: ReactiveValue<Boolean>
         get() = reactiveValue(true)
@@ -74,6 +80,16 @@ class MidiTrackFlow(
         }
         appendLine("]);")
         +"$superColliderName = $trackVariable.addToServer($placement)"
+    }
+
+    fun toggleRecording() {
+        if (isRecording.now) {
+            context[MidiRecorder].finishRecording(this)
+            recording.now = false
+        } else {
+            context[MidiRecorder].startRecording(this)
+            recording.now = true
+        }
     }
 
     override fun copy(): AudioFlow = MidiTrackFlow(sourceDevice.copy(), instruments.copy())

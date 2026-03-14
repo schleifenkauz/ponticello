@@ -47,6 +47,7 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.midi.MidiRecorder
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.vc.JavaFXGitUserInteraction
 import reaktive.Observer
@@ -345,6 +346,7 @@ class PonticelloLauncher {
                     try {
                         context[SuperColliderClient] = client
                         AudioNodeTree().initialize(context)
+                        context[MidiRecorder] = MidiRecorder(context)
                         context[ScoreObjectScheduler] = ScoreObjectScheduler(context)
                         context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
                         context[Recorder] = Recorder(context)

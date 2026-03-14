@@ -218,7 +218,7 @@ class SoundProcess(
     }
 
     override fun ScWriter.freeObject() {
-        if (isCreatedInSuperCollider) {
+        if (isCreatedInSuperCollider && getInstrument() !is MidiInstrument) {
             client.run("SoundProcess.remove('${name.now}')")
             isCreatedInSuperCollider = false
         }

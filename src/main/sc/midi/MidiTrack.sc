@@ -1,5 +1,5 @@
 MidiTrack {
-	var <sourceDevice, <>instruments, <activeNotes, <controlValues, <group, notesInPedal, connected=false;
+	var <sourceDevice, <>instruments, <activeNotes, <controlValues, <group, notesInPedal, connected=false, <recorder;
 	classvar initialized=false, tracksBySource, noteOn, noteOff, cc;
 
 	* init {
@@ -110,6 +110,7 @@ MidiTrack {
 	}
 
 	activate {
+		recorder = MidiRecorder.new;
 		instruments.do{ |instr| instr.activate(this) }
 	}
 
@@ -118,7 +119,7 @@ MidiTrack {
 			instruments.insert(idx, instrument);
 			instrument.activate(this);
 		} {
-			Exception("")
+			Exception("Attempt to insert nil").throw;
 		}
 	}
 
@@ -170,12 +171,14 @@ MidiTrack {
 		postf("Note On: %, %\n", num, val);
 		activeNotes[num] = val;
 		notesInPedal.remove(num);
+		recorder.noteOn(num, val, chan, src);
 		this.perform(src) { |instr|
 			instr.noteOn(num, val, chan, this, src)
 		}
 	}
 
 	noteOff { |num, val, chan=0, src|
+		recorder.noteOff(num, val, chan, src);
 		if (this.isPedalDown.not) {
 			activeNotes.removeAt(num);
 			this.perform(src) { |instr| instr.noteOff(num, val, chan, this, src) }
