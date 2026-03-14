@@ -169,6 +169,7 @@ MidiTrack {
 	noteOn { |val, num, chan=0, src|
 		postf("Note On: %, %\n", num, val);
 		activeNotes[num] = val;
+		notesInPedal.remove(num);
 		this.perform(src) { |instr|
 			instr.noteOn(chan, num, val, this, src)
 		}
