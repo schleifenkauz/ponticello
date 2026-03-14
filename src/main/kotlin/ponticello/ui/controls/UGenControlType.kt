@@ -114,7 +114,7 @@ data object UGenControlType : ControlType<UGenControl>() {
             append("var inst = ")
             if (absolutePosition != null) appendLine("SoundProcess.get('$processName').getInstanceAt($absolutePosition);")
             else appendLine("SoundProcess.get($processName).getSingleInstance;") //TODO
-            appendBlock("if (inst != nil)", endLine = false) {
+            appendBlock("if (inst != nil)", endLine = null) {
                 appendBlock("AppClock.sched(0)") {
                     +"var index = inst.getControlBus('$parameter').index"
                     +"var scope = Stethoscope.new(s, 1, index, rate:'control')"

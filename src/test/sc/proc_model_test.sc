@@ -7,7 +7,7 @@ SynthDef(\sine) { arg bus = 0, freq = 440, amp = 0.1;
 }.add;
 ~sine = SynthInstrument(\sine);
 
-~proc = SoundProcess.create('proc', ~sine, duration: 0.5, controls: [ValueControl('freq', 200)]);
+~proc = SoundProcess.create('proc', ~sine, controls: [ValueControl('freq', 200)], duration: 0.5);
 
 ~beat = RoutineInstrument('beat', ()) { |inst|
 	loop {

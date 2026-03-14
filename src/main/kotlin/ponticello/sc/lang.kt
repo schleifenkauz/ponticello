@@ -275,7 +275,7 @@ data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: 
             body.statements.singleOrNull()?.code(writer, context)
             append("}")
         } else {
-            appendBlock("", endLine = false) {
+            appendBlock("", endLine = null) {
                 if (parameters.isNotEmpty()) {
                     append("arg ")
                     appendList(parameters, separator = ", ", context)

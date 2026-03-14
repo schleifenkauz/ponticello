@@ -30,6 +30,7 @@ fun ScExpr.transform(f: (ScExpr) -> ScExpr): ScExpr = when (this) {
     is AccessKey -> f(AccessKey(receiver.transform(f), key.transform(f)))
     is SpreadArray -> f(SpreadArray(array.transform(f)))
     is AdhocSynth -> f(AdhocSynth(name, block.transformBlock(f)))
+    is TopLevelFunctionCall -> f(TopLevelFunctionCall(function, arguments.map { a -> a.transform(f) }))
     else -> f(this)
 }
 

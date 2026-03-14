@@ -18,8 +18,8 @@ SoundProcess {
 		dict[new_name] = proc;
 	}
 
-	* create { |name, instr, duration, controls|
-		var proc = super.new.init(name, instr, duration, controls);
+	* create { |name, instr, controls, duration|
+		var proc = super.new.init(name, instr, controls, duration);
 		dict[name] = proc;
 		if (conds.includesKey(name)) {
 			var cond = conds.removeAt(name);
@@ -67,7 +67,7 @@ SoundProcess {
 		^proc;
 	}
 
-	init { |n, i, dur, ctrls|
+	init { |n, i, ctrls, dur|
 		name = n; instr = i; duration = dur; controls = ctrls;
 		instances = Dictionary.new; byPosition = Dictionary.new; control_map = Dictionary.new;
 		instance_ctr = 0;

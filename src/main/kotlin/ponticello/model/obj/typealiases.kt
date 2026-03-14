@@ -7,10 +7,7 @@ import ponticello.model.code.ScriptObject
 import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.VSTPluginFlow
-import ponticello.model.instr.BusObject
-import ponticello.model.instr.ParameterDefObject
-import ponticello.model.instr.RoutineDefObject
-import ponticello.model.instr.SynthDefObject
+import ponticello.model.instr.*
 import ponticello.model.live.LiveObject
 import ponticello.model.live.LiveTaskObject
 import ponticello.model.player.ClockObject
@@ -24,6 +21,7 @@ import reaktive.value.now
 
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
 typealias ProcessDefReference = ObjectReference<@Contextual RoutineDefObject>
+typealias MidiEffectInstrumentReference = ObjectReference<@Contextual MidiEffectInstrument>
 typealias BusReference = ObjectReference<@Contextual BusObject>
 typealias BufferReference = ObjectReference<@Contextual BufferObject>
 typealias GlobalPatternReference = ObjectReference<@Contextual GlobalPatternObject>

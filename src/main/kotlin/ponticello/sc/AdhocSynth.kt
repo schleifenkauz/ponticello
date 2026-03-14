@@ -18,7 +18,7 @@ data class AdhocSynth(
         get() = listOf(block)
 
     override fun code(writer: ScWriter, context: Context) = with(writer) {
-        appendBlock("${"~adhoc_${name.text}"} = SynthDef(\\${name.text})", endLine = false) {
+        appendBlock("${"~adhoc_${name.text}"} = SynthDef(\\${name.text})", endLine = null) {
             block.writeCode(this.writer, context)
         }
         +".add.play(${"s.defaultGroup"}, addAction: ${

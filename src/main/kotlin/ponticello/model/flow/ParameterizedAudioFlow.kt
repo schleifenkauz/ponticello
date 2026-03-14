@@ -8,7 +8,7 @@ import ponticello.impl.writeCode
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.player.SoundProcessUpdater
-import ponticello.model.score.SoundProcess
+import ponticello.model.score.SoundProcess.Companion.createSoundProcessObject
 import ponticello.model.score.controls.BusControl
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.run
@@ -45,7 +45,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     }
 
     override fun ScWriter.createObject() {
-        SoundProcess.createSoundProcessObject(writer, this@ParameterizedAudioFlow, duration = null)
+        writer.createSoundProcessObject(this@ParameterizedAudioFlow)
         isCreatedInSuperCollider = true
     }
 

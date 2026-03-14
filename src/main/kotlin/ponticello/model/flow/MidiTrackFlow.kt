@@ -56,25 +56,29 @@ class MidiTrackFlow(
     }
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        +"$superColliderName = $trackVariable.addToServer($placement)"
         for (instr in instruments) {
             val placement = NodePlacement.tail(superColliderName)
-            +instr.addToTrack(this@MidiTrackFlow, placement)
+            instr.addToTrack(writer, this@MidiTrackFlow, placement)
         }
+        appendLine("$trackVariable = MidiTrack(${sourceDevice.now.code}, [")
+        indented {
+            for (instr in instruments) {
+                append(instr.superColliderName)
+                appendLine(",")
+            }
+        }
+        appendLine("]);")
+        +"$superColliderName = $trackVariable.addToServer($placement)"
     }
 
     override fun copy(): AudioFlow = MidiTrackFlow(sourceDevice.copy(), instruments.copy())
 
-    override fun ScWriter.createObject() {
+    override fun ScWriter.createObject() {}
+
+    override fun onRelease() {
         client.run {
-            appendLine("$trackVariable = MidiTrack(${sourceDevice.now.code}, [")
-            indented {
-                for (instr in instruments) {
-                    append(instr.superColliderName)
-                    appendLine(",")
-                }
-            }
-            appendLine("]);")
+            +"$trackVariable.release"
+            +"$trackVariable = nil"
         }
     }
 
@@ -95,13 +99,13 @@ class MidiTrackFlow(
 
         override fun onAdded(obj: MidiInstrument, idx: Int) {
             track.client.run {
-                +obj.addToTrack(track, NodePlacement.tail(track.superColliderName))
-                +"${track.trackVariable}.instruments.insert($idx, ${obj.superColliderName})"
+                obj.addToTrack(writer, track, NodePlacement.tail(track.superColliderName))
+                +"${track.trackVariable}.insertInstrument($idx, ${obj.superColliderName})"
             }
         }
 
         override fun onRemoved(obj: MidiInstrument, idx: Int) {
-            track.client.run { +"${track.trackVariable}.instruments.removeAt($idx)" }
+            track.client.run { +"${track.trackVariable}.removeInstrument($idx)" }
         }
 
         override fun onMoved(obj: MidiInstrument, oldIdx: Int, newIdx: Int) {
@@ -114,6 +118,4 @@ class MidiTrackFlow(
             MidiInstrument.Companion.serializer(), ::InstrumentList
         )
     }
-
-
 }

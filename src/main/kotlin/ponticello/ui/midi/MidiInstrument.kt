@@ -5,6 +5,7 @@ import kotlinx.serialization.Transient
 import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.AbstractNamedObject
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.*
 
@@ -20,7 +21,11 @@ sealed class MidiInstrument : AbstractNamedObject() {
     val superColliderName: String get() = "~${name.now}"
 
     fun toggleEnabled() {
-        enabled.set(!enabled.now)
+        setEnabled(!enabled.now)
+    }
+
+    open fun setEnabled(value: Boolean) {
+        enabled.set(value)
         context[SuperColliderClient].run("$superColliderName.enabled = ${isEnabled.now}")
     }
 
@@ -30,7 +35,7 @@ sealed class MidiInstrument : AbstractNamedObject() {
 
     abstract override fun copy(): MidiInstrument
 
-    open fun addToTrack(track: MidiTrackFlow, placement: NodePlacement): String = ""
+    open fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {}
 
     open fun midiContext(): MidiContext? = null
 

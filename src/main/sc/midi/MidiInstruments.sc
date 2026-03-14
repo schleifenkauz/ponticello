@@ -1,36 +1,32 @@
 SoundProcessMidiInstrument {
-	var procName, instancesByNote, notesInPedal, <>enabled;
+	var procName, instancesByNote, <>enabled;
 
-	* new { |procName, enabled=true|
-		^super.newCopyArgs(procName, Dictionary.new, [], enabled)
+	* create { |name, instr, controls, enabled=true|
+		SoundProcess.create(name, instr, controls);
+		^super.newCopyArgs(name, Dictionary.new, enabled)
 	}
 
 	noteOn { |chan, num, val, track, src|
 		if (enabled) {
             var proc = SoundProcess.get(procName);
             var inst = proc.createInstance(nil, 0, (pitch: num, velocity: val));
-            inst.setupMidi(track, (latency: src.latency, player_id: src.player_id, instr: this));
+            inst.midiTrack = track;
             inst.onDispose { instancesByNote[num].remove(inst) };
             inst.start((addAction: \addToTail, target: track.group), src.latency, src.player_id);
             instancesByNote[num] = instancesByNote[num].add(inst);
 		}
+		^true
 	}
 
-	noteOff { |chan, num, velocity, track, src|
-		postf("NoteOff %, src = %, pedal: %\n", num, src, track.pedalState);
-		if ((track.pedalState > 0).not) {
-			instancesByNote[num].postln;
-			instancesByNote[num].copy.do(_.release);
-		} {
-			notesInPedal = notesInPedal.add(num);
-		}
+	noteOff { |chan, num, val, track, src|
+		instancesByNote[num].copy.do(_.release);
+		^true
 	}
 
-	pedalUp { |track|
-		notesInPedal.do { |num|
-			this.noteOff(track, 0, num, 0);
-		}
+	control { |chan, num, val, track, src|
+		^true
 	}
+
 
 	allNotesOff {
 		instancesByNote.keysValuesDo { |num, instances|
@@ -38,7 +34,9 @@ SoundProcessMidiInstrument {
 		};
 	}
 
-	control { }
+	activate {}
+
+	dispose {}
 }
 
 VSTMidiInstrument {
@@ -54,17 +52,19 @@ VSTMidiInstrument {
 		}
 	}
 
-	noteOn { |chan, num, val, track, src|
+	noteOn { |chan, num, val|
 		if (enabled) {
 			this.prResolve;
 			vst.midi.noteOn(chan, num, val)
 		}
+		^true
 	}
 
-	noteOff { |chan, num, val, track, src|
+	noteOff { |chan, num, val|
 		if (vst.notNil) {
 			vst.midi.noteOff(chan, num, val)
 		}
+		^true
 	}
 
 	control { |chan, num, val|
@@ -72,7 +72,12 @@ VSTMidiInstrument {
 			this.prResolve;
 			vst.midi.control(chan, num, val);
 		}
+		^true
 	}
 
 	allNotesOff { vst.midi.allNotesOff }
+
+	activate {}
+
+	dispose {}
 }

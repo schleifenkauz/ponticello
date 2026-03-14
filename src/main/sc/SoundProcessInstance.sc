@@ -4,7 +4,7 @@ SoundProcessInstance : AudioNode {
 	<server_latency, start_time, placement, group,
 	running = false, <restarting = false, disposed = false,
 	initial_args, control_buses, auxil_synths, sound_obj, children,
-	<midiTrack, <midiSrc,
+	<>midiTrack, <midiSrc,
 	on_dispose;
 
 	* new {| def, idx, pos, cutoff = 0, extra_args |
@@ -15,11 +15,6 @@ SoundProcessInstance : AudioNode {
 		def = d; idx = i; pos = p; cutoff = offset; extra_args = extra;
 		initial_args = Dictionary.new; control_buses = Dictionary.new; auxil_synths = Dictionary.new;
 		on_dispose = [];
-	}
-
-	setupMidi { |track, src|
-		midiTrack = track;
-		midiSrc = src;
 	}
 
 	type { ^def.type }

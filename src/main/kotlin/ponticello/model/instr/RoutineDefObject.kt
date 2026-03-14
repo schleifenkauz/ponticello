@@ -17,8 +17,6 @@ import ponticello.impl.randomColor
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
-import ponticello.model.registry.ObjectRegistry
-import ponticello.model.registry.reference
 import ponticello.sc.*
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
@@ -44,9 +42,6 @@ class RoutineDefObject(
 
     override fun superColliderName(objectName: String) = "RoutineInstrument.get('${name.now}')"
 
-    override val registry: ObjectRegistry<*>
-        get() = context[InstrumentRegistry]
-
     override fun supports(type: ParameterType): Boolean = true
 
     override fun copy(): RoutineDefObject = RoutineDefObject(
@@ -55,33 +50,29 @@ class RoutineDefObject(
         body.clone(context)
     )
 
-    override fun ScWriter.sync() {
-        createObject()
-    }
-
     override fun ScWriter.createObject() {
         val parameterMap = parameters.associate { p ->
-            p.name.now to { Identifier("inst").send("getControlValue", SymbolLiteral(p.name.now)) }
+            p.name.now to { Identifier("inst").send("get", SymbolLiteral(p.name.now)) }
         }
         val extraMap = mapOf(
             "time" to { Identifier("inst").send("current_time") }
         )
         val processBody = body.editor.result.now
         val substitutedBody = processBody.substitute(parameterMap + extraMap) as CodeBlock
-        val defaultValueMap = parameters.filter { p -> p.spec.now is NumericalControlSpec }
-            .joinToString(", ", "(", ")") { param ->
-                val spec = param.spec.now as NumericalControlSpec
-                "${param.name.now}: ${spec.defaultValue.text}"
-            }
+        val defaultValueMap = createDefaultValueMap()
         appendBlock("RoutineInstrument('${name.now}', $defaultValueMap)") {
             +"arg inst, duration"
             substitutedBody.writeCode(this, context)
         }
     }
 
+    override fun ScWriter.sync() {
+        createObject()
+    }
+
     override fun sync() {
         context[SuperColliderClient].run { writer.sync() }
-        Logger.confirm("Synchronized ProcessDef '${name.now}'", Logger.Category.Instruments)
+        Logger.confirm("Synchronized RoutineDef '${name.now}'", Logger.Category.Instruments)
     }
 
     override fun ScWriter.freeObject() {
@@ -100,10 +91,8 @@ class RoutineDefObject(
     }
 
     override fun onRename(oldName: String, newName: String) {
-        sync()
+        client.run("RoutineInstrument.rename('$oldName', '$newName')")
     }
-
-    override fun instrumentReference() = InstrumentReference.UserDefined(this.reference())
 
     companion object {
         fun newEmpty(name: String) = RoutineDefObject(

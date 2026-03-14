@@ -53,10 +53,8 @@ class InstrumentRegistryPane(
         else MaterialDesignE.EYE
 
     override fun getContent(obj: InstrumentObject, box: ObjectBox<InstrumentObject>): Parent? = when (obj) {
-        is CustomizableSynthDefObject -> {
-            SynthDefObjectPane(obj)
-        }
-
+        is CustomizableSynthDefObject -> SynthDefObjectPane(obj)
+        is MidiEffectInstrument -> MidiEffectInstrumentPane(obj)
         is RoutineDefObject -> {
             val enableActions = box.currentMode == DisplayMode.SubWindow
             RoutineDefObjectPane(obj, enableActions)
@@ -89,19 +87,20 @@ class InstrumentRegistryPane(
                                 "Import SynthDef '$name' from SynthDescLib? A new SynthDef will be created otherwise.",
                         default = true
                     ).showDialog(anchorNode = this) ?: return null
-                    return if (reference) ReferencedSynthDefObject.get(name)
+                    if (reference) ReferencedSynthDefObject.get(name)
                     else CustomizableSynthDefObject.create(name)
                 }
 
                 else -> CustomizableSynthDefObject.create(name)
             }
 
-            InstrumentType.ProcessDef -> RoutineDefObject.newEmpty(name)
+            InstrumentType.Routine -> RoutineDefObject.newEmpty(name)
+            InstrumentType.MidiEffect -> MidiEffectInstrument.newEmpty(name)
         }
     }
 
     private enum class InstrumentType {
-        SynthDef, ProcessDef;
+        SynthDef, Routine, MidiEffect;
     }
 
     override fun extraHeaderActions(): List<ContextualizedAction> =

@@ -98,12 +98,11 @@ abstract class MultiChannelAudioBuffer(val sampleRate: Double, val nChannels: In
         val path = audioFile.superColliderPath
         context[SuperColliderClient].run {
             +"var path = $path"
-            appendBlock("Buffer.read(s, path, $frameOffset, $numFrames, action: ", endLine = false) {
+            appendBlock("Buffer.read(s, path, $frameOffset, $numFrames, action: ", endLine = ");") {
                 +"arg b"
                 action("b")
                 +"File.delete(path)"
             }
-            appendLine(");")
         }
     }
 

@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.VSTPluginFlow
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import reaktive.value.now
@@ -28,15 +29,21 @@ class VSTMidiInstrument(
         return "VSTMidiInstrument <$flowName>"
     }
 
+    override fun setEnabled(value: Boolean) {
+        super.setEnabled(value)
+        flow.setActive(value)
+    }
+
     override fun activate() {
         context[SuperColliderClient].run {
             +"~${name.now} = VSTMidiInstrument({${vst.controllerVar}}, enabled: ${isEnabled.now})"
         }
     }
 
-    override fun addToTrack(track: MidiTrackFlow, placement: NodePlacement): String {
+    override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {
         flow.setFlowGroup(track.parentGroup!!)
-        return flow.writeCode(placement)
+        writer.append(flow.writeCode(placement))
+        writer.appendLine(";")
     }
 
     override fun onRemoved() {
@@ -46,9 +53,5 @@ class VSTMidiInstrument(
 
     override fun copy(): MidiInstrument = VSTMidiInstrument(flow)
 
-    companion object {
-        fun create(pluginName: String) {
-
-        }
-    }
+    companion object
 }

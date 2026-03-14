@@ -13,6 +13,7 @@ import javafx.scene.layout.Region
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.flow.VSTPlugins
 import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.MidiEffectInstrument
 import ponticello.model.obj.project
 import ponticello.model.project.instruments
 import ponticello.model.registry.reference
@@ -28,24 +29,30 @@ class NewMidiInstrumentPrompt(
 ) : SelectorPrompt<NewMidiInstrumentPrompt.MidiInstrumentOption>(title) {
     override fun options(): List<MidiInstrumentOption> {
         val userInstruments: List<MidiInstrumentOption> = context.project.instruments
+            .filter { it !is MidiEffectInstrument }
             .map(MidiInstrumentOption::SoundProcess)
+        val midiEffects: List<MidiInstrumentOption> = context.project.instruments
+            .filterIsInstance<MidiEffectInstrument>()
+            .map(MidiInstrumentOption::MidiEffect)
         val vstInstruments: List<MidiInstrumentOption> = VSTPlugins.availablePlugins(context, midi = true)
             .map(MidiInstrumentOption::VST)
-        return userInstruments + vstInstruments
+        return userInstruments + midiEffects + vstInstruments
     }
 
     override fun createCell(option: MidiInstrumentOption): Region {
         val type = when (option) {
             is MidiInstrumentOption.SoundProcess -> option.instrument.instrumentType
+            is MidiInstrumentOption.MidiEffect -> "MIDI Effect"
             is MidiInstrumentOption.VST -> "VST"
         }
-        val typeLabel = Label(type).setFixedWidth(70.0).styleClass("instrument-type-label")
+        val typeLabel = Label(type).setFixedWidth(80.0).styleClass("instrument-type-label")
         val name = extractText(option)
         return HBox(Label(name).setFixedWidth(150.0), infiniteSpace(), typeLabel)
     }
 
     override fun extractText(option: MidiInstrumentOption): String = when (option) {
         is MidiInstrumentOption.SoundProcess -> option.instrument.name.now
+        is MidiInstrumentOption.MidiEffect -> option.instrument.name.now
         is MidiInstrumentOption.VST -> option.pluginName
     }
 
@@ -53,6 +60,9 @@ class NewMidiInstrumentPrompt(
         fun createInstrument(context: Context, ev: Event?): MidiInstrument? = when (this) {
             is SoundProcess ->
                 SoundProcessMidiInstrument(reactiveVariable(instrument.reference()), ParameterControlList())
+
+            is MidiEffect ->
+                MidiEffectObject(reactiveVariable(instrument.reference()), ParameterControlList())
 
             is VST -> {
                 val presets = VSTPlugins.globalPresetList(context, pluginName)
@@ -69,6 +79,7 @@ class NewMidiInstrumentPrompt(
         }
 
         data class SoundProcess(val instrument: InstrumentObject) : MidiInstrumentOption()
+        data class MidiEffect(val instrument: MidiEffectInstrument) : MidiInstrumentOption()
         data class VST(val pluginName: String) : MidiInstrumentOption()
     }
 }

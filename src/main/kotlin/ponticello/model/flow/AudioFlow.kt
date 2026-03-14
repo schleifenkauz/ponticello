@@ -9,6 +9,7 @@ import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.project
 import ponticello.model.project.flows
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import ponticello.ui.midi.MidiContext
@@ -82,12 +83,20 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
 
     fun release() {
         parentGroup = null
+        onRelease()
+    }
+
+    protected open fun onRelease() {
         context[SuperColliderClient].run("${superColliderName}.release")
+    }
+
+    override fun ScWriter.freeObject() {
+        context[SuperColliderClient].run("$superColliderName = nil")
     }
 
     override fun sync() {
         if (!isActive.now || parentGroup?.isActive?.now != true) return
-        context[SuperColliderClient].run("$superColliderName.release")
+        onRelease()
         val placement = parentGroup!!.getPlacement(this)
         val code = writeCode(placement)
         context[SuperColliderClient].run(code)

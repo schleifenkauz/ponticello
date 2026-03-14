@@ -149,8 +149,6 @@ class CustomizableSynthDefObject(
         ugenGraph?.initialize(myContext)
     }
 
-    override fun canRenameTo(newName: String): Boolean = !context[InstrumentRegistry].has(newName)
-
     override fun rename(newName: String) {
         onRemoved()
         super.rename(newName)

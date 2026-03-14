@@ -65,8 +65,9 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
     }
 
     override fun getContent(obj: MidiInstrument, box: ObjectBox<MidiInstrument>): Parent? = when (val obj = box.obj) {
-        is SoundProcessMidiInstrument -> ParameterControlsPane(obj, midiContext = midiContext(obj)).pad(3.0)
         is VSTMidiInstrument -> VSTPluginFlowView(obj.vst, showPluginSelector = false)
+
+        is ParameterizedMidiInstrument -> ParameterControlsPane(obj, midiContext = midiContext(obj)).pad(3.0)
     }
 
     override fun getHeaderContent(obj: MidiInstrument): List<Node> = when (obj) {
@@ -84,18 +85,13 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
             hspace(1.0),
             VSTPluginFlowView.createPluginSelectorBar(obj.vst)
         )
-    }
 
-    /* TODO remove
-        override fun expandedLayout(box: ObjectBox<MidiInstrument>): Node {
-            val header = HBox(
-                createInstrumentSelectorButton(box.obj),
-                infiniteSpace(),
-                removeObjectAction.withContext(box).makeButton("small-icon-button")
-            )
-            return VBox(3.0, header, box.content).pad(3.0)
-        }
-    */
+        is MidiEffectObject -> listOf(
+            Label("MIDI Effect"),
+            hspace(1.0),
+            MidiEffectSelectorPrompt(obj.context).selectorButton(obj.reference)
+        )
+    }
 
     override fun createSeparatorNode(box: ObjectBox<MidiInstrument>): Node {
         val button = insertObjectAction.withContext(box).makeButton("small-icon-button")
@@ -128,20 +124,19 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
             addAction("View instrument") {
                 icon { obj ->
                     when (obj) {
-                        is SoundProcessMidiInstrument -> reactiveValue(Codicons.CODE)
+                        is ParameterizedMidiInstrument -> reactiveValue(Codicons.CODE)
                         is VSTMidiInstrument -> reactiveValue(MaterialDesignE.EYE)
                     }
                 }
                 executes { obj ->
                     when (obj) {
-                        is SoundProcessMidiInstrument -> {
+                        is ParameterizedMidiInstrument -> {
                             val pane = obj.context[AppLayout].get<InstrumentRegistryPane>()
                             pane.showContent(obj.getInstrument())
                         }
 
                         is VSTMidiInstrument -> {
-                            val flow = obj.vst
-                            flow?.showEditor()
+                            obj.vst.showEditor()
                         }
                     }
                 }

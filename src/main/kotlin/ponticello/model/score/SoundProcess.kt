@@ -214,7 +214,7 @@ class SoundProcess(
     }
 
     override fun ScWriter.createInSuperCollider() {
-        createSoundProcessObject(writer, this@SoundProcess, duration)
+        createSoundProcessObject(this@SoundProcess, duration)
     }
 
     override fun ScWriter.freeObject() {
@@ -260,11 +260,12 @@ class SoundProcess(
             controls: ParameterControlList = ParameterControlList.empty(),
         ): SoundProcess = SoundProcess(reactiveVariable(instrument), controls).withName(name)
 
-        fun createSoundProcessObject(writer: ScWriter, obj: ParameterizedObject, duration: Decimal?) =
-            writer.appendGroup("SoundProcess.create") {
+        fun ScWriter.createSoundProcessObject(
+            obj: ParameterizedObject, duration: Decimal? = null,
+            className: String = "SoundProcess", extraArguments: List<String> = emptyList()
+        ) = appendGroup("$className.create") {
                 appendLine("name: '${obj.soundProcessName}',")
                 appendLine("instr: ${obj.getInstrument().superColliderName},")
-                appendLine("duration: ${duration ?: "nil"},")
                 append("controls: [")
                 indented {
                     for (ctrl in obj.controls) {
@@ -273,7 +274,12 @@ class SoundProcess(
                         appendLine("$expr,")
                     }
                 }
-                appendLine("]")
+            appendLine("],")
+            if (duration != null) appendLine("duration: $duration,")
+            for (arg in extraArguments) {
+                append(arg)
+                appendLine(",")
+            }
             }
     }
 }

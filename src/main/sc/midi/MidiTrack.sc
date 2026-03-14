@@ -1,5 +1,5 @@
 MidiTrack {
-	var <sourceDevice, <>instruments, <group, <pedalState = 0, connected=false;
+	var <sourceDevice, <>instruments, <activeNotes, <controlValues, <group, notesInPedal, connected=false;
 	classvar initialized=false, tracksBySource, noteOn, noteOff, cc;
 
 	* init {
@@ -80,8 +80,9 @@ MidiTrack {
 	}
 
 	* new { |source, instrs|
-		var track = super.newCopyArgs(source, instrs);
-		^track.prConnect
+		var track = super.newCopyArgs(source, instrs, Dictionary.new, Dictionary.new);
+		track.prConnect;
+		^track.activate;
 	}
 
 	* freeAll {
@@ -106,6 +107,24 @@ MidiTrack {
 			MidiTrack.disconnectSource(sourceDevice, this);
 		};
 		connected = false;
+	}
+
+	activate {
+		instruments.do{ |instr| instr.activate(this) }
+	}
+
+	insertInstrument { |idx, instrument|
+		if (instrument.notNil) {
+			instruments.insert(idx, instrument);
+			instrument.activate(this);
+		} {
+			Exception("")
+		}
+	}
+
+	removeInstrument { |idx|
+		var instrument = instruments.removeAt(idx);
+		instrument.dispose;
 	}
 
 	sourceDevice_ { |deviceName|
@@ -133,32 +152,48 @@ MidiTrack {
 
 	perform { |src, fn|
 		fork {
-			instruments.drop((instruments.indexOf(src.instr) ? -1) + 1).do { |instr|
-				fn.value(instr)
-			};
+			var idx = (instruments.indexOf(src.instr) ? -1) + 1, continue = true;
+			postf("Starting at index % (src instr: %)\n", idx, src.instr);
+			while { (continue == true) && (idx < instruments.size) } {
+				var instr = instruments[idx];
+				continue = fn.value(instr) ? true;
+				if (continue.isKindOf(Function)) {
+					fn = continue;
+					continue = true;
+				};
+				idx = idx + 1;
+			}
 		}
 	}
 
 	noteOn { |val, num, chan=0, src|
 		postf("Note On: %, %\n", num, val);
+		activeNotes[num] = val;
 		this.perform(src) { |instr|
 			instr.noteOn(chan, num, val, this, src)
 		}
 	}
 
 	noteOff { |val, num, chan=0, src|
-		this.perform(src) { |instr| instr.noteOff(chan, num, val, this, src) }
+		if (this.isPedalDown.not) {
+			activeNotes.removeAt(num);
+			this.perform(src) { |instr| instr.noteOff(chan, num, val, this, src) }
+		} {
+			notesInPedal = notesInPedal.add(num);
+		}
 	}
 
 	control { |val, num, chan=0, src|
-		if (num == 64) {
-			pedalState = val;
-			if (val == 0) {
-				instruments.do { |instr| instr.pedalUp(this); }
+		controlValues[num] = val;
+		if (num == 64 && val == 0) {
+			notesInPedal.do { |num|
+				this.noteOff(0, num, 0, src);
 			}
 		};
 		this.perform(src) { |instr| instr.control(chan, num, val, this, src) }
 	}
+
+	isPedalDown { ^(controlValues[64] ? 0) > 0 }
 }
 
 MidiTrackGroup : Group {

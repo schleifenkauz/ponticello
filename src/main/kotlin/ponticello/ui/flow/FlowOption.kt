@@ -112,6 +112,7 @@ sealed interface FlowOption {
             is SynthDefObject -> "SynthDef ${def.name.now}"
             is RoutineDefObject -> "Process ${def.name.now}"
             is VSTInstrumentObject -> "VST: ${def.name.now}"
+            is MidiEffectInstrument -> throw AssertionError("MidiEffectInstrument should not be here")
             is NoInstrument -> throw AssertionError("NoInstrument should not be here")
         }
 
@@ -131,7 +132,9 @@ sealed interface FlowOption {
 
         fun getOptions(context: Context): List<FlowOption> {
             val vstOptions = VSTPlugins.availablePlugins(context).map(::VSTPlugin)
-            val synthOptions = context[InstrumentRegistry].map(::Instrument)
+            val synthOptions = context[InstrumentRegistry]
+                .filter { it !is MidiEffectInstrument }
+                .map(::Instrument)
             return simpleOptions + synthOptions + vstOptions
         }
     }

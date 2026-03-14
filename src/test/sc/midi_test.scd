@@ -68,3 +68,18 @@ t.instruments = [SoundProcessInstrument(~arp), ~pianoteq.midi, SoundProcessInstr
 ~pianoteq.midi.noteOn()
 
 ~instr.allNotesOff
+
+(
+~create_task = {
+	t = Task {
+		"hello".postln;
+		5.wait;
+		"finished".postln;
+		~create_task.value();
+	}
+}
+)
+~create_task.value()
+t.play
+t.reset
+t.addDependant((stopped: { "finished".postln }))

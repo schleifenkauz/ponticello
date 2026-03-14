@@ -65,7 +65,7 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
         decreaseIndent()
     }
 
-    inline fun appendBlock(s: String = "", endLine: Boolean = true, block: ScWriter.() -> Unit) {
+    inline fun appendBlock(s: String = "", endLine: String? = ";", block: ScWriter.() -> Unit) {
         if (s.isNotEmpty()) {
             append(s)
             append(" ")
@@ -73,7 +73,7 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
         append("{")
         indented(block)
         append("}")
-        if (endLine) appendLine(";")
+        if (endLine != null) appendLine(endLine)
     }
 
     inline fun appendGroup(block: ScWriter.() -> Unit) {

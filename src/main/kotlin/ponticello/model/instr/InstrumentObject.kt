@@ -28,6 +28,9 @@ sealed interface InstrumentObject : SuperColliderObject {
 
     val parameters: List<ParameterDefObject>
 
+    override val registry: InstrumentRegistry?
+        get() = context[InstrumentRegistry]
+
     fun allParameters(): List<ParameterDefObject> = parameters
 
     fun getParameter(name: String): ParameterDefObject? = allParameters().find { p -> p.name.now == name }
@@ -55,7 +58,7 @@ sealed interface InstrumentObject : SuperColliderObject {
         return defaultControls(context, defaultBus)
     }
 
-    fun instrumentReference(): InstrumentReference
+    fun instrumentReference(): InstrumentReference = InstrumentReference.UserDefined(this.reference())
 
     companion object {
         val DATA_FORMAT = TypedDataFormat<ObjectReference<InstrumentObject>>("ponticello:instrument")

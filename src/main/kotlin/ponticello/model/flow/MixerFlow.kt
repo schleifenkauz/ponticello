@@ -169,7 +169,7 @@ class MixerFlow(
     override fun writeCode(placement: NodePlacement): String = writeCode {
         if (components.isEmpty()) return@writeCode
         val sink = targetBus.now.force()
-        appendBlock("$superColliderName = ", endLine = false) {
+        appendBlock("$superColliderName = ", endLine = null) {
             +"var sources, volumes, pans, filters, snd, mono_mix"
             val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
             val volumes = components.map { comp -> getActualVolume(comp) }
@@ -195,7 +195,7 @@ class MixerFlow(
             }
             if (activateFilters.now) {
                 for (i in sources.indices) {
-                    appendBlock(endLine = false) {
+                    appendBlock(endLine = ".value;") {
                         +"var dry, cutoff, lpf, hpf, filtered"
                         +"dry = sources[$i]"
                         +"lpf = BLowPass4.ar(dry, filters[$i].abs.linexp(0, 1, 20000, 60), 0.5)"
@@ -203,7 +203,6 @@ class MixerFlow(
                         +"filtered = SelectX.ar(filters[$i].linlin(-1, 1, 0, 1) ! 2, [lpf, hpf])"
                         +"sources[$i] = XFade2.ar(dry, filtered, filters[$i].abs)"
                     }
-                    appendLine(".value;")
                 }
             }
             +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
