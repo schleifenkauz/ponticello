@@ -148,7 +148,7 @@ MidiTrack {
 
 	perform { |src, fn|
 		fork {
-			var idx = (instruments.indexOf(src.instr) ? -1) + 1, continue = true;
+			var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
 			postf("Starting at index % (src instr: %)\n", idx, src.instr);
 			while { (continue == true) && (idx < instruments.size) } {
 				var instr = instruments[idx];

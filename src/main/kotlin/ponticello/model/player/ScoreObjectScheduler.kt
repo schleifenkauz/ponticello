@@ -57,7 +57,7 @@ class ScoreObjectScheduler(val context: Context) {
             }
 
             is SoundProcess -> {
-                val time = pos.time + player.timeOffset
+                val time = pos.time + player.timeOffset + sclangLatency - extraLatency
                 when (obj.getInstrument()) {
                     is RoutineDefObject -> {
                         val objectStart = pos.plusTime(-obj.duration)

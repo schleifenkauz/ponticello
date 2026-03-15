@@ -61,7 +61,7 @@ ValueControl : ParameterControl {
 	getSynthArgument { |inst|
 	    ^if (this.allocatesBus) {
 	        (bus ? inst.getControlBus(this.name)).asMap
-        } { value }
+        } { this.getValue(inst) }
     }
 
 	prepare { |inst|
@@ -92,4 +92,22 @@ ValueControl : ParameterControl {
 	dispose {
 		if (bus != nil) { bus.free; }
 	}
+}
+
++ Association {
+	name { ^this.key }
+
+	getValue { ^this.value }
+
+	getUGen { ^this.value }
+
+	getBus { ^nil }
+
+	getSynthArgument { ^this.value }
+
+	prepare {  }
+
+	apply {}
+
+	dispose {  }
 }

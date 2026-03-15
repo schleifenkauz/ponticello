@@ -1,20 +1,17 @@
 SoundProcessInstance : AudioNode {
-	var <def, <idx, <cutoff, <pos,
-	<extra_args, <playerId,
-	<server_latency, start_time, placement, group,
+	var <def, <idx, <pos, <cutoff, extra_control_keys, <control_map,
+	initial_args, control_buses, auxil_synths, children, on_dispose,
+	<playerId, <server_latency, start_time, placement, group,
 	running = false, <restarting = false, disposed = false,
-	initial_args, control_buses, auxil_synths, sound_obj, children,
-	<>midiTrack, <midiSrc,
-	on_dispose;
+	sound_obj, <>midiTrack, <midiSrc;
 
-	* new {| def, idx, pos, cutoff = 0, extra_args |
-		^ super.new.init (def, idx, pos, cutoff, extra_args);
-	}
-
-	init { |d, i, p, offset, extra|
-		def = d; idx = i; pos = p; cutoff = offset; extra_args = extra;
-		initial_args = Dictionary.new; control_buses = Dictionary.new; auxil_synths = Dictionary.new;
-		on_dispose = [];
+	* new {| def, idx, pos, cutoff = 0, extra_controls |
+		var extra_control_map = Dictionary.with(*extra_controls.collect { |ctrl| ctrl.name -> ctrl });
+		var control_map = def.control_map ++ extra_control_map;
+		^super.newCopyArgs(
+			def, idx, pos, cutoff, extra_control_map.keys, control_map,
+			Dictionary.new, Dictionary.new, Dictionary.new, List[]
+		);
 	}
 
 	type { ^def.type }
@@ -42,15 +39,9 @@ SoundProcessInstance : AudioNode {
 		}
 	}
 
-	getControl { |name|
-		^if (extra_args.includesKey(name)) {
-			ValueControl.new(name, extra_args[name])
-		} { def.getControl(name) }
-	}
+	getControl { |name|	^control_map[name] }
 
 	getControlBus { |name| ^control_buses[name] }
-
-	getInitialArguments { ^initial_args ++ extra_args }
 
 	freeControlBus { |name|
 		var bus = control_buses.removeAt(name);
@@ -58,13 +49,9 @@ SoundProcessInstance : AudioNode {
 	}
 
 	createAuxilSynth { |param_name, synth_def, args, replace = false|
-		var auxil_synth, target, addAction;
-		if (sound_obj == nil) { Error("Cannot create auxiliary synth because sound_obj = nil.").throw };
-		target = if (sound_obj.isMemberOf(Synth)) { sound_obj } { group };
-		addAction = if (sound_obj.isMemberOf(Synth)) { \addBefore } { \addToTail };
-		auxil_synth = if (running) {
-			Synth(synth_def, args, target, addAction);
-		} { Synth.newPaused(synth_def, args, target, addAction) };
+		var auxil_synth = if (running) {
+			Synth(synth_def, args, target: group, addAction: \addToTail);
+		} { Synth.newPaused(synth_def, args, group, \addToTail) };
 		auxil_synths[param_name] = auxil_synth;
 		^auxil_synth
 	}
@@ -82,7 +69,7 @@ SoundProcessInstance : AudioNode {
 	}
 
 	mapParameter { |name, bus|
-		if (extra_args.includesKey(name).not) {
+		if (extra_control_keys.includes(name).not) {
 			if (sound_obj == nil) {Error ("Cannot map parameter because sound_obj = nil.").throw};
 			if (sound_obj.respondsTo (\map) ) {
 				sound_obj.map (name, bus);
@@ -91,35 +78,28 @@ SoundProcessInstance : AudioNode {
 	}
 
 	putArgument { |name, value|
-		if (extra_args.includesKey(name).not) {
-			if (sound_obj == nil) {
-				initial_args.put(name, value);
-			} {
-				if (sound_obj.respondsTo(\set)) {
-					sound_obj.set(name, value);
-				}
+		if (extra_control_keys.includes(name).not) {
+			if (sound_obj.respondsTo(\set)) {
+				sound_obj.set(name, value);
 			}
 		}
 	}
 
 	setDefaultValue { |parameter|
-		sound_obj.set (parameter, def.instr.getDefaultValue (parameter) )
+		if (extra_control_keys.includes(parameter).not && sound_obj.respondsTo(\set)) {
+			var default = def.instr.getDefaultValue(parameter);
+			sound_obj.set(parameter)
+		}
 	}
 
 	getControlValue { |name|
-		^extra_args[name] ?? {
-		    var ctrl = def.getControl(name);
-		    if (ctrl.notNil) { ctrl.getValue(this) } { def.instr.getDefaultValue(name) }
-		}
+		^this.getControl(name) !? (_.getValue(this)) ? def.instr.getDefaultValue(name);
 	}
 
 	get { |name| ^this.getControlValue(name) }
 
 	getControlUGen { |name|
-		^extra_args[name] ?? {
-		    var ctrl = def.getControl(name);
-		    if (ctrl.notNil) { ctrl.getUGen(this) } { def.instr.getDefaultValue(name) }
-		}
+		^this.getControl(name) !? (_.getUGen(this)) ? def.instr.getDefaultValue(name);
 	}
 
 	updateDuration { |dur|
@@ -131,17 +111,17 @@ SoundProcessInstance : AudioNode {
 	asString { ^"Instance #% of % [running: %, disposed: %]".format(idx, def, running, disposed) }
 
 	onDispose { |func|
-		on_dispose = on_dispose.add(func);
+		on_dispose.add(func);
 	}
 
 	dispose {
 		case
 		{ disposed } { postf("Warning: % already disposed", this) }
 		{ restarting } {
-			{
+			fork {
 				this.prStart(running);
 				restarting = false;
-			}.fork;
+			};
 		}
 		{ true } {
 			control_buses.do (_.free);
@@ -149,7 +129,7 @@ SoundProcessInstance : AudioNode {
 			if (group != nil) {
 				group.free;
 				group = nil;
-				if (pos != nil) {
+				if (pos != nil) { //TODO 'if' needed?
 					AudioNodeOrder.remove(this);
 				}
 			};
@@ -166,23 +146,24 @@ SoundProcessInstance : AudioNode {
 		start_time = TempoClock.beats;
 		server_latency = latency;
 		playerId = player_id;
-		if (placement != nil) {
-			Server.local.sync;
-			group = Group.new(placement.target, placement.addAction);
-			//group.register(assumePlaying: true);
-		};
-		def.controls.do { |ctrl|
-			if (extra_args.includesKey(ctrl.name).not) { ctrl.prepare(this) };
-		};
-		this.prStart(run);
+		forkIfNeeded {
+			if (placement != nil) {
+				Server.local.sync;
+				group = Group.new(placement.target, placement.addAction);
+				//group.register(assumePlaying: true);
+			};
+			control_map.keysValuesDo { |name, ctrl|
+				ctrl.prepare(this);
+			};
+			this.prStart(run);
+		}
 	}
 
 	prStart { |run|
-	    sound_obj = def.instr.create(this);
-		Server.local.sync;
-		def.controls.do { |ctrl|
-			if (extra_args.includesKey(ctrl.name).not) { ctrl.apply(this) };
+		control_map.keysValuesDo { |name, ctrl|
+			ctrl.apply(this);
 		};
+		sound_obj = def.instr.create(this);
         if (run) {
             Server.local.sync;
             Server.local.makeBundle(server_latency) {
@@ -216,13 +197,13 @@ SoundProcessInstance : AudioNode {
 		};
 	}
 
-	startChildInstance { |proc, extra_args|
+	startChildInstance { |proc, extra_controls|
 		var inst, placement, p;
 		if (this.type != \routine) {
 			Exception("Attempt to call .startChildInstance on %".format(this)).throw;
 		};
 		p = (t: pos.t + this.current_time, y: pos.y);
-		inst = proc.createInstance(p, 0, extra_args ? ());
+		inst = proc.createInstance(p, 0, extra_controls ? ());
 		placement = (addAction: \addToTail, target: group);
 		inst.start(placement, Server.local.latency, playerId);
 		inst.onDispose { children.remove(inst) };

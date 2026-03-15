@@ -91,7 +91,7 @@ Ponticello {
 		Ponticello.respond('/save_plugin_state', this.save_plugin_state(_, _, _));
 		Ponticello.respond('/run', this.run(_));
 		Ponticello.respondId('/eval', this.eval(_, _));
-		Ponticello.respond('/schedule', PonticelloPlayback.schedule(_, _, _, _, _, _));
+		Ponticello.respondId('/schedule', PonticelloPlayback.schedule(_, _, _, _, _, _));
 		Ponticello.respond('/set_time_warp', PonticelloPlayback.set_time_warp(_, _));
 		Ponticello.respond('/start_play', PonticelloPlayback.start_play(_, _));
 		Ponticello.respond('/pause_play', PonticelloPlayback.pause_play(_));

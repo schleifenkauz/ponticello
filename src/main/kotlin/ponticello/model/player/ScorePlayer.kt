@@ -144,7 +144,7 @@ class ScorePlayer private constructor(
         playing.set(true)
         System.err.println("Start Player [$id]")
         val time = playHead.currentTime
-        client.send("start_play", listOf(id.toString(), time.toString()))
+        client.sendAsync("start_play", listOf(id, time.toString()))
         context[Recorder].startingPlayback()
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
         lastPlayFrom = time
@@ -168,7 +168,7 @@ class ScorePlayer private constructor(
         lastPlayFrom = zero
         getClock().stop(this)
         currentClock = null
-        client.send("pause_play", listOf(id))
+        client.sendAsync("pause_play", listOf(id))
         freeActiveObjects()
     }
 

@@ -9,7 +9,7 @@ SoundProcessMidiInstrument {
 	noteOn { |num, val, chan, track, src|
 		if (enabled) {
             var proc = SoundProcess.get(procName);
-            var inst = proc.createInstance(nil, 0, (pitch: num, velocity: val));
+			var inst = proc.createInstance(nil, 0, [\pitch -> num, \velocity -> val]);
             inst.midiTrack = track;
             inst.onDispose { instancesByNote[num].remove(inst) };
             inst.start((addAction: \addToTail, target: track.group), src.latency, src.player_id);

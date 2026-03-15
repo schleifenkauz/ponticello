@@ -76,7 +76,7 @@ fun SuperColliderClient.schedule(
     description: String, time: Decimal, absolute: Boolean,
     player: ScorePlayer, code: String
 ): CompletableFuture<String> {
-    val args = listOf(absolute, time.toString(), player.id, code)
+    val args = listOf(absolute, time.toString(), player.id, code, description)
     if (context.playbackSettings.logScCode.now) {
         println("Schedule $description at $time, player_id = ${player.id}:")
         println(code)

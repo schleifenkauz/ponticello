@@ -1,6 +1,6 @@
 SoundProcess {
 	classvar dict, by_instrument, conds;
-	var <>name, <instr, <duration, <controls, control_map, instances, byPosition, instance_ctr;
+	var <>name, <instr, <duration, <controls, <control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
@@ -184,8 +184,8 @@ SoundProcess {
 		}
 	}
 
-	createInstance { |pos, cutoff = 0, extra_args|
-		var inst = SoundProcessInstance.new(this, instance_ctr, pos, cutoff ? 0, extra_args ? ());
+	createInstance { |pos, cutoff = 0, extra_controls|
+		var inst = SoundProcessInstance.new(this, instance_ctr, pos, cutoff ? 0, extra_controls ? ());
 		instances.put(instance_ctr, inst);
 		if (pos != nil) {
 			byPosition[pos] = inst;
@@ -194,8 +194,8 @@ SoundProcess {
 		^inst
 	}
 
-	startNewInstance { |pos, cutoff, extra_args, server_latency, player_id|
-		var inst = this.createInstance(pos, cutoff, extra_args);
+	startNewInstance { |pos, cutoff, extra_controls, server_latency, player_id|
+		var inst = this.createInstance(pos, cutoff, extra_controls);
 		var placement = AudioNodeOrder.insert(inst);
 		//postf("Placement for %: %\n", name, placement);
 		inst.start(placement, server_latency, player_id);

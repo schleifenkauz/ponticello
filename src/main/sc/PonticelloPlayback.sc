@@ -9,10 +9,10 @@ PonticelloPlayback {
 	}
 
 	* start_play { |player_id, start_time|
-		player_id = player_id.asFloat; start_time = start_time.asFloat;
-		play_start[player_id] = SystemClock.beats;
+		postf("Start Play: %, start_time: %\n", player_id, start_time);
+		start_time = start_time.asFloat;
+		play_start.put(player_id.asInteger, SystemClock.seconds);
 		score_time_counter = Synth(\score_clock, [start: start_time, rate: time_warp_bus, out: score_time_bus]);
-		^nil
 	}
 
 	* pause_play { |player_id|
@@ -41,7 +41,11 @@ PonticelloPlayback {
 	* schedule { |id, absolute, time, player_id, code, info|
 		var fct, my_play_start, abs_time;
 		my_play_start = play_start[player_id];
-		abs_time = if (absolute) { time } { time + (my_play_start ? SystemClock.beats) };
+		time = time.asFloat;
+		abs_time = if (absolute) { time } {
+			var reference = my_play_start ? SystemClock.seconds;
+			time + reference
+		};
 		fct = thisProcess.interpreter.compile(code.asString);
 		if (fct == nil) {
 			Ponticello.sendMsg('/error', id, "Compilation error!");

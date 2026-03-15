@@ -46,8 +46,8 @@ data class PlayObject(val scoreObjectNameExpr: ScExpr, val extraArgs: List<ScExp
 
     override fun code(writer: ScWriter, context: Context) {
         val scoreObjectName = scoreObjectNameExpr.code(context)
-        writer.append("inst.startChildInstance(SoundProcess.get(", scoreObjectName, "), (")
+        writer.append("inst.startChildInstance(SoundProcess.get(", scoreObjectName, "), [")
         writer.appendList(extraArgs, separator = ", ", context)
-        writer.append("))")
+        writer.append("])")
     }
 }

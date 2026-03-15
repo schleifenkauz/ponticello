@@ -26,11 +26,10 @@ SynthInstrument {
         } {
 			args = List[duration: duration];
 		};
-		inst.getInitialArguments.keysValuesDo {| p, v | args = args.addAll([p, v]) };
-		inst.def.controls.do { |ctrl|
+		inst.control_map.keysValuesDo { |name, ctrl|
 		    var argument = ctrl.getSynthArgument(inst);
 		    if (argument != nil) {
-		        args = args.addAll([ctrl.name, argument]);
+		        args = args.addAll([name, argument]);
 		    };
 		};
 		//postf("Creating synth % with args %\n", synthDefName, args);

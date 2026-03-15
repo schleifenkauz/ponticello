@@ -87,8 +87,12 @@ AudioNodeOrder {
 
 	* remove { |node|
 		var idx = nodes.indexOf(node);
-		nodes.removeAt(idx);
-		Ponticello.sendMsg('/removed_node', idx);
+		if (idx != nil) {
+			nodes.removeAt(idx);
+			Ponticello.sendMsg('/removed_node', idx);
+		} {
+			Exception("% not found in AudioNodeOrder\n", node).reportError;
+		}
 	}
 
 	* clear {

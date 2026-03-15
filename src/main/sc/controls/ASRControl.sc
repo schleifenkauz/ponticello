@@ -20,7 +20,7 @@ ASRControl : ParameterControl {
 
 	getUGen { |inst| nil }
 
-	prepare { |inst|
+	apply { |inst|
 		inst.putArgument('attack', attack);
 		inst.putArgument('release', release);
 	}
