@@ -96,27 +96,13 @@ class CustomizableSynthDefObject(
             extraVariables.addAll(listOf("attack", "release", "sustain_", "env_"))
             extraStatements.add("attack = \\attack.kr(${AttackReleaseControl.DEFAULT})")
             extraStatements.add("release = \\release.kr(${AttackReleaseControl.DEFAULT})")
-            extraStatements.add("sustain_ = duration - (attack + release)")
-            extraStatements.add(
-                "gate_env_ = IEnvGen.kr(" +
-                        "Env([1, 1, 1 - \\auto_release.kr(1)], [(attack + sustain_).max(0.002), 0]), " +
-                        "index: Sweep.kr(rate: ~time_warp_bus.kr))"
-            )
-            extraStatements.add(
-                "env_ = Env.asr(attack, 1, release)" +
-                        ".kr(Done.freeSelf, gate: (gate_env_ * \\gate.kr(1)), timeScale: ~time_warp_bus.kr)"
-            ) //TODO does this react to updates to the \duration control?
+            extraStatements.add("env_ = PonticelloPlayback.asrEnv(duration, attack, release)")
             for ((param, spec) in attackReleaseParameters) {
                 spec as NumericalControlSpec
                 extraStatements.add("$param = env_.${spec.warp.mappingFunction(spec.min.text, param)}")
             }
         } else {
-            extraStatements.add(
-                "gate_env_ = IEnvGen.kr(" +
-                        "Env.step([0, \\auto_release.kr(1)], [duration, 1]), " +
-                        "index: Sweep.kr(rate: ~time_warp_bus.kr))"
-            )
-            extraStatements.add("FreeSelf.kr(gate_env_ + (1 - \\gate.kr(1)))")
+            extraStatements.add("PonticelloPlayback.freeAfter(duration)")
         }
         val statements = ugenGraph?.editor?.result?.now?.statements.orEmpty()
         val block = CodeBlock(

@@ -7,7 +7,6 @@ import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.sc.client.ScWriter
-import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import reaktive.value.now
 
@@ -34,16 +33,13 @@ class VSTMidiInstrument(
         flow.setActive(value)
     }
 
-    override fun activate() {
-        context[SuperColliderClient].run {
-            +"~${name.now} = VSTMidiInstrument({${vst.controllerVar}}, enabled: ${isEnabled.now})"
-        }
-    }
-
     override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {
         flow.setFlowGroup(track.parentGroup!!)
-        writer.append(flow.writeCode(placement))
-        writer.appendLine(";")
+        writer.run {
+            append(flow.writeCode(placement))
+            appendLine(";")
+            +"$superColliderName = VSTMidiInstrument(${vst.controllerVar}, enabled: ${isEnabled.now})"
+        }
     }
 
     override fun onRemoved() {

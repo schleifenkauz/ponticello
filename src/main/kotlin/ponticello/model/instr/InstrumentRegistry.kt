@@ -8,6 +8,7 @@ import javafx.scene.paint.Color
 import ponticello.impl.Logger
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.registry.SuperColliderObjectRegistry
+import reaktive.value.now
 import reaktive.value.reactiveVariable
 
 class InstrumentRegistry(
@@ -32,6 +33,11 @@ class InstrumentRegistry(
             Logger.error("Failed to query SynthDef '$name'", e)
             false
         }
+    }
+
+    override fun getOrNull(name: String) = when (name) {
+        MidiInstrument.name.now -> MidiInstrument
+        else -> super.getOrNull(name)
     }
 
     companion object : PublicProperty<InstrumentRegistry> by publicProperty("InstrumentRegistry") {

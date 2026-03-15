@@ -67,7 +67,7 @@ class OSCHookObject(
                 }
             }
             +"{ |error| error.reportError }"
-            +"~ponticello_addr.sendMsg(\\osc_hook, '$path', time, addr.ip, addr.port, *msg[1..])"
+            +"Ponticello.sendMsg(\\osc_hook, '$path', time, addr.ip, addr.port, *msg[1..])"
         }
         appendLine(", '$path');")
     }

@@ -40,22 +40,15 @@ SoundProcessMidiInstrument {
 }
 
 VSTMidiInstrument {
-	var vst_func, <>enabled, vst;
+	var vst, <>enabled;
 
 	* new { |vst, enabled=true|
 		^super.newCopyArgs(vst, enabled);
 	}
 
-	prResolve {
-		if (vst.isNil) {
-			vst = vst_func.value();
-		}
-	}
-
 	noteOn { |num, val, chan, track, src|
 		if (enabled) {
 			var latency = src.latency ? 0;
-			this.prResolve;
 			SystemClock.sched(latency) {
 				vst.midi.noteOn(chan, num, val)
 			}
@@ -74,7 +67,6 @@ VSTMidiInstrument {
 
 	control { |num, val, chan, track, src|
 		if (enabled) {
-			this.prResolve;
 			SystemClock.sched(src.latency ? 0) {
 				vst.midi.control(chan, num, val);
 			}

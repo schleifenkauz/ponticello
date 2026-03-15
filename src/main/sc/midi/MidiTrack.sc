@@ -1,5 +1,5 @@
 MidiTrack {
-	var <sourceDevice, <>instruments, <activeNotes, <controlValues, <group, notesInPedal, connected=false, <recorder;
+	var <group, <sourceDevice, <>instruments, <activeNotes, <controlValues, notesInPedal, connected=false, <recorder;
 	classvar initialized=false, tracksBySource, noteOn, noteOff, cc;
 
 	* init {
@@ -79,8 +79,8 @@ MidiTrack {
 		}
 	}
 
-	* new { |source, instrs|
-		var track = super.newCopyArgs(source, instrs, Dictionary.new, Dictionary.new);
+	* new { |group, source, instrs|
+		var track = super.newCopyArgs(group, source, instrs, Dictionary.new, Dictionary.new);
 		track.prConnect;
 		^track.activate;
 	}
@@ -89,11 +89,6 @@ MidiTrack {
 		tracksBySource.keysValuesDo { |src, tracks|
 			tracks.copy.do(_.release);
 		}
-	}
-
-	addToServer { |placement|
-		group = MidiTrackGroup.new(placement, this);
-		^group
 	}
 
 	prConnect {
@@ -198,18 +193,4 @@ MidiTrack {
 	}
 
 	isPedalDown { ^(controlValues[64] ? 0) > 0 }
-}
-
-MidiTrackGroup : Group {
-	var <>track;
-
-	* new { |placement, track|
-		var group = super.new(placement.target, placement.addAction);
-		group.track = track;
-		^group;
-	}
-
-	run { |active|
-		track.run(active);
-	}
 }

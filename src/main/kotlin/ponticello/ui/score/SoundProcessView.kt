@@ -17,6 +17,7 @@ import ponticello.impl.one
 import ponticello.impl.zero
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.InstrumentObject
+import ponticello.model.instr.MidiInstrument
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
@@ -118,14 +119,16 @@ class SoundProcessView(
 
     override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         pane.addItem("Color:", this.colorPicker)
-        val viewInstrumentBtn = ScoreObjectActions.localObjectActions.getAction("View definition")
-            .withContext(obj)
-            .makeButton("medium-icon-button")
-        val selectorBtn = InstrumentSelectorPopup(context).selectorButton(
-            obj.instrumentRef, undoManager = context[UndoManager], actionDescription = "Select instrument"
-        )
-        selectorBtn.setupDropArea(InstrumentDropHandler(obj.instrumentRef, context))
-        pane.addItem("Instrument: ", HBox(5.0, selectorBtn, viewInstrumentBtn).centerChildren())
+        if (obj.getInstrument() !is MidiInstrument) {
+            val viewInstrumentBtn = ScoreObjectActions.localObjectActions.getAction("View definition")
+                .withContext(obj)
+                .makeButton("medium-icon-button")
+            val selectorBtn = InstrumentSelectorPopup(context).selectorButton(
+                obj.instrumentRef, undoManager = context[UndoManager], actionDescription = "Select instrument"
+            )
+            selectorBtn.setupDropArea(InstrumentDropHandler(obj.instrumentRef, context))
+            pane.addItem("Instrument: ", HBox(5.0, selectorBtn, viewInstrumentBtn).centerChildren())
+        }
         val controlsPane = ParameterControlsPane(obj, this, midiContext)
         VBox.setVgrow(controlsPane, Priority.ALWAYS)
         pane.children.add(controlsPane)

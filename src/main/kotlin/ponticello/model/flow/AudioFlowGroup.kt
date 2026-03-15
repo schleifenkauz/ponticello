@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
+import ponticello.impl.Logger
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
@@ -107,7 +108,11 @@ class AudioFlowGroup(
         for (flow in flows) {
             //join enforces that the synths are added in the right order
             val placement = NodePlacement.tail(groupNode)
-            flow.addToGroup(this, placement).join()
+            try {
+                flow.addToGroup(this, placement).join()
+            } catch (e: Exception) {
+                Logger.error("Error adding flow ${flow.name.now} to group ${name.now}", e)
+            }
         }
     }
 

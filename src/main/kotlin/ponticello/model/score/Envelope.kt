@@ -74,7 +74,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
 
     fun generatorCode(warp: Warp, offset: Decimal): String {
         val envCode = code(warp)
-        return "IEnvGen.kr($envCode, index: Sweep.kr(rate: ~time_warp_bus.kr) + $offset)"
+        return "IEnvGen.kr($envCode, index: PonticelloPlayback.sweep + $offset)"
     }
 
     fun interpolateValueAt(t: Decimal, warp: Warp): Decimal {

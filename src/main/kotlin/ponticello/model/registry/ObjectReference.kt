@@ -45,7 +45,9 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
             isResolved = reactiveValue(false)
             return null
         }
-        obj = registry.find { obj -> obj.name.now == _name }
+        obj =
+            if (registry is NamedObjectList) registry.getOrNull(_name)
+            else registry.find { it.name.now == _name }
         isResolved = reactiveValue(obj != null)
         if (obj == null) {
             val objectType = if (registry is ObjectList) registry.objectType else "Object"

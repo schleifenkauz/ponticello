@@ -30,7 +30,7 @@ AudioNodeOrder {
 		    prev = prev - 1;
 		};
 		if (node.isKindOf(SoundProcessInstance)) {
-			~ponticello_addr.sendMsg('/inserted_instance', idx, node.def.name, node.pos.t, node.pos.y);
+			Ponticello.sendMsg('/inserted_instance', idx, node.def.name, node.pos.t, node.pos.y);
 		};
 		if (done != nil) {
 			done.value(idx);
@@ -61,7 +61,7 @@ AudioNodeOrder {
 	* insertFlowGroup { |score_y, name|
 		var node = SimpleAudioNode.new(score_y);
 		var placement = this.insert(node) { |idx|
-			~ponticello_addr.sendMsg('/inserted_flow_group', idx, name);
+			Ponticello.sendMsg('/inserted_flow_group', idx, name);
 		};
 		var group = Group.new(placement.target, placement.addAction);
 		node.node = group;
@@ -81,18 +81,18 @@ AudioNodeOrder {
                 var prev = nodes[new_idx - 1];
                 node.moveAfter(prev.node);
             };
-			~ponticello_addr.sendMsg('/moved_node', old_idx, new_idx);
+			Ponticello.sendMsg('/moved_node', old_idx, new_idx);
 		}
 	}
 
 	* remove { |node|
 		var idx = nodes.indexOf(node);
 		nodes.removeAt(idx);
-		~ponticello_addr.sendMsg('/removed_node', idx);
+		Ponticello.sendMsg('/removed_node', idx);
 	}
 
 	* clear {
-		~ponticello_addr.sendMsg('/cleared_node_tree');
+		Ponticello.sendMsg('/cleared_node_tree');
 		nodes = [];
 	}
 }

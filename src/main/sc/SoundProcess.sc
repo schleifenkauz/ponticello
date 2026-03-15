@@ -64,7 +64,7 @@ SoundProcess {
 		if (dict.includesKey(name).not) {
 			var cond = Condition.new;
 			conds[name] = cond;
-			~ponticello_addr.sendMsg('/sync_sound_proc', name);
+			Ponticello.sendMsg('/sync_sound_proc', name);
 			cond.wait;
 		};
 		proc = dict[name.asSymbol];

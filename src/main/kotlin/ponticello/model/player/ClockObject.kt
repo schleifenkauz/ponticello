@@ -15,7 +15,6 @@ import ponticello.sc.Warp
 import ponticello.sc.client.SuperColliderClient
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
-import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -64,12 +63,15 @@ class ClockObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        timeWarpObserver = timeWarp.forEach { warp ->
+        timeWarpObserver = timeWarp.observe { warp ->
             val scoreTime = activePlayers.firstOrNull()?.player?.currentTime
             val args =
                 if (scoreTime != null) listOf(warp.toString(), scoreTime.toString())
                 else listOf(warp.toString())
             client.sendAsync("set_time_warp", args)
+        }
+        if (timeWarp.now != one) {
+            client.sendAsync("set_time_warp", listOf(timeWarp.now.toString()))
         }
         startClockThread()
     }

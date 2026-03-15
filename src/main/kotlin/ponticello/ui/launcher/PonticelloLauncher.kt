@@ -166,7 +166,7 @@ class PonticelloLauncher {
     private fun maybeSyncRepository(directory: File, askSync: Boolean, afterwards: () -> Unit) {
         if (!askSync) return afterwards()
         val repo = ProjectGitRepository.get(directory) ?: return afterwards()
-        if (!repo.hasRemote.now) return afterwards()
+        if (!repo.hasRemote.now || true) return afterwards() //TODO fix GitHub integration
         val sync = YesNoPrompt("Sync repository before opening?").showDialog() ?: return
         if (sync) {
             repo.pullFromRemote(JavaFXGitUserInteraction) {

@@ -66,12 +66,17 @@ class MidiTrackFlow(
         }
     }
 
+    override fun setRunning(active: Boolean) {
+        client.run("$trackVariable.run($active)")
+    }
+
     override fun writeCode(placement: NodePlacement): String = writeCode {
+        +"$superColliderName = Group.new(s, ${placement.code})"
         for (instr in instruments) {
             val placement = NodePlacement.tail(superColliderName)
             instr.addToTrack(writer, this@MidiTrackFlow, placement)
         }
-        appendLine("$trackVariable = MidiTrack(${sourceDevice.now.code}, [")
+        appendLine("$trackVariable = MidiTrack($superColliderName, ${sourceDevice.now.code}, [")
         indented {
             for (instr in instruments) {
                 append(instr.superColliderName)
@@ -79,7 +84,6 @@ class MidiTrackFlow(
             }
         }
         appendLine("]);")
-        +"$superColliderName = $trackVariable.addToServer($placement)"
     }
 
     fun toggleRecording() {

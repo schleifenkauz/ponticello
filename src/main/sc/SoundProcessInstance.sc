@@ -154,7 +154,7 @@ SoundProcessInstance : AudioNode {
 				}
 			};
 			on_dispose.do (_.value);
-            ~ponticello_addr.sendMsg ('/stopped', -1, def.name, idx);
+            Ponticello.sendMsg ('/stopped', -1, def.name, idx);
             def.removeInstance(idx);
             disposed = true;
 		}

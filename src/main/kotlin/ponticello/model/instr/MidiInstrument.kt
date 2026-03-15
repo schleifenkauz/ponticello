@@ -17,7 +17,7 @@ object MidiInstrument : InstrumentObject, AbstractNamedObject() {
         get() = "<midi instrument>"
 
     override val name: ReactiveValue<String>
-        get() = reactiveValue(instrumentType)
+        get() = reactiveValue("<midi instrument>")
 
     override fun ScWriter.createObject() {}
 

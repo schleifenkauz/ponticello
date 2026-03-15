@@ -76,14 +76,7 @@ class BusRegistry(
         writer: ScWriter, bus: BusObject.AudioBus,
         placement: NodePlacement, id: Int, synthVar: String
     ) = writer.run {
-        val channels = bus.channels.now
-        if (channels !in availableLevelSendSynthDefs) {
-            +"~addLevelSendSynthDef.($channels)"
-            availableLevelSendSynthDefs.add(channels)
-        }
-        +"Server.local.sync"
-        val args = "[bus: ${bus.superColliderName}, id: $id, rate: 10, lag: 0.0]"
-        +"$synthVar = Synth(\\level_send_$channels, $args, ${placement.code})"
+        +"$synthVar = DefaultSynthDefs.create_level_send(${bus.superColliderName}, $id, ${placement.code})"
     }
 
     override fun onAdded(obj: BusObject, idx: Int) {

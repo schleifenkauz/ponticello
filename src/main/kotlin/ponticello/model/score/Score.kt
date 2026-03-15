@@ -9,10 +9,8 @@ import javafx.geometry.Side
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.instr.MidiInstrument
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.registry.ScoreObjectRegistry
-import ponticello.model.registry.reference
 import reaktive.value.ReactiveString
 import reaktive.value.now
 import reaktive.value.reactiveValue
@@ -58,10 +56,6 @@ open class Score(
         val itr = instances.listIterator()
         for (inst in itr) {
             inst.resolveObject(context)
-            val obj = inst.obj
-            if (parentObject is MidiObject && obj is SoundProcess) {
-                obj.instrumentRef.set(MidiInstrument.reference())
-            }
             inst.initialize(context)
             inst.addedToScore(this)
             if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {

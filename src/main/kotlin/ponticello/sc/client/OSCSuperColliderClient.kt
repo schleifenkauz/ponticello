@@ -9,15 +9,12 @@ import com.illposed.osc.transport.OSCPortIn
 import com.illposed.osc.transport.OSCPortOut
 import hextant.context.Context
 import ponticello.impl.Logger
-import ponticello.impl.superColliderPath
 import ponticello.model.obj.playbackSettings
-import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.Observer
 import reaktive.event.unitEvent
 import reaktive.observe
 import reaktive.value.now
-import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
@@ -58,9 +55,9 @@ class OSCSuperColliderClient(
 
     override fun onClientReady(action: () -> Unit) {
         eventObservers.add(ready.stream.observe(action))
-        /*        if (isReady) {
-                    action()
-                }*/
+        if (isReady) {
+            action()
+        }
     }
 
     override var sampleRate: Double = -1.0
@@ -94,7 +91,7 @@ class OSCSuperColliderClient(
 
     override fun sendAsync(address: String, arguments: List<Any>) {
         val adr = if (!address.startsWith('/')) "/$address" else address
-        val msg = OSCMessage(adr, listOf(-1) + arguments)
+        val msg = OSCMessage(adr, arguments)
         sender.send(msg)
     }
 
@@ -205,30 +202,11 @@ class OSCSuperColliderClient(
     )
 
     companion object {
-        private const val SETUP_FILE = "ponticello_setup.scd"
-
-        private var setupFile: File? = null
-
-        private fun copySetupFile(context: Context): File {
-            setupFile?.let { return it }
-            val resource = this::class.java.getResourceAsStream(SETUP_FILE) ?: error("Setup file $SETUP_FILE not found")
-            val setupScript = resource.bufferedReader().use { r -> r.readText() }
-            setupFile = context[PonticelloFiles].resolve(SETUP_FILE)
-            setupFile!!.writeText(setupScript)
-            return setupFile!!
-        }
-
-        fun create(
-            context: Context, scPort: Int = OSCPortOut.DEFAULT_SC_LANG_OSC_PORT,
-        ): OSCSuperColliderClient {
-            val setupFile = copySetupFile(context).superColliderPath
+        fun create(context: Context, scPort: Int): OSCSuperColliderClient {
             val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$scPort"))
                 .redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
-            Thread.sleep(100)
-            sclang.outputStream.write("this.executeFile($setupFile);\n".toByteArray())
-            sclang.outputStream.flush()
             val localhost = InetAddress.getLoopbackAddress()
             val sender = OSCPortOut(localhost, scPort)
             val receiver = OSCPortIn(7775)

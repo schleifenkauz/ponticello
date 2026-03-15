@@ -18,7 +18,7 @@ MidiRecorder {
 		if (recording.not) {
 			Exception("Not recording").throw;
 		};
-		~ponticello_addr.sendMsg('/midi_recording_finished', recordingId, events.size, *events.flatten);
+		Ponticello.sendMsg('/midi_recording_finished', recordingId, events.size, *events.flatten);
 		recording = false;
 		recordingId = nil;
 		firstNoteTime = nil;
