@@ -64,7 +64,6 @@ class MidiObjectView(
                 hspace(50.0), transposeButton
             ).centerChildren()
         )
-        pane.addItem("Latency (ms): ", IntSpinner(obj.latencyMs, -200..200, 5))
         pane.children.add(ParameterControlsPane(obj, this, midiContext))
     }
 

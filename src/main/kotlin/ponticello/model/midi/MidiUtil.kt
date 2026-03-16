@@ -29,6 +29,7 @@ object MidiUtil {
         val notes = mutableListOf<ScoreObjectInstance>()
         var lowestPitch = 127
         var highestPitch = 0
+        val extraMessages = mutableListOf<MidiEvent>()
         for (ev in events) {
             val (time, type, pitch, value) = ev
             when {
@@ -44,7 +45,7 @@ object MidiUtil {
                     highestPitch = maxOf(highestPitch, pitch)
                 }
 
-                type == MidiEvent.Type.ControlChange -> {}
+                else -> extraMessages.add(ev)
             }
         }
         val lastEventTime = events.last().time
@@ -56,7 +57,7 @@ object MidiUtil {
         val midiObject = MidiObject(
             reactiveVariable(track),
             lowestPitch, highestPitch,
-            score, ParameterControlList()
+            score, ParameterControlList(), extraMessages
         )
         midiObject.setInitialSize(events.last().time, height = 0.2.asY)
         return midiObject

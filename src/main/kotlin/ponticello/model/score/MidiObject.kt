@@ -13,11 +13,15 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.MidiInstrument
 import ponticello.model.instr.ParameterizedObject
+import ponticello.model.midi.MidiEvent
 import ponticello.model.obj.MidiTrackReference
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
 import reaktive.Reactive
-import reaktive.value.*
+import reaktive.value.ReactiveVariable
+import reaktive.value.now
+import reaktive.value.reactiveValue
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("MidiObject")
@@ -27,10 +31,10 @@ class MidiObject(
     @SerialName("highestPitch") private var _highestPitch: Int,
     override val score: Score,
     override val controls: ParameterControlList,
-    val latencyMs: ReactiveVariable<Int> = reactiveVariable(0),
+    val extraMessages: MutableList<MidiEvent> = mutableListOf(),
     override val associatedColor: ReactiveVariable<
             @Serializable(with = ColorSerializer::class) Color
-            > = reactiveVariable(Color.WHITE),
+            > = reactiveVariable(Color.WHITE)
 ) : AbstractScoreObjectGroup(), ParameterizedObject {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -124,10 +128,8 @@ class MidiObject(
     override fun cloneWith(score: Score): MidiObject =
         MidiObject(
             track.copy(), lowestPitch, highestPitch,
-            score, controls.copy(), latencyMs.copy(), associatedColor.copy()
+            score, controls.copy(), extraMessages, associatedColor.copy()
         )
-
-    override fun duration(): ReactiveValue<Decimal> = super.duration()
 
     override fun getSpec(parameter: String): ControlSpec? = super<ParameterizedObject>.getSpec(parameter)
 
