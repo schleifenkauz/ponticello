@@ -254,8 +254,8 @@ class ObjectListView<O : Any>(
         }
         source.add(newObj, idx)
         val box = getBox(newObj)
-        if (mode.now == DisplayMode.Inline) {
-            box.toggleExpanded()
+        if (this.mode.now == Collapsable && config.expandNewItem(newObj)) {
+            box.setExpanded(true)
         }
         if (config.enableSelection) {
             runAfterLayout {
@@ -308,9 +308,6 @@ class ObjectListView<O : Any>(
         val j = getInsertionIndex(idx)
         val box = getBox(obj)
         box.updateMode(oldMode = null, newMode = mode.now)
-        if (mode.now == Collapsable && config.expandNewItem(obj)) {
-            box.setExpanded(true)
-        }
         boxes.add(j, box)
         val wrapper = wrapBox(box)
         itemsLayout.children.add(j, wrapper)
