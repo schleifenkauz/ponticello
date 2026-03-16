@@ -50,6 +50,6 @@ class LevelMeterFlowView(private val flow: LevelMeterFlow) : VBox() {
         val meter = LevelMeter(initialBus, flow.replyId, meterWidth = 8.0)
         val pane = BorderPane(meter)
         meter.heightProperty().bind(pane.heightProperty())
-        return pane
+        return pane.alwaysVGrow() //TODO how to make it shrink back
     }
 }

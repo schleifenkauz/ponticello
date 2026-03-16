@@ -8,6 +8,7 @@ import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.SimpleSelectorPrompt
+import fxutils.prompt.YesNoPrompt
 import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -28,6 +29,7 @@ import ponticello.model.project.BUSSES
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.busses
 import ponticello.model.server.BusRegistry
+import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
@@ -122,8 +124,17 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
                 if (spec != null) {
                     defaultValue.now = spec.defaultValue.get()
                     if (previousSpec?.copy(defaultValue = spec.defaultValue) != spec) {
+                        val converter = spec.converter(updateRange = { min, max ->
+                            val extendRange = YesNoPrompt("Extend range?", default = true)
+                                .showDialog(sliderBox)
+                            if (extendRange == true) {
+                                val newSpec = spec.copy(min = DecimalLiteral(min), max = DecimalLiteral(max))
+                                obj.updateSpec(newSpec)
+                                true
+                            } else false
+                        })
                         val slider = SliderBar(
-                            defaultValue, name, spec.converter(), SliderBar.Style.AlwaysValue,
+                            defaultValue, name, converter, SliderBar.Style.AlwaysValue,
                             undoManager = registry.context[UndoManager]
                         )
                         sliderBox.children.add(slider)

@@ -132,17 +132,29 @@ data class NumericalControlSpec(
     override fun toString(): String =
         "default: ${defaultValue.text}, range: ${min.text}..${max.text}, warp: $warp, step: ${step.text}"
 
-    fun converter(unit: String = ""): SliderBar.Converter<Decimal> = Converter(this, unit)
+    fun converter(
+        unit: String = "", updateRange: (min: Decimal, max: Decimal) -> Boolean = { _, _ -> false }
+    ): SliderBar.Converter<Decimal> = Converter(this, unit, updateRange)
 
-    private class Converter(spec: NumericalControlSpec, private val unit: String) : SliderBar.Converter<Decimal> {
+    private class Converter(
+        private val spec: NumericalControlSpec,
+        private val unit: String,
+        private val updateRange: (min: Decimal, max: Decimal) -> Boolean
+    ) : SliderBar.Converter<Decimal> {
         private val defaultTransformation = SpecTransformation(spec, 0.0..1.0)
 
         private val precision = spec.precision
 
         override fun fromDouble(value: Double): Decimal = Decimal(defaultTransformation.unmap(value), precision)
 
-        override fun fromLiteral(value: String): Decimal? =
-            value.removeSuffix(unit).parseDecimal()?.withPrecision(precision)
+        override fun fromLiteral(value: String): Decimal? {
+            val value = value.removeSuffix(unit).parseDecimal()?.withPrecision(precision) ?: return null
+            return if (value !in spec.range) {
+                val newMin = minOf(spec.min.get(), value)
+                val newMax = maxOf(spec.max.get(), value)
+                if (updateRange(newMin, newMax)) null else value
+            } else value
+        }
 
         override fun toDouble(value: Decimal): Double = defaultTransformation.map(value.toDouble())
 

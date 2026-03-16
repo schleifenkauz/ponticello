@@ -1,6 +1,7 @@
 package ponticello.ui.controls
 
 import fxutils.controls.SliderBar
+import fxutils.prompt.YesNoPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
@@ -19,10 +20,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.model.score.controls.getNumericalValue
-import ponticello.sc.ControlSpec
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.Transformation
-import ponticello.sc.mapOnto
+import ponticello.sc.*
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.forEach
@@ -37,12 +35,22 @@ data object ValueControlType : ControlType<ValueControl>() {
     ): Node {
         val spec = namedControl.spec.now
         if (spec !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
-        val converter = spec.converter()
-        return SliderBar(
+        lateinit var bar: SliderBar<*>
+        val converter = spec.converter(updateRange = { min, max ->
+            val extendRange = YesNoPrompt("Extend parameter range?", default = true)
+                .showDialog(bar)
+            if (extendRange == true) {
+                val newSpec = spec.copy(min = DecimalLiteral(min), max = DecimalLiteral(max))
+                namedControl.setCustomSpec(newSpec)
+                true
+            } else false
+        })
+        bar = SliderBar(
             control.value, namedControl.name, converter,
             style = SliderBar.Style.AlwaysValue,
             undoManager = namedControl.context[UndoManager]
         )
+        return bar
     }
 
     override fun createSimpleInput(namedControl: NamedParameterControl, control: ValueControl): Node {
