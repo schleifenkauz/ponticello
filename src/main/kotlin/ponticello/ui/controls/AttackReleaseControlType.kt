@@ -59,8 +59,8 @@ data object AttackReleaseControlType : ControlType<AttackReleaseControl>() {
                 control.release, "Release", timeSpec,
                 undoManager = namedControl.context[UndoManager]
             )
-            attack.prefWidth = 100.0
-            release.prefWidth = 100.0
+            attack.prefWidth = 50.0
+            release.prefWidth = 50.0
             box.children.setAll(attack, release) //TODO would be awesome to merge them into one slider
         } and control.attack.observe { _, _, attack ->
             if (objectDuration != null) {

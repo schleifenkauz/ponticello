@@ -1,7 +1,6 @@
 package ponticello.ui.registry
 
 import fxutils.controls.SliderBar
-import fxutils.setFixedWidth
 import fxutils.undo.UndoManager
 import javafx.event.Event
 import javafx.scene.Node
@@ -29,7 +28,7 @@ class ClockRegistryPane(clocks: ClockRegistry) : ObjectRegistryPane<ClockObject>
         val slider = SliderBar(
             obj.timeWarp, name, converter, SliderBar.Style.Regular,
             undoManager = registry.context[UndoManager], updateActionDescription = "Update time warp"
-        ).setFixedWidth(150.0)
+        )
         return listOf(slider)
     }
 

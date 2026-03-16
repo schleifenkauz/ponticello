@@ -38,13 +38,11 @@ data object ValueControlType : ControlType<ValueControl>() {
         val spec = namedControl.spec.now
         if (spec !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
         val converter = spec.converter()
-        val sliderBar = SliderBar(
+        return SliderBar(
             control.value, namedControl.name, converter,
             style = SliderBar.Style.AlwaysValue,
             undoManager = namedControl.context[UndoManager]
         )
-        sliderBar.prefWidth = 150.0
-        return sliderBar
     }
 
     override fun createSimpleInput(namedControl: NamedParameterControl, control: ValueControl): Node {

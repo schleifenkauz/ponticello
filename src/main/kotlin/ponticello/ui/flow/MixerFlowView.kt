@@ -70,7 +70,6 @@ class MixerFlowView private constructor(
             obj.volume, "Volume (db)", converter, SliderBar.Style.AlwaysValue,
             undoManager = flow.context[UndoManager], updateActionDescription = "Update volume"
         )
-        volumeSlider.prefWidth = 150.0
         volumeSlider.disableProperty().bind(obj.state.equalTo(MixerFlow.MixerComponentMode.Mute).asObservableValue())
 
         val panKnob = listConfig.createPanKnob(obj.pan, 16.0)

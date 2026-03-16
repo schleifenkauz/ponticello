@@ -54,8 +54,9 @@ class ParameterControlsPane(
 
     override val addSpaceBeforeActionBar: Boolean get() = false
 
-    override val canDuplicate: Boolean
-        get() = true
+    override val canDuplicate: Boolean get() = true
+
+    override val nameDisplayWidth: Double get() = 80.0
 
     init {
         styleClass("parameter-controls")

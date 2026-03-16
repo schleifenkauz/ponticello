@@ -126,7 +126,6 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
                             defaultValue, name, spec.converter(), SliderBar.Style.AlwaysValue,
                             undoManager = registry.context[UndoManager]
                         )
-                        slider.prefWidth = 150.0
                         sliderBox.children.add(slider)
                     }
                 } else {

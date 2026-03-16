@@ -189,7 +189,8 @@ class LauncherGridPane(
                 val scoreYSlider = SliderBar(
                     target.yPosition, "Score Y", spec.converter(),
                     undoManager = grid.context[UndoManager],
-                ).setFixedWidth(120.0)
+                )
+                scoreYSlider.maxWidth = 100.0
                 box.children.add(scoreYSlider)
             }
         }
