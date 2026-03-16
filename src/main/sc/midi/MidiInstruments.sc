@@ -27,7 +27,6 @@ SoundProcessMidiInstrument {
 		^true
 	}
 
-
 	allNotesOff {
 		instancesByNote.keysValuesDo { |num, instances|
 			instances.copy.do(_.release);
@@ -74,7 +73,7 @@ VSTMidiInstrument {
 		^true
 	}
 
-	allNotesOff { vst.midi.allNotesOff }
+	allNotesOff { vst.midi.allNotesOff(0) }
 
 	activate {}
 

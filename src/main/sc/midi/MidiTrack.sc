@@ -149,7 +149,7 @@ MidiTrack {
 	perform { |src, fn|
 		fork {
 			var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
-			postf("Starting at index % (src instr: %)\n", idx, src.instr);
+			//postf("Starting at index % (src instr: %)\n", idx, src.instr);
 			while { (continue == true) && (idx < instruments.size) } {
 				var instr = instruments[idx];
 				continue = fn.value(instr) ? true;
@@ -163,7 +163,6 @@ MidiTrack {
 	}
 
 	noteOn { |num, val, chan=0, src|
-		postf("Note On: %, %\n", num, val);
 		activeNotes[num] = val;
 		notesInPedal.remove(num);
 		recorder.noteOn(num, val, chan, src);
@@ -193,4 +192,10 @@ MidiTrack {
 	}
 
 	isPedalDown { ^(controlValues[64] ? 0) > 0 }
+
+	allNotesOff { //TODO |player_id|
+		instruments.do { |instr| instr.allNotesOff };
+		notesInPedal = [];
+		activeNotes = Dictionary.new;
+	}
 }

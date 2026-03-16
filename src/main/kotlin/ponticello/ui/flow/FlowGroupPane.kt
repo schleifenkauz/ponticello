@@ -208,7 +208,7 @@ class FlowGroupPane(
 
     override fun getActions(box: ObjectBox<AudioFlow>): List<ContextualizedAction> = buildList {
         addAll(flowActions.withContext(box.obj))
-        if (box.obj is MidiTrackFlow) add(midiRecordAction.withContext(box.obj))
+        if (box.obj is MidiTrackFlow) addAll(midiTrackActions.withContext(box.obj))
         add(removeObjectAction.withContext(box))
     }
 
@@ -269,24 +269,29 @@ class FlowGroupPane(
             executes { grp -> grp.toggleActive() }
         }
 
-        private val midiRecordAction = action<MidiTrackFlow>("Record MIDI") {
-            icon { track ->
-                `if`(
-                    track.isRecording,
-                    then = { MaterialDesignM.MICROPHONE },
-                    otherwise = { MaterialDesignM.MICROPHONE_OUTLINE }
-                )
+        private val midiTrackActions = collectActions<MidiTrackFlow> {
+            addAction("Record MIDI") {
+                icon { track ->
+                    `if`(
+                        track.isRecording,
+                        then = { MaterialDesignM.MICROPHONE },
+                        otherwise = { MaterialDesignM.MICROPHONE_OUTLINE }
+                    )
+                }
+                description {
+                    `if`(
+                        it.isRecording,
+                        then = { "Finish recording MIDI" },
+                        otherwise = { "Start recording MIDI" }
+                    )
+                }
+                executes { track -> track.toggleRecording() }
             }
-            description {
-                `if`(
-                    it.isRecording,
-                    then = { "Finish recording MIDI" },
-                    otherwise = { "Start recording MIDI" }
-                )
+            addAction("All notes off") {
+                icon(MaterialDesignE.EXCLAMATION)
+                executes { track -> track.allNotesOff(-1) }
             }
-            executes { track -> track.toggleRecording() }
         }
-
         private val flowActions = collectActions<AudioFlow> {
             addAction("Show VST editor") {
                 icon(MaterialDesignE.EYE)

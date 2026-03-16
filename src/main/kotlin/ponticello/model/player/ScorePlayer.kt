@@ -3,6 +3,7 @@ package ponticello.model.player
 import bundles.publicProperty
 import javafx.application.Platform
 import ponticello.impl.*
+import ponticello.model.flow.AudioFlows
 import ponticello.model.live.QuantizationConfig
 import ponticello.model.obj.playbackSettings
 import ponticello.model.obj.project
@@ -175,6 +176,9 @@ class ScorePlayer private constructor(
     private fun freeActiveObjects() = execute {
         Logger.info("Pausing playback", Logger.Category.Playback)
         client.run("SoundProcess.stopAllProcesses(player_id:$id)")
+        for (track in context[AudioFlows].allMidiTracks()) {
+            track.allNotesOff(id)
+        }
     }
 
     //Only inside ScorePlayer.execute

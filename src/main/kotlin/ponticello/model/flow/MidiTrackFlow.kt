@@ -96,6 +96,10 @@ class MidiTrackFlow(
         }
     }
 
+    fun allNotesOff(playerId: Int) {
+        client.run("$trackVariable.allNotesOff($playerId)")
+    }
+
     override fun copy(): AudioFlow = MidiTrackFlow(sourceDevice.copy(), instruments.copy())
 
     override fun ScWriter.createObject() {}
