@@ -173,11 +173,26 @@ class EnvelopeEditor(
         val v2 = envelope.points[idx].value
         if ((v1 - v2).absoluteValue < 0.1.pow(spec.precision)) {
             val v = DecimalPrompt("Value for envelope segment", spec.precision, v1, spec.range)
-                .showDialog(pane.scene.window, Point2D(ev.screenX, ev.screenY)) ?: return
+                .showDialog(pane.scene.window, Point2D(ev.screenX, ev.screenY))
+                ?.checkRange(anchor = Point2D(ev.screenX, ev.screenY)) ?: return
             envelope.beginSegmentEdit(idx - 1)
             envelope.editSegment(v)
             envelope.finishEdit()
         }
+    }
+
+    private fun Decimal.checkRange(anchor: Point2D): Decimal? {
+        if (this in spec.range) return this
+        val extendRange = YesNoPrompt("Extend parameter range?", default = true)
+            .showDialog(pane.scene.window, anchor) ?: return null
+        if (extendRange) {
+            val newSpec = spec.copy(
+                min = DecimalLiteral(spec.min.get().coerceAtMost(this)),
+                max = DecimalLiteral(spec.max.get().coerceAtLeast(this))
+            )
+            namedControl.setCustomSpec(newSpec)
+        }
+        return takeIf { extendRange }
     }
 
     private fun createNewPoint(ev: MouseEvent, interpolate: Boolean) {
@@ -409,7 +424,8 @@ class EnvelopeEditor(
 
     private fun showValuePrompt(point: EnvelopePoint, anchor: Point2D): Decimal? {
         val value = DecimalPrompt("Value for $parameterName", point.value)
-            .showDialog(pane.scene.window, anchor) ?: return null
+            .showDialog(pane.scene.window, anchor)
+            ?.checkRange(anchor) ?: return null
         if (value !in spec.range) {
             val adjustSpec = YesNoPrompt("The value is not in the range ${spec.range}. Adjust the spec?")
                 .showDialog(pane.scene.window, anchor) ?: return null
