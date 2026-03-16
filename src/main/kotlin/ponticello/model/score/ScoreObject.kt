@@ -43,6 +43,8 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     open val canResizeHorizontally: Boolean get() = true
     open val canResizeVertically: Boolean get() = true
 
+    open val askBeforeDeleting: Boolean get() = true
+
     open val affectsPlayback: Boolean get() = true
 
     @SerialName("duration")
@@ -337,7 +339,7 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         }
         if (option == Score.RegistryOption.KEEP_IN_REGISTRY) return
         if (!context.project.hasReferencesTo(this) && registry.has(this)) {
-            val remove = this is MemoObject || option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
+            val remove = !this.askBeforeDeleting || option == Score.RegistryOption.REMOVE_WITHOUT_ASKING || YesNoPrompt(
                 "Score has no instances of $this anymore. Remove it from the registry?",
                 cancellable = false,
                 default = true

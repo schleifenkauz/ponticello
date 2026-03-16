@@ -5,6 +5,7 @@ PonticelloPlayback {
 		play_start = Dictionary.new;
 		score_time_bus = Bus.control(Server.local, 1);
 		time_warp_bus = Bus.control(Server.local, 1);
+		time_warp_bus.set(1);
 		time_warp = 1;
 	}
 
@@ -70,16 +71,14 @@ PonticelloPlayback {
 	}
 
 	* freeAfter { |duration|
-		var env = Env.step([0, 1], [duration, 1]);
-		var gate_env = IEnvGen.kr(env, index: this.sweep) * \auto_release.kr(1);
-		^FreeSelf.kr(gate_env + (1 - \gate.kr(1)))
+		FreeSelf.kr(this.sweep > duration);
+		^FreeSelf.kr(1 - \gate.kr(1))
 	}
 
-	 //TODO does this react to updates to the \duration control?
-	* asrEnv { |duration, attack, release|
-		var sustain = duration - (attack + release);
-		var env = Env([1, 1, 1 - \auto_release.kr(1)], [(attack + sustain).max(0.002), 0]);
-		var gate_env = IEnvGen.kr(env, this.sweep);
-		^Env.asr(attack, 1, release).kr(Done.freeSelf, gate_env * \gate.kr(1), timeScale: time_warp_bus.kr);
+	* asrEnv { |duration, attack, release, curve=\linear|
+		var auto_release = this.sweep < (duration - release);
+		var env = Env.asr(attack, 1, release, curve);
+		var gate = auto_release * \gate.kr(1);
+		^env.kr(Done.freeSelf, gate, timeScale: time_warp_bus.kr);
 	}
 }

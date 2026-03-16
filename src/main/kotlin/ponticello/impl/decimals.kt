@@ -131,7 +131,8 @@ fun String.parseDecimal(): Decimal? {
 
 fun Double.toDecimal() = toString().parseDecimal()!!
 fun Float.toDecimal() = toString().parseDecimal()!!
-fun Int.toDecimal() = Decimal(toDouble(), 0)
+fun Int.toDecimal() = toString().parseDecimal()!!
+fun Long.toDecimal() = toString().parseDecimal()!!
 
 fun Double.snap(grid: Decimal): Decimal {
     if (grid == zero || grid.isNaN()) error("Invalid grid value: $grid")

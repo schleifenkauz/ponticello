@@ -32,6 +32,7 @@ import ponticello.model.ServerOptions
 import ponticello.model.code.ScriptObject
 import ponticello.model.git.ProjectGitRepository
 import ponticello.model.instr.GlobalDefinitionLibrary
+import ponticello.model.midi.MidiRecorder
 import ponticello.model.obj.project
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScoreObjectScheduler
@@ -47,7 +48,6 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.midi.ContextualMidiReceiver
-import ponticello.ui.midi.MidiRecorder
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.vc.JavaFXGitUserInteraction
 import reaktive.Observer

@@ -10,6 +10,7 @@ import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.model.instr.ParameterizedObject
+import ponticello.model.midi.MidiInstrument
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ExprControl
 import ponticello.model.score.controls.ParameterControl
@@ -17,7 +18,6 @@ import ponticello.model.score.controls.ParameterControlList.NamedParameterContro
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander
-import ponticello.ui.midi.MidiInstrument
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now

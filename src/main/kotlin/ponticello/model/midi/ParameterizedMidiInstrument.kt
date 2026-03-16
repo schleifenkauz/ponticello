@@ -1,4 +1,4 @@
-package ponticello.ui.midi
+package ponticello.model.midi
 
 import hextant.context.Context
 import kotlinx.serialization.SerialName
@@ -14,6 +14,8 @@ import ponticello.model.registry.ObjectReference
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
+import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.ParameterControlsMidiContext
 import reaktive.Reactive
 import reaktive.value.ReactiveValue
 import reaktive.value.now

@@ -70,9 +70,9 @@ class SoundProcessUpdater<O>(
             }
 
             is AttackReleaseControl -> control.attack.observe { _, _, att ->
-                updateControl(parameter, "setAttack($att)")
+                updateControl(parameter, "attack = $att")
             } and control.release.observe { _, _, rel ->
-                updateControl(parameter, "setRelease($rel)")
+                updateControl(parameter, "release = $rel")
             }
 
             is EnvelopeControl -> control.updated.observe { _ ->

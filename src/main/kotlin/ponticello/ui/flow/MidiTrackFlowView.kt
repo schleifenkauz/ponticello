@@ -18,9 +18,12 @@ import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.flow.MidiTrackFlow
+import ponticello.model.midi.*
 import ponticello.model.registry.ObjectList
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.midi.*
+import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.MidiEffectSelectorPrompt
+import ponticello.ui.midi.NewMidiInstrumentPrompt
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ListDisplayConfig.Companion.addObjectAction

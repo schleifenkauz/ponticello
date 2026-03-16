@@ -63,7 +63,20 @@ s.waitForBoot {
 }
 )
 
-PonticelloPlayback.start_play(0, 10)
-PonticelloPlayback.pause_play(0)
+(
+SynthDef(\test) {
+	var snd = SinOsc.ar * 0.01 ! 2;
+	PonticelloPlayback.freeAfter(\duration.kr(5));
+	Out.ar(0, snd);
+}.add;
 
-PonticelloPlayback.schedule(1, false, 15, 0, "'hello'.postln", "post hello")
+SynthDef(\test2) {
+	var snd = SinOsc.ar * 0.01 ! 2;
+	var env = PonticelloPlayback.asrEnv(\duration.kr(5), attack:1, release:1, curve: \linear);
+	Out.ar(0, snd * env);
+}.add
+)
+
+x = Synth(\test2, [duration: 3])
+x.release
+x.set(\duration, 2)

@@ -1,4 +1,4 @@
-package ponticello.ui.midi
+package ponticello.model.midi
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,6 +13,8 @@ import ponticello.model.project.instruments
 import ponticello.model.score.SoundProcess.Companion.createSoundProcessObject
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.client.ScWriter
+import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.ParameterControlsMidiContext
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now

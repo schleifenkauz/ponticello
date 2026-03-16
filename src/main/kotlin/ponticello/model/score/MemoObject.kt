@@ -27,6 +27,8 @@ class MemoObject : ScoreObject() {
     override val affectsPlayback: Boolean
         get() = false
 
+    override val askBeforeDeleting: Boolean get() = false
+
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject? = null
 
     override fun doClone(): ScoreObject = MemoObject()

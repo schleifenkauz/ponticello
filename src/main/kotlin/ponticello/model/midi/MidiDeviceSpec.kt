@@ -1,6 +1,7 @@
-package ponticello.ui.midi
+package ponticello.model.midi
 
 import hextant.context.Context
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
@@ -15,9 +16,11 @@ sealed class MidiDeviceSpec {
         }
 
     @Serializable
+    @SerialName("None")
     data object None : MidiDeviceSpec()
 
     @Serializable
+    @SerialName("ByName")
     data class ByName(val name: String) : MidiDeviceSpec()
     enum class Type {
         SOURCE, OUTPUT

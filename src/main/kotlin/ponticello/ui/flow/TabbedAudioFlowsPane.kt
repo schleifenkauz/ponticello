@@ -13,7 +13,6 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.impl.Logger
-import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.project.PonticelloProject
@@ -21,14 +20,13 @@ import ponticello.model.project.flows
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.*
 import ponticello.ui.impl.colorPicker
-import ponticello.ui.registry.ObjectListView
 
 //TODO how to group by bus?
 class TabbedAudioFlowsPane(private val flows: AudioFlows) : TabbedToolPane<AudioFlowGroup>(flows) {
     override val type: Type
         get() = TabbedAudioFlowsPane
 
-    override fun getContent(obj: AudioFlowGroup): Parent = FlowGroupPane(obj, null).flowsView
+    override fun getContent(obj: AudioFlowGroup): Parent = FlowGroupPane(obj, this)
 
     override fun defaultState(): ToolPaneState = TabbedFlowPaneState.default()
 
@@ -44,7 +42,7 @@ class TabbedAudioFlowsPane(private val flows: AudioFlows) : TabbedToolPane<Audio
         getItemBox(group)?.setPseudoClassState("flow-group-hover", value)
     }
 
-    fun allFlowBoxes() = flows.flatMap { flow -> (content(flow) as ObjectListView<AudioFlow>).getBoxes() }
+    fun allFlowBoxes() = flows.flatMap { flow -> (content(flow) as FlowGroupPane).flowsView.getBoxes() }
 
     override fun saveState(dest: ToolPaneState) {
         super.saveState(dest)

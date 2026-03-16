@@ -65,6 +65,9 @@ class SoundProcess(
     override val type: String
         get() = "synth"
 
+    override val askBeforeDeleting: Boolean
+        get() = getInstrument() !is MidiInstrument
+
     override fun soundProcessName(objectName: String): String = objectName
 
     override fun superColliderName(objectName: String): String = "SoundProcess.get('${soundProcessName}')"
@@ -242,7 +245,8 @@ class SoundProcess(
             track.run { sendNoteOn(midinote, controls, info.serverLatency, info.player) }
         } else {
             val latency = info.serverLatency
-            val extraArgsString = extraArgs.entries.joinToString(", ", "(", ")") { (name, value) -> "$name: $value" }
+            val extraArgsString =
+                extraArgs.entries.joinToString(", ", "[", "]") { (name, value) -> "\\$name -> $value" }
             append(
                 superColliderName, ".startNewInstance(",
                 info.pos, ",", info.cutoff, ",", extraArgsString, ",",

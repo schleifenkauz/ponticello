@@ -10,7 +10,7 @@ SoundProcessInstance : AudioNode {
 		var control_map = def.control_map ++ extra_control_map;
 		^super.newCopyArgs(
 			def, idx, pos, cutoff, extra_control_map.keys, control_map,
-			Dictionary.new, Dictionary.new, Dictionary.new, List[]
+			Dictionary.new, Dictionary.new, Dictionary.new, List[], List[]
 		);
 	}
 
@@ -77,12 +77,18 @@ SoundProcessInstance : AudioNode {
 		}
 	}
 
-	putArgument { |name, value|
+	set { |name, value|
 		if (extra_control_keys.includes(name).not) {
 			if (sound_obj.respondsTo(\set)) {
 				sound_obj.set(name, value);
 			}
 		}
+	}
+
+	addControl { |ctrl|
+		extra_control_keys.add(ctrl.name);
+		control_map[ctrl.name] = ctrl;
+		ctrl.sound_proc = def;
 	}
 
 	setDefaultValue { |parameter|
@@ -133,7 +139,7 @@ SoundProcessInstance : AudioNode {
 					AudioNodeOrder.remove(this);
 				}
 			};
-			on_dispose.do (_.value);
+			on_dispose.do(_.value);
             Ponticello.sendMsg ('/stopped', -1, def.name, idx);
             def.removeInstance(idx);
             disposed = true;
@@ -152,7 +158,7 @@ SoundProcessInstance : AudioNode {
 				group = Group.new(placement.target, placement.addAction);
 				//group.register(assumePlaying: true);
 			};
-			control_map.keysValuesDo { |name, ctrl|
+			control_map.copy.keysValuesDo { |name, ctrl|
 				ctrl.prepare(this);
 			};
 			this.prStart(run);
@@ -188,10 +194,12 @@ SoundProcessInstance : AudioNode {
 		sound_obj.run(active, this);
 	}
 
-	release {
+	release { |latency|
 		children.do(_.release);
-		if (sound_obj.isMemberOf(Synth) ) {
-			sound_obj.set(\gate, 0); //why does [release] not work here?
+		if (sound_obj.isMemberOf(Synth)) {
+			Server.local.makeBundle(latency) {
+				sound_obj.release;
+			}
 		} {
 			sound_obj.release;
 		};

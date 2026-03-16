@@ -1,12 +1,12 @@
 ASRControl : ParameterControl {
-	var attack, release;
+	var <attack, <release;
 
-	* new { |name, attack, release|
-		^super.new(name).init(attack, release);
+	* new { |attack, release|
+		^super.new('attack-release').init(attack, release);
 	}
 
 	init { |att, rel|
-		attack = att; release = rel;
+		attack = ValueControl(\attack, att); release = ValueControl(\release, rel);
 	}
 
 	getValue { |inst|
@@ -20,22 +20,16 @@ ASRControl : ParameterControl {
 
 	getUGen { |inst| nil }
 
-	apply { |inst|
-		inst.putArgument('attack', attack);
-		inst.putArgument('release', release);
+	prepare { |inst|
+		inst.addControl(attack);
+		inst.addControl(release);
 	}
 
-	setAttack { |att|
-		attack = att;
-		this.updateInstances { |inst|
-			inst.putArgument('attack', attack);
-		}
+	attack_ { |att|
+		attack.update(att);
 	}
 
-	setRelease { |rel|
-		release = rel;
-		this.updateInstances { |inst|
-			inst.putArgument('release', release);
-		}
+	release_ { |rel|
+		release.update(rel);
 	}
 }

@@ -53,7 +53,6 @@ MidiEffect {
 	}
 
 	noteOn { |num, val, chan, track, src|
-		postf("Note on %, %, %. Enabled: %\n", num, val, chan, enabled);
 		^if (enabled) {
 			try {
 				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);

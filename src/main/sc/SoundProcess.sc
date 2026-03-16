@@ -150,7 +150,7 @@ SoundProcess {
 		var ctrl = control_map.removeAt(parameter);
 		controls.remove(ctrl);
 		this.updateInstances { |inst|
-			inst.putArgument(parameter, defaultValue);
+			inst.set(parameter, defaultValue);
 		};
 		ctrl.dispose;
 	}

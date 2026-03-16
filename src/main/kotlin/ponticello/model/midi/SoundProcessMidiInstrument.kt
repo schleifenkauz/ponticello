@@ -1,4 +1,4 @@
-package ponticello.ui.midi
+package ponticello.model.midi
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

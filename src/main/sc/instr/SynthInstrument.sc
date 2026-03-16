@@ -20,12 +20,9 @@ SynthInstrument {
 	getDefaultValue {| param | ^synthDesc.controlDict[param] !? { |ctrl| ctrl.defaultValue }}
 
 	create {| inst |
-		var duration = inst.def.duration !? {| dur | dur - inst.cutoff}, args, synth;
-		if (duration == inf || duration == nil) {
-            args = List[auto_release: 0, duration: 0.1];
-        } {
-			args = List[duration: duration];
-		};
+		var duration, asr, args, synth;
+		duration = inst.def.duration !? {| dur | dur - inst.cutoff};
+		args = List[duration: duration ? inf];
 		inst.control_map.keysValuesDo { |name, ctrl|
 		    var argument = ctrl.getSynthArgument(inst);
 		    if (argument != nil) {

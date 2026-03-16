@@ -23,6 +23,7 @@ import org.kordamp.ikonli.materialdesign2.*
 import ponticello.model.flow.*
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.InstrumentRegistry
+import ponticello.model.midi.MidiDeviceSpec
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.resolve
 import ponticello.model.obj.withName
@@ -35,7 +36,6 @@ import ponticello.ui.flow.MidiTrackFlowView.MidiDeviceSelectorPrompt
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.impl.getFrom
 import ponticello.ui.midi.MidiContext
-import ponticello.ui.midi.MidiDeviceSpec
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ListDisplayConfig.Companion.addObjectAction
@@ -58,7 +58,7 @@ import kotlin.reflect.KClass
 
 class FlowGroupPane(
     private val group: AudioFlowGroup,
-    private val parent: AudioFlowsPane?,
+    private val parent: TabbedAudioFlowsPane?,
 ) : VBox(), ListDisplayConfig<AudioFlow> {
     val flowsView = ObjectListView(group.flows, this, scrollable = true)
     private var midiContexts: MutableMap<AudioFlow, MidiContext?>? = null
@@ -190,8 +190,8 @@ class FlowGroupPane(
         val midiContext = midiContext(box.obj)
         if (midiContext != null) {
             midiContext.setCondition {
-                val showing = context[AppLayout].get<AudioFlowsPane>().isShowing.now
-                val groupExpanded = parent == null || parent.listView.getBox(group).isExpanded
+                val showing = context[AppLayout].get<TabbedAudioFlowsPane>().isShowing.now
+                val groupExpanded = parent == null || parent.isSelected(group)
                 showing && groupExpanded && box.isExpanded
             }
             box.registerShortcuts(
@@ -236,7 +236,7 @@ class FlowGroupPane(
         return flow
     }
 
-    override fun filter(obj: AudioFlow): Boolean = parent?.filter(obj) ?: true
+//    override fun filter(obj: AudioFlow): Boolean = parent?.filter(obj) ?: true
 
     companion object {
         private val viewFactories = mutableMapOf<KClass<out AudioFlow>, (AudioFlow) -> Parent>()

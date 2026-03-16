@@ -6,9 +6,9 @@ import bundles.set
 import hextant.context.Context
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
+import ponticello.model.midi.VSTMidiInstrument
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.SuperColliderClient
-import ponticello.ui.midi.VSTMidiInstrument
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit

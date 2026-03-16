@@ -14,6 +14,10 @@ import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.flow.VSTPlugins
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.MidiEffectInstrument
+import ponticello.model.midi.MidiEffectObject
+import ponticello.model.midi.MidiInstrument
+import ponticello.model.midi.SoundProcessMidiInstrument
+import ponticello.model.midi.VSTMidiInstrument
 import ponticello.model.obj.project
 import ponticello.model.project.instruments
 import ponticello.model.registry.reference

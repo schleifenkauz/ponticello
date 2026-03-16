@@ -92,6 +92,8 @@ abstract class TabbedToolPane<T : NamedObject>(protected val items: ObjectList<T
         selectedObject = obj?.reference() ?: ObjectReference.none()
     }
 
+    fun isSelected(obj: T): Boolean = selectedObject.get() == obj
+
     protected fun getItemBox(obj: T): Node? = itemBoxes[obj]
 
     protected fun content(obj: T): Parent = cachedViews.getOrPut(obj) { getContent(obj) }

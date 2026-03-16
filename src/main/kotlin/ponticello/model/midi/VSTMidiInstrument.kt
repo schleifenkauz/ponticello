@@ -1,4 +1,4 @@
-package ponticello.ui.midi
+package ponticello.model.midi
 
 import hextant.context.Context
 import kotlinx.serialization.SerialName

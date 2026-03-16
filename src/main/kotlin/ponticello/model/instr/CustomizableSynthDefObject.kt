@@ -56,6 +56,7 @@ class CustomizableSynthDefObject(
             val spec = p.spec.now
             spec is NumericalControlSpec && spec.attackRelease
         } || super<ConfigurableInstrumentObject>.hasParameter(name)
+
         else -> super<ConfigurableInstrumentObject>.hasParameter(name)
     }
 
@@ -66,11 +67,9 @@ class CustomizableSynthDefObject(
     )
 
     override fun ScWriter.sync() {
-        appendBlock("fork") {
-            createObject()
-            +"s.sync"
-            +"SoundProcess.updatedInstrument($superColliderName)"
-        }
+        createObject()
+        +"s.sync"
+        +"SoundProcess.updatedInstrument($superColliderName)"
     }
 
     override fun sync() {

@@ -8,6 +8,9 @@ import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.impl.toDecimal
 import ponticello.impl.writeCode
+import ponticello.model.midi.MidiDeviceSpec
+import ponticello.model.midi.MidiInstrument
+import ponticello.model.midi.MidiRecorder
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectListSerializer
@@ -15,9 +18,6 @@ import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.run
-import ponticello.ui.midi.MidiDeviceSpec
-import ponticello.ui.midi.MidiInstrument
-import ponticello.ui.midi.MidiRecorder
 import reaktive.Observer
 import reaktive.value.*
 

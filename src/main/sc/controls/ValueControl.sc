@@ -45,7 +45,7 @@ ValueControl : ParameterControl {
 				}
 			} {
 				this.updateInstances { |inst|
-					inst.putArgument(this.name, value); //unmap
+					inst.set(this.name, value); //unmap
 				};
 				if (cutoff_multiplier == 0) {
 					bus.free; bus = nil;
@@ -83,7 +83,7 @@ ValueControl : ParameterControl {
 		} {
 			if (this.sound_proc.type != \routine) {
 				this.updateInstances { |inst|
-					inst.putArgument(this.name, value);
+					inst.set(this.name, value);
 				}
 			}
 		}

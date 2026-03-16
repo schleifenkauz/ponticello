@@ -1,4 +1,4 @@
-package ponticello.ui.midi
+package ponticello.model.midi
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -7,6 +7,7 @@ import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.AbstractNamedObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
+import ponticello.ui.midi.MidiContext
 import reaktive.value.*
 
 @Serializable
