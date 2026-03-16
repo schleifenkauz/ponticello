@@ -322,6 +322,14 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                     )
                 )
             }
+            "slider".expand { expander ->
+                val context = expander.context[PonticelloContext]
+                val spec = if (context is PonticelloContext.Control) {
+                    context.control.spec.now as? NumericalControlSpec
+                        ?: NumericalControlSpec.DEFAULT
+                } else NumericalControlSpec.DEFAULT
+                SliderExprEditor(spec)
+            }
         }
     }
 }

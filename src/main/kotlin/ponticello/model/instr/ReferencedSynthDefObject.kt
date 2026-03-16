@@ -68,14 +68,14 @@ class ReferencedSynthDefObject(
 
     private fun getSynthDefParameters(name: String): List<ParameterDefObject> = when (name) {
         "send" -> listOf(
-            ParameterDefObject.Companion.AMP,
-            ParameterDefObject.Companion.IN,
-            ParameterDefObject.Companion.OUT
+            ParameterDefObject.AMP,
+            ParameterDefObject.IN,
+            ParameterDefObject.OUT
         )
         "utility" -> listOf(
-            ParameterDefObject.Companion.BUS,
-            ParameterDefObject.Companion.AMP,
-            ParameterDefObject.Companion.PAN
+            ParameterDefObject.BUS,
+            ParameterDefObject.AMP,
+            ParameterDefObject.PAN
         )
         else -> with(context[SuperColliderClient]) {
             val params = mutableListOf<ParameterDefObject>()
@@ -102,7 +102,7 @@ class ReferencedSynthDefObject(
                             val step = send("controlStep", listOf(name, paramName)).get().toDouble()
                             NumericalControlSpec(
                                 default.toDouble(), min, max,
-                                step.toDecimal(), 0.02, warp, randomColor()
+                                step.toDecimal(), warp, 0.02, randomColor()
                             )
                         }
                     }

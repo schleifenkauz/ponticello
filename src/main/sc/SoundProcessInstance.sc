@@ -135,7 +135,7 @@ SoundProcessInstance : AudioNode {
 			if (group != nil) {
 				group.free;
 				group = nil;
-				if (pos != nil) { //TODO 'if' needed?
+				if (pos.notNil) { //TODO 'if' needed?
 					AudioNodeOrder.remove(this);
 				}
 			};

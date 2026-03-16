@@ -77,21 +77,21 @@ class ParameterDefObject(val spec: ReactiveVariable<ControlSpec>) : AbstractRena
 
         val FREQ = ParameterDefObject(
             "freq",
-            NumericalControlSpec(440.0, 20.0, 20000.0, 1.0.toDecimal(), 0.02, Warp.Exponential, Color.BLACK)
+            NumericalControlSpec(440.0, 20.0, 20000.0, 1.0.toDecimal(), Warp.Exponential, 0.02, Color.BLACK)
         )
 
         val MIDINOTE = ParameterDefObject(
             "midinote",
-            NumericalControlSpec(60.0, 0.0, 127.0, step = one, warp = Warp.Linear)
+            NumericalControlSpec(60.0, 0.0, 127.0, step = one)
         )
 
         val AMP = ParameterDefObject(
             "amp",
-            NumericalControlSpec(0.1, 0.0, 1.0, 0.01.toDecimal(), 0.02, Warp.Linear, Color.ORANGE)
+            NumericalControlSpec(0.1, 0.0, 1.0, 0.01.toDecimal(), lag = 0.02, associatedColor = Color.ORANGE)
         )
         val PAN = ParameterDefObject(
             "pan",
-            NumericalControlSpec(0.0, -1.0, 1.0, 0.1.toDecimal(), 0.02, Warp.Linear, Color.BLUE)
+            NumericalControlSpec(0.0, -1.0, 1.0, 0.1.toDecimal(), lag = 0.02, associatedColor = Color.BLUE)
         )
 
         val BUF = ParameterDefObject("buf", BufferControlSpec(2))

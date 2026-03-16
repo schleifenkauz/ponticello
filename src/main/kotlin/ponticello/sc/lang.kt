@@ -327,7 +327,12 @@ sealed class Operator(val code: String) : Selector, ScElement {
         override fun completionPool(context: Any?): Collection<Operator> = values().asList()
 
         fun values(): Array<Operator> =
-            arrayOf(Plus, Minus, Times, Div, Mod, Exp, Le, Leq, Gr, Greq, Eq, Neq, PlusPlus, Expansion)
+            arrayOf(
+                Plus, Minus, Times, Div, Mod, Exp,
+                Le, Leq, Gr, Greq, Eq, Neq,
+                PlusPlus, Expansion, At,
+                QuestionMark, DoubleQuestionMark, Arrow
+            )
     }
 
     object Plus : Operator("+")
@@ -345,6 +350,9 @@ sealed class Operator(val code: String) : Selector, ScElement {
     object PlusPlus : Operator("++")
     object Expansion : Operator("!")
     object At : Operator("@")
+    object QuestionMark : Operator("?")
+    object DoubleQuestionMark : Operator("??")
+    object Arrow : Operator("->")
     class Unrecognized(val text: String) : Operator(text)
 
     object Ser : KSerializer<Operator> {

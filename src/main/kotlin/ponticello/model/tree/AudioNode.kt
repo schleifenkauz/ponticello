@@ -13,7 +13,7 @@ sealed interface AudioNode {
     val context: Context
     val associatedColor: ReactiveValue<Color?>
 
-    data class SoundProcessInstance(val process: SoundProcess, val position: ObjectPosition) : AudioNode {
+    data class SoundProcessInstance(val process: SoundProcess, val position: ObjectPosition?) : AudioNode {
         override val name: ReactiveString
             get() = process.name
         override val context: Context

@@ -1,6 +1,6 @@
 + SoundProcessInstance {
-	pitch { ^this.get('pitch') }
-	velocity { ^this.get('velocity') }
+	pitch { |default| ^this.get('pitch') ? default }
+	velocity { |default| ^this.get('velocity') ? default }
 }
 
 + VSTPlugin {

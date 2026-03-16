@@ -289,7 +289,7 @@ class MixerFlow(
         const val MAX_VOLUME = +24.0
         val VOLUME_SPEC = NumericalControlSpec(
             default = zero, min = MIN_VOLUME.toDecimal(), max = MAX_VOLUME.toDecimal(),
-            lag = AttackReleaseControl.DEFAULT, warp = Warp.Linear, step = 0.1.toDecimal(),
+            step = 0.1.toDecimal(), warp = Warp.Linear, lag = AttackReleaseControl.DEFAULT,
         )
 
         fun create(out: BusObject) = MixerFlow(

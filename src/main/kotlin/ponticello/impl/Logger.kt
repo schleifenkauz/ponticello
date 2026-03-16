@@ -113,6 +113,7 @@ object Logger {
         object VersionControl: Category()
         object OSC : Category()
         object Recording: Category()
+        object Serialization : Category()
 
         fun filter(category: Category?): Boolean = when {
             this == All -> true

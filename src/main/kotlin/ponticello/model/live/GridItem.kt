@@ -6,7 +6,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.model.obj.AbstractContextualObject
-import ponticello.model.score.SoundProcess
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -34,12 +33,6 @@ class GridItem(
             value.initialize(grid)
             grid.undoManager.record(ChooseTarget(this, oldTarget, value, oldMode))
             grid.notifyViews { updateItem(this@GridItem) }
-            if (value is ItemTarget.Object) {
-                val target = value.targetObject
-                if (target is SoundProcess && target.getInstrument().hasParameter("level")) {
-                    value.velocityParameter.now = "level"
-                }
-            }
         }
 
     fun target(): ReactiveValue<ItemTarget> = _target

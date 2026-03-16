@@ -100,16 +100,17 @@ data class NumericalControlSpec(
     var origin: ControlSpec? = null
 
     constructor(
-        default: Double, min: Double, max: Double, step: Decimal, lag: Double = 0.0,
-        warp: Warp = Warp.Linear, associatedColor: Color = Color.WHITE,
+        default: Double, min: Double, max: Double, step: Decimal, warp: Warp = Warp.Linear,
+        lag: Double = 0.0, associatedColor: Color = Color.WHITE,
     ) : this(
         default.withPrecision(step.precision),
         min.withPrecision(step.precision), max.withPrecision(step.precision),
-        step, lag.withPrecision(step.precision), warp, associatedColor
+        step, warp, lag.withPrecision(step.precision), associatedColor
     )
 
     constructor(
-        default: Decimal, min: Decimal, max: Decimal, step: Decimal, lag: Decimal, warp: Warp,
+        default: Decimal, min: Decimal, max: Decimal,
+        step: Decimal, warp: Warp = Warp.Linear, lag: Decimal = zero,
         associatedColor: Color = Color.WHITE,
         inlineDisplay: Boolean = false, attackRelease: Boolean = false, allocateBus: Boolean = false
     ) : this(
@@ -164,23 +165,23 @@ data class NumericalControlSpec(
     companion object {
         val DEFAULT = NumericalControlSpec(
             zero, zero, one, 0.01.toDecimal(),
-            AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
+            Warp.Linear, AttackReleaseControl.DEFAULT
         )
 
-        val GATE = NumericalControlSpec(one, zero, one, one, zero, Warp.Linear)
+        val GATE = NumericalControlSpec(one, zero, one, one, Warp.Linear, zero)
 
         val LEVEL = NumericalControlSpec(
             one, zero, one, 0.01.toDecimal(),
-            AttackReleaseControl.DEFAULT, Warp.Linear, Color.WHITE
+            Warp.Linear, AttackReleaseControl.DEFAULT
         )
 
         val BALANCE = NumericalControlSpec(
-            0.0, -100.0, 100.0, 1.0.withPrecision(0), 0.02, associatedColor = Color.GREEN
+            0.0, -100.0, 100.0, 1.0.withPrecision(0), lag = 0.02, associatedColor = Color.GREEN
         )
 
-        val VELOCITY = NumericalControlSpec(64.0, 0.0, 127.0, one, warp = Warp.Linear)
-        val PITCH = NumericalControlSpec(60.0, 0.0, 127.0, one, warp = Warp.Linear)
-        val CHANNEL = NumericalControlSpec(0.0, 0.0, 127.0, one, warp = Warp.Linear)
+        val VELOCITY = NumericalControlSpec(64.0, 0.0, 127.0, one)
+        val PITCH = NumericalControlSpec(60.0, 0.0, 127.0, one)
+        val CHANNEL = NumericalControlSpec(0.0, 0.0, 127.0, one)
 
         val DURATION = NumericalControlSpec(0.0, 0.0, Double.POSITIVE_INFINITY, 0.01.toDecimal())
         val AUTO_RELEASE = NumericalControlSpec(1.0, 0.0, 1.0, 1.toDecimal())

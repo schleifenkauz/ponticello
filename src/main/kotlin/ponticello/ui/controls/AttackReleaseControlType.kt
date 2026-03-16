@@ -42,7 +42,7 @@ data object AttackReleaseControlType : ControlType<AttackReleaseControl>() {
         box.userData = duration.forEach { maxDur ->
             val timeSpec = NumericalControlSpec(
                 default = zero, min = zero, max = maxDur,
-                step = 0.01.toDecimal(), lag = zero, warp = Warp.Linear, associatedColor = Color.GRAY
+                step = 0.01.toDecimal(), warp = Warp.Linear, lag = zero, associatedColor = Color.GRAY
             ).converter(unit = "s")
             control.attack.now = control.attack.now.coerceAtMost(maxDur)
             if (objectDuration != null) {

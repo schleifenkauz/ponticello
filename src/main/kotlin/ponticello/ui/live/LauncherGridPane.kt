@@ -7,14 +7,12 @@ import fxutils.controls.SliderBar
 import fxutils.drag.setupDropArea
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
-import fxutils.undo.VariableEdit
 import javafx.application.Platform
 import javafx.geometry.Side.BOTTOM
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.input.MouseButton
-import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
@@ -26,8 +24,6 @@ import org.kordamp.ikonli.materialdesign2.*
 import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
-import ponticello.model.instr.ParameterDefObject
-import ponticello.model.instr.ParameterizedObject
 import ponticello.model.live.*
 import ponticello.model.live.LauncherGrid.GridItemReference
 import ponticello.model.player.ScorePlayer
@@ -35,26 +31,21 @@ import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
 import ponticello.sc.NumericalControlSpec
-import ponticello.sc.ParameterType
 import ponticello.sc.Warp
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
-import ponticello.ui.registry.ParameterDefSelectorPrompt
 import ponticello.ui.registry.ScriptRegistryPane
 import ponticello.ui.score.FlowGroupManager
 import ponticello.ui.score.ScoreObjectDetailPane
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.and
-import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
-import reaktive.value.now
-import reaktive.value.reactiveValue
 
 class LauncherGridPane(
     private val grid: LauncherGrid,
@@ -185,7 +176,7 @@ class LauncherGridPane(
         if (target is ItemTarget.Object) {
             val obj = target.ref.get()
             if (obj != null) {
-                val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), zero, Warp.Linear)
+                val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), Warp.Linear, zero)
                 val scoreYSlider = SliderBar(
                     target.yPosition, "Score Y", spec.converter(),
                     undoManager = grid.context[UndoManager],
@@ -294,50 +285,6 @@ class LauncherGridPane(
                 executes { target ->
                     val obj = target.targetObject!!
                     obj.context[ScoreObjectDuplicator].enterDuplicateMode(obj)
-                }
-            }
-            addAction("Set velocity parameter") {
-                applicableIf { target -> target is ItemTarget.Object && target.targetObject is ParameterizedObject }
-                icon { target ->
-                    if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(null)
-                    else reactiveValue(MaterialDesignA.ALPHA_V_BOX)
-                }
-                toggleState { target ->
-                    if (target !is ItemTarget.Object || target.targetObject !is ParameterizedObject) reactiveValue(false)
-                    else target.velocityParameter.notNull()
-                }
-                executes { target, ev ->
-                    val obj = target.targetObject as? ParameterizedObject ?: return@executes
-                    when {
-                        target !is ItemTarget.Object -> {}
-                        ev is MouseEvent && ev.button == MouseButton.SECONDARY -> {
-                            target.velocityParameter.set(null)
-                        }
-//                        ev.isShiftDown() -> {
-//                            val velocityParam = target.velocityParameter.now.get() ?: return@executes
-//                            ControlSpecPrompt.create(velocityParam.name.now, obj, velocityParam.spec.now)
-//                                ?.showDialog(ev)
-//                        }
-                        else -> {
-                            val oldVelocityParam = target.velocityParameter.now?.let { name ->
-                                obj.getSpec(name)?.let { spec -> ParameterDefObject(name, spec) }
-                            }
-                            val newVelocityParam = ParameterDefSelectorPrompt(
-                                obj.getInstrument().allParameters(), "Select velocity parameter",
-                                fixedParameterType = ParameterType.Numerical
-                            ).showPopup(ev, initialOption = oldVelocityParam) ?: return@executes
-                            if (newVelocityParam != oldVelocityParam) {
-                                val newParamName = newVelocityParam.name.now
-                                target.velocityParameter.set(newParamName)
-                                target.context[UndoManager].record(
-                                    VariableEdit(
-                                        target.velocityParameter, oldVelocityParam?.name?.now, newParamName,
-                                        "Select velocity parameter"
-                                    )
-                                )
-                            }
-                        }
-                    }
                 }
             }
             addAction("Configure recording") {

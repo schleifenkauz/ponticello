@@ -58,7 +58,7 @@ class NumericalControlSpecPrompt(
     private infix fun <N : Node> N.named(name: String): N = also { content.addItem(name, it) }
 
     override fun makeSpec() = NumericalControlSpec(
-        default!!, min!!, max!!, step!!, lag!!, warp, associatedColor.value,
+        default!!, min!!, max!!, step!!, warp, lag!!, associatedColor.value,
         inlineDisplayOption.isSelected, attackReleaseOption.isSelected, allocateBusOption.isSelected
     )
 }

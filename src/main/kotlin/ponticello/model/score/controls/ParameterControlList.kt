@@ -5,7 +5,6 @@ import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
-import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -122,8 +121,7 @@ class ParameterControlList(
                 duration?.map { dur ->
                     NumericalControlSpec(
                         default = zero, min = zero, max = dur,
-                        step = 0.01.toDecimal(), lag = 0.01.asTime, warp = Warp.Linear,
-                        associatedColor = Color.WHITE
+                        step = 0.01.toDecimal(), warp = Warp.Linear, lag = 0.01.asTime
                     ).also { it.origin = spec }
                 } ?: reactiveValue(null)
             }

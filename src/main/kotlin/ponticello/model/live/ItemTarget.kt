@@ -5,10 +5,12 @@ import javafx.application.Platform
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.impl.*
+import ponticello.impl.Decimal
+import ponticello.impl.div
+import ponticello.impl.toDecimal
+import ponticello.impl.zero
 import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.ParameterDefObject
-import ponticello.model.instr.ParameterizedObject
 import ponticello.model.obj.*
 import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.model.project.LIVE_BUFFERS
@@ -22,9 +24,7 @@ import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ValueControl
-import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.mapOnto
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.*
@@ -177,19 +177,9 @@ sealed class ItemTarget : AbstractContextualObject() {
                 val position = ObjectPosition(time, yPosition.now)
                 val totalDelay = quantizationDelay.coerceAtMost(context.playbackSettings.lookAhead)
                 val extraArguments = mutableMapOf<ParameterDefObject, ParameterControl>()
-                val velocityParam = velocityParameter.now
-                if (obj is ParameterizedObject && velocityParam != null) {
-                    val velocityCtrl = obj.controls.get(velocityParam)
-                    val spec = velocityCtrl.spec.now
-                    if (spec is NumericalControlSpec) {
-                        val transform = spec.mapOnto(0.0, 127.0)
-                        val value = transform.unmap(velocity.toDouble()).toDecimal().withPrecision(spec.precision)
-                        val param = ParameterDefObject(velocityParam, spec)
-                        extraArguments[param] = ValueControl.create(value)
-                    }
-                }
+                extraArguments[ParameterDefObject.VELOCITY] = ValueControl.create(velocity.toDecimal())
                 if (mode != GridItem.Mode.Trigger) {
-                    extraArguments[ParameterDefObject.AUTO_RELEASE] = ValueControl.create(zero)
+                    extraArguments[ParameterDefObject.DURATION] = ValueControl.create(Decimal.INF)
                 }
                 val playbackInfo = ObjectPlaybackInfo(position, player, totalDelay / 2, extraArguments = extraArguments)
                 instanceId = grid.scheduler.scheduleObject(obj, playbackInfo, scLangLatency = totalDelay / 2)
