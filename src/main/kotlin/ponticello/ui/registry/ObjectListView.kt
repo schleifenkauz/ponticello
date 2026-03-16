@@ -600,10 +600,10 @@ class ObjectListView<O : Any>(
                     }
                 }
             }
-            addAction("Copy item") {
+            /*addAction("Copy item") {
                 shortcut("Ctrl+C")
                 executes { list -> list.copySelected() }
-            }
+            }*/
             addAction("Focus selected object") {
                 shortcut("Enter")
                 executes { list -> list.showSelected() }

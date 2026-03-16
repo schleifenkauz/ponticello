@@ -9,6 +9,7 @@ import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import ponticello.impl.Logger
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
@@ -56,6 +57,7 @@ class MidiEffectInstrument(
 
     override fun ScWriter.sync() {
         createObject()
+        Logger.confirm("Synchronized MidiEffectInstrument '${name.now}'", Logger.Category.Instruments)
     }
 
     override fun ScWriter.freeObject() {
