@@ -93,6 +93,19 @@ class BusRegistry(
         }
     }
 
+    fun setEnableLevelMeters(enable: Boolean) {
+        client.run {
+            for (bus in filterIsInstance<BusObject.AudioBus>()) {
+                +"~level_send_${bus.name.now}.run($enable)"
+            }
+        }
+        if (!enable) {
+            for ((_, event) in levelEvents) {
+                event.fire(BusLevel(emptyList(), emptyList()))
+            }
+        }
+    }
+
     private fun receivedBusLevel(msg: OSCMessage) {
         val replyId = msg.getArgument<Int>(0, "replyID") ?: return
         val event = levelEvents[replyId]

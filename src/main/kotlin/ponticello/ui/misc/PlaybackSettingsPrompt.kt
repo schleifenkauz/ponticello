@@ -28,6 +28,7 @@ class PlaybackSettingsPrompt(
     private val extraLatency = settings.extraLatency.copy()
     private val logScCode = settings.logScCode.copy()
     private val scrollWithPlayHead = settings.scrollWithPlayHead.copy()
+    private val enableLevelMeters = settings.enableLevelMeters.copy()
     private val djMode = settings.djMode.activated.copy()
 
     override val content: Parent = VBox(
@@ -40,6 +41,7 @@ class PlaybackSettingsPrompt(
             CheckBox(scrollWithPlayHead, "Scroll with play-head: "),
             infiniteSpace()
         ).centerChildren(),
+        HBox(infiniteSpace(), CheckBox(enableLevelMeters, "Enable level meters: "), infiniteSpace()).centerChildren(),
         HBox(infiniteSpace(), CheckBox(djMode, "DJ mode: "), infiniteSpace()).centerChildren(),
     )
 
@@ -50,6 +52,7 @@ class PlaybackSettingsPrompt(
         settings.logScCode.set(logScCode.now)
         settings.scrollWithPlayHead.set(scrollWithPlayHead.now)
         settings.djMode.activated.set(djMode.now)
+        settings.setEnableLevelMeters(enableLevelMeters.now)
     }
 
     companion object {

@@ -26,10 +26,7 @@ class LevelMeter(
 
     private val observer: Observer
 
-    val nChannels get() = bus.channels.now
-
     init {
-        width = meterWidth * nChannels + TICK_WIDTH + NUMBER_WIDTH
         heightProperty().addListener {
             paintScale()
             levels?.let { level -> updateLevels(level) }
@@ -41,7 +38,13 @@ class LevelMeter(
     }
 
     private fun updateLevels(level: BusLevel) = Platform.runLater {
+        width = meterWidth * level.channels.count() + SCALE_WIDTH
+        val oldChannelCount = levels?.channels?.count()
         this.levels = level
+        if (level.channels.count() != oldChannelCount) {
+            graphicsContext2D.clearRect(0.0, 0.0, width, height)
+            paintScale()
+        }
         for (ch in level.channels) {
             val rms = level.rms[ch]
             val peak = level.peak[ch]
@@ -67,8 +70,8 @@ class LevelMeter(
     }
 
     private fun paintScale() {
-        val xOffset = nChannels * meterWidth
-        graphicsContext2D.clearRect(xOffset, 0.0, TICK_WIDTH + NUMBER_WIDTH, height)
+        val xOffset: Double = (levels?.channels?.count() ?: 0) * meterWidth
+        graphicsContext2D.clearRect(xOffset, 0.0, width - xOffset, height)
         graphicsContext2D.fill = Color.gray(0.5)
         val tickStep = stepPossibilities.firstOrNull { step -> height / (LEVEL_RANGE / step) >= 10.0 } ?: return
         for (lvl in MIN_LEVEL..MAX_LEVEL step tickStep) {
@@ -92,6 +95,7 @@ class LevelMeter(
     companion object {
         private const val TICK_WIDTH = 8.0
         private const val NUMBER_WIDTH = 24.0
+        const val SCALE_WIDTH = TICK_WIDTH + NUMBER_WIDTH
         const val MIN_LEVEL = -60
         const val MAX_LEVEL = 24
         const val LEVEL_RANGE = MAX_LEVEL - MIN_LEVEL

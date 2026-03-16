@@ -58,13 +58,17 @@ DefaultSynthDefs {
 		available_send_level_synth_defs.add(channels);
 	}
 
-	* create_level_send { |bus, reply_id, addAction, target, rate=10, lag=0.01|
+	* create_level_send { |bus, reply_id, addAction, target, run=true, rate=10, lag=0.01|
 		var def_name = ("level_send_" ++ bus.numChannels.asString).asSymbol;
 		if (available_send_level_synth_defs.includes(bus.numChannels).not) {
 			DefaultSynthDefs.add_level_send_synth_def(bus.numChannels);
 			Server.local.sync;
+		};
+		^if (run) {
+			^Synth(def_name, [bus: bus, id: reply_id, rate: rate, lag: lag], target, addAction);
+		} {
+			Synth.newPaused(def_name, [bus: bus, id: reply_id, rate: rate, lag: lag], target, addAction);
 		}
-		^Synth(def_name, [bus: bus, id: reply_id, rate: rate, lag: lag], target, addAction);
 	}
 
 	* setupSynthDefQueries {

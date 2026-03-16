@@ -13,6 +13,7 @@ import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.impl.Logger
+import ponticello.model.flow.AudioFlow
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.AudioFlows
 import ponticello.model.project.PonticelloProject
@@ -43,7 +44,7 @@ class TabbedAudioFlowsPane(private val flows: AudioFlows) : TabbedToolPane<Audio
         getItemBox(group)?.setPseudoClassState("flow-group-hover", value)
     }
 
-    private fun allFlowBoxes() = flows.flatMap { flow -> (content(flow) as ObjectListView<*>).getBoxes() }
+    fun allFlowBoxes() = flows.flatMap { flow -> (content(flow) as ObjectListView<AudioFlow>).getBoxes() }
 
     override fun saveState(dest: ToolPaneState) {
         super.saveState(dest)

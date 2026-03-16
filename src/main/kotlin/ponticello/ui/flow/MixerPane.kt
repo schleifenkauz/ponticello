@@ -275,7 +275,7 @@ class MixerPane(
         meter.heightProperty().addListener {
             triangle.layoutY = meter.levelToY(volume.now.toDouble())
         }
-        triangle.layoutX = meter.nChannels * meter.meterWidth
+        triangle.layoutXProperty().bind(meter.widthProperty().subtract(LevelMeter.SCALE_WIDTH))
         triangle.setOnMouseClicked { ev ->
             triangle.requestFocus()
             ev.consume()
