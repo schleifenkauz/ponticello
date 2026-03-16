@@ -5,8 +5,6 @@ import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import com.illposed.osc.argument.OSCTimeTag64
 import com.illposed.osc.messageselector.JavaRegexAddressMessageSelector
-import com.illposed.osc.transport.OSCPortIn
-import com.illposed.osc.transport.OSCPortOut
 import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.model.obj.playbackSettings
@@ -16,13 +14,13 @@ import reaktive.event.unitEvent
 import reaktive.observe
 import reaktive.value.now
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 class OSCSuperColliderClient(
     process: Process,
-    private val sender: OSCPortOut,
-    private val receiver: OSCPortIn,
+    private val clientTransport: UDPTransport,
     override val context: Context
 ) : SuperColliderClient, OSCMessageListener {
     private var isReady = false
@@ -31,6 +29,11 @@ class OSCSuperColliderClient(
     private val eventExecutor = Executors.newSingleThreadExecutor()
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(process.inputStream)
+
+    private val clientReceiver = OSCReceiver(clientTransport).also(Thread::start)
+    private lateinit var serverTransport: UDPTransport
+    override lateinit var serverReceiver: OSCReceiver
+        private set
 
     private val eventObservers = mutableListOf<Observer>()
     private val ready = unitEvent()
@@ -65,17 +68,11 @@ class OSCSuperColliderClient(
 
     init {
         consoleMonitor.start()
-        addListener(this)
+        clientReceiver.addListener(this)
     }
 
     override fun addListener(listener: OSCMessageListener) {
-        receiver.dispatcher.addListener(ALL_MESSAGES) { ev ->
-            try {
-                listener.acceptMessage(ev)
-            } catch (e: Exception) {
-                Logger.error("Error while processing OSC message /${ev.message.address}", e)
-            }
-        }
+        clientReceiver.addListener(listener)
     }
 
     override fun addListener(
@@ -92,7 +89,9 @@ class OSCSuperColliderClient(
     override fun sendAsync(address: String, arguments: List<Any>) {
         val adr = if (!address.startsWith('/')) "/$address" else address
         val msg = OSCMessage(adr, arguments)
-        sender.send(msg)
+        synchronized(clientTransport) {
+            clientTransport.send(msg)
+        }
     }
 
     override fun send(address: String, arguments: List<Any>, description: String?): CompletableFuture<String> {
@@ -102,7 +101,9 @@ class OSCSuperColliderClient(
         val msg = OSCMessage(adr, listOf(id) + arguments)
         waitingForReply[id] = PendingRequest(description, msg, future)
         try {
-            sender.send(msg)
+            synchronized(clientTransport) {
+                clientTransport.send(msg)
+            }
         } catch (e: Exception) {
             future.completeExceptionally(e)
         }
@@ -127,9 +128,11 @@ class OSCSuperColliderClient(
 
     private fun addPonticelloToClientList() {
         val serverPort = eval("s.addr.port").get().toInt()
-        val addr = InetAddress.getLoopbackAddress()
-        val server = OSCPortOut(addr, serverPort)
-        server.send(OSCMessage("/notify", listOf(1)))
+        val local = InetSocketAddress(PONTICELLO_PORT + 1)
+        val remote = InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort)
+        serverTransport = UDPTransport(local, remote)
+        serverReceiver = OSCReceiver(serverTransport).also(Thread::start)
+        serverTransport.send(OSCMessage("/notify", listOf(1)))
     }
 
     override fun acceptMessage(event: OSCMessageEvent) {
@@ -139,11 +142,11 @@ class OSCSuperColliderClient(
                 "/ready" -> eventExecutor.execute {
                     ready.fire()
                     isReady = true
-                    //addPonticelloToClientList()
                 }
 
                 "/booted" -> eventExecutor.execute {
                     sampleRate = eval("s.sampleRate").get().toDouble()
+                    addPonticelloToClientList()
                     serverBoot.fire()
                 }
 
@@ -161,7 +164,7 @@ class OSCSuperColliderClient(
                         return
                     }
                     if (request.description != null) {
-                        println("Completed ${request.description}")
+                        println("Completed ${request.description}: $result")
                     }
                     request.future.complete(result)
                 }
@@ -190,8 +193,8 @@ class OSCSuperColliderClient(
         consoleMonitor.interrupt()
         run("s.quit;")
         run("0.exit;")
-        sender.disconnect()
-        receiver.close()
+        clientReceiver.interrupt()
+        serverReceiver.interrupt()
         eventExecutor.shutdown()
     }
 
@@ -201,19 +204,21 @@ class OSCSuperColliderClient(
         val future: CompletableFuture<String>,
     )
 
+
     companion object {
+        val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
+
+        private const val PONTICELLO_PORT = 7775
+
         fun create(context: Context, scPort: Int): OSCSuperColliderClient {
             val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$scPort"))
                 .redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
-            val localhost = InetAddress.getLoopbackAddress()
-            val sender = OSCPortOut(localhost, scPort)
-            val receiver = OSCPortIn(7775)
-            receiver.startListening()
-            return OSCSuperColliderClient(sclang, sender, receiver, context)
+            val local = InetSocketAddress(PONTICELLO_PORT)
+            val remote = InetSocketAddress(InetAddress.getLoopbackAddress(), scPort)
+            val transport = UDPTransport(local, remote)
+            return OSCSuperColliderClient(sclang, transport, context)
         }
-
-        val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
     }
 }

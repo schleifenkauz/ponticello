@@ -56,7 +56,7 @@ class BusRegistry(
                 }
             }
         }
-        context[SuperColliderClient].addListener("/bus_levels") { _, msg -> receivedBusLevel(msg) }
+        context[SuperColliderClient].serverReceiver?.addListener("/bus_levels") { _, msg -> receivedBusLevel(msg) }
     }
 
     fun reserveReplyId(): Int {
@@ -107,7 +107,7 @@ class BusRegistry(
     }
 
     private fun receivedBusLevel(msg: OSCMessage) {
-        val replyId = msg.getArgument<Int>(0, "replyID") ?: return
+        val replyId = msg.getArgument<Int>(1, "replyID") ?: return
         val event = levelEvents[replyId]
         if (event == null) {
             Logger.warn(
@@ -116,7 +116,7 @@ class BusRegistry(
             )
             return
         }
-        val values = msg.arguments.drop(1)
+        val values = msg.arguments.drop(2)
         val channels = values.size / 2
         val rms = values.take(channels).map { lvl -> (lvl as Float).toDouble() }
         val peak = values.takeLast(channels).map { lvl -> (lvl as Float).toDouble() }

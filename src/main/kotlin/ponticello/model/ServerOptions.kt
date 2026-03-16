@@ -29,7 +29,7 @@ data class ServerOptions(
     }
 
     fun configureOptions(client: SuperColliderClient) {
-        client.eval {
+        client.eval(description = "Configure server options") {
             if (isWindows) {
                 +"s.options.device_(${if (device.isEmpty()) "nil" else "\"$device\""})"
             }
@@ -38,6 +38,7 @@ data class ServerOptions(
             +"s.options.memSize = $memSize"
             +"s.options.numWireBufs = $numWireBufs"
             +"s.options.sampleRate = $sampleRate"
+            +"s.options.maxLogins = 2"
         }.join()
         if (initialized) configureIOBuses()
     }

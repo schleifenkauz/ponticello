@@ -80,3 +80,13 @@ SynthDef(\test2) {
 x = Synth(\test2, [duration: 3])
 x.release
 x.set(\duration, 2)
+
+~addr = NetAddr("localhost", 50000)
+~addr.sendMsg('/notify', 1)
+
+x = { SendReply.kr(Impulse.kr(2), '/test', SinOsc.kr(10)) }.play
+
+x = Server.remote('server', ~addr, nil, 0)
+s.options.maxLogins = 2
+s.boot
+x.notify

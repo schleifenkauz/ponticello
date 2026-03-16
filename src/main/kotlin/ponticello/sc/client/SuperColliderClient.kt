@@ -14,6 +14,8 @@ interface SuperColliderClient : SuperColliderContext {
 
     val sampleRate: Double
 
+    val serverReceiver: OSCReceiver?
+
     fun onServerBooted(action: () -> Unit): Observer
 
     fun onTreeCleared(initially: Boolean = false, action: () -> Unit)

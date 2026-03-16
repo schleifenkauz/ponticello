@@ -18,6 +18,8 @@ class DummySuperColliderClient(
 
     override val consoleMonitor: ConsoleMonitor = ConsoleMonitor(inputStream)
 
+    override val serverReceiver: OSCReceiver? get() = null
+
     override fun onClientReady(action: () -> Unit) {
         action()
     }

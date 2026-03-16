@@ -33,9 +33,6 @@ DefaultSynthDefs {
 		}, metadata: (specs: (
 			amp: [0, 1, \lin, 0.01, 1],
 		))).add;
-		OSCdef(\bus_levels, { arg msg;
-			Ponticello.sendMsg('/bus_levels', *msg[2..]);
-		}, '/bus_levels');
 		this.setupSynthDefQueries;
 	}
 

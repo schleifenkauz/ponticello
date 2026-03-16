@@ -15,7 +15,7 @@ Ponticello {
 					handler.value(*msg.drop(1));
 				}
 			}
-		}, address);
+		}, address).permanent_(true);
 	}
 
 	* respondId { |address, handler|
@@ -23,7 +23,7 @@ Ponticello {
 			fork {
 				handler.value(*msg.drop(1));
 			}
-		}, address);
+		}, address).permanent_(true);
 	}
 
 	* respondResult { |address, handler|
@@ -35,7 +35,7 @@ Ponticello {
 					Ponticello.sendMsg('/reply', id, result);
 				}
 			}
-		}, address);
+		}, address).permanent_(true);
 	}
 
 	* sendMsg { |... args|
@@ -96,7 +96,7 @@ Ponticello {
 		Ponticello.respond('/start_play', PonticelloPlayback.start_play(_, _));
 		Ponticello.respond('/pause_play', PonticelloPlayback.pause_play(_));
 
-		postf("Successfully setup OSC handling. Replying to \n", ponticello_addr);
+		postf("Successfully setup OSC handling. Replying to % \n", ponticello_addr);
 		Ponticello.sendMsg('/ready');
 	}
 
