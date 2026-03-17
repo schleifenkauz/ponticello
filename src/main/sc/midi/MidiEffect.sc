@@ -52,11 +52,13 @@ MidiEffect {
 		^super.newCopyArgs(name, instr, controls, env, enabled);
 	}
 
-	noteOn { |num, val, chan, track, src|
+	noteOn { |num, val, src|
 		^if (enabled) {
 			try {
-				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
-				env.use { instr.noteOn.value(num, val, chan, track, controls, mySrc) };
+				var mySrc = src.copy.instr_(this);
+				//postf("Note On %, %. Track: %, src: %", num, val, track, mySrc);
+				controls.postln;
+				env.use { instr.noteOn.value(num, val, track, controls, mySrc) };
 			} { |error|
 				//postf("Error during noteOn handling of MidiEffect % (%, %)\n", instr.name, num, val);
 				error.reportError;
@@ -65,11 +67,11 @@ MidiEffect {
 		} { true }
 	}
 
-	noteOff { |num, val, chan, track, src|
+	noteOff { |num, val, src|
 		^if (enabled) {
 			try {
-				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
-				env.use { instr.noteOff.value(num, val, chan, track, controls, mySrc) };
+                var mySrc = src.copy.instr_(this);
+				env.use { instr.noteOff.value(num, val, track, controls, mySrc) };
 			} { |error|
 				//postf("Error during noteOff handling of MidiEffect % (%, %)\n", instr.name, num, val);
 				error.reportError;
@@ -78,11 +80,11 @@ MidiEffect {
 		} { true }
 	}
 
-	control { |num, val, chan, track, src|
+	control { |num, val, src|
 		^if (enabled) {
 			try {
-				var mySrc = (latency: src.latency, player_id: src.player_id, instr: this);
-				^env.use { instr.control.value(num, val, chan, track, controls, mySrc) };
+				var mySrc = src.copy.instr_(this);
+				^env.use { instr.control.value(num, val, track, controls, mySrc) };
 			} { |error|
 				//postf("Error during cc handling of MidiEffect % (%, %)\n", instr.name, num, val);
 				error.reportError;
@@ -102,15 +104,17 @@ MidiEffect {
 
 	activate { |tr|
 		track = tr;
+		postf("Track: %\n", tr);
 		this.prCreateTask;
 		if (enabled) {
 			task.play;
 		}
 	}
 
-	dispose {
-		task.stop;
+	pause {
+		task.pause;
 		env.use { instr.stop.value(track, controls) };
+		track.stopEffect(this);
 	}
 
 	enabled_ { |v|
@@ -118,9 +122,14 @@ MidiEffect {
 		if (v) {
 			task.play;
 		} {
-			task.pause;
+			this.pause;
 		}
  	}
+
+
+	dispose {
+		this.pause;
+	}
 
 	allNotesOff {} //TODO
 }

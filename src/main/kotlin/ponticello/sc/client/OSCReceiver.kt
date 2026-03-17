@@ -3,6 +3,7 @@ package ponticello.sc.client
 import com.illposed.osc.*
 import com.illposed.osc.argument.OSCTimeTag64
 import ponticello.impl.Logger
+import java.nio.channels.ClosedByInterruptException
 
 class OSCReceiver(private val transport: UDPTransport) : Thread("OSC Receiver") {
     private val listeners = mutableListOf<OSCMessageListener>()
@@ -19,6 +20,9 @@ class OSCReceiver(private val transport: UDPTransport) : Thread("OSC Receiver") 
                 val oscPacket: OSCPacket = transport.receive()
                 dispatching = true
                 dispatchPacket(oscPacket)
+            } catch (ex: ClosedByInterruptException) {
+                Logger.info("OSCReceiver stopped", Logger.Category.OSC)
+                break
             } catch (ex: Exception) {
                 Logger.error("Error while receiving OSC packet", ex)
                 break

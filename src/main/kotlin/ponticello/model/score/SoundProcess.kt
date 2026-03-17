@@ -16,6 +16,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonNames
 import ponticello.impl.*
+import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.instr.*
 import ponticello.model.obj.BufferReference
 import ponticello.model.obj.InstrumentReference
@@ -215,9 +216,7 @@ class SoundProcess(
     }
 
     override fun ScWriter.createInSuperCollider() {
-        if (getInstrument() !is MidiInstrument) {
-            createSoundProcessObject(this@SoundProcess, duration)
-        }
+        createSoundProcessObject(this@SoundProcess, duration)
     }
 
     override fun ScWriter.freeObject() {
@@ -234,25 +233,23 @@ class SoundProcess(
     }
 
     override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
-        val extraArgs = info.extraArguments.entries.associateTo(mutableMapOf()) { (param, ctrl) ->
-            val valueCtrl = ctrl as? ValueControl ?: error("Expected ValueControl for $param")
-            param.name.now to valueCtrl.value.now
+        val extraArgs = info.extraArguments.entries.mapTo(mutableListOf()) { (param, ctrl) ->
+            ctrl.writeCode(param.name.now, param.spec.now, this@SoundProcess)
         }
         val parentObject = info.instance?.score?.parentObject
+        var midiTrack: MidiTrackFlow? = null
         if (parentObject is MidiObject && getInstrument() is MidiInstrument) {
             val midinote = info.instance.y
-            val track = parentObject.track.now.get() ?: return
-            track.run { sendNoteOn(midinote, controls, info.serverLatency, info.player) }
-        } else {
-            val latency = info.serverLatency
-            val extraArgsString =
-                extraArgs.entries.joinToString(", ", "[", "]") { (name, value) -> "\\$name -> $value" }
-            append(
-                superColliderName, ".startNewInstance(",
-                info.pos, ",", info.cutoff, ",", extraArgsString, ",",
-                latency, ",", info.player.id, ")"
-            )
+            midiTrack = parentObject.track.now.get() ?: return
+            extraArgs.add("ValueControl(\\pitch, $midinote)")
         }
+        val latency = info.serverLatency
+        append(
+            superColliderName, ".startNewInstance(",
+            info.pos, ",", info.cutoff, ",", extraArgs.joinToString(", ", "[", "]"), ",",
+            latency, ",", info.player.id,
+            ", midiTrack: ", midiTrack?.trackVariable ?: "nil", ")"
+        )
     }
 
     companion object {
@@ -265,22 +262,22 @@ class SoundProcess(
             obj: ParameterizedObject, duration: Decimal? = null,
             className: String = "SoundProcess", extraArguments: List<String> = emptyList()
         ) = appendGroup("$className.create") {
-                appendLine("name: '${obj.soundProcessName}',")
-                appendLine("instr: ${obj.getInstrument().superColliderName},")
-                append("controls: [")
-                indented {
-                    for (ctrl in obj.controls) {
-                        val parameter = ctrl.name.now
-                        val expr = ctrl.now.writeCode(parameter, ctrl.spec.now, obj)
-                        appendLine("$expr,")
-                    }
+            appendLine("name: '${obj.soundProcessName}',")
+            appendLine("instr: ${obj.getInstrument().superColliderName},")
+            append("controls: [")
+            indented {
+                for (ctrl in obj.controls) {
+                    val parameter = ctrl.name.now
+                    val expr = ctrl.now.writeCode(parameter, ctrl.spec.now, obj)
+                    appendLine("$expr,")
                 }
+            }
             appendLine("],")
             if (duration != null) appendLine("duration: $duration,")
             for (arg in extraArguments) {
                 append(arg)
                 appendLine(",")
             }
-            }
+        }
     }
 }

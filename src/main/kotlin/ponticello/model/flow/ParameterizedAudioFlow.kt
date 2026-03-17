@@ -24,6 +24,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
 
     override fun soundProcessName(objectName: String): String? = "flow_${objectName}"
 
+    @Transient
     final override var isCreatedInSuperCollider: Boolean = false
         private set
 
@@ -58,7 +59,7 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
         +"$superColliderName = SoundProcess.get('flow_${name.now}').createInstance"
-        +"$superColliderName.start($placement, 0, -1, ${isActive.now})"
+        +"$superColliderName.start($placement, latency: 0, playerId: -1, run: ${isActive.now})"
     }
 
     override fun midiContext(): MidiContext? = ParameterControlsMidiContext(controls)

@@ -14,7 +14,7 @@ object MidiInstrument : InstrumentObject, AbstractNamedObject() {
     override val parameters: List<ParameterDefObject>
         get() = listOf(ParameterDefObject.VELOCITY, ParameterDefObject.CHANNEL)
     override val superColliderName: String
-        get() = "<midi instrument>"
+        get() = "MIDIInstrument.new"
 
     override val name: ReactiveValue<String>
         get() = reactiveValue("<midi instrument>")

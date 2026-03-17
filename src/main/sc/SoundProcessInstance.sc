@@ -1,18 +1,24 @@
 SoundProcessInstance : AudioNode {
 	var <def, <idx, <pos, <cutoff, extra_control_keys, <control_map,
 	initial_args, control_buses, auxil_synths, children, on_dispose,
-	<playerId, <server_latency, start_time, placement, group,
+	<player_id, <>server_latency, start_time, placement, group,
 	running = false, <restarting = false, disposed = false,
-	sound_obj, <>midiTrack, <midiSrc;
+	sound_obj, <midi_track;
 
 	* new {| def, idx, pos, cutoff = 0, extra_controls |
-		var extra_control_map = Dictionary.with(*extra_controls.collect { |ctrl| ctrl.name -> ctrl });
-		var control_map = def.control_map ++ extra_control_map;
+		var control_map = def.control_map.copy;
+		var extra_control_keys = Set[];
+		extra_controls.do { |ctrl|
+			control_map[ctrl.name] = ctrl;
+			extra_control_keys.add(ctrl.name);
+		};
 		^super.newCopyArgs(
-			def, idx, pos, cutoff, extra_control_map.keys, control_map,
+			def, idx, pos, cutoff, extra_control_keys, control_map,
 			Dictionary.new, Dictionary.new, Dictionary.new, List[], List[]
 		);
 	}
+
+	controls { ^control_map.values }
 
 	type { ^def.type }
 
@@ -146,14 +152,15 @@ SoundProcessInstance : AudioNode {
 		}
 	}
 
-	start { |plcmnt, latency, player_id, run = true|
+	start { |plcmnt, latency, playerId, midiTrack=nil, run = true|
 		var duration = def.duration !? { |dur| dur - cutoff };
 		placement = plcmnt;
 		start_time = TempoClock.beats;
 		server_latency = latency;
-		playerId = player_id;
+		player_id = playerId;
+		midi_track = midiTrack;
 		forkIfNeeded {
-			if (placement != nil) {
+			if (placement.notNil && (def.type != \midi)) {
 				Server.local.sync;
 				group = Group.new(placement.target, placement.addAction);
 				//group.register(assumePlaying: true);
@@ -194,14 +201,14 @@ SoundProcessInstance : AudioNode {
 		sound_obj.run(active, this);
 	}
 
-	release { |latency|
-		children.do(_.release);
+	release { |latency=0|
+		children.do(_.release(latency));
 		if (sound_obj.isMemberOf(Synth)) {
 			Server.local.makeBundle(latency) {
 				sound_obj.release;
 			}
 		} {
-			sound_obj.release;
+			sound_obj.release(latency);
 		};
 	}
 
@@ -213,7 +220,7 @@ SoundProcessInstance : AudioNode {
 		p = (t: pos.t + this.current_time, y: pos.y);
 		inst = proc.createInstance(p, 0, extra_controls ? ());
 		placement = (addAction: \addToTail, target: group);
-		inst.start(placement, Server.local.latency, playerId);
+		inst.start(placement, Server.local.latency, player_id);
 		inst.onDispose { children.remove(inst) };
 		children = children.add(inst);
 		^inst

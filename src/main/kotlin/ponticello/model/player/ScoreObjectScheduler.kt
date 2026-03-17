@@ -4,8 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import hextant.context.Context
 import ponticello.impl.*
-import ponticello.model.instr.MidiInstrument
-import ponticello.model.instr.RoutineDefObject
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
@@ -57,30 +56,14 @@ class ScoreObjectScheduler(val context: Context) {
             }
 
             is SoundProcess -> {
-                val time = pos.time + player.timeOffset + sclangLatency - extraLatency
-                when (obj.getInstrument()) {
-                    is RoutineDefObject -> {
-                        val objectStart = pos.plusTime(-obj.duration)
-                        val code = writeCode {
-                            releaseObject(obj, objectStart)
-                        }
-                        val description = "stop ${obj.name.now}"
-                        client.schedule(description, time, absolute = false, player, code)
+                if (obj.getInstrument() !is SynthDefObject) {
+                    val time = pos.time + player.timeOffset + sclangLatency - extraLatency
+                    val objectStart = pos.plusTime(-obj.duration)
+                    val code = writeCode {
+                        releaseObject(obj, objectStart, serverLatency)
                     }
-
-                    is MidiInstrument -> {
-                        val parent = instance.score?.parentObject
-                        if (parent is MidiObject) {
-                            val midinote = instance.y
-                            val code = writeCode {
-                                val track = parent.track.now.get() ?: return@writeCode
-                                track.run { sendNoteOff(midinote, obj.controls, serverLatency) }
-                            }
-                            client.schedule("noteOff $midinote", time, absolute = false, player, code)
-                        }
-                    }
-
-                    else -> {}
+                    val description = "stop ${obj.name.now}"
+                    client.schedule(description, time, absolute = false, player, code)
                 }
             }
 
@@ -89,17 +72,9 @@ class ScoreObjectScheduler(val context: Context) {
     }
 
     //Only inside on ScorePlayer.execute
-    fun stopObjectInstantly(instance: ScoreObjectInstance, pos: ObjectPosition) {
-        val parentObject = instance.score?.parentObject
-        val obj = instance.obj
+    fun stopObjectInstantly(obj: ScoreObject, pos: ObjectPosition) {
         client.run {
-            if (parentObject is MidiObject && obj is SoundProcess && obj.getInstrument() is MidiInstrument) {
-                val track = parentObject.track.now.get() ?: return@run
-                val midinote = instance.y
-                track.run { sendNoteOff(midinote, obj.controls, latency = zero) }
-            } else {
-                releaseObject(obj, pos)
-            }
+            releaseObject(obj, pos, serverLatency = zero)
         }
     }
 
@@ -108,8 +83,8 @@ class ScoreObjectScheduler(val context: Context) {
         client.run("${obj.superColliderName}.getInstance($instanceId).release")
     }
 
-    private fun ScWriter.releaseObject(obj: ScoreObject, pos: ObjectPosition) {
-        +"${obj.superColliderName}.getInstanceAt($pos).release"
+    private fun ScWriter.releaseObject(obj: ScoreObject, pos: ObjectPosition, serverLatency: Decimal) {
+        +"${obj.superColliderName}.getInstanceAt($pos).release($serverLatency)"
     }
 
     //Only inside ScorePlayer.execute

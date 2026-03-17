@@ -27,6 +27,8 @@ sealed class ParameterizedMidiInstrument : MidiInstrument(), ParameterizedObject
 
     @Transient
     private lateinit var updater: SoundProcessUpdater<*>
+
+    @Transient
     final override var isCreatedInSuperCollider: Boolean = false
         private set
 

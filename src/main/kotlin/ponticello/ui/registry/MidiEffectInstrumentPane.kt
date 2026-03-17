@@ -37,7 +37,7 @@ class MidiEffectInstrumentPane(def: MidiEffectInstrument) : ParameterizedObjectD
     override fun getContent(def: MidiEffectInstrument): Node {
         val startCodeControl = makeCodePane(def.start, "start", listOf("track", "controls"))
         val stopCodeControl = makeCodePane(def.stop, "stop", listOf("track", "controls"))
-        val eventArguments = listOf("pitch", "velocity", "channel", "track", "controls", "src")
+        val eventArguments = listOf("pitch", "velocity", "track", "controls", "src")
         val noteOnControl = makeCodePane(def.noteOn, "noteOn", eventArguments)
         val noteOffControl = makeCodePane(def.noteOff, "noteOff", eventArguments)
         val ccControl = makeCodePane(def.cc, "cc", eventArguments)

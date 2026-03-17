@@ -1,18 +1,6 @@
 ### Questions
 
-- is the `AdhocSynth` still needed?
-- does each `ConfigurableParameterizedObjectDef` need its own context
-    - or does it take the one of its registry?
-- separate registries for audio and control buses?
-
 ### Needs Fix
-
-- resizing behaviour is not quite right
-- something is not quite right yet in `ScoreEventCollector` (especially when resizing objects...)
-- moving objects to sub score parent is buggy
-- sub-objects get buggy after unlinking group objects
-    - the new objects don't get added to the `ScoreEventCollector`
-- deleting objects doesn't remove them from the events collector...
 
 ### Minor
 
@@ -42,8 +30,6 @@
 
 ### UI niceties
 
-- option to put documentation browser into fixed window
-- make the quit button nicer
 - don't squish the item cell list in detail pane mode
 - special layout for lambdas as function arguments
 
@@ -57,11 +43,8 @@
 
 ### More efficient communication with SC
 
-- add score objects as functions in sc
-    - what about object groups
 - in which cases can we talk to scsynth directly?
     - bus value update (could really improve live modulation performance)
-  - SynthObjects could be created by sending messages to scsynth directly
 
 ### Own notification API integrating with the LogPane
 
@@ -79,11 +62,6 @@
 
 - this means ability to do NRT bouncing!
 
-### Rethink VSTPlugins
-
-- should `SynthDef`s and `VSTPlugin` have a separate registry
-- retrieve parameters from plugin info, make them controllable in the `DetailPane` or as envelopes
-
 ### Live mode
 
 - time jumps
@@ -94,8 +72,6 @@
 
 - split stems with demucs
 - do we need a global tempo?
-- a track is a sample with a tempo grid
-- when adding a track to the score, choose how to align it with the existing grids
 
 ### Different curvatures for envelopes
 

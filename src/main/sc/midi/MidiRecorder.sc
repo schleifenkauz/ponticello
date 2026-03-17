@@ -25,21 +25,21 @@ MidiRecorder {
 		events = List[];
 	}
 
-	noteOn { |num, val, chan, src|
+	noteOn { |num, val, src|
 		if (recording) {
 			var t;
 			if (firstNoteTime.notNil) { t = SystemClock.seconds - firstNoteTime } {
 				firstNoteTime = SystemClock.seconds;
 				t = 0.0;
 			};
-			events.add([t, 1, num, val, chan]);
+			events.add([t, 1, num, val, src.chan]);
 		}
 	}
 
-	noteOff { |num, val, chan, src|
+	noteOff { |num, val, src|
 		if (recording && firstNoteTime.notNil) {
 			var t = SystemClock.seconds - firstNoteTime;
-			events.add([t, 0, num, val, chan]);
+			events.add([t, 0, num, val, src.chan]);
 		}
 	}
 }

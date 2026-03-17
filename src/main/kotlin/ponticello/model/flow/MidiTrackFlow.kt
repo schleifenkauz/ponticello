@@ -83,7 +83,7 @@ class MidiTrackFlow(
                 appendLine(",")
             }
         }
-        appendLine("]);")
+        appendLine("], enabled: ${isActive.now});")
     }
 
     fun toggleRecording() {
@@ -97,7 +97,7 @@ class MidiTrackFlow(
     }
 
     fun allNotesOff(playerId: Int) {
-        client.run("$trackVariable.allNotesOff($playerId)")
+        client.run("$trackVariable.allNotesOff(player_id: $playerId)")
     }
 
     override fun copy(): AudioFlow = MidiTrackFlow(sourceDevice.copy(), instruments.copy())

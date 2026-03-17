@@ -106,7 +106,7 @@ class MidiEffectInstrument(
     }
 
     private fun ScWriter.callbackParameters() {
-        +"arg pitch, velocity, channel, track, controls, src"
+        +"arg pitch, velocity, track, controls, src"
     }
 
     companion object {

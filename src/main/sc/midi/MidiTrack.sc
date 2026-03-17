@@ -1,20 +1,22 @@
 MidiTrack {
-	var <group, <sourceDevice, <>instruments, <activeNotes, <controlValues, notesInPedal, connected=false, <recorder;
+	var <group, <sourceDevice, <>instruments, enabled, <activeNotes, <controlValues, notesInPedal, connected=false, <recorder;
 	classvar initialized=false, tracksBySource, noteOn, noteOff, cc;
 
 	* init {
 		if (initialized.not) {
-			var defaultSrc = (latency: 0, player_id: 0);
 			MIDIClient.init(1, 1, verbose: false);
 			tracksBySource = Dictionary.new;
-			noteOn = MIDIFunc.noteOn { |val, num, chan, src|
-				MidiTrack.dispatchEvent(src) { |track| track.noteOn(num, val, chan, defaultSrc) }
+			noteOn = MIDIFunc.noteOn { |val, num, chan, uid|
+			    var src = (player_id: -1, server_latency: 0, chan: chan);
+				MidiTrack.dispatchEvent(uid) { |track| track.noteOn(num, val, src) }
 			}.permanent_(true);
-			noteOff = MIDIFunc.noteOff { |val, num, chan, src|
-				MidiTrack.dispatchEvent(src) { |track| track.noteOff(num, val, chan, defaultSrc) }
+			noteOff = MIDIFunc.noteOff { |val, num, chan, uid|
+                var src = (player_id: -1, server_latency: 0, chan: chan);
+				MidiTrack.dispatchEvent(uid) { |track| track.noteOff(num, val, src) }
 			}.permanent_(true);
-			cc = MIDIFunc.cc { |val, num, chan, src|
-				MidiTrack.dispatchEvent(src) { |track| track.control(num, val, chan, defaultSrc) }
+			cc = MIDIFunc.cc { |val, num, chan, uid|
+                var src = (player_id: -1, server_latency: 0, chan: chan);
+				MidiTrack.dispatchEvent(uid) { |track| track.control(num, val, src) }
 			}.permanent_(true);
 			initialized = true;
 		}
@@ -79,10 +81,15 @@ MidiTrack {
 		}
 	}
 
-	* new { |group, source, instrs|
-		var track = super.newCopyArgs(group, source, instrs, Dictionary.new, Dictionary.new);
-		track.prConnect;
-		^track.activate;
+	* new { |group, source, instrs, enabled=true|
+		var track = super.newCopyArgs(
+			group, source, instrs, enabled,
+			Dictionary.new, Dictionary.new
+		);
+		if (enabled) {
+			track.prConnect;
+			^track.activate;
+		}
 	}
 
 	* freeAll {
@@ -133,7 +140,7 @@ MidiTrack {
 
 	release {
 		if (group != nil) {
-			instruments.do(_.allNotesOff);
+			this.allNotesOff;
 			group.free;
 			group = nil;
 			MidiTrack.disconnectSource(sourceDevice, this);
@@ -143,59 +150,98 @@ MidiTrack {
 	}
 
 	run { |v|
+		enabled = v;
 		if (v) { this.prConnect } { this.prDisconnect }
 	}
 
 	perform { |src, fn|
-		fork {
-			var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
-			//postf("Starting at index % (src instr: %)\n", idx, src.instr);
-			while { (continue == true) && (idx < instruments.size) } {
-				var instr = instruments[idx];
-				continue = fn.value(instr) ? true;
-				if (continue.isKindOf(Function)) {
-					fn = continue;
-					continue = true;
+		if (enabled) {
+			fork {
+				var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
+				//postf("Starting at index % (src instr: %)\n", idx, src.instr);
+				while { (continue == true) && (idx < instruments.size) } {
+					var instr = instruments[idx];
+					continue = fn.value(instr) ? true;
+					if (continue.isKindOf(Function)) {
+						fn = continue;
+						continue = true;
+					};
+					idx = idx + 1;
 				};
-				idx = idx + 1;
+				if (continue) {
+					fn.value(recorder);
+				}
 			}
 		}
 	}
 
-	noteOn { |num, val, chan=0, src|
-		activeNotes[num] = val;
+	noteOn { |num, val, src|
+		src.track = this;
+		//postf("Note On %, % (src: %)\n", num, val, src);
+		activeNotes[num] = activeNotes[num].add(src);
 		notesInPedal.remove(num);
-		recorder.noteOn(num, val, chan, src);
 		this.perform(src) { |instr|
-			instr.noteOn(num, val, chan, this, src)
+			instr.noteOn(num, val, src)
 		}
 	}
 
-	noteOff { |num, val, chan=0, src|
-		recorder.noteOff(num, val, chan, src);
+	noteOff { |num, val, src|
+		src.track = this;
+		recorder.noteOff(num, val, src);
+		//postf("Note Off %, % (src: %)\n", num, val, src);
 		if (this.isPedalDown.not) {
-			activeNotes.removeAt(num);
-			this.perform(src) { |instr| instr.noteOff(num, val, chan, this, src) }
+			activeNotes[num].remove(src);
+			this.perform(src) { |instr|
+				instr.noteOff(num, val, src)
+			};
+			if (src.respondsTo(\dispose)) {
+				src.dispose;
+			}
 		} {
 			notesInPedal = notesInPedal.add(num);
 		}
 	}
 
-	control { |num, val, chan=0, src|
+	control { |num, val, src|
+		src.track = this;
 		controlValues[num] = val;
 		if (num == 64 && val == 0) {
 			notesInPedal.do { |num|
-				this.noteOff(num, val, chan, src);
+				this.noteOff(num, val, src);
 			}
 		};
-		this.perform(src) { |instr| instr.control(num, val, chan, this, src) }
+		this.perform(src) { |instr|
+			instr.control(num, val, src)
+		};
 	}
 
 	isPedalDown { ^(controlValues[64] ? 0) > 0 }
 
-	allNotesOff { //TODO |player_id|
-		instruments.do { |instr| instr.allNotesOff };
-		notesInPedal = [];
-		activeNotes = Dictionary.new;
+	activeNotesDo { |fn|
+		activeNotes.copy.keysValuesDo { |num, notes|
+			notes.do { |src|
+				fn.value(num, src);
+			}
+		}
+	}
+
+	stopEffect { |eff|
+		this.activeNotesDo { |num, src|
+			if (src.instr == eff) {
+				this.noteOff(num, 0, src);
+			}
+		}
+	}
+
+	allNotesOff { |player_id|
+		if (player_id.isNil || (player_id == -1)) {
+			instruments.do(_.allNotesOff);
+		} {
+			this.activeNotesDo { |num, src|
+				if (src.player_id == player_id) {
+					this.noteOff(num, 0, src);
+				}
+			}
+		}
 	}
 }

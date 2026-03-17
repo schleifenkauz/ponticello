@@ -110,4 +110,8 @@ ValueControl : ParameterControl {
 	apply {}
 
 	dispose {  }
+
+	sound_proc {}
+
+	sound_proc_ {}
 }

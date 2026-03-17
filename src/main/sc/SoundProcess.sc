@@ -102,7 +102,7 @@ SoundProcess {
 
 	stopAllInstances { |player_id|
 		instances.copy.do { |inst|
-			if (player_id == nil || inst.playerId == player_id) { inst.release; }
+			if (player_id == nil || inst.player_id == player_id) { inst.release; }
 		};
 	}
 
@@ -185,7 +185,7 @@ SoundProcess {
 	}
 
 	createInstance { |pos, cutoff = 0, extra_controls|
-		var inst = SoundProcessInstance.new(this, instance_ctr, pos, cutoff ? 0, extra_controls ? ());
+		var inst = SoundProcessInstance.new(this, instance_ctr, pos, cutoff ? 0, extra_controls ? []);
 		instances.put(instance_ctr, inst);
 		if (pos != nil) {
 			byPosition[pos] = inst;
@@ -194,11 +194,12 @@ SoundProcess {
 		^inst
 	}
 
-	startNewInstance { |pos, cutoff, extra_controls, server_latency, player_id|
+	startNewInstance { |pos, cutoff, extra_controls, server_latency, player_id, midiTrack=nil|
 		var inst = this.createInstance(pos, cutoff, extra_controls);
-		var placement = AudioNodeOrder.insert(inst);
+		var placement = nil;
+		if (this.type != \midi) { AudioNodeOrder.insert(inst) };
 		//postf("Placement for %: %\n", name, placement);
-		inst.start(placement, server_latency, player_id);
+		inst.start(placement, server_latency, player_id, midiTrack);
 		^inst.idx;
 	}
 
@@ -213,5 +214,7 @@ SoundProcess {
 
 	clearAll {}
 
-	asString { ^"SoundProcess '%' [instr: %, duration: %]".format(name, instr, duration) }
+	asString { ^"SoundProcess"
+	    //^"SoundProcess %. instr: %, duration: %".format(name, instr, duration)
+	}
 }
