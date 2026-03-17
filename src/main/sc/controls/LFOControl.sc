@@ -78,4 +78,6 @@ LFOControl : ParameterControl {
 			inst.freeAuxilSynth(this.name);
 		}
 	}
+
+	asString { ^"%: UGen".format(name) } //TODO print compiled string
 }

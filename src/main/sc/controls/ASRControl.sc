@@ -32,4 +32,6 @@ ASRControl : ParameterControl {
 	release_ { |rel|
 		release.update(rel);
 	}
+
+	asString { ^"(attack: %, release: %)".format(attack, release) }
 }

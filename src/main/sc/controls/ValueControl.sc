@@ -92,6 +92,8 @@ ValueControl : ParameterControl {
 	dispose {
 		if (bus != nil) { bus.free; }
 	}
+
+	asString { ^"%: % (allocate: %)".format(this.name, value, allocateBus) }
 }
 
 + Association {

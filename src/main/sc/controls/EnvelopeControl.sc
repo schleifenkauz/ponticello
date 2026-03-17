@@ -62,4 +62,6 @@ EnvelopeControl : ParameterControl {
 			}
 		}
 	}
+
+	asString { ^"%: Env (%)".format(name, synth_def) }
 }

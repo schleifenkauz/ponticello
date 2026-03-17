@@ -39,7 +39,7 @@ MidiEffectInstrument {
 
 	getDefaultValue { |param| ^parameterDefaults[param] }
 
-	asString { "MidiEffect: %".format(name) }
+	asString { ^"MidiEffect: %".format(name) }
 }
 
 MidiEffect {

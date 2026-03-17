@@ -21,4 +21,6 @@ BusControl : ParameterControl {
 			inst.mapParameter(this.name, bus);
 		}
 	}
+
+	asString { ^"%: %".format(name, bus) }
 }

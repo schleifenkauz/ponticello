@@ -21,4 +21,6 @@ ExprControl : ParameterControl {
 			}
 		}
 	}
+
+	asString { ^"%: Expr".format(this.name) }
 }
