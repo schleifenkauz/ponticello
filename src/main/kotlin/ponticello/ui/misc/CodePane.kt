@@ -20,6 +20,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.impl.writeCode
 import ponticello.sc.DisabledExpr
+import ponticello.sc.Identifier
 import ponticello.sc.ScExpr
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.SuperColliderException
@@ -28,6 +29,7 @@ import ponticello.sc.editor.CodeBlockEditor
 import ponticello.sc.editor.ScExprEditor
 import ponticello.sc.editor.ScExprExpander
 import ponticello.sc.editor.ScExprListEditor
+import ponticello.sc.unboundVariables
 import ponticello.ui.impl.showDialog
 import reaktive.value.now
 import java.util.concurrent.ExecutionException
@@ -101,6 +103,7 @@ class CodePane(
                     }
                 }
             }
+
             editor is ScExprEditor<*> -> {
                 evaluate(listOf(editor.result.now), anchorEditor = editor) {
                     if (delete) {
@@ -115,6 +118,7 @@ class CodePane(
                     }
                 }
             }
+
             editor is ScExprListEditor -> {
                 evaluate(editor.result.now, anchorEditor = editor.editors.now.last()) {
                     if (delete) {
@@ -153,13 +157,25 @@ class CodePane(
     }
 
     private fun evaluate(statements: List<ScExpr>, anchorEditor: Editor<*>, onSuccess: () -> Unit) {
+        val boundVariables = if (rootEditor is CodeBlockEditor) {
+            rootEditor.variables.result.now.mapTo(mutableSetOf(), Identifier::text)
+        } else emptySet()
+        val unboundVariables = statements.flatMapTo(mutableSetOf()) { expr ->
+            expr.unboundVariables(boundVariables)
+        }
         val anchorNode = context[EditorControlGroup].getViewOf(anchorEditor)
         val code = writeCode {
-            if (rootEditor is CodeBlockEditor) {
-                val variables = rootEditor.variables.result.now
-                if (variables.isNotEmpty()) {
-                    append("var ")
-                    append(variables.joinToString(", ") { id -> id.text })
+            if (boundVariables.isNotEmpty()) {
+                append("var ")
+                append(boundVariables.joinToString(", "))
+                appendLine(";")
+            }
+            if (unboundVariables.isNotEmpty()) {
+                val assignment = VariableAssignmentPrompt(unboundVariables, context)
+                    .showDialog(anchorNode) ?: return@evaluate
+                for ((name, value) in assignment) {
+                    append("var $name = ")
+                    value.code(this, context)
                     appendLine(";")
                 }
             }
@@ -169,22 +185,26 @@ class CodePane(
                 else appendLine()
             }
         }
-        resultWaiter.submit {
-            try {
-                val result = context[SuperColliderClient].eval(code).get()
-                showResult(result, anchorNode, error = false)
-                Platform.runLater(onSuccess)
-            } catch (ex: ExecutionException) {
-                val message = when (val cause = ex.cause) {
-                    is SuperColliderException -> cause.errorMessage
-                    is Exception -> cause.message ?: "Unknown Error"
-                    else -> "Unknown Error"
+        context[SuperColliderClient].eval(code).thenAccept { result ->
+            showResult(result, anchorNode, error = false)
+            Platform.runLater(onSuccess)
+        }.exceptionally { ex ->
+            when (ex) {
+                is ExecutionException -> {
+                    val message = when (val cause = ex.cause) {
+                        is SuperColliderException -> cause.errorMessage
+                        is Exception -> cause.message ?: "Unknown Error"
+                        else -> "Unknown Error"
+                    }
+                    showResult(message, anchorNode, error = true)
                 }
-                showResult(message, anchorNode, error = true)
-            } catch (e: Exception) {
-                showResult("Error: ${e.message}", anchorNode, error = true)
-                Logger.error("Error while evaluating code snippet", e)
+
+                else -> {
+                    showResult("Error: ${ex.message}", anchorNode, error = true)
+                    Logger.error("Error while evaluating code snippet", ex)
+                }
             }
+            null
         }
     }
 

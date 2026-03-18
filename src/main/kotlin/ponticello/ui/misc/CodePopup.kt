@@ -21,6 +21,8 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import ponticello.sc.code
 import ponticello.sc.editor.ScExprExpander
+import ponticello.sc.substitute
+import ponticello.sc.unboundVariables
 import ponticello.ui.actions.UndoRedoActions
 import ponticello.ui.impl.sceneFill
 import reaktive.value.now
@@ -76,8 +78,14 @@ class CodePopup private constructor(private val context: Context) : Popup() {
     }
 
     private fun evaluate() {
-        val expr = history[currentHistoryIdx].editor.result.now
+        var expr = history[currentHistoryIdx].editor.result.now
         if (expr is EmptyExpr || !expr.isValid) return
+        val unboundVariables = expr.unboundVariables()
+        if (unboundVariables.isNotEmpty()) {
+            val assignment = VariableAssignmentPrompt(unboundVariables, context)
+                .showDialog(pane) ?: return
+            expr = expr.substitute(assignment.mapValues { (_, v) -> { v } })
+        }
         val code = expr.code(context)
         context[SuperColliderClient].eval(code)
             .handleAsync { result, exception ->

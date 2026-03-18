@@ -63,3 +63,50 @@ fun ScExpr.substitute(map: Map<String, () -> ScExpr>): ScExpr = transform { e ->
 
 private fun CodeBlock.transformBlock(f: (ScExpr) -> ScExpr) =
     CodeBlock(variables, statements.map { s -> s.transform(f) })
+
+fun ScExpr.unboundVariables(boundVariables: Set<String> = emptySet()): Set<String> {
+    val unbound = mutableSetOf<String>()
+    collectUnboundVariables(boundVariables, unbound)
+    return unbound
+}
+
+private fun ScElement.collectUnboundVariables(boundVariables: Set<String>, unbound: MutableSet<String>) {
+    when (this) {
+        is Identifier -> {
+            when {
+                text.isBlank() -> {}
+                text.startsWith("~") -> {}
+                text.first().isUpperCase() -> {}
+            }
+        }
+
+        is TopLevelFunctionCall -> {
+            for (arg in arguments) {
+                arg.collectUnboundVariables(boundVariables, unbound)
+            }
+        }
+
+        is MessageSend -> {
+            receiver.collectUnboundVariables(boundVariables, unbound)
+            for (arg in arguments) {
+                arg.collectUnboundVariables(boundVariables, unbound)
+            }
+        }
+
+        is NamedExpr -> value.collectUnboundVariables(boundVariables, unbound)
+
+        is CodeBlock -> {
+            val boundInBlock = boundVariables + unbound
+            for (expr in statements) {
+                expr.collectUnboundVariables(boundInBlock, unbound)
+            }
+        }
+
+        is ScFunction -> {
+            val boundInFunction = boundVariables + unbound
+            body.collectUnboundVariables(boundInFunction, unbound)
+        }
+
+        else -> children.forEach { child -> child.collectUnboundVariables(boundVariables, unbound) }
+    }
+}
