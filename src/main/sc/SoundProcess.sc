@@ -214,6 +214,17 @@ SoundProcess {
 
 	clearAll {}
 
+	generateScore {
+		var inst, pos, score;
+		if (instr.isKindOf(RoutineInstrument).not) {
+			Exception("Illegal .generateScore call on %".format(this)).throw;
+		};
+		pos = (t: 0, y: 0);
+		inst = this.createInstance(pos);
+		score = instr.generateScore(inst);
+		Ponticello.sendMsg('/generated_score', name, *score.flatten);
+	}
+
 	asString { ^"SoundProcess"
 	    //^"SoundProcess %. instr: %, duration: %".format(name, instr, duration)
 	}

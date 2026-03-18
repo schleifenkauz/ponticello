@@ -21,10 +21,7 @@ import ponticello.model.instr.MidiInstrument
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
-import ponticello.model.score.Envelope
-import ponticello.model.score.ScoreObject
-import ponticello.model.score.ScoreObjectInstance
-import ponticello.model.score.SoundProcess
+import ponticello.model.score.*
 import ponticello.model.score.controls.*
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.server.BufferRegistry
@@ -147,6 +144,10 @@ class SoundProcessView(
             c
         }
         canvas.display(lfo, spec)
+    }
+
+    fun generatedScore(score: Score) {
+        //TODO
     }
 
     override fun rescale() {

@@ -1,9 +1,10 @@
 SoundProcessInstance : AudioNode {
 	var <def, <idx, <pos, <cutoff, extra_control_keys, <control_map,
-	initial_args, control_buses, auxil_synths, children, on_dispose,
+	control_buses, auxil_synths, <children, on_dispose,
 	<player_id, <>server_latency, start_time, placement, group,
 	running = false, <restarting = false, disposed = false,
-	sound_obj, <midi_track;
+	sound_obj, <midi_track,
+	<>clock_time;
 
 	* new {| def, idx, pos, cutoff = 0, extra_controls |
 		var control_map = def.control_map.copy;
@@ -14,7 +15,7 @@ SoundProcessInstance : AudioNode {
 		};
 		^super.newCopyArgs(
 			def, idx, pos, cutoff, extra_control_keys, control_map,
-			Dictionary.new, Dictionary.new, Dictionary.new, List[], List[]
+			Dictionary.new, Dictionary.new, List[], List[]
 		);
 	}
 
@@ -26,7 +27,8 @@ SoundProcessInstance : AudioNode {
 
 	node { ^group }
 
-	current_time { ^TempoClock.beats - start_time + cutoff - Server.local.latency }
+	//TODO when to subtract server latency?
+	current_time { clock_time ?? { ^TempoClock.beats - start_time + cutoff }}
 
 	isActive {
 	    ^running && (this.current_time < def.duration)
@@ -218,11 +220,13 @@ SoundProcessInstance : AudioNode {
 			Exception("Attempt to call .startChildInstance on %".format(this)).throw;
 		};
 		p = (t: pos.t + this.current_time, y: pos.y);
-		inst = proc.createInstance(p, 0, extra_controls ? ());
+		inst = proc.createInstance(p, 0, extra_controls);
 		placement = (addAction: \addToTail, target: group);
-		inst.start(placement, Server.local.latency, player_id);
+		children.add(inst);
 		inst.onDispose { children.remove(inst) };
-		children = children.add(inst);
+		if (clock_time.isNil) {
+			inst.start(placement, Server.local.latency, player_id);
+		};
 		^inst
 	}
 }

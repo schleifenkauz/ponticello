@@ -81,3 +81,12 @@ x = Synth(\test2, [duration: 3])
 x.release
 x.set(\duration, 2)
 
+(
+var rout = Routine {
+	10.do {
+		1.0.rand.wait;
+	};
+};
+while { rout.next.postln.notNil }
+)
+

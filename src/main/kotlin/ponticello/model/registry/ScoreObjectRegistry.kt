@@ -13,6 +13,7 @@ import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.project
 import ponticello.model.project.UIState
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.SoundProcess
 import ponticello.model.score.UnresolvedScoreObject
 import ponticello.sc.client.getArgument
 import ponticello.sc.client.run
@@ -32,9 +33,18 @@ class ScoreObjectRegistry(
     override fun initialize(context: Context) {
         context[ScoreObjectRegistry] = this
         super.initialize(context)
-        client.addListener("/sync_sound_proc") { _, msg ->
-            syncSoundProcess(msg)
+        client.addListener("/sync_sound_proc") { _, msg -> syncSoundProcess(msg) }
+        client.addListener("/generated_score") { _, msg -> generatedScore(msg) }
+    }
+
+    private fun generatedScore(msg: OSCMessage) {
+        val objectName = msg.getArgument<String>(0, "process_name") ?: return
+        val obj = getOrNull(objectName) ?: return
+        if (obj !is SoundProcess) {
+            Logger.warn("Received generated score message for non-SoundProcess '$objectName'", Logger.Category.Playback)
+            return
         }
+        obj.generatedScore(msg.arguments.drop(1))
     }
 
     private fun syncSoundProcess(msg: OSCMessage) {

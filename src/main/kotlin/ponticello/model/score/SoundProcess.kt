@@ -30,6 +30,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.ScWriter
 import ponticello.ui.misc.LFOsManager
+import ponticello.ui.score.SoundProcessView
 import reaktive.Reactive
 import reaktive.value.*
 import reaktive.value.binding.flatMap
@@ -41,6 +42,7 @@ import reaktive.value.binding.orElse
 class SoundProcess(
     @JsonNames("synthDef", "processDef", "instrument") val instrumentRef: ReactiveVariable<InstrumentReference>,
     override val controls: ParameterControlList,
+    private var generatedScore: Score? = null
 ) : ScoreObject(), ParameterizedObject {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -113,11 +115,16 @@ class SoundProcess(
     }
 
     override fun doClone(): ScoreObject = SoundProcess(
-        instrumentRef.copy(), controls = controls.copy()
+        instrumentRef.copy(), controls.copy(), generatedScore?.clone()
+    )
+
+    override fun deepClone(): ScoreObject = SoundProcess(
+        instrumentRef.copy(), controls.copy(), generatedScore?.deepClone()
     )
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject = SoundProcess(
-        instrumentRef.copy(), controls = cutEnvelopes(whichHalf, position)
+        instrumentRef.copy(), controls = cutEnvelopes(whichHalf, position),
+        generatedScore = generatedScore //TODO cut score
     )
 
     private fun cutEnvelopes(
@@ -231,6 +238,29 @@ class SoundProcess(
             client.run("SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')")
         }
     }
+
+    fun generateScore() {
+        val instr = getInstrument()
+        if (instr !is RoutineDefObject) return
+        client.run("$superColliderName.generateScore")
+    }
+
+    fun generatedScore(arguments: List<Any?>) {
+        val instances = arguments.chunked(2).mapNotNullTo(mutableListOf()) { (timestamp, procName) ->
+            val obj = registry.getOrNull(procName as String)
+            if (obj == null) {
+                Logger.warn("Unresolved score object in generated score for $this", Logger.Category.Playback)
+                null
+            } else {
+                val time = (timestamp as Float).toDecimal().withPrecision(4)
+                ScoreObjectInstance(obj, time, y = zero)
+            }
+        }
+        val score = Score(instances)
+        generatedScore = score
+        notifyListeners<SoundProcessView> { generatedScore(score) }
+    }
+
 
     override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
         val extraArgs = info.extraArguments.entries.mapTo(mutableListOf()) { (param, ctrl) ->

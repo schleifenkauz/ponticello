@@ -20,6 +20,7 @@ import ponticello.impl.zero
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.NoInstrument
 import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.RoutineDefObject
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.InstrumentReference
 import ponticello.model.project.InlineControlsDisplay
@@ -356,7 +357,7 @@ object ScoreObjectActions {
                 }
             }
         }
-        addObjectAction("Select parent") {
+        addObjectAction("Select parent") { //TODO does not work...
             shortcut("Alt?+P")
             applicableOn<ScoreObjectView>()
             executeSingle { view, ev ->
@@ -365,6 +366,18 @@ object ScoreObjectActions {
                 if (parent is ScoreObjectView) {
                     view.context[ScoreObjectSelectionManager].select(parent, addToSelection = false)
                 }
+            }
+        }
+        addObjectAction("Generate score") {
+            enableWhen { ctx ->
+                ctx.focusedView.flatMap { v ->
+                    if (v !is SoundProcessView) reactiveValue(false)
+                    else v.obj.instrumentRef.map { ref -> ref.get() is RoutineDefObject }
+                }
+            }
+            executeSingle { view, _ ->
+                val obj = view.obj as SoundProcess
+                obj.generateScore()
             }
         }
         addObjectAction("Slice object") {
