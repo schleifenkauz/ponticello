@@ -116,7 +116,7 @@ task distributeZip(type: Zip) {
     dependsOn(shadowJar)
 
     from(shadowJar.archiveFile) {
-        into('lib')
+        into('app')
     }
 
     from(file("${System.getProperty("user.home")}/cloud/ponticello/global-instruments")) {
@@ -131,10 +131,19 @@ task distributeZip(type: Zip) {
         into("global-instruments")
     }
 
-    from('src/scripts') {
-        into('scripts')
+    from('src/main/sc') {
+        into('extensions')
     }
 
+    from('scripts') {
+        include('Ponticello.desktop')
+        into('resources')
+    }
+
+    from('src/main/resources/ponticello/ui/icons') {
+        include('appicon.png')
+        into('resources')
+    }
 
     destinationDirectory.set(file("$websiteRepo/software"))
     archiveFileName.set(zipFileName)

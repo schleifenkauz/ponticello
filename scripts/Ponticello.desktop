@@ -1,0 +1,12 @@
+[Desktop Entry]
+# Write keys in the order specified in https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html#recognized-keys
+# After editing, run this command to check for errors: $ desktop-file-validate [filename]
+Type=Application
+Version=1.0
+Name=Ponticello
+Icon=<ponticello_home>/resources/appicon.png
+Exec=<ponticello_home>/ponticello
+Terminal=false
+Categories=AudioVideo;Audio;Midi;Music;
+Keywords=music;MIDI;playback;instrument;
+StartupNotify=true
