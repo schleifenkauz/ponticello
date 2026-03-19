@@ -2,6 +2,8 @@
 
 package ponticello.model.score
 
+import fxutils.undo.AbstractEdit
+import fxutils.undo.ToggleEdit
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
@@ -294,6 +296,11 @@ class SoundProcess(
         if (instances.isEmpty()) return
         val score = Score(instances)
         score.initialize(context, parentObject = this)
+        setGeneratedScore(score)
+        context[UndoManager].record(GeneratedScoreEdit(this, score, clear = false))
+    }
+
+    private fun setGeneratedScore(score: Score) {
         _generatedScore = score
         _generatedScoreYScale = this.height / score.objectInstances.maxOf { inst -> inst.y + inst.height }
         _hasGeneratedScore.now = true
@@ -305,15 +312,18 @@ class SoundProcess(
     }
 
     fun clearGeneratedScore() {
+        val score = _generatedScore ?: return
         _generatedScore = null
         _hasGeneratedScore.now = false
         _useGeneratedScore.now = false
         notifyListeners<SoundProcessView> { generatedScore(null, one) }
+        context[UndoManager].record(GeneratedScoreEdit(this, score, clear = true))
     }
 
     fun toggleUseGeneratedScore() {
         _useGeneratedScore.toggle()
         notifyListeners<SoundProcessView> { useGeneratedScore(_useGeneratedScore.now) }
+        context[UndoManager].record(ToggleEdit("Toggle use generated score", _useGeneratedScore))
     }
 
     override fun addListener(view: Listener) {
@@ -349,6 +359,25 @@ class SoundProcess(
         append(", player_id: ", info.player.id)
         if (midiTrack != null) append(", midiTrack: ", midiTrack.trackVariable)
         append(")")
+    }
+
+    private class GeneratedScoreEdit(
+        private val obj: SoundProcess,
+        private val score: Score,
+        private val clear: Boolean
+    ) : AbstractEdit() {
+        override val actionDescription: String
+            get() = "Generate score"
+
+        override fun doUndo() {
+            if (clear) obj.setGeneratedScore(score)
+            else obj.clearGeneratedScore()
+        }
+
+        override fun doRedo() {
+            if (clear) obj.clearGeneratedScore()
+            else obj.setGeneratedScore(score)
+        }
     }
 
     companion object {
