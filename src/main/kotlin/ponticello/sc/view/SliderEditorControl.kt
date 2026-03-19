@@ -6,6 +6,7 @@ import fxutils.controls.SliderBar
 import fxutils.infiniteSpace
 import fxutils.pad
 import fxutils.prompt.YesNoPrompt
+import fxutils.setFixedWidth
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.codegen.ProvideImplementation
@@ -15,6 +16,9 @@ import javafx.scene.Node
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import ponticello.impl.Decimal
+import ponticello.model.ctx.PonticelloContext
+import ponticello.model.score.controls.ExprControl
+import ponticello.model.score.controls.UGenControl
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.editor.SliderExprEditor
@@ -26,6 +30,7 @@ class SliderEditorControl @ProvideImplementation(ControlFactory::class) construc
     private val editor: SliderExprEditor, arguments: Bundle
 ) : EditorControl<Node>(editor, arguments) {
     private val specObserver: Observer
+    private var updateObserver: Observer? = null
 
     init {
         specObserver = editor.spec.observe { _, _, newSpec ->
@@ -49,8 +54,19 @@ class SliderEditorControl @ProvideImplementation(ControlFactory::class) construc
         bar = SliderBar(
             editor.value, "<value>", converter, style = SliderBar.Style.AlwaysValue,
             undoManager = context[UndoManager], updateActionDescription = "Update slider value"
-        )
-        setOnMouseClicked { ev ->
+        ).setFixedWidth(70.0)
+        updateObserver?.kill()
+        updateObserver = bar.updateFinished.observe { _ ->
+            val ctx = context[PonticelloContext]
+            if (ctx is PonticelloContext.Control) {
+                when (val ctrl = ctx.control.now) {
+                    is ExprControl -> ctrl.update.fire()
+                    is UGenControl -> ctrl.update.fire()
+                    else -> {}
+                }
+            }
+        }
+        bar.setOnMouseClicked { ev ->
             if (ev.clickCount == 2) {
                 val newSpec = SimpleNumericalControlSpecPrompt(editor.spec.now)
                     .showDialog(this) ?: return@setOnMouseClicked
