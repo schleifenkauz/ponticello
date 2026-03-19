@@ -71,7 +71,7 @@
 }
 
 .object-box:hover {
-    -fx-background-color: rgba(60, 0, 0, 0.5) !important;
+    -fx-background-color: rgba(60, 0, 0, 0.3) !important;
 }
 
 .object-box:selected {
@@ -80,7 +80,7 @@
 }
 
 .object-box:hover:selected {
-    -fx-background-color: rgba(60, 0, 0, 0.5) !important;
+    -fx-background-color: rgba(60, 0, 0, 0.3) !important;
     -fx-border-color: green !important;
 }
 

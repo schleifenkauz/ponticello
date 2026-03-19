@@ -20,51 +20,30 @@ class ControlAssignmentEditor(
     val view: ScoreObjectView?,
     val controlsPane: ParameterControlsPane
 ) : HBox() {
-    private var selectedOption: ControlType<*>? = null
-    private val optionButton = selectorButton()
+    private var selectedControlType: ControlType<*> = ControlType.getType(control.now)
+    private val optionButton = selectorButton(onAction = ::showOptionPopup)
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private var settingControl = false
     private var detailEditor: Node? = null
 
     init {
         optionButton.isFocusTraversable = false
-        optionButton.setOnMouseClicked { ev -> showOptionPopup(ev) }
         optionButton.prefWidth = 55.0
         styleClass("parameter-control-item")
         alwaysHGrow()
     }
-//
-//    override fun drop(event: DragEvent): Boolean {
-//        val db = event.dragboard
-//        val samples = control.context[BufferRegistry]
-//        val sample =
-//            when {
-//                db.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) -> samples.getOrAdd(db.files[0])
-//                db.hasContent(BufferObject.DATA_FORMAT) -> samples.get(db.getContent(BufferObject.DATA_FORMAT) as String)
-//                else -> return false
-//            }
-//        val ctrl = control.now as BufferControl
-//        ctrl.sample.set(sample.reference())
-//        return true
-//    }
-//
-//    override fun acceptedTransferModes(event: DragEvent): Array<TransferMode> {
-//        if (control.now !is BufferControl) return emptyArray()
-//        val db = event.dragboard
-//        return db.hasFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) || db.hasContent(BufferObject.DATA_FORMAT)
-//    }
 
     fun showOptionPopup(ev: Event?) {
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
         if (options.isEmpty() || options.size == 1) return
         val listView = SimpleSelectorPrompt(options, "Select control type")
-        val option = listView.showPopup(ev, initialOption = selectedOption) ?: return
+        val option = listView.showPopup(optionButton, initialOption = selectedControlType) ?: return
         updateControlType(option, ev)
     }
 
     private fun <T : ParameterControl> updateControlType(t: ControlType<T>, ev: Event?) {
-        selectedOption = t
+        selectedControlType = t
         val oldControl = control.now
         val newControl = t.createInitialControl(
             control.parentObject, control.spec.now, oldControl, control.name.now, ev

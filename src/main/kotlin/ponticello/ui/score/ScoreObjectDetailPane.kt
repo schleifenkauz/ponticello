@@ -110,18 +110,10 @@ class ScoreObjectDetailPane : ToolPane() {
         if (obj is UnresolvedScoreObject) {
             return detailPane
         }
-        val instanceCountLabel = label(obj.numberOfInstances.map { instances ->
-            when (instances) {
-                0 -> "no instances"
-                1 -> "1 instance"
-                else -> "$instances instances"
-            }
-        })
         val actionContext = ObjectActionContext.SingleObjectContext(view)
         val headerBox = HBox(
             5.0,
             NameControl(obj).setFixedWidth(200.0),
-            instanceCountLabel,
             infiniteSpace(),
             ActionBar(
                 ScoreObjectActions.singleObjectActions.withContext(actionContext),
@@ -129,6 +121,7 @@ class ScoreObjectDetailPane : ToolPane() {
             ),
         ).centerChildren().pad(8.0)
         detailPane.children.add(headerBox)
+        detailPane.addItem("Instances", label(obj.numberOfInstances.map(Int::toString)))
         if (obj.canResizeHorizontally) {
             val durationLabel = label(obj.duration().map { dur ->
                 "${dur.round(2).toCanonicalString()} seconds"

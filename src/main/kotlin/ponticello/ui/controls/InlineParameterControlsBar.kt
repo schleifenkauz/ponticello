@@ -107,7 +107,7 @@ class InlineParameterControlsBar(
     ) {
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
-        if (options.isEmpty() || options.size == 1) return
+        if (options.size <= 1) return
         val listView = SimpleSelectorPrompt(options, "Select control type")
         val option = listView.showPopup(ev, initialOption = selectedType) ?: return
         updateControlType(control, option, spec, ev)

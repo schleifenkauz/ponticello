@@ -386,18 +386,18 @@ class ObjectListView<O : Any>(
     fun select(box: ObjectBox<O>) {
         if (!config.enableSelection) return
         val prevSelected = selectedBox.now
-        if (prevSelected == box) return
-        selectedBox.now = box
-        if (prevSelected != null) {
-            prevSelected.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
-            config.onDeselected(prevSelected.obj)
+        if (prevSelected != box) {
+            selectedBox.now = box
+            if (prevSelected != null) {
+                prevSelected.pseudoClassStateChanged(PseudoClasses.SELECTED, false)
+                config.onDeselected(prevSelected.obj)
+            }
+            box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
+            if (mode.now == DisplayMode.DetailsPane) {
+                displayContent(box)
+            }
+            config.onSelected(box.obj)
         }
-
-        box.pseudoClassStateChanged(PseudoClasses.SELECTED, true)
-        if (mode.now == DisplayMode.DetailsPane) {
-            displayContent(box)
-        }
-        config.onSelected(box.obj)
         runFXWithTimeout(10) {
             if (!box.isFocusWithin) {
                 box.requestFocus()

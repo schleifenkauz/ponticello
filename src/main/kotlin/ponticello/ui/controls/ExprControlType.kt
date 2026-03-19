@@ -10,13 +10,15 @@ import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.model.instr.ParameterizedObject
+import ponticello.model.midi.MidiEffectObject
 import ponticello.model.midi.MidiInstrument
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ExprControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.getNumericalValue
-import ponticello.sc.*
+import ponticello.sc.AttackReleaseControlSpec
+import ponticello.sc.ControlSpec
 import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
@@ -24,8 +26,12 @@ import reaktive.value.now
 
 data object ExprControlType : ControlType<ExprControl>() {
     override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
-        (obj is ScoreObject || obj is MidiInstrument) &&
-                (spec is NumericalControlSpec || spec is BusControlSpec || spec is BufferControlSpec || spec is ExprControlSpec)
+        when {
+            spec is AttackReleaseControlSpec -> false
+            obj is MidiEffectObject -> false
+            obj is MidiInstrument || obj is ScoreObject -> true
+            else -> false
+        }
 
     override fun createDetailInput(
         namedControl: NamedParameterControl, control: ExprControl, view: ScoreObjectView?,

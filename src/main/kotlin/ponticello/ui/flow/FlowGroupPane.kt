@@ -285,6 +285,7 @@ class FlowGroupPane(
                         otherwise = { "Start recording MIDI" }
                     )
                 }
+                shortcut("Alt?+R")
                 executes { track -> track.toggleRecording() }
             }
             addAction("All notes off") {

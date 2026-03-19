@@ -3,7 +3,9 @@ package ponticello.ui.score
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.isShiftDown
+import fxutils.actions.registerActions
 import fxutils.neverSquishVertically
+import fxutils.registerShortcuts
 import fxutils.styleClass
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -28,6 +30,7 @@ import ponticello.sc.NumericalControlSpec
 import ponticello.sc.defaultControlType
 import ponticello.ui.controls.ControlAssignmentEditor
 import ponticello.ui.controls.ControlSpecPrompt
+import ponticello.ui.controls.ControlType
 import ponticello.ui.dock.ListToolPane
 import ponticello.ui.midi.MidiContext
 import ponticello.ui.registry.ObjectBox
@@ -177,6 +180,14 @@ class ParameterControlsPane(
     override fun extraHeaderActions(): List<ContextualizedAction> =
         if (midiContext != null) listOf(MidiContext.toggleActiveAction.withContext(midiContext))
         else emptyList()
+
+    override fun configureBox(box: ObjectBox<NamedParameterControl>, currentMode: DisplayMode) {
+        val control = box.obj
+        box.registerShortcuts {
+            val type = ControlType.getType(control.now)
+            registerActions(type.actions(control, control.now, view))
+        }
+    }
 
     companion object {
         private val actions = collectActions<ObjectBox<NamedParameterControl>> {
