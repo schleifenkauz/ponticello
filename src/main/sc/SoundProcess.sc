@@ -200,7 +200,7 @@ SoundProcess {
 		^inst
 	}
 
-	startNewInstance { |pos, cutoff, extra_controls, server_latency, player_id, midiTrack=nil|
+	startNewInstance { |pos, cutoff=0, extra_controls, server_latency, player_id, midiTrack=nil|
 		var inst = this.createInstance(pos, cutoff, extra_controls);
 		var placement = AudioNodeOrder.insert(inst);
 		postf("Placement for %: %\n", name, placement);

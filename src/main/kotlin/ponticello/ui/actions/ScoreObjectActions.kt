@@ -389,7 +389,7 @@ object ScoreObjectActions {
                 ctx.focusedView.flatMap { v ->
                     `if`(
                         (v!!.obj as SoundProcess).useGeneratedScore,
-                        then = { Codicons.CODE }, otherwise = { MaterialDesignG.GROUP }
+                        then = { MaterialDesignC.CHART_TIMELINE_VARIANT }, otherwise = { MaterialDesignG.GROUP }
                     )
                 }
             }

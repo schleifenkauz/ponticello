@@ -140,9 +140,9 @@ class SingleObjectScorePane(
         children.remove(marker)
     }
 
-    override fun getScoreY(screenY: Double): Decimal = (screenY / (height)).asY * rootObj.height
+    override fun getScoreY(screenY: Double): Decimal = (screenY / height).asY * rootObj.height
 
-    override fun getScreenY(scoreY: Decimal): Double = ((scoreY / rootObj.height) * (height)).value
+    override fun getScreenY(scoreY: Decimal): Double = ((scoreY / rootObj.height) * height).value
 
     override fun isRoot(obj: ScoreObject): Boolean = obj == rootObj
 

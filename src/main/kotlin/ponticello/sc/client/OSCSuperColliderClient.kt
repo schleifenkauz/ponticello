@@ -208,7 +208,7 @@ class OSCSuperColliderClient(
     companion object {
         val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
 
-        private val DELIMITERS = "()[]{};:,".toSet()
+        val DELIMITERS = "()[]{};:,".toSet()
 
         private const val PONTICELLO_PORT = 7775
 

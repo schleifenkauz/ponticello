@@ -14,6 +14,7 @@ import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.layout.*
 import javafx.scene.robot.Robot
+import ponticello.impl.Decimal
 import ponticello.impl.one
 import ponticello.impl.zero
 import ponticello.model.instr.BusObject
@@ -47,7 +48,7 @@ class SoundProcessView(
     override val obj: SoundProcess, instance: ScoreObjectInstance,
 ) : ScoreObjectView(instance) {
     private val objectPane = Pane()
-    private var generatedScorePane: ScorePane? = null
+    private var generatedScorePane: SubScorePane? = null
     private val samplePainter = SamplePainter(this, objectPane)
     private val envelopeManager = EnvelopeEditorManager(this, objectPane)
     private val attackReleaseOverlay = AttackReleaseOverlay(this)
@@ -82,6 +83,7 @@ class SoundProcessView(
         samplePainter.initialize()
         envelopeManager.initialize()
         attackReleaseOverlay.initialize()
+        generatedScorePane?.initialize()
     }
 
     override fun configureInlineControls() {
@@ -148,21 +150,21 @@ class SoundProcessView(
         canvas.display(lfo, spec)
     }
 
-    fun generatedScore(score: Score?) = Platform.runLater {
+    fun generatedScore(score: Score?, yScale: Decimal) = Platform.runLater {
         val oldScorePane = generatedScorePane
         if (oldScorePane != null) {
             children.remove(oldScorePane)
             generatedScorePane = null
         }
         if (score != null) {
-            val pane = SubScorePane(score, this)
+            val pane = SubScorePane(score, this, yScale)
             pane.prefWidthProperty().bind(prefWidthProperty())
             pane.prefHeightProperty().bind(prefHeightProperty().subtract(objectPane.layoutYProperty()))
             pane.backgroundProperty().bind(backgroundColor.map { color ->
                 Background(BackgroundFill(color, CornerRadii.EMPTY, null))
             }.asObservableValue())
-            pane.initialize()
             generatedScorePane = pane
+            if (isInitialized) pane.initialize()
         } else {
             if (objectPane !in children) children.add(objectPane)
         }
@@ -171,7 +173,12 @@ class SoundProcessView(
     fun useGeneratedScore(use: Boolean) = Platform.runLater {
         if (use) {
             children.remove(objectPane)
-            if (generatedScorePane != null && generatedScorePane !in children) children.add(generatedScorePane)
+            if (generatedScorePane == null) {
+                generatedScore(obj.generatedScore, obj.generatedScoreYScale)
+            }
+            if (generatedScorePane !in children) {
+                children.add(generatedScorePane)
+            }
         } else {
             children.remove(generatedScorePane)
             if (objectPane !in children) children.add(objectPane)

@@ -9,10 +9,7 @@ import ponticello.model.obj.project
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
 import ponticello.model.score.*
-import ponticello.sc.client.ScWriter
-import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.run
-import ponticello.sc.client.schedule
+import ponticello.sc.client.*
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
 
@@ -117,7 +114,7 @@ class ScoreObjectScheduler(val context: Context) {
             Logger.error("Failed to write code for $obj", e, Logger.Category.Playback)
             return null
         }
-        if (code == "") return null
+        if (code.isBlank() || code.all { ch -> ch in OSCSuperColliderClient.DELIMITERS }) return null
         try {
             val description = "start ${obj.name.now}"
             return client.schedule(description, scheduledTime, absolute, info.player, code)

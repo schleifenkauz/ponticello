@@ -37,6 +37,7 @@ import reaktive.value.*
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.binding.orElse
+import java.util.*
 
 @Serializable
 @SerialName("SoundProcess")
@@ -45,6 +46,7 @@ class SoundProcess(
     override val controls: ParameterControlList,
     @SerialName("generatedScore") private var _generatedScore: Score? = null,
     @SerialName("useGeneratedScore") private val _useGeneratedScore: ReactiveVariable<Boolean> = reactiveVariable(false),
+    @SerialName("generatedScoreYScale") private var _generatedScoreYScale: Decimal = one,
 ) : ScoreObject(), ParameterizedObject {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -68,6 +70,7 @@ class SoundProcess(
         })
 
     val generatedScore: Score? get() = _generatedScore
+    val generatedScoreYScale: Decimal get() = _generatedScoreYScale
     val useGeneratedScore: ReactiveBoolean get() = _useGeneratedScore
 
     @Transient
@@ -230,6 +233,7 @@ class SoundProcess(
         controls.initialize(this.context, this)
         updater = SoundProcessUpdater(this)
         lfosManager = LFOsManager()
+        generatedScore?.initialize(context, this)
     }
 
     override fun createInSuperCollider(writer: ScWriter) {
@@ -263,23 +267,39 @@ class SoundProcess(
     }
 
     fun generatedScore(arguments: List<Any?>) {
-        val instances = arguments.chunked(2).mapNotNullTo(mutableListOf()) { (timestamp, procName) ->
+        val activeObjects = PriorityQueue(compareBy(ScoreObjectInstance::end))
+        val takenY = TreeSet(compareBy(DecimalRange::start))
+        val instances = mutableListOf<ScoreObjectInstance>()
+        for ((timestamp, procName) in arguments.chunked(2)) {
+            val time = (timestamp as Float).toDecimal().withPrecision(4)
+            while (activeObjects.isNotEmpty() && time >= activeObjects.peek().end) {
+                val inst = activeObjects.poll()
+                takenY.remove(inst.yRange)
+            }
             val obj = registry.getOrNull(procName as String)
             if (obj == null) {
                 Logger.warn("Unresolved score object in generated score for $this", Logger.Category.Playback)
-                null
             } else {
-                val time = (timestamp as Float).toDecimal().withPrecision(4)
-                ScoreObjectInstance(obj, time, y = zero)
+                val y: Decimal = if (takenY.isEmpty() || takenY.first().start >= obj.height) zero else {
+                    takenY.zipWithNext().firstOrNull { (r1, r2) ->
+                        r2.start - r1.endInclusive >= obj.height
+                    }?.first?.endInclusive ?: takenY.last().endInclusive
+                }
+                val inst = ScoreObjectInstance(obj, time, y)
+                takenY.add(inst.yRange)
+                activeObjects.add(inst)
+                instances.add(inst)
             }
         }
+        if (instances.isEmpty()) return
         val score = Score(instances)
         score.initialize(context, parentObject = this)
         _generatedScore = score
+        _generatedScoreYScale = this.height / score.objectInstances.maxOf { inst -> inst.y + inst.height }
         _hasGeneratedScore.now = true
         _useGeneratedScore.now = true
         notifyListeners<SoundProcessView> {
-            generatedScore(score)
+            generatedScore(score, generatedScoreYScale)
             useGeneratedScore(true)
         }
     }
@@ -288,7 +308,7 @@ class SoundProcess(
         _generatedScore = null
         _hasGeneratedScore.now = false
         _useGeneratedScore.now = false
-        notifyListeners<SoundProcessView> { generatedScore(null) }
+        notifyListeners<SoundProcessView> { generatedScore(null, one) }
     }
 
     fun toggleUseGeneratedScore() {
@@ -299,7 +319,7 @@ class SoundProcess(
     override fun addListener(view: Listener) {
         super.addListener(view)
         if (view is SoundProcessView && _generatedScore != null) {
-            view.generatedScore(_generatedScore!!)
+            view.generatedScore(_generatedScore!!, generatedScoreYScale)
             if (_useGeneratedScore.now) {
                 view.useGeneratedScore(true)
             }
@@ -321,7 +341,7 @@ class SoundProcess(
         append(superColliderName, ".startNewInstance(", info.pos)
         if (info.cutoff != zero) append(", cutoff: ", info.cutoff)
         if (extraArgs.isNotEmpty()) {
-            append("extra_controls: [")
+            append(", extra_controls: [")
             appendList(extraArgs, separator = ", ")
             append("]")
         }

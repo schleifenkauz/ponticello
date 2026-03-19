@@ -60,7 +60,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         executes { rootPane ->
             if (RectangleSelection.get() != null) return@executes
             val (pane, pos) = rootPane.getScorePaneAtCursor() ?: return@executes
-            if (pane is AbstractScorePane) {
+            if (pane is RegularScorePane) {
                 val defaultName = pane.context[ScoreObjectRegistry].availableName("task")
                 val name = NamePrompt(pane.context[ScoreObjectRegistry], "Task name", defaultName)
                     .showDialog(pane.scene.window, Robot().mousePosition) ?: return@executes
@@ -106,7 +106,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         shortcut("Enter")
         executes { _ ->
             val selection = RectangleSelection.get() ?: return@executes
-            val pane = selection.pane as? AbstractScorePane ?: return@executes
+            val pane = selection.pane as? RegularScorePane ?: return@executes
             val synthObj = pane.createSoundObject(anchor = Robot().mousePosition) ?: return@executes
             RectangleSelection.clear()
             pane.addObject(synthObj, selection)
@@ -116,7 +116,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         shortcut("K")
         executes { _ ->
             val selection = RectangleSelection.get() ?: return@executes
-            val pane = selection.pane as? AbstractScorePane ?: return@executes
+            val pane = selection.pane as? RegularScorePane ?: return@executes
             val context = pane.context
             val anchor = Robot().mousePosition
             val track = MidiTrackSelectorPrompt(context).showPopup(anchor, pane.scene.window) ?: return@executes
@@ -146,7 +146,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         return Pair(this, pos)
     }
 
-    private fun AbstractScorePane.createSoundObject(anchor: Point2D): SoundProcess? {
+    private fun RegularScorePane.createSoundObject(anchor: Point2D): SoundProcess? {
         val instrument = InstrumentSelectorPopup(context).showPopup(anchor, scene.window) ?: return null
         val defaultBus = (associatedObject as? ScoreObjectGroup)?.defaultBusRef?.now?.get()
         val controls = SoundProcessView.getInitialControls(

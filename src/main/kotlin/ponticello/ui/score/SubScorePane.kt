@@ -8,7 +8,8 @@ import ponticello.model.score.ScoreObject
 class SubScorePane(
     score: Score,
     override val associatedView: ScoreObjectView,
-) : AbstractScorePane(score, associatedView.context) {
+    private val yScale: Decimal = one,
+) : RegularScorePane(score, associatedView.context) {
     val parentPane get() = associatedView.parentPane
 
     override val associatedObject: ScoreObject get() = associatedView.instance.obj
@@ -33,7 +34,9 @@ class SubScorePane(
         score.addListener(this)
     }
 
-    override fun getScreenY(scoreY: Decimal): Double = scoreY.value * (this.prefHeight / associatedObject.height.value)
+    override fun getScreenY(scoreY: Decimal): Double =
+        (scoreY.value * yScale.value) * (this.prefHeight / associatedObject.height.value)
 
-    override fun getScoreY(screenY: Double): Decimal = screenY * (associatedObject.height / this.prefHeight)
+    override fun getScoreY(screenY: Double): Decimal =
+        (screenY / yScale) * (associatedObject.height / this.prefHeight)
 }
