@@ -29,6 +29,7 @@ import ponticello.sc.BufferPositionControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.ScWriter
+import ponticello.sc.client.run
 import ponticello.ui.misc.LFOsManager
 import ponticello.ui.score.SoundProcessView
 import reaktive.Reactive
@@ -42,7 +43,8 @@ import reaktive.value.binding.orElse
 class SoundProcess(
     @JsonNames("synthDef", "processDef", "instrument") val instrumentRef: ReactiveVariable<InstrumentReference>,
     override val controls: ParameterControlList,
-    private var generatedScore: Score? = null
+    @SerialName("generatedScore") private var _generatedScore: Score? = null,
+    @SerialName("useGeneratedScore") private val _useGeneratedScore: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : ScoreObject(), ParameterizedObject {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -65,8 +67,16 @@ class SoundProcess(
             ref.get()?.color ?: reactiveValue(null)
         })
 
+    val generatedScore: Score? get() = _generatedScore
+    val useGeneratedScore: ReactiveBoolean get() = _useGeneratedScore
+
+    @Transient
+    private val _hasGeneratedScore = reactiveVariable(generatedScore != null)
+
+    val hasGeneratedScore: ReactiveValue<Boolean> get() = _hasGeneratedScore
+
     override val type: String
-        get() = "synth"
+        get() = "proc"
 
     override val askBeforeDeleting: Boolean
         get() = getInstrument() !is MidiInstrument
@@ -115,16 +125,16 @@ class SoundProcess(
     }
 
     override fun doClone(): ScoreObject = SoundProcess(
-        instrumentRef.copy(), controls.copy(), generatedScore?.clone()
+        instrumentRef.copy(), controls.copy(), generatedScore?.clone(), _useGeneratedScore.copy()
     )
 
     override fun deepClone(): ScoreObject = SoundProcess(
-        instrumentRef.copy(), controls.copy(), generatedScore?.deepClone()
+        instrumentRef.copy(), controls.copy(), generatedScore?.deepClone(), _useGeneratedScore.copy()
     )
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject = SoundProcess(
         instrumentRef.copy(), controls = cutEnvelopes(whichHalf, position),
-        generatedScore = generatedScore //TODO cut score
+        _generatedScore = generatedScore //TODO cut score
     )
 
     private fun cutEnvelopes(
@@ -222,8 +232,9 @@ class SoundProcess(
         lfosManager = LFOsManager()
     }
 
-    override fun ScWriter.createInSuperCollider() {
-        createSoundProcessObject(this@SoundProcess, duration)
+    override fun createInSuperCollider(writer: ScWriter) {
+        writer.createSoundProcessObject(this, duration)
+        writer.appendLine(";")
     }
 
     override fun ScWriter.freeObject() {
@@ -242,7 +253,13 @@ class SoundProcess(
     fun generateScore() {
         val instr = getInstrument()
         if (instr !is RoutineDefObject) return
-        client.run("$superColliderName.generateScore")
+        client.run {
+            if (!isCreatedInSuperCollider) {
+                createInSuperCollider(writer)
+                isCreatedInSuperCollider = true
+            }
+            +"$superColliderName.generateScore"
+        }
     }
 
     fun generatedScore(arguments: List<Any?>) {
@@ -257,10 +274,37 @@ class SoundProcess(
             }
         }
         val score = Score(instances)
-        generatedScore = score
-        notifyListeners<SoundProcessView> { generatedScore(score) }
+        score.initialize(context, parentObject = this)
+        _generatedScore = score
+        _hasGeneratedScore.now = true
+        _useGeneratedScore.now = true
+        notifyListeners<SoundProcessView> {
+            generatedScore(score)
+            useGeneratedScore(true)
+        }
     }
 
+    fun clearGeneratedScore() {
+        _generatedScore = null
+        _hasGeneratedScore.now = false
+        _useGeneratedScore.now = false
+        notifyListeners<SoundProcessView> { generatedScore(null) }
+    }
+
+    fun toggleUseGeneratedScore() {
+        _useGeneratedScore.toggle()
+        notifyListeners<SoundProcessView> { useGeneratedScore(_useGeneratedScore.now) }
+    }
+
+    override fun addListener(view: Listener) {
+        super.addListener(view)
+        if (view is SoundProcessView && _generatedScore != null) {
+            view.generatedScore(_generatedScore!!)
+            if (_useGeneratedScore.now) {
+                view.useGeneratedScore(true)
+            }
+        }
+    }
 
     override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
         val extraArgs = info.extraArguments.entries.mapTo(mutableListOf()) { (param, ctrl) ->
@@ -274,12 +318,17 @@ class SoundProcess(
             extraArgs.add("ValueControl(\\pitch, $midinote)")
         }
         val latency = info.serverLatency
-        append(
-            superColliderName, ".startNewInstance(",
-            info.pos, ",", info.cutoff, ",", extraArgs.joinToString(", ", "[", "]"), ",",
-            latency, ",", info.player.id,
-            ", midiTrack: ", midiTrack?.trackVariable ?: "nil", ")"
-        )
+        append(superColliderName, ".startNewInstance(", info.pos)
+        if (info.cutoff != zero) append(", cutoff: ", info.cutoff)
+        if (extraArgs.isNotEmpty()) {
+            append("extra_controls: [")
+            appendList(extraArgs, separator = ", ")
+            append("]")
+        }
+        append(", server_latency: ", latency)
+        append(", player_id: ", info.player.id)
+        if (midiTrack != null) append(", midiTrack: ", midiTrack.trackVariable)
+        append(")")
     }
 
     companion object {

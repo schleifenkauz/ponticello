@@ -42,6 +42,13 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
         appendLine(";")
     }
 
+    fun appendList(list: Iterable<String>, separator: String = ", ") {
+        for ((i, str) in list.withIndex()) {
+            if (i != 0) append(separator)
+            append(str)
+        }
+    }
+
     fun appendList(list: Iterable<ScElement>, separator: String, context: Context) {
         for ((i, element) in list.withIndex()) {
             if (i != 0 && element !is DisabledExpr) append(separator)
@@ -59,9 +66,7 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
 
     inline fun indented(block: ScWriter.() -> Unit) {
         increaseIndent()
-        appendLine()
         this.block()
-        appendLine()
         decreaseIndent()
     }
 
@@ -79,13 +84,13 @@ class ScWriter(private val output: Appendable) : SuperColliderContext {
     inline fun appendGroup(block: ScWriter.() -> Unit) {
         append("(")
         indented(block)
-        appendLine(")")
+        append(")")
     }
 
-    inline fun appendGroup(s: String = "", block: ScWriter.() -> Unit) {
+    inline fun appendGroup(s: String = "", endLine: String? = null, block: ScWriter.() -> Unit) {
         append(s)
-        append(" ")
         appendGroup(block)
+        if (endLine != null) appendLine(endLine)
     }
 
     override fun run(command: String) {

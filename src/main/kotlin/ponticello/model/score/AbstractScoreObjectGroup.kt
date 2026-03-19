@@ -55,8 +55,7 @@ sealed class AbstractScoreObjectGroup : ScoreObject() {
         return clone
     }
 
-    override fun ScWriter.createInSuperCollider() {
-//        SoundProcess.createSoundProcessObject(writer, this, duration)
+    override fun createInSuperCollider(writer: ScWriter) {
     }
 
     override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {

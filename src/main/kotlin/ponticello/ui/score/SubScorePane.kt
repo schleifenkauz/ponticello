@@ -1,25 +1,23 @@
 package ponticello.ui.score
 
-import hextant.context.Context
 import ponticello.impl.*
 import ponticello.model.score.ObjectPosition
-import ponticello.model.score.ScoreObjectGroup
-import ponticello.model.score.ScoreObjectInstance
+import ponticello.model.score.Score
+import ponticello.model.score.ScoreObject
 
 class SubScorePane(
-    private val instance: ScoreObjectInstance,
-    override val associatedObject: ScoreObjectGroup,
-    override val associatedView: ScoreObjectGroupView,
-    context: Context,
-) : AbstractScorePane(associatedObject.score, context) {
+    score: Score,
+    override val associatedView: ScoreObjectView,
+) : AbstractScorePane(score, associatedView.context) {
     val parentPane get() = associatedView.parentPane
 
-    override val root: ScorePane
-        get() = parentPane.root
-    override val displayStart: Decimal
-        get() = 0.0.asTime
-    override val displayEnd: Decimal
-        get() = associatedObject.duration
+    override val associatedObject: ScoreObject get() = associatedView.instance.obj
+
+    override val root: ScorePane get() = parentPane.root
+
+    override val displayStart: Decimal get() = 0.0.asTime
+
+    override val displayEnd: Decimal get() = associatedObject.duration
 
     override val yRange: DecimalRange
         get() = zero..associatedObject.height
@@ -28,11 +26,11 @@ class SubScorePane(
         get() = parentPane.pixelsPerSecond
 
     override val absolutePosition: ObjectPosition
-        get() = parentPane.absolutePosition + instance.position
+        get() = parentPane.absolutePosition + associatedView.instance.position
 
     fun initialize() {
         listenForEvents()
-        associatedObject.score.addListener(this)
+        score.addListener(this)
     }
 
     override fun getScreenY(scoreY: Decimal): Double = scoreY.value * (this.prefHeight / associatedObject.height.value)

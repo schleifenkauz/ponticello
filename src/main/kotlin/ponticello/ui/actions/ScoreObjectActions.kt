@@ -35,10 +35,8 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import ponticello.ui.score.*
-import reaktive.value.binding.and
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
-import reaktive.value.binding.notEqualTo
+import reaktive.value.ReactiveBoolean
+import reaktive.value.binding.*
 import reaktive.value.now
 import reaktive.value.reactiveValue
 import reaktive.value.toggle
@@ -369,15 +367,35 @@ object ScoreObjectActions {
             }
         }
         addObjectAction("Generate score") {
-            enableWhen { ctx ->
+            enableWhen(::isRoutineSoundProcess)
+            ifNotApplicable(Action.IfNotApplicable.Disable)
+            icon(MaterialDesignC.COG_SYNC)
+            executeSingle { view, _ ->
+                val obj = view.obj as SoundProcess
+                obj.generateScore()
+            }
+        }
+        addObjectAction("Clear generated score") {
+            enableWhen { ctx -> isRoutineSoundProcess(ctx) { obj -> obj.hasGeneratedScore } }
+            icon(MaterialDesignC.CLOSE)
+            executeSingle { view, _ ->
+                val obj = view.obj as SoundProcess
+                obj.clearGeneratedScore()
+            }
+        }
+        addObjectAction("Toggle use generated score") {
+            enableWhen { ctx -> isRoutineSoundProcess(ctx) { obj -> obj.hasGeneratedScore } }
+            icon { ctx ->
                 ctx.focusedView.flatMap { v ->
-                    if (v !is SoundProcessView) reactiveValue(false)
-                    else v.obj.instrumentRef.map { ref -> ref.get() is RoutineDefObject }
+                    `if`(
+                        (v!!.obj as SoundProcess).useGeneratedScore,
+                        then = { Codicons.CODE }, otherwise = { MaterialDesignG.GROUP }
+                    )
                 }
             }
             executeSingle { view, _ ->
                 val obj = view.obj as SoundProcess
-                obj.generateScore()
+                obj.toggleUseGeneratedScore()
             }
         }
         addObjectAction("Slice object") {
@@ -389,6 +407,13 @@ object ScoreObjectActions {
                 view.cutObject(orientation)
             }
         }
+    }
+
+    private fun isRoutineSoundProcess(
+        ctx: ObjectActionContext, extraCondition: (SoundProcess) -> ReactiveBoolean = { reactiveValue(true) }
+    ): Binding<Boolean> = ctx.focusedView.flatMap { v ->
+        if (v !is SoundProcessView) reactiveValue(false)
+        else v.obj.instrumentRef.map { ref -> ref.get() is RoutineDefObject } and extraCondition(v.obj)
     }
 
     private fun showInstrument(instrument: InstrumentReference, context: Context) {
@@ -442,7 +467,7 @@ object ScoreObjectActions {
     }
 
     private fun completeUnlink(obj: ScoreObject, instances: Set<ScoreObjectInstance>, pane: ScorePane) {
-        val parentObj = pane.associatedObject
+        val parentObj = pane.associatedObject as? ScoreObjectGroup
         val parentView = pane.associatedView
         if (parentObj == null || parentView == null) {
             replaceInstancesWith(obj, instances, autoSelect = false)

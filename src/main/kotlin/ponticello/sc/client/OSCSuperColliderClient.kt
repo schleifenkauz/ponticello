@@ -111,7 +111,7 @@ class OSCSuperColliderClient(
     }
 
     override fun run(command: String) {
-        if (command == "(\n)\n") return
+        if (command.all { c -> c.isWhitespace() || c in DELIMITERS }) return
         Logger.fine("run: $command", Logger.Category.SuperCollider)
         if (!context.hasProperty(currentProject) || context.playbackSettings.logScCode.now) {
             println("################ RUN #################")
@@ -207,6 +207,8 @@ class OSCSuperColliderClient(
 
     companion object {
         val ALL_MESSAGES = JavaRegexAddressMessageSelector(".*")
+
+        private val DELIMITERS = "()[]{};:,".toSet()
 
         private const val PONTICELLO_PORT = 7775
 

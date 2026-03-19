@@ -25,7 +25,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.ScWriter
-import ponticello.sc.client.eval
+import ponticello.sc.client.run
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import reaktive.value.*
 
@@ -125,16 +125,16 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
         }
     }
 
-    protected open fun ScWriter.createInSuperCollider() {
+    protected open fun createInSuperCollider(writer: ScWriter) {
         if (affectsPlayback) {
-            Logger.warn("createInSuperCollider not implemented for $this", Logger.Category.Playback)
+            Logger.warn("createInSuperCollider not implemented for $writer", Logger.Category.Playback)
         }
     }
 
     fun createInSuperCollider() {
-        client.eval {
-            createInSuperCollider()
-        }.join()
+        client.run {
+            createInSuperCollider(this)
+        }
         isCreatedInSuperCollider = true
     }
 
@@ -144,10 +144,13 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
 
     fun startNewInstance(info: ObjectPlaybackInfo): String {
         if (!affectsPlayback) return ""
-        if (!isCreatedInSuperCollider) {
-            createInSuperCollider()
+        return writeCode {
+            if (!isCreatedInSuperCollider) {
+                createInSuperCollider(this)
+                isCreatedInSuperCollider = true
+            }
+            startNewInstance(info)
         }
-        return writeCode { startNewInstance(info) }
     }
 
     protected fun recordEdit(edit: Edit) {

@@ -91,7 +91,7 @@ AudioNodeOrder {
 			nodes.removeAt(idx);
 			Ponticello.sendMsg('/removed_node', idx);
 		} {
-			Exception("% not found in AudioNodeOrder\n", node).reportError;
+			Exception("% not found in AudioNodeOrder\n".format(node)).reportError;
 		}
 	}
 

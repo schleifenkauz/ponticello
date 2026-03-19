@@ -10,16 +10,14 @@ SoundProcessMidiInstrument {
 		if (enabled) {
             var proc = SoundProcess.get(procName);
 			var midi_controls = [\pitch -> num, \velocity -> val];
-			var inst = proc.createInstance(nil, 0, src.controls ++ midi_controls);
+			var inst = proc.createInstance(pos: nil, cutoff: 0, extra_controls: src.controls ++ midi_controls);
 			var note = (src: src, instance: inst);
+			var placement = (addAction: \addToTail, target: src.track.group);
 			activeNotes[num] = activeNotes[num].add(note);
 			inst.onDispose {
 				activeNotes[num].remove(note)
 			};
-            inst.start(
-                (addAction: \addToTail, target: src.track.group),
-                src.server_latency, src.player_id, midiTrack: src.track
-            );
+            inst.start(placement, src.server_latency, src.player_id, midiTrack: src.track);
 		}
 		^true
 	}

@@ -39,7 +39,7 @@ class ScoreObjectRegistry(
 
     private fun generatedScore(msg: OSCMessage) {
         val objectName = msg.getArgument<String>(0, "process_name") ?: return
-        val obj = getOrNull(objectName) ?: return
+        val obj = getOrNull(objectName)
         if (obj !is SoundProcess) {
             Logger.warn("Received generated score message for non-SoundProcess '$objectName'", Logger.Category.Playback)
             return

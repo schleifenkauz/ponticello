@@ -65,12 +65,18 @@ Ponticello {
 
 	* save_plugin_state { |id, controller_var, path|
 		var controller = currentEnvironment[controller_var.asSymbol];
+		postf("Saving %: %\n", controller_var, controller);
 		if (controller != nil) {
 			controller.writeProgram(path.asString) { |ctrl, ok|
-                Ponticello.sendMsg('/reply', id, ok.asString)
+				if (ok) {
+					Ponticello.sendMsg('/reply', id, "ok")
+				} {
+					Ponticello.sendMsg('/error', id, "Error saving VSTPlugin state of %".format(controller_var));
+				}
             }
+		} {
+			Ponticello.sendMsg('/error', id, "Could not find VSTPluginController %".format(controller_var));
 		};
-		^nil
 	}
 
 	* doOnStartUp {

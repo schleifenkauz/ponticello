@@ -107,6 +107,8 @@ class ScorePlayer private constructor(
             val obj = inst.obj
             if (obj is AbstractScoreObjectGroup) {
                 collectEvents(obj.score, timeRange, withCutoff, timeOffset, position + inst.position)
+            } else if (obj is SoundProcess && obj.generatedScore != null && obj.useGeneratedScore.now) {
+                collectEvents(obj.generatedScore!!, timeRange, withCutoff, timeOffset, position + inst.position)
             } else {
                 val start = inst.start + position.time
                 val end = inst.end + position.time

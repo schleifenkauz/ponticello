@@ -8,6 +8,7 @@ import fxutils.sourceWindow
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
+import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.event.Event
 import javafx.geometry.Point2D
@@ -46,6 +47,7 @@ class SoundProcessView(
     override val obj: SoundProcess, instance: ScoreObjectInstance,
 ) : ScoreObjectView(instance) {
     private val objectPane = Pane()
+    private var generatedScorePane: ScorePane? = null
     private val samplePainter = SamplePainter(this, objectPane)
     private val envelopeManager = EnvelopeEditorManager(this, objectPane)
     private val attackReleaseOverlay = AttackReleaseOverlay(this)
@@ -146,8 +148,34 @@ class SoundProcessView(
         canvas.display(lfo, spec)
     }
 
-    fun generatedScore(score: Score) {
-        //TODO
+    fun generatedScore(score: Score?) = Platform.runLater {
+        val oldScorePane = generatedScorePane
+        if (oldScorePane != null) {
+            children.remove(oldScorePane)
+            generatedScorePane = null
+        }
+        if (score != null) {
+            val pane = SubScorePane(score, this)
+            pane.prefWidthProperty().bind(prefWidthProperty())
+            pane.prefHeightProperty().bind(prefHeightProperty().subtract(objectPane.layoutYProperty()))
+            pane.backgroundProperty().bind(backgroundColor.map { color ->
+                Background(BackgroundFill(color, CornerRadii.EMPTY, null))
+            }.asObservableValue())
+            pane.initialize()
+            generatedScorePane = pane
+        } else {
+            if (objectPane !in children) children.add(objectPane)
+        }
+    }
+
+    fun useGeneratedScore(use: Boolean) = Platform.runLater {
+        if (use) {
+            children.remove(objectPane)
+            if (generatedScorePane != null && generatedScorePane !in children) children.add(generatedScorePane)
+        } else {
+            children.remove(generatedScorePane)
+            if (objectPane !in children) children.add(objectPane)
+        }
     }
 
     override fun rescale() {
@@ -155,6 +183,7 @@ class SoundProcessView(
         envelopeManager.rescaleEnvelopes()
         samplePainter.rescale()
         attackReleaseOverlay.updateOverlay()
+        generatedScorePane?.repaint()
     }
 
     override fun resizedObject(obj: ScoreObject) {

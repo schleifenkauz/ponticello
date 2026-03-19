@@ -4,7 +4,7 @@ SoundProcessInstance : AudioNode {
 	<player_id, <>server_latency, start_time, placement, group,
 	running = false, <restarting = false, disposed = false,
 	sound_obj, <midi_track,
-	<>clock_time;
+	<>clock_time, <>parent_instance;
 
 	* new {| def, idx, pos, cutoff = 0, extra_controls |
 		var control_map = def.control_map.copy;
@@ -28,7 +28,7 @@ SoundProcessInstance : AudioNode {
 	node { ^group }
 
 	//TODO when to subtract server latency?
-	current_time { clock_time ?? { ^TempoClock.beats - start_time + cutoff }}
+	current_time { ^clock_time ?? { TempoClock.beats - start_time + cutoff }}
 
 	isActive {
 	    ^running && (this.current_time < def.duration)
@@ -143,7 +143,7 @@ SoundProcessInstance : AudioNode {
 			if (group != nil) {
 				group.free;
 				group = nil;
-				if (pos.notNil) { //TODO 'if' needed?
+				if (midi_track.isNil && parent_instance.isNil) {
 					AudioNodeOrder.remove(this);
 				}
 			};
@@ -158,7 +158,7 @@ SoundProcessInstance : AudioNode {
 		var duration = def.duration !? { |dur| dur - cutoff };
 		placement = plcmnt;
 		start_time = TempoClock.beats;
-		server_latency = latency;
+		server_latency = latency ? Server.local.latency;
 		player_id = playerId;
 		midi_track = midiTrack;
 		forkIfNeeded {
@@ -203,7 +203,8 @@ SoundProcessInstance : AudioNode {
 		sound_obj.run(active, this);
 	}
 
-	release { |latency=0|
+	release { |latency|
+		latency = latency ? server_latency;
 		children.do(_.release(latency));
 		if (sound_obj.isMemberOf(Synth)) {
 			Server.local.makeBundle(latency) {
@@ -220,12 +221,15 @@ SoundProcessInstance : AudioNode {
 			Exception("Attempt to call .startChildInstance on %".format(this)).throw;
 		};
 		p = (t: pos.t + this.current_time, y: pos.y);
+		//postf("Creating child instance %, with %\n", proc, extra_controls);
 		inst = proc.createInstance(p, 0, extra_controls);
-		placement = (addAction: \addToTail, target: group);
+		inst.parent_instance = this;
 		children.add(inst);
 		inst.onDispose { children.remove(inst) };
 		if (clock_time.isNil) {
-			inst.start(placement, Server.local.latency, player_id);
+			var placement = (addAction: \addToTail, target: group);
+			//postf("Starting child % at %\n", inst, placement);
+			inst.start(placement, server_latency, player_id);
 		};
 		^inst
 	}

@@ -172,7 +172,10 @@ class VSTPluginFlow private constructor(
         preset = null
         val stateFile = pluginStateFile().invariantSeparatorsPath
         val controllerVar = controllerVar.removePrefix("~")
-        return client.send("save_plugin_state", listOf(controllerVar, stateFile))
+        return client.send("/save_plugin_state", listOf(controllerVar, stateFile)).exceptionally { ex ->
+            Logger.error("Failed to save plugin state of for flow ${name.now} [$pluginName]", ex)
+            "error"
+        }
     }
 
     fun loadConfiguration() {

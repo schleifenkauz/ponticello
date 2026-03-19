@@ -39,8 +39,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
 
     abstract val yRange: DecimalRange
 
-    abstract val associatedObject: AbstractScoreObjectGroup?
-    abstract val associatedView: AbstractScoreObjectGroupView?
+    abstract val associatedObject: ScoreObject?
+    abstract val associatedView: ScoreObjectView?
 
     abstract val pixelsPerSecond: Double
 

@@ -41,6 +41,7 @@ class SoundProcessMidiInstrument(
                 className = "SoundProcessMidiInstrument",
                 extraArguments = listOf("enabled: ${isEnabled.now}")
             )
+            appendLine(";")
         }
         super.addToTrack(writer, track, placement)
     }

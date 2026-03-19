@@ -21,17 +21,19 @@ SoundProcess {
 	* create { |name, instr, controls, duration|
 		var proc = super.new.init(name, instr, controls, duration);
 		dict[name] = proc;
-		if (conds.includesKey(name)) {
-			var cond = conds.removeAt(name);
-			cond.test = true;
-			cond.signal;
-		};
+		postf("Created %\n", proc);
 		if (instr.notNil) {
 			if (by_instrument.includesKey(instr)) {
-				by_instrument[instr] = by_instrument[instr].add(proc);
+				by_instrument[instr].add(proc);
 			} {
-				by_instrument[instr] = [proc];
+				by_instrument[instr] = List[proc];
 			};
+		};
+		if (conds.includesKey(name)) {
+			var cond = conds.removeAt(name);
+			postf("Signaling %\n", cond);
+			cond.test = true;
+			cond.signal;
 		};
 		^proc;
 	}
@@ -50,6 +52,7 @@ SoundProcess {
 
 	* undefined { |name|
 		var cond = conds[name];
+		postf("SoundProcess % undefined\n", name);
 		if (cond.notNil) {
 			cond.test = true;
 			cond.signal;
@@ -63,11 +66,14 @@ SoundProcess {
 		name = name.asSymbol;
 		if (dict.includesKey(name).not) {
 			var cond = Condition.new;
+			postf("SoundProcess % yet created!\n", name);
 			conds[name] = cond;
 			Ponticello.sendMsg('/sync_sound_proc', name);
+			postf("Waiting for %\n", cond);
 			cond.wait;
 		};
-		proc = dict[name.asSymbol];
+		postf("Accessing %\n", name);
+		proc = dict[name];
 		if (proc.isNil) {
 			Exception("SoundProcess % not found".format(name)).throw;
 		};
@@ -102,7 +108,7 @@ SoundProcess {
 
 	stopAllInstances { |player_id|
 		instances.copy.do { |inst|
-			if (player_id == nil || inst.player_id == player_id) { inst.release; }
+			if (player_id.isNil || (inst.player_id == player_id)) { inst.release(latency: 0); }
 		};
 	}
 
@@ -196,9 +202,8 @@ SoundProcess {
 
 	startNewInstance { |pos, cutoff, extra_controls, server_latency, player_id, midiTrack=nil|
 		var inst = this.createInstance(pos, cutoff, extra_controls);
-		var placement = nil;
-		if (this.type != \midi) { AudioNodeOrder.insert(inst) };
-		//postf("Placement for %: %\n", name, placement);
+		var placement = AudioNodeOrder.insert(inst);
+		postf("Placement for %: %\n", name, placement);
 		inst.start(placement, server_latency, player_id, midiTrack);
 		^inst.idx;
 	}
@@ -221,11 +226,10 @@ SoundProcess {
 		};
 		pos = (t: 0, y: 0);
 		inst = this.createInstance(pos);
-		score = instr.generateScore(inst);
-		Ponticello.sendMsg('/generated_score', name, *score.flatten);
+		instr.generateScore(inst);
 	}
 
-	asString { ^"SoundProcess"
-	    //^"SoundProcess %. instr: %, duration: %".format(name, instr, duration)
+	asString { //^"SoundProcess"
+		^"SoundProcess % [instr: %, duration: %]".format(name, instr, duration)
 	}
 }

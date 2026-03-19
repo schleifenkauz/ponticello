@@ -35,6 +35,7 @@ import ponticello.ui.registry.ObjectListView.DisplayMode.Companion.Collapsable
 import reaktive.value.*
 import reaktive.value.binding.map
 import reaktive.value.binding.notEqualTo
+import java.util.*
 
 class ObjectListView<O : Any>(
     val source: ObjectList<O>,
@@ -55,7 +56,7 @@ class ObjectListView<O : Any>(
     var autoResizeScene = false
 
     private val boxes = mutableListOf<ObjectBox<O>>()
-    private val boxesCache = mutableMapOf<O, ObjectBox<O>>()
+    private val boxesCache = IdentityHashMap<O, ObjectBox<O>>()
     private val selectedBox: ReactiveVariable<ObjectBox<O>?> = reactiveVariable(null)
 
     private var itemsLayout: Pane = Pane()

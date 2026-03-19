@@ -44,17 +44,25 @@ RoutineInstrument { //TODO common superclass with MidiEffectInstrument
 
 	generateScore { |inst|
 		var delta, env = EnvironmentRedirect(currentEnvironment), score;
-		var routine = Routine(env.use { func.(inst, inst.def.duration) });
-		inst.clock_time = 0;
-		while { (delta = routine.next ).notNil && (inst.clock_time < inst.def.duration) } {
-			inst.clock_time = inst.clock_time + delta;
-		};
-		score = inst.children.collect { |child|
-			[child.pos, child.def.name/*TODO: extra_controls*/]
-		};
-		env.use { onFinished.value(inst) };
-		inst.clock_time = nil;
-		^score;
+		var routine = Routine { env.use { func.(inst, inst.def.duration) } };
+		fork {
+			inst.clock_time = 0.0;
+			while { (delta = routine.next ).notNil && (inst.clock_time < inst.def.duration) } {
+				if (delta.isKindOf(Number)) {
+					inst.clock_time = inst.clock_time + delta;
+				} {
+					if (delta != \hang) {
+						delta.wait; //Conditions etc.
+					}
+				}
+			};
+			score = inst.children.collect { |child|
+				[child.pos.t, child.def.name/*TODO: extra_controls*/]
+			};
+			env.use { onFinished.value(inst) };
+			inst.clock_time = nil;
+			Ponticello.sendMsg('/generated_score', inst.def.name, *score.flatten.postln);
+		}
 	}
 
 	asString { ^"Routine %".format(name) }
@@ -99,6 +107,7 @@ RoutineInstance {
 
     release { |latency=0|
 		SystemClock.sched(latency) {
+			postf("Stopping %, %\n", instance, task);
 			task.stop;
 			this.prFinished;
 		}

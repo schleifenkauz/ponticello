@@ -43,7 +43,7 @@ class OSCReceiver(private val transport: UDPTransport) : Thread("OSC Receiver") 
                 try {
                     listener.acceptMessage(event)
                 } catch (e: Exception) {
-                    Logger.error("Error while processing OSC message /${packet.address}", e)
+                    Logger.error("Error while processing OSC message ${packet.address}", e)
                 }
             }
 
