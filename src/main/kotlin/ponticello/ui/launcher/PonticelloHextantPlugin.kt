@@ -16,6 +16,7 @@ import hextant.serial.PropertyAccessor
 import ponticello.impl.Logger
 import ponticello.impl.one
 import ponticello.impl.randomColor
+import ponticello.impl.toDecimal
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.instr.ParameterDefObject
@@ -31,6 +32,7 @@ import ponticello.ui.actions.addAllNamedArguments
 import ponticello.ui.actions.showParameterInfo
 import ponticello.ui.controls.NamePrompt
 import ponticello.ui.controls.NumericalControlSpecPrompt
+import ponticello.ui.controls.SimpleNumericalControlSpecPrompt
 import ponticello.ui.launcher.PonticelloHextantPlugin.multilineCommand
 import ponticello.ui.launcher.PonticelloHextantPlugin.singleLineCommand
 import reaktive.value.now
@@ -275,6 +277,22 @@ object PonticelloHextantPlugin : PluginInitializer({
                     }
                 }
             }
+        }
+    }
+
+    registerCommand<ScExprEditor<*>, Unit> {
+        shortName = "slider"
+        name = "Convert to slider"
+        applicableIf { editor -> editor is ScExprExpander && editor.result.now is DecimalLiteral }
+        executing { editor ->
+            editor as ScExprExpander
+            val value = (editor.result.now as DecimalLiteral).get()
+            val step = one(value.precision) / value.precision.toDecimal()
+            val initialSpec = NumericalControlSpec(value, value, value, step)
+            val spec = SimpleNumericalControlSpecPrompt(initialSpec)
+                .showDialog(editor.context[EditorControlGroup].getViewOf(editor)) ?: return@executing
+            val slider = SliderExprEditor(spec, value)
+            editor.expand(slider)
         }
     }
 }) {

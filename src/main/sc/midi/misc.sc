@@ -1,6 +1,10 @@
 + SoundProcessInstance {
 	pitch { |default| ^this.get('pitch') ? default }
-	velocity { |default| ^this.get('velocity') ? default }
+	freq { |default| ^this.pitch(default).midicps }
+	velocity { |default, min=0, max=127, curve=\lin|
+	    var velo = this.get('velocity') ? default;
+	    ^velo.lincurve(min, max, curve);
+    }
     chan { |default| ^this.get('channel') ? default }
     midiSource {
         ^(
