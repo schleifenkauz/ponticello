@@ -10,6 +10,7 @@ import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Label
+import javafx.scene.control.ScrollPane
 import javafx.scene.control.Slider
 import javafx.scene.control.Tooltip
 import javafx.scene.input.DataFormat
@@ -17,6 +18,7 @@ import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.*
@@ -65,6 +67,11 @@ class FlowGroupPane(
 
     init {
         flowsView.alwaysVGrow()
+        val content = flowsView.itemsScrollPane.content as Region
+        val viewportHeight = flowsView.itemsScrollPane.viewportBoundsProperty().map { it.height }
+        content.prefHeightProperty().bind(viewportHeight)
+        content.minHeightProperty().bind(viewportHeight)
+        flowsView.itemsScrollPane.vbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
         alwaysVGrow()
         val addFlowButton = addObjectAction.withContext(flowsView).makeButton("small-icon-button")
         val layout = HBox(VBox(infiniteSpace(), addFlowButton, infiniteSpace()), flowsView).alwaysVGrow()

@@ -18,7 +18,7 @@ import kotlin.math.floor
 
 class LevelMeter(
     private val bus: BusObject.AudioBus,
-    private val replyId: Int = bus.replyId,
+    replyId: Int = bus.replyId,
     offset: ReactiveValue<Decimal> = reactiveValue(zero),
     val meterWidth: Double
 ) : Canvas() {
