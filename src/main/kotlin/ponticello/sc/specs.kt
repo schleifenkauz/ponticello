@@ -12,10 +12,7 @@ import kotlinx.serialization.Transient
 import ponticello.impl.*
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.controls.*
-import ponticello.sc.editor.ControlSpecEditor
-import ponticello.sc.editor.SimpleBooleanEditor
-import ponticello.sc.editor.SimpleColorEditor
-import ponticello.sc.editor.SimpleIntegerEditor
+import ponticello.sc.editor.*
 import ponticello.ui.controls.*
 import reaktive.value.ReactiveVariable
 import reaktive.value.reactiveVariable
@@ -75,6 +72,27 @@ fun ControlSpec.defaultControlType() = when (this) {
     is BusControlSpec -> BusControlType
     is ExprControlSpec -> ExprControlType
     is NumericalControlSpec -> ValueControlType
+}
+
+fun ControlSpec.setDefaultExpr(expander: ScExprExpander) {
+    when (this) {
+        is BufferControlSpec -> {
+            val bufferSelector = BufferSelector()
+            bufferSelector.selectInitial(ObjectReference.none())
+            expander.setInitialContent(bufferSelector)
+        }
+
+        is BusControlSpec -> {
+            val busSelector = BusSelector()
+            busSelector.selectInitial(ObjectReference.none())
+            expander.setInitialContent(busSelector)
+        }
+
+        is NumericalControlSpec -> expander.setInitialText(defaultValue.text)
+        is ExprControlSpec -> expander.setInitialText("")
+        is BufferPositionControlSpec -> expander.setInitialText("0")
+        is AttackReleaseControlSpec -> expander.setInitialText("0")
+    }
 }
 
 @Serializable

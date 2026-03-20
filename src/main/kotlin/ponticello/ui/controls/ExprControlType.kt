@@ -16,10 +16,11 @@ import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ExprControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
-import ponticello.model.score.controls.getNumericalValue
+import ponticello.model.score.controls.getCode
 import ponticello.sc.AttackReleaseControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.editor.ScExprExpander
+import ponticello.sc.setDefaultExpr
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now
@@ -48,12 +49,12 @@ data object ExprControlType : ControlType<ExprControl>() {
         parameterName: String,
         promptPlacement: PromptPlacement?,
     ): ExprControl {
-        val editor = ScExprExpander()
-        val root = EditorRoot(editor)
-        if (oldControl?.getNumericalValue() != null) {
-            editor.setInitialText(oldControl.getNumericalValue().toString())
-        } else editor.setInitialText("")
-        return ExprControl(root)
+        val expr = oldControl?.getCode() ?: run {
+            val editor = ScExprExpander()
+            if (spec != null) spec.setDefaultExpr(editor) else editor.setInitialText("")
+            EditorRoot(editor)
+        }
+        return ExprControl(expr)
     }
 
     override fun onSelected(

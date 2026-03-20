@@ -37,7 +37,9 @@ data class UGenControl(
             set(UndoManager, context[UndoManager]/*.createSubManager()*/)
             set(PonticelloContext, PonticelloContext.Control(namedControl))
         }
-        expr.initialize(myContext)
+        if (!(expr.editor.isInitialized)) {
+            expr.initialize(myContext)
+        }
     }
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean = true

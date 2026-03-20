@@ -35,7 +35,9 @@ class ExprControl(val expr: EditorRoot<@Contextual ScExprExpander>) : ParameterC
             set(UndoManager, context[UndoManager]/*.createSubManager()*/)
             set(PonticelloContext, PonticelloContext.Control(namedControl))
         }
-        expr.initialize(myContext)
+        if (!(expr.editor.isInitialized)) {
+            expr.initialize(myContext)
+        }
     }
 
     override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String {

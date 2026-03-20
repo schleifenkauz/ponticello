@@ -20,12 +20,13 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.UGenControl
-import ponticello.model.score.controls.getNumericalValue
+import ponticello.model.score.controls.getCode
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
+import ponticello.sc.setDefaultExpr
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
@@ -50,12 +51,12 @@ data object UGenControlType : ControlType<UGenControl>() {
         parameterName: String,
         promptPlacement: PromptPlacement?,
     ): UGenControl {
-        val editor = ScExprExpander()
-        val root = EditorRoot(editor)
-        if (oldControl?.getNumericalValue() != null) {
-            editor.setInitialText(oldControl.getNumericalValue().toString())
-        } else editor.setInitialText("")
-        return UGenControl(root)
+        val expr = oldControl?.getCode() ?: run {
+            val editor = ScExprExpander()
+            if (spec != null) spec.setDefaultExpr(editor) else editor.setInitialText("")
+            EditorRoot(editor)
+        }
+        return UGenControl(expr)
     }
 
     override fun actions(
