@@ -4,9 +4,9 @@ import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.makeButton
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SelectorPrompt
 import hextant.context.Context
-import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -101,9 +101,9 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
         return HBox(infiniteSpace(), button, infiniteSpace())
     }
 
-    override fun createNewObject(ev: Event?, list: ObjectList<MidiInstrument>): MidiInstrument? =
+    override fun createNewObject(promptPlacement: PromptPlacement, list: ObjectList<MidiInstrument>): MidiInstrument? =
         NewMidiInstrumentPrompt(flow.context, "Insert instrument")
-            .showPopup(ev)?.createInstrument(flow.context, ev)
+            .showPopup(promptPlacement)?.createInstrument(flow.context, promptPlacement)
 
     class MidiDeviceSelectorPrompt(
         private val type: MidiDeviceSpec.Type,

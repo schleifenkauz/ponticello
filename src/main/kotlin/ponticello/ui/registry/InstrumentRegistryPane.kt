@@ -2,10 +2,10 @@ package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.YesNoPrompt
 import fxutils.setFixedWidth
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.ColorPicker
@@ -74,10 +74,14 @@ class InstrumentRegistryPane(
         return listOf(picker)
     }
 
-    override fun createNewObject(ev: Event?, list: ObjectList<InstrumentObject>): InstrumentObject? {
-        val option = SimpleSelectorPrompt(InstrumentType.entries, "Instrument type").showPopup(ev) ?: return null
+    override fun createNewObject(
+        promptPlacement: PromptPlacement,
+        list: ObjectList<InstrumentObject>
+    ): InstrumentObject? {
+        val option =
+            SimpleSelectorPrompt(InstrumentType.entries, "Instrument type").showPopup(promptPlacement) ?: return null
         val name = NamePrompt(instruments, "$option name", "")
-            .showDialog(ev) ?: return null
+            .showDialog(promptPlacement) ?: return null
         return when (option) {
             InstrumentType.SynthDef -> when {
                 instruments.synthDescLibContains(name) -> {

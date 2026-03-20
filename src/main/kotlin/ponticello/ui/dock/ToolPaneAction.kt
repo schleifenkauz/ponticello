@@ -3,6 +3,7 @@ package ponticello.ui.dock
 import fxutils.Shortcut
 import fxutils.actions.Action
 import fxutils.actions.ContextualizedAction
+import fxutils.popupAnchor
 import fxutils.shortcut
 import javafx.event.Event
 import javafx.scene.input.KeyEvent
@@ -39,7 +40,9 @@ class ToolPaneAction(private val toolPane: ToolPane) : ContextualizedAction {
         when {
             ev is MouseEvent && ev.button == MouseButton.PRIMARY ->
                 toolPane.toggleShowing(toggleExclusive = ev.isControlDown)
-            ev is MouseEvent && ev.button == MouseButton.SECONDARY -> toolPane.showToolPaneConfigMenu(ev)
+
+            ev is MouseEvent && ev.button == MouseButton.SECONDARY -> toolPane.showToolPaneConfigMenu(anchor = ev.popupAnchor())
+
             ev is KeyEvent -> toolPane.handleShortcut(ev)
         }
     }

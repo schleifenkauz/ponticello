@@ -1,9 +1,8 @@
 package ponticello.ui.flow
 
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.Context
-import javafx.event.Event
-import javafx.geometry.Point2D
 import ponticello.model.flow.*
 import ponticello.model.instr.*
 import ponticello.model.server.BusRegistry
@@ -14,14 +13,14 @@ import ponticello.ui.score.SoundProcessView
 import reaktive.value.now
 
 sealed interface FlowOption {
-    fun createFlow(context: Context, anchor: Point2D): AudioFlow?
+    fun createFlow(context: Context, promptPlacement: PromptPlacement): AudioFlow?
 
     fun defaultName(): String
 
-    fun getNameForFlow(takenFlowNames: Set<String>, ev: Event?): String? {
+    fun getNameForFlow(takenFlowNames: Set<String>, promptPlacement: PromptPlacement): String? {
         val initialName = getDefaultName(takenFlowNames)
         return FlowNamePrompt(takenFlowNames, "Flow name", initialName)
-            .showDialog(ev)
+            .showDialog(promptPlacement)
     }
 
     fun getDefaultName(takenFlowNames: Set<String>): String {
@@ -32,11 +31,11 @@ sealed interface FlowOption {
     }
 
     data object Send : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): AudioFlow? {
             val source = BusSelectorPrompt(context[BusRegistry], "Source bus")
-                .showPopup(anchor) ?: return null
+                .showDialog(promptPlacement) ?: return null
             val selected = BusSelectorPrompt(context[BusRegistry], "Target bus")
-                .showPopup(anchor) ?: return null
+                .showDialog(promptPlacement) ?: return null
             return SendFlow.create(source, selected)
         }
 
@@ -44,9 +43,9 @@ sealed interface FlowOption {
     }
 
     data object Utility : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): UtilityFlow? {
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): UtilityFlow? {
             val target = BusSelectorPrompt(context[BusRegistry], "Target bus")
-                .showPopup(anchor) ?: return null
+                .showDialog(promptPlacement) ?: return null
             return UtilityFlow.create(target)
         }
 
@@ -54,15 +53,15 @@ sealed interface FlowOption {
     }
 
     data object Code : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): AudioFlow = CodeFlow.create()
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): AudioFlow = CodeFlow.create()
 
         override fun defaultName(): String = "code"
     }
 
     data object Mixer : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): MixerFlow? {
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): MixerFlow? {
             val out = BusSelectorPrompt(context[BusRegistry], "Output bus")
-                .showPopup(anchor) ?: return null
+                .showPopup(promptPlacement) ?: return null
             return MixerFlow.create(out)
         }
 
@@ -71,9 +70,9 @@ sealed interface FlowOption {
 
     //TODO option on BusControls to add meter before/after
     data object LevelMeter : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): AudioFlow? {
             val target = BusSelectorPrompt(context[BusRegistry], "Target bus", rate = Rate.Audio)
-                .showPopup(anchor) ?: return null
+                .showPopup(promptPlacement) ?: return null
             return LevelMeterFlow.create(target)
         }
 
@@ -81,19 +80,20 @@ sealed interface FlowOption {
 
         override fun defaultName(): String = "meter"
 
-        override fun getNameForFlow(takenFlowNames: Set<String>, ev: Event?): String = getDefaultName(takenFlowNames)
+        override fun getNameForFlow(takenFlowNames: Set<String>, promptPlacement: PromptPlacement): String =
+            getDefaultName(takenFlowNames)
     }
 
     data class VSTPlugin(val pluginName: String) : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): AudioFlow? {
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): AudioFlow? {
             val presets = VSTPlugins.globalPresetList(context, pluginName)
             val preset = if (presets.isNotEmpty()) {
                 SimpleSelectorPrompt(listOf("<no preset>") + presets, "Select preset")
-                    .showPopup(anchor)
+                    .showDialog(promptPlacement)
                     .takeIf { it != "<no preset>" }
             } else null
             val bus = BusSelectorPrompt(context[BusRegistry], "Target bus")
-                .showPopup(anchor) ?: return null
+                .showDialog(promptPlacement) ?: return null
             return VSTPluginFlow.create(pluginName, preset, bus)
         }
 
@@ -103,8 +103,10 @@ sealed interface FlowOption {
     }
 
     data class Instrument(val def: InstrumentObject) : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): InstrumentFlow? {
-            val controls = SoundProcessView.getInitialControls(def, context, defaultBus = null, anchor) ?: return null
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): InstrumentFlow? {
+            val controls = SoundProcessView.getInitialControls(
+                def, context, defaultBus = null, promptPlacement
+            ) ?: return null
             return InstrumentFlow.create(def, controls)
         }
 
@@ -119,7 +121,7 @@ sealed interface FlowOption {
     }
 
     data object MidiTrack : FlowOption {
-        override fun createFlow(context: Context, anchor: Point2D): AudioFlow = MidiTrackFlow()
+        override fun createFlow(context: Context, promptPlacement: PromptPlacement): AudioFlow = MidiTrackFlow()
 
         override fun toString(): String = "MIDI Track"
 

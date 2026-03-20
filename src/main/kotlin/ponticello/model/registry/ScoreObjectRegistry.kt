@@ -4,9 +4,9 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
 import com.illposed.osc.OSCMessage
+import fxutils.prompt.PromptPlacement
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.event.Event
 import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
 import ponticello.model.obj.SuperColliderObject
@@ -77,19 +77,19 @@ class ScoreObjectRegistry(
         return availableName(prefix)
     }
 
-    fun nameForClone(obj: ScoreObject, ev: Event?): String? {
+    fun nameForClone(obj: ScoreObject, promptPlacement: PromptPlacement): String? {
         val defaultName = nameForClone(obj)
         return if (context[UIState].askForCloneNames.now) {
             NamePrompt(context[ScoreObjectRegistry], "Name for clone", defaultName)
-                .showDialog(ev, preferMouseCoords = true)
+                .showDialog(promptPlacement)
         } else defaultName
     }
 
-    fun nameForGroup(ev: Event?): String? {
+    fun nameForGroup(promptPlacement: PromptPlacement): String? {
         val defaultName = availableName("group")
         return if (context[UIState].askForGroupNames.now) {
             NamePrompt(context[ScoreObjectRegistry], "Name for group", defaultName)
-                .showDialog(ev, preferMouseCoords = true)
+                .showDialog(promptPlacement)
         } else defaultName
     }
 

@@ -2,11 +2,12 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.event.Event
 import javafx.scene.Node
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
@@ -24,6 +25,7 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Rate
 import ponticello.ui.actions.ServerActions
+import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.registry.BusSelectorPrompt
@@ -51,13 +53,13 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        ev: Event?,
+        promptPlacement: PromptPlacement?,
     ): BusValueControl {
-        if (ev == null) return BusValueControl(reactiveVariable(ObjectReference.none()))
+        if (promptPlacement == null) return BusValueControl(reactiveVariable(ObjectReference.none()))
         val initial = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
         val title = "Select '${parameterName}'"
         val selected = BusSelectorPrompt(obj.context[BusRegistry], title, rate = Rate.Control, channels = 1)
-            .showPopup(ev, initialOption = initial.get()) ?: initial.force()
+            .showPopup(promptPlacement, initialOption = initial.get()) ?: initial.force()
         return BusValueControl(reactiveVariable(selected.reference()))
     }
 
@@ -74,7 +76,8 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         }
         val initialOption = controls.map { ctrl -> ctrl.bus.now }.distinct().singleOrNull()?.get()
         val newBus = BusSelectorPrompt(context[BusRegistry], "Choose $parameterName", Rate.Control, 1)
-            .showPopup(context[primaryStage], null, initialOption) ?: return false
+            .selectInitialOption(initialOption)
+            .showDialog(context[primaryStage]) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
                 VariableEdit.updateVariable(
@@ -103,8 +106,9 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         executes { ctrl, ev ->
             val obj = ctrl.parentObject as ScoreObject
             val context = ctrl.context
+            val placement = ev?.nextToTarget() ?: context.defaultPlacement
             val instrumentDef = SimpleRegistrySelectorPrompt(context[InstrumentRegistry], "Choose Instrument")
-                .showPopup(ev, initialOption = null) ?: return@executes
+                .showDialog(placement) ?: return@executes
             val parameter = ctrl.name.now
             val name = "${obj.name.now}_$parameter"
             val controls = instrumentDef.getDefaultControls(null)

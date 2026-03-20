@@ -2,7 +2,7 @@ package ponticello.ui.score
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import javafx.event.Event
+import fxutils.prompt.PromptPlacement
 import javafx.geometry.Rectangle2D
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.Image
@@ -76,9 +76,9 @@ class ScoreObjectDuplicator { //TODO replace snapshots with deactivated ScoreObj
         }
     }
 
-    fun enterDuplicateMode(sample: SampleObject, ev: Event?) {
+    fun enterDuplicateMode(sample: SampleObject, promptPlacement: PromptPlacement) {
         val image = Image(sample.spectrogramFile.inputStream())
-        val instrument = sample.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
+        val instrument = sample.context.project[UI_STATE].getOrSelectInstrument(promptPlacement) ?: return
         val obj = sample.createSoundProcess(instrument) ?: return
         enterDuplicateMode(obj, image, null)
     }

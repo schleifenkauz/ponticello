@@ -5,11 +5,11 @@ import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
 import fxutils.controls.CheckBox
 import fxutils.opacity
+import fxutils.prompt.PromptPlacement
 import fxutils.runFXWithTimeout
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.serial.EditorRoot
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.evaicons.Evaicons
@@ -48,7 +48,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        ev: Event?,
+        promptPlacement: PromptPlacement?,
     ): UGenControl {
         val editor = ScExprExpander()
         val root = EditorRoot(editor)

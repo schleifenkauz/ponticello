@@ -1,8 +1,8 @@
 package ponticello.ui.registry
 
 import fxutils.controls.SliderBar
+import fxutils.prompt.PromptPlacement
 import fxutils.undo.UndoManager
-import javafx.event.Event
 import javafx.scene.Node
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
@@ -32,7 +32,8 @@ class ClockRegistryPane(clocks: ClockRegistry) : ObjectRegistryPane<ClockObject>
         return listOf(slider)
     }
 
-    override fun createNewObject(name: String, ev: Event?): ClockObject = ClockObject.withName(name)
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): ClockObject =
+        ClockObject.withName(name)
 
     companion object : Type(2, "Clocks") {
         override val icon: Ikon

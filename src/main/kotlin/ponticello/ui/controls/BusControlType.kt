@@ -1,11 +1,11 @@
 package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
+import fxutils.prompt.PromptPlacement
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.event.Event
 import javafx.scene.Node
 import ponticello.impl.Logger
 import ponticello.model.instr.ParameterizedObject
@@ -42,7 +42,7 @@ data object BusControlType : ControlType<BusControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        ev: Event?,
+        promptPlacement: PromptPlacement?,
     ): BusControl {
         spec as BusControlSpec
         val bus = oldControl?.getBus() ?: obj.context[BusRegistry].getDefault().reference()
@@ -71,7 +71,8 @@ data object BusControlType : ControlType<BusControl>() {
         }
         val initialOption = controls.map { ctrl -> ctrl.bus.now }.distinct().singleOrNull()?.get()
         val newBus = BusSelectorPrompt(context[BusRegistry], "Choose $parameterName", rate, channels)
-            .showPopup(context[primaryStage], null, initialOption) ?: return false
+            .selectInitialOption(initialOption)
+            .showDialog(context[primaryStage]) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
                 VariableEdit.updateVariable(

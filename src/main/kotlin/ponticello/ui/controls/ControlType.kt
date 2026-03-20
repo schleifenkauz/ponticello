@@ -1,8 +1,8 @@
 package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
+import fxutils.prompt.PromptPlacement
 import hextant.context.Context
-import javafx.event.Event
 import javafx.scene.Node
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.*
@@ -16,7 +16,7 @@ sealed class ControlType<C : ParameterControl> {
 
     abstract fun createInitialControl(
         obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl?,
-        parameterName: String, ev: Event?,
+        parameterName: String, promptPlacement: PromptPlacement?,
     ): C
 
     abstract fun createDetailInput(namedControl: NamedParameterControl, control: C, view: ScoreObjectView?): Node

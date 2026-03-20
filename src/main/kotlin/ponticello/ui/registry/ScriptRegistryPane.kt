@@ -2,10 +2,10 @@ package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.setFixedWidth
 import hextant.serial.EditorRoot
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
@@ -40,10 +40,12 @@ class ScriptRegistryPane(
 
     override fun defaultState(): ToolPaneState = ListToolPaneState.docked
 
-    override fun createNewObject(name: String, ev: Event?): ScriptObject? {
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): ScriptObject? {
         val options = SCRIPT_TYPE_OPTIONS
+        val placement = promptPlacement ?: PromptPlacement.RelativeTo(this)
         val type = SimpleSelectorPrompt(options, "Script type")
-            .showPopup(ev, initialOption = ScriptObject.Type.REGULAR) ?: return null
+            .selectInitialOption(ScriptObject.Type.REGULAR)
+            .showDialog(placement) ?: return null
         return ScriptObject.create(type, name)
     }
 

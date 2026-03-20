@@ -5,6 +5,7 @@ import fxutils.Shift
 import fxutils.actions.isTargetTextInput
 import fxutils.modifiers
 import fxutils.noModifiers
+import fxutils.prompt.atMouseCoords
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.geometry.HorizontalDirection.LEFT
@@ -40,7 +41,8 @@ object ArrowKeys {
                 else inst.start - inst.obj.duration
                 val position = ObjectPosition(start, inst.y)
                 val newInst = if (ev.isShiftDown) {
-                    val name = context[ScoreObjectRegistry].nameForClone(inst.obj, ev) ?: return@addEventFilter
+                    val placement = ev.atMouseCoords()
+                    val name = context[ScoreObjectRegistry].nameForClone(inst.obj, placement) ?: return@addEventFilter
                     inst.clone(position, name)
                 } else inst.duplicate(position)
                 inst.score!!.addObject(newInst, autoSelect = true)

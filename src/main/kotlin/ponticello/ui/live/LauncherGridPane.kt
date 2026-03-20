@@ -5,7 +5,9 @@ import fxutils.actions.*
 import fxutils.controls.OptionSpinner
 import fxutils.controls.SliderBar
 import fxutils.drag.setupDropArea
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
+import fxutils.prompt.nextToTarget
 import fxutils.undo.UndoManager
 import javafx.application.Platform
 import javafx.geometry.Side.BOTTOM
@@ -292,7 +294,8 @@ class LauncherGridPane(
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { target, ev ->
-                    PlaybackActions.selectRecordedBus(target.context[ScorePlayer.MAIN], ev)
+                    val promptPlacement = ev?.nextToTarget() ?: PromptPlacement.Centered()
+                    PlaybackActions.selectRecordedBus(target.context[ScorePlayer.MAIN], promptPlacement)
                 }
             }
             add(LiveObjectRegistryPane.configureQuantizationAction) { target ->

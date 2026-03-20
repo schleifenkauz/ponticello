@@ -9,6 +9,7 @@ import fxutils.button
 import fxutils.opacity
 import fxutils.prompt.DetailPane
 import fxutils.prompt.YesNoPrompt
+import fxutils.prompt.nextToTarget
 import fxutils.showBelow
 import hextant.context.createControl
 import hextant.core.view.ChoiceEditorControl
@@ -131,7 +132,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                         if (list.has(param.name.now)) {
                             val overwrite = YesNoPrompt(
                                 "Parameter ${param.name.now} already exists in the list. Overwrite?"
-                            ).showDialog(ev) ?: return@button
+                            ).showDialog(ev.nextToTarget()) ?: return@button
                             if (!overwrite) return@button
                         }
                         list.add(param.copy().withName(param.name.now))

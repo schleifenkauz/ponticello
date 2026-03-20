@@ -2,7 +2,6 @@ package ponticello.ui.registry
 
 import fxutils.SubWindow
 import fxutils.prompt.SimpleSelectorPrompt
-import javafx.geometry.Point2D
 import ponticello.model.instr.*
 import ponticello.model.obj.withName
 import ponticello.sc.Identifier
@@ -36,8 +35,7 @@ class ParameterDefSelectorPrompt(
         }
         val type = fixedParameterType ?: SimpleSelectorPrompt(availableParameterTypes, "Parameter type")
             .showPopup(content, initialOption = ParameterType.Numerical) ?: return null
-        val anchor = content.localToScreen(Point2D.ZERO)
-        val spec = ControlSpecPrompt.createParameter(text, parentObject, type, window, anchor) ?: return null
+        val spec = ControlSpecPrompt.createParameter(text, parentObject, type, placement) ?: return null
         return ParameterDefObject(text, spec).withName(text)
     }
 }

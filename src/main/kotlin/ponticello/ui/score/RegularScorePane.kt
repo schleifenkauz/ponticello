@@ -2,11 +2,11 @@ package ponticello.ui.score
 
 import fxutils.Alt
 import fxutils.Shift
-import fxutils.actions.isShiftDown
 import fxutils.modifiers
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.event.Event
 import javafx.scene.input.MouseEvent
 import ponticello.model.obj.withName
 import ponticello.model.registry.ScoreObjectRegistry
@@ -36,23 +36,23 @@ abstract class RegularScorePane(score: Score, context: Context) : ScorePane(scor
                 val anchor = localToScreen(ev.x, ev.y)
                 val sample = popup.showPopup(anchor, scene.window) ?: return
                 val pos = snapToGrid(ev.x, ev.y)
-                ScorePaneDropHandler.createPlayBufObject(sample, pos, ev, this)
+                ScorePaneDropHandler.createPlayBufObject(sample, pos, ev.nextToTarget(), this)
             }
 
             else -> super.rightClicked(ev)
         }
     }
 
-    fun addNewGroup(ev: Event?, selection: RectangleSelection) {
+    fun addNewGroup(promptPlacement: PromptPlacement, selection: RectangleSelection, recurse: Boolean) {
         val containedViews = selection.containedViews(mustBeContainedEntirely = true)
-        val name = context[ScoreObjectRegistry].nameForGroup(ev) ?: return
+        val name = context[ScoreObjectRegistry].nameForGroup(promptPlacement) ?: return
         context.compoundEdit("Add object group") {
             val subScore = Score(mutableListOf())
             val groupObj = ScoreObjectGroup(subScore).withName(name)
             val inst = addObject(groupObj, selection)
             val relativePosition = -inst.position
             for (view in containedViews) {
-                view.instance.moveInto(subScore, relativePosition, recurse = ev.isShiftDown())
+                view.instance.moveInto(subScore, relativePosition, recurse)
             }
         }
     }

@@ -1,8 +1,8 @@
 package ponticello.ui.flow
 
 import fxutils.*
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
-import javafx.event.Event
 import javafx.scene.Node
 import org.kordamp.ikonli.javafx.FontIcon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
@@ -51,12 +51,15 @@ class VSTPluginParameterMappingsPane(
 
     override fun getDragTarget(box: ObjectBox<VSTPluginParameterMapping>): Node = box
 
-    override fun createNewObject(ev: Event?, list: ObjectList<VSTPluginParameterMapping>): VSTPluginParameterMapping? {
+    override fun createNewObject(
+        promptPlacement: PromptPlacement,
+        list: ObjectList<VSTPluginParameterMapping>
+    ): VSTPluginParameterMapping? {
         val options = flow.automatableParameters - flow.parameterMappings.mapTo(mutableSetOf()) { mapping -> mapping.name }
         val name = SimpleSelectorPrompt(options, "Select parameter")
-            .showPopup(ev) ?: return null
+            .showPopup(promptPlacement) ?: return null
         val bus = BusSelectorPrompt(list.context[BusRegistry], "Select control bus", Rate.Control, 1)
-            .showPopup(ev) ?: return null
+            .showPopup(promptPlacement) ?: return null
         return VSTPluginParameterMapping.create(name, bus)
     }
 }

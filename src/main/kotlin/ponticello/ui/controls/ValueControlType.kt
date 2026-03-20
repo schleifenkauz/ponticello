@@ -1,12 +1,12 @@
 package ponticello.ui.controls
 
 import fxutils.controls.SliderBar
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.event.Event
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.control.Label
@@ -90,7 +90,7 @@ data object ValueControlType : ControlType<ValueControl>() {
         val precision = numericalSpecs.maxOf { spec -> spec.precision }
         val initialValue = controls.map { c -> c.value.now }.distinct().singleOrNull()
         val newValue = DecimalPrompt(parameterName, precision, initialValue, DecimalRange(min, max))
-            .showDialog(context[primaryStage], null) ?: return false
+            .showDialog(context[primaryStage]) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
                 VariableEdit.updateVariable(ctrl.value, newValue, context[UndoManager], "Update $parameterName")
@@ -140,7 +140,7 @@ data object ValueControlType : ControlType<ValueControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        ev: Event?,
+        promptPlacement: PromptPlacement?,
     ): ValueControl {
         val defaultValue = (spec as? NumericalControlSpec)?.defaultValue?.get() ?: zero
         val value = oldControl?.getNumericalValue() ?: defaultValue

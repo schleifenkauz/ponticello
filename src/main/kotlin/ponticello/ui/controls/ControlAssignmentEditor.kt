@@ -3,10 +3,11 @@ package ponticello.ui.controls
 import fxutils.actions.ActionBar
 import fxutils.alwaysHGrow
 import fxutils.infiniteSpace
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
+import fxutils.prompt.nextToTarget
 import fxutils.selectorButton
 import fxutils.styleClass
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.HBox
 import ponticello.model.score.controls.ParameterControl
@@ -21,7 +22,7 @@ class ControlAssignmentEditor(
     val controlsPane: ParameterControlsPane
 ) : HBox() {
     private var selectedControlType: ControlType<*> = ControlType.getType(control.now)
-    private val optionButton = selectorButton(onAction = ::showOptionPopup)
+    private val optionButton = selectorButton(onAction = { ev -> showOptionPopup(ev.nextToTarget()) })
     private val detailEditors = mutableMapOf<ControlType<*>, Node>()
     private var settingControl = false
     private var detailEditor: Node? = null
@@ -33,20 +34,20 @@ class ControlAssignmentEditor(
         alwaysHGrow()
     }
 
-    fun showOptionPopup(ev: Event?) {
+    fun showOptionPopup(promptPlacement: PromptPlacement) {
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
         if (options.isEmpty() || options.size == 1) return
         val listView = SimpleSelectorPrompt(options, "Select control type")
         val option = listView.showPopup(optionButton, initialOption = selectedControlType) ?: return
-        updateControlType(option, ev)
+        updateControlType(option, promptPlacement)
     }
 
-    private fun <T : ParameterControl> updateControlType(t: ControlType<T>, ev: Event?) {
+    private fun <T : ParameterControl> updateControlType(t: ControlType<T>, promptPlacement: PromptPlacement) {
         selectedControlType = t
         val oldControl = control.now
         val newControl = t.createInitialControl(
-            control.parentObject, control.spec.now, oldControl, control.name.now, ev
+            control.parentObject, control.spec.now, oldControl, control.name.now, promptPlacement
         )
         control.reassign(newControl)
         t.onSelected(control, newControl, view, controlsPane)

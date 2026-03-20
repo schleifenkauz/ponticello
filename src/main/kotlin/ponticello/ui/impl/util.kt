@@ -4,6 +4,7 @@ package ponticello.ui.impl
 
 import fxutils.SubWindow
 import fxutils.prompt.Prompt
+import fxutils.prompt.PromptPlacement
 import hextant.context.Context
 import hextant.fx.initHextantScene
 import javafx.geometry.Dimension2D
@@ -58,7 +59,9 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     return picker
 }
 
-fun <R> Prompt<R>.showDialog(context: Context) = showDialog(owner = context[primaryStage])
+fun <R> Prompt<R>.showDialog(context: Context) = showDialog(context.defaultPlacement)
+
+val Context.defaultPlacement get() = PromptPlacement.Centered(this[primaryStage])
 
 val DEFAULT_SCENE_FILL: Color = Color.web("#1d1d20")
 

@@ -5,6 +5,8 @@ import fxutils.actions.*
 import fxutils.controls.CheckBox
 import fxutils.controls.IntSpinner
 import fxutils.drag.TypedDataFormat
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import javafx.geometry.Side.BOTTOM
 import javafx.scene.Parent
 import javafx.scene.control.Label
@@ -112,7 +114,8 @@ class LiveBuffersPane(
         private val addItemButton = action<LiveBuffersPane>("Add buffer") {
             icon(MaterialDesignP.PLUS_CIRCLE)
             executes { pane, ev ->
-                val buffer = NewLiveBufferPrompt(pane.buffers).showDialog(ev) ?: return@executes
+                val placement = ev?.nextToTarget() ?: PromptPlacement.RelativeTo(pane)
+                val buffer = NewLiveBufferPrompt(pane.buffers).showDialog(placement) ?: return@executes
                 pane.items.add(buffer)
                 pane.select(buffer)
             }

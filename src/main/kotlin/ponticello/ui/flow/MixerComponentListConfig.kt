@@ -2,12 +2,11 @@ package ponticello.ui.flow
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.prompt.PromptPlacement
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
-import javafx.event.Event
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
-import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.paint.Color
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
@@ -40,18 +39,21 @@ class MixerComponentListConfig : ListDisplayConfig<MixerFlow.MixerComponent> {
         _mixer = m
     }
 
-    fun addSourceBus(ev: MouseEvent) {
-        val component = createNewObject(ev, mixer.components) ?: return
+    fun addSourceBus(promptPlacement: PromptPlacement) {
+        val component = createNewObject(promptPlacement, mixer.components) ?: return
         mixer.components.add(component)
     }
 
-    override fun createNewObject(ev: Event?, list: ObjectList<MixerFlow.MixerComponent>): MixerFlow.MixerComponent? {
+    override fun createNewObject(
+        promptPlacement: PromptPlacement,
+        list: ObjectList<MixerFlow.MixerComponent>
+    ): MixerFlow.MixerComponent? {
         val expectedChannels = mixer.targetBus.now.get()?.channels?.now
         val bus = BusSelectorPrompt(
             mixer.context[BusRegistry], "Select source bus",
             Rate.Audio, expectedChannels
         ).exclude { mixer.usedBuses() }
-            .showPopup(ev) ?: return null
+            .showPopup(promptPlacement) ?: return null
         return MixerFlow.MixerComponent.create(bus)
     }
 

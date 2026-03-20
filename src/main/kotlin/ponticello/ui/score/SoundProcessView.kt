@@ -4,16 +4,13 @@ import fxutils.actions.makeButton
 import fxutils.centerChildren
 import fxutils.drag.setupDropArea
 import fxutils.prompt.DetailPane
-import fxutils.sourceWindow
+import fxutils.prompt.PromptPlacement
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
-import javafx.event.Event
-import javafx.geometry.Point2D
 import javafx.scene.layout.*
-import javafx.scene.robot.Robot
 import ponticello.impl.Decimal
 import ponticello.impl.one
 import ponticello.impl.zero
@@ -206,7 +203,7 @@ class SoundProcessView(
 
     companion object {
         fun getInitialControls(
-            def: InstrumentObject, context: Context, defaultBus: BusObject?, anchor: Point2D?,
+            def: InstrumentObject, context: Context, defaultBus: BusObject?, promptPlacement: PromptPlacement,
         ): ParameterControlList? {
             val map = mutableMapOf<String, ParameterControl>()
             for (param in def.parameters) {
@@ -214,7 +211,7 @@ class SoundProcessView(
                 val control = when (val spec = param.spec.now) {
                     is BufferControlSpec -> {
                         val buffer = BufferSelectorPrompt(context[BufferRegistry], "Select $name", spec.channels)
-                            .showPopup(anchor) ?: return null
+                            .showDialog(promptPlacement) ?: return null
                         BufferControl.create(buffer)
                     }
 
@@ -223,7 +220,7 @@ class SoundProcessView(
                         else {
                             val bus =
                                 BusSelectorPrompt(context[BusRegistry], "Select $name", spec.rate, spec.channels)
-                                    .showPopup(anchor) ?: return null
+                                    .showDialog(promptPlacement) ?: return null
                             BusControl.create(bus)
                         }
                     }
@@ -235,7 +232,7 @@ class SoundProcessView(
             return ParameterControlList.from(map)
         }
 
-        fun showNewEnvelopePopup(obj: SoundProcess, ev: Event?) {
+        fun showNewEnvelopePopup(obj: SoundProcess, placement: PromptPlacement) {
             val possibleParameters = obj.getInstrument().allParameters()
                 .filter { p -> p.spec.now is NumericalControlSpec }
                 .filter { p ->
@@ -248,7 +245,7 @@ class SoundProcessView(
             val listView = ParameterDefSelectorPrompt(
                 possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
             )
-            val param = listView.showPopup(Robot().mousePosition, ev.sourceWindow) ?: return
+            val param = listView.showPopup(placement) ?: return
             val name = param.name.now
             val spec = param.spec.now as NumericalControlSpec
             val initialValue = obj.controls.controlMap[name]?.getNumericalValue() ?: spec.defaultValue.get()

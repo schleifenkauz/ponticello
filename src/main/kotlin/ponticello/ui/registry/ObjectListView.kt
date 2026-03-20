@@ -5,12 +5,12 @@ import fxutils.actions.Action
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
 import fxutils.drag.DropHandler
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.UndoManager
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
 import javafx.application.Platform
-import javafx.event.Event
 import javafx.geometry.Dimension2D
 import javafx.geometry.Orientation
 import javafx.scene.Node
@@ -241,17 +241,18 @@ class ObjectListView<O : Any>(
 
     private fun addObjectButton(): Node {
         val button = button("Add ${source.objectType}") { ev ->
-            addObject(ev)
+            addObject()
         }
         button.tooltip = Tooltip("Type Ctrl+PLUS to add a new ${source.objectType}.")
         return if (config.centerAddObjectButton) VBox(button).centerChildren() else button
     }
 
-    fun addObject(ev: Event? = null, idx: Int = config.defaultInsertionIndex(source)) {
-        val newObj = config.createNewObject(ev, source) ?: return
+    fun addObject(promptPlacement: PromptPlacement? = null, idx: Int = config.defaultInsertionIndex(source)) {
+        val placement = promptPlacement ?: PromptPlacement.RelativeTo(this)
+        val newObj = config.createNewObject(placement, source) ?: return
         if (source is NamedObjectList && newObj is NamedObject && source.has(newObj.name.now)) {
             val prompt = YesNoPrompt("Overwrite ${source.objectType} ${newObj.name.now}?")
-            if (prompt.showDialog(ev) != true) return
+            if (prompt.showDialog(placement) != true) return
         }
         source.add(newObj, idx)
         val box = getBox(newObj)
@@ -551,7 +552,7 @@ class ObjectListView<O : Any>(
                 applicableIf { list -> list.config.canCreateNewObject }
                 shortcut("Ctrl+PLUS")
                 icon(MaterialDesignP.PLUS)
-                executes { p, ev -> p.addObject(ev) }
+                executes { p, ev -> p.addObject() }
             }
             addAction("Select previous") {
                 shortcuts("UP", "LEFT")

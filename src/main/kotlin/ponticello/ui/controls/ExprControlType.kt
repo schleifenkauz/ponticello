@@ -2,9 +2,9 @@ package ponticello.ui.controls
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.prompt.PromptPlacement
 import fxutils.runFXWithTimeout
 import hextant.serial.EditorRoot
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignS
@@ -46,7 +46,7 @@ data object ExprControlType : ControlType<ExprControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        ev: Event?,
+        promptPlacement: PromptPlacement?,
     ): ExprControl {
         val editor = ScExprExpander()
         val root = EditorRoot(editor)

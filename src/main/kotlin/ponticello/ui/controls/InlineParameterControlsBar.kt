@@ -1,11 +1,12 @@
 package ponticello.ui.controls
 
 import fxutils.label
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
+import fxutils.prompt.nextToTarget
 import fxutils.runFXWithTimeout
 import fxutils.styleClass
 import javafx.beans.InvalidationListener
-import javafx.event.Event
 import javafx.scene.Cursor
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
@@ -91,7 +92,7 @@ class InlineParameterControlsBar(
             nameLabel.setOnMouseClicked { ev ->
                 when (ev.button) {
                     MouseButton.SECONDARY -> controls.remove(control)
-                    MouseButton.PRIMARY -> showControlTypePopup(control, type, ev)
+                    MouseButton.PRIMARY -> showControlTypePopup(control, type, ev.nextToTarget())
                     else -> {}
                 }
             }
@@ -103,23 +104,23 @@ class InlineParameterControlsBar(
 
     private fun showControlTypePopup(
         control: NamedParameterControl, selectedType: ControlType<ParameterControl>,
-        ev: Event? = null,
+        placement: PromptPlacement,
     ) {
         val spec = control.spec.now ?: return
         val options = ControlType.all.filter { option -> option.applicableOn(control.parentObject, spec) }
         if (options.size <= 1) return
         val listView = SimpleSelectorPrompt(options, "Select control type")
-        val option = listView.showPopup(ev, initialOption = selectedType) ?: return
-        updateControlType(control, option, spec, ev)
+        val option = listView.showPopup(placement, initialOption = selectedType) ?: return
+        updateControlType(control, option, spec, placement)
     }
 
     private fun <T : ParameterControl> updateControlType(
-        control: NamedParameterControl, option: ControlType<T>, spec: ControlSpec, ev: Event?,
+        control: NamedParameterControl, option: ControlType<T>, spec: ControlSpec, promptPlacement: PromptPlacement,
     ) {
         val oldControl = control.now
         val parameterName = control.name.now
         val newControl = option.createInitialControl(
-            controls.associatedObject, spec, oldControl, parameterName, ev
+            controls.associatedObject, spec, oldControl, parameterName, promptPlacement
         )
         controls.reassignControl(parameterName, newControl)
         option.onSelected(control, newControl, view, null)

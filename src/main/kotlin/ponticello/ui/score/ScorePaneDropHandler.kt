@@ -1,9 +1,10 @@
 package ponticello.ui.score
 
 import fxutils.drag.ConfiguredDropHandler
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import hextant.context.compoundEdit
 import hextant.serial.readJson
-import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.input.TransferMode
 import ponticello.impl.Logger
@@ -27,7 +28,7 @@ class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHan
         handleSingleFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) { ev, file ->
             val buffer = context[BufferRegistry].getOrAdd(file)
             val pos = scorePane.snapToGrid(ev.x, ev.y)
-            createPlayBufObject(buffer, pos, ev, scorePane)
+            createPlayBufObject(buffer, pos, ev.nextToTarget(), scorePane)
             true
         }
         handleSingleFile("mid") { ev, file ->
@@ -48,7 +49,7 @@ class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHan
         handleTypedFormat(BufferObject.DATA_FORMAT, TransferMode.COPY) { ev, ref ->
             val buffer = ref.resolve(context[BufferRegistry]) ?: return@handleTypedFormat false
             val pos = scorePane.snapToGrid(ev.x, ev.y)
-            createPlayBufObject(buffer, pos, ev, scorePane)
+            createPlayBufObject(buffer, pos, ev.nextToTarget(), scorePane)
             true
         }
         handleTypedFormat(ScoreObject.DATA_FORMAT, TransferMode.COPY) { ev, ref ->
@@ -79,9 +80,9 @@ class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHan
 
     companion object {
         fun createPlayBufObject(
-            buffer: BufferObject, position: ObjectPosition, ev: Event?, scorePane: ScorePane,
+            buffer: BufferObject, position: ObjectPosition, promptPlacement: PromptPlacement, scorePane: ScorePane,
         ) {
-            val instrument = scorePane.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
+            val instrument = scorePane.context.project[UI_STATE].getOrSelectInstrument(promptPlacement) ?: return
             val obj = buffer.createSoundProcess(instrument) ?: return
             val inst = ScoreObjectInstance(obj, position)
             scorePane.context.compoundEdit("Add sample to score") {

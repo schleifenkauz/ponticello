@@ -2,6 +2,7 @@ package ponticello.ui.actions
 
 import fxutils.KeyEventHandlerBody
 import fxutils.actions.isTargetTextInput
+import fxutils.prompt.atMouseCoords
 import hextant.context.Context
 import hextant.context.compoundEdit
 import ponticello.impl.Logger
@@ -42,7 +43,8 @@ object SelectionRelatedActions {
             if (ev.isTargetTextInput) return@on
             val selection = RectangleSelection.get()
             if (selection != null && selection.pane is RegularScorePane) {
-                selection.pane.addNewGroup(ev, selection)
+                val placement = ev.atMouseCoords()
+                selection.pane.addNewGroup(placement, selection, recurse = ev.isShiftDown)
                 RectangleSelection.clear()
             } else {
                 val views = selector.selectedViews

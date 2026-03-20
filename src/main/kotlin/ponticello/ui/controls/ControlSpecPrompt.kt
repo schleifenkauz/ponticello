@@ -2,9 +2,9 @@ package ponticello.ui.controls
 
 import fxutils.prompt.ConfirmablePrompt
 import fxutils.prompt.Prompt
+import fxutils.prompt.PromptPlacement
 import fxutils.styleClass
 import javafx.beans.binding.BooleanBinding
-import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.control.Button
 import ponticello.model.instr.ConfigurableInstrumentObject
@@ -98,19 +98,19 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
             parameterName: String,
             parentObject: ParameterizedObject?,
             parameterType: ParameterType,
-            ownerWindow: javafx.stage.Window? = null, anchor: Point2D?,
+            promptPlacement: PromptPlacement,
         ): ControlSpec? = when (parameterType) {
             ParameterType.Bus ->
-                create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2))?.showDialog(ownerWindow, anchor)
+                create(parameterName, parentObject, BusControlSpec(Rate.Audio, 2))?.showDialog(promptPlacement)
 
             ParameterType.Buffer ->
-                create(parameterName, parentObject, BufferControlSpec(2))?.showDialog(ownerWindow, anchor)
+                create(parameterName, parentObject, BufferControlSpec(2))?.showDialog(promptPlacement)
 
             ParameterType.Numerical ->
-                create(parameterName, parentObject, NumericalControlSpec.DEFAULT)?.showDialog(ownerWindow, anchor)
+                create(parameterName, parentObject, NumericalControlSpec.DEFAULT)?.showDialog(promptPlacement)
 
             ParameterType.AttackRelease ->
-                create(parameterName, parentObject, AttackReleaseControlSpec())?.showDialog(ownerWindow, anchor)
+                create(parameterName, parentObject, AttackReleaseControlSpec())?.showDialog(promptPlacement)
 
             ParameterType.BufferPosition -> BufferPositionControlSpec()
             ParameterType.Expr -> ExprControlSpec()

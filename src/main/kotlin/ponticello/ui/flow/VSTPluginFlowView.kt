@@ -5,6 +5,7 @@ import fxutils.*
 import fxutils.actions.button
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.SimpleTextPrompt
+import fxutils.prompt.nextToTarget
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.codicons.Codicons
@@ -36,18 +37,18 @@ class VSTPluginFlowView(
             val pluginSelectorBtn = selectorButton(flow.pluginName) { ev ->
                 val options = VSTPlugins.availablePlugins(flow.context).toList()
                 val newPluginName = SimpleSelectorPrompt(options, "Select VST Plugin")
-                    .showPopup(ev) ?: return@selectorButton
+                    .showPopup(ev.nextToTarget()) ?: return@selectorButton
                 flow.loadPlugin(newPluginName)
             }
             val saveGlobalPresetBtn = Material2MZ.SAVE.button("Save global preset", "medium-icon-button") { ev ->
-                val name = SimpleTextPrompt("Preset name", "").showDialog(ev) ?: return@button
+                val name = SimpleTextPrompt("Preset name", "").showDialog(ev.nextToTarget()) ?: return@button
                 flow.saveGlobalPreset(name)
             }
             val loadGlobalPresetBtn = Codicons.FOLDER_OPENED.button("Load global preset", "medium-icon-button") { ev ->
                 val options =
                     VSTPlugins.globalPresetList(flow.context, flow.pluginName.now)
                 val presetName = SimpleSelectorPrompt(options, "Select preset")
-                    .showPopup(ev) ?: return@button
+                    .showPopup(ev.nextToTarget()) ?: return@button
                 flow.loadGlobalPreset(presetName)
             }
             return HBox(

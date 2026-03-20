@@ -5,9 +5,9 @@ import fxutils.actions.collectActions
 import fxutils.actions.detailsAction
 import fxutils.controls.CheckBox
 import fxutils.opacity
+import fxutils.prompt.PromptPlacement
 import fxutils.setFixedWidth
 import fxutils.undo.UndoManager
-import javafx.event.Event
 import javafx.scene.Node
 import ponticello.impl.asTime
 import ponticello.model.instr.ParameterizedObject
@@ -42,7 +42,7 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        ev: Event?,
+        promptPlacement: PromptPlacement?,
     ): EnvelopeControl {
         spec as NumericalControlSpec
         val value = oldControl?.getNumericalValue() ?: spec.defaultValue.get()

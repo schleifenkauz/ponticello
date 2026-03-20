@@ -2,9 +2,9 @@ package ponticello.ui.misc
 
 import fxutils.button
 import fxutils.prompt.CompoundPrompt
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.setFixedWidth
-import javafx.event.Event
 import javafx.geometry.Side
 import javafx.scene.control.Button
 import javafx.scene.control.Spinner
@@ -89,9 +89,9 @@ class ScoreObjectResizeDialog(
     companion object {
         private const val SELECTOR_WIDTH = 120.0
 
-        fun show(obj: ScoreObject, quantization: QuantizationConfig, ev: Event?) {
+        fun show(obj: ScoreObject, quantization: QuantizationConfig, placement: PromptPlacement) {
             val dialog = ScoreObjectResizeDialog(obj, quantization.meter.now)
-            val resizeMode = dialog.showDialog(ev) ?: return
+            val resizeMode = dialog.showDialog(placement) ?: return
             obj.resize(dialog.computeDuration(), obj.height, resizeMode, Side.RIGHT)
         }
     }

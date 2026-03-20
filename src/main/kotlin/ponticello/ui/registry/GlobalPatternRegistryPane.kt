@@ -3,9 +3,9 @@ package ponticello.ui.registry
 import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.prompt.PromptPlacement
 import fxutils.showAndBringToFront
 import hextant.serial.EditorRoot
-import javafx.event.Event
 import javafx.scene.input.DataFormat
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
@@ -42,7 +42,8 @@ class GlobalPatternRegistryPane(
 
     override fun defaultState(): ToolPaneState = ListToolPaneState.docked
 
-    override fun createNewObject(name: String, ev: Event?): GlobalPatternObject = GlobalPatternObject.create(name)
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): GlobalPatternObject =
+        GlobalPatternObject.create(name)
 
     override fun getEditorRoot(obj: GlobalPatternObject): EditorRoot<out ScExprEditor<*>> = obj.patternCode
 

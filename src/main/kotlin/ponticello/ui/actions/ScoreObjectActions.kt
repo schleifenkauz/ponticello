@@ -2,14 +2,14 @@ package ponticello.ui.actions
 
 import fxutils.actions.*
 import fxutils.prompt.IntegerPrompt
-import fxutils.sourceWindow
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.atMouseCoords
+import fxutils.prompt.nextToTarget
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
-import javafx.event.Event
 import javafx.geometry.Orientation
 import javafx.geometry.Side
-import javafx.scene.robot.Robot
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.*
@@ -32,6 +32,7 @@ import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.MultiObjectControlPopup
 import ponticello.ui.controls.RenamePrompt
 import ponticello.ui.dock.AppLayout
+import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import ponticello.ui.score.*
@@ -123,8 +124,7 @@ object ScoreObjectActions {
             executes { ctx, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
                 val popup = SimpleRegistrySelectorPrompt(ctx.context[ScoreObjectRegistry], "Add object instance")
-                val anchor = Robot().mousePosition
-                val obj = popup.showPopup(anchor, owner = null) ?: return@executes
+                val obj = popup.showPopup(ev.atMouseCoords()) ?: return@executes
                 val instances = ctx.selectedInstances.toSet()
                 ctx.context.compoundEdit("Replace objects") {
                     for (instance in instances) {
@@ -146,7 +146,8 @@ object ScoreObjectActions {
                     Logger.warn("Some selected objects are not sound processes", Logger.Category.Score)
                     return@executes
                 }
-                MultiObjectControlPopup.show(ctx.context, objects, ev)
+                val placement = ev.atMouseCoords()
+                MultiObjectControlPopup.show(ctx.context, objects, placement)
             }
         }
         addObjectAction("Choose instrument") {
@@ -156,9 +157,10 @@ object ScoreObjectActions {
                 val commonInstrument = ctx.selectedObjects
                     .map { obj -> (obj as ParameterizedObject).getInstrument() }
                     .singleOrNull()?.reference()
+                val placement = ev?.nextToTarget() ?: ctx.context.defaultPlacement
                 val newInstrument = InstrumentSelectorPopup(ctx.context)
                     .selectInitialOption(commonInstrument)
-                    .showDialog(ev) ?: return@executes
+                    .showDialog(placement) ?: return@executes
                 for (obj in ctx.selectedObjects) {
                     when (obj) {
                         is SoundProcess -> obj.instrumentRef.set(newInstrument)
@@ -201,8 +203,9 @@ object ScoreObjectActions {
             shortcut("Ctrl+Shift?+I")
             applicableIf { obj -> obj is SoundProcess || obj is AbstractScoreObjectGroup }
             executes { obj, ev ->
+                val placement = ev?.nextToTarget() ?: obj.context.defaultPlacement
                 val ratio = DecimalPrompt("Scaling factor", precision = 10, 1.0, 0.001..1000.0)
-                    .showDialog(ev) ?: return@executes
+                    .showDialog(placement) ?: return@executes
                 val mode =
                     if (ev.isShiftDown()) ScoreObject.ResizeMode.DeepStretch
                     else ScoreObject.ResizeMode.Stretch
@@ -213,13 +216,16 @@ object ScoreObjectActions {
         }
         addAction("Rename object") {
             shortcut("F2")
-            executes { obj, ev -> RenamePrompt(obj, "Rename object").showDialog(ev) }
+            executes { obj, ev ->
+                val placement = ev?.nextToTarget() ?: obj.context.defaultPlacement
+                RenamePrompt(obj, "Rename object").showDialog(placement)
+            }
         }
         addAction("Add envelope") {
             shortcut("Alt?+E")
             executesOn<SoundProcess> { obj, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executesOn
-                SoundProcessView.showNewEnvelopePopup(obj, ev)
+                SoundProcessView.showNewEnvelopePopup(obj, ev.atMouseCoords())
             }
         }
         addAction("Extend object group") {
@@ -227,7 +233,8 @@ object ScoreObjectActions {
             executesOn<AbstractScoreObjectGroup> { obj, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executesOn
                 val context = obj.context
-                extendGroup(obj, context, moreThanOne = true, cloneObjects = ev.isShiftDown(), ev)
+                val placement = ev?.atMouseCoords() ?: context.defaultPlacement
+                extendGroup(obj, context, moreThanOne = true, cloneObjects = ev.isShiftDown(), placement)
             }
         }
     }
@@ -259,7 +266,9 @@ object ScoreObjectActions {
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 view.context[ScoreObjectSelectionManager].deselectAll()
                 val duplicator = view.context[ScoreObjectDuplicator]
-                val newName = view.context[ScoreObjectRegistry].nameForClone(view.obj, ev) ?: return@executeSingle
+                val placement = ev.atMouseCoords()
+                val newName =
+                    view.context[ScoreObjectRegistry].nameForClone(view.obj, placement) ?: return@executeSingle
                 val clone = if (ev.isShiftDown()) view.obj.deepClone(newName) else view.obj.clone(newName)
                 duplicator.enterDuplicateMode(clone, view)
             }
@@ -279,7 +288,8 @@ object ScoreObjectActions {
                     )
                     return@executes
                 }
-                val newName = ctx.context[ScoreObjectRegistry].nameForClone(obj, ev) ?: return@executes
+                val placement = ev.atMouseCoords()
+                val newName = ctx.context[ScoreObjectRegistry].nameForClone(obj, placement) ?: return@executes
                 val deepClone = ev.isShiftDown()
                 val clone = ctx.context.withoutUndo {
                     if (deepClone) obj.deepClone(newName) else obj.clone(newName)
@@ -436,10 +446,10 @@ object ScoreObjectActions {
 
     private fun extendGroup(
         obj: AbstractScoreObjectGroup, context: Context,
-        moreThanOne: Boolean, cloneObjects: Boolean, ev: Event?,
+        moreThanOne: Boolean, cloneObjects: Boolean, promptPlacement: PromptPlacement,
     ) {
         val times = if (moreThanOne) IntegerPrompt("Number of repetitions", 1, 1..16)
-            .showDialog(ev.sourceWindow, Robot().mousePosition) ?: return
+            .showDialog(promptPlacement) ?: return
         else 1
         context.compoundEdit("Extend object group") {
             val duration = obj.duration

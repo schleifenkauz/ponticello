@@ -7,10 +7,10 @@ import fxutils.actions.collectActions
 import fxutils.controls.IntSpinner
 import fxutils.controls.SliderBar
 import fxutils.prompt.IntegerPrompt
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.prompt.YesNoPrompt
 import fxutils.undo.UndoManager
-import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.input.DataFormat
@@ -95,12 +95,13 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
     override fun filter(obj: BusObject): Boolean = super.filter(obj) && filter.filter(obj)
 
-    override fun createNewObject(name: String, ev: Event?): BusObject? {
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): BusObject? {
+        val placement = promptPlacement ?: PromptPlacement.RelativeTo(this)
         val type = SimpleSelectorPrompt(Rate.entries, "Bus type")
-            .showPopup(ev) ?: return null
+            .showDialog(placement) ?: return null
 
         val channels = IntegerPrompt("Channels", initialValue = 2, range = 1..16)
-            .showDialog(ev) ?: return null
+            .showDialog(placement) ?: return null
         return BusObject.create(type, name, channels)
     }
 

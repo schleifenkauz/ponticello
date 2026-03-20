@@ -3,6 +3,7 @@ package ponticello.model.record
 import fxutils.actions.action
 import fxutils.actions.collectActions
 import fxutils.prompt.YesNoPrompt
+import fxutils.prompt.nextToTarget
 import hextant.context.Context
 import hextant.core.editor.ListenerManager
 import kotlinx.serialization.SerialName
@@ -16,6 +17,7 @@ import ponticello.model.project.LIVE_BUFFERS
 import ponticello.model.project.get
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.NamePrompt
+import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.record.LiveBufferViewConfig
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
@@ -122,7 +124,8 @@ class LiveBufferObject(
             addAction("Clear buffer") {
                 shortcut("Alt+DELETE")
                 executes { obj, ev ->
-                    val clear = YesNoPrompt("Clear buffer?").showDialog(ev)
+                    val placement = ev?.nextToTarget() ?: obj.context.defaultPlacement
+                    val clear = YesNoPrompt("Clear buffer?").showDialog(placement)
                     if (clear == true) {
                         obj.buffer.clear()
                     }
@@ -132,7 +135,8 @@ class LiveBufferObject(
                 shortcut("Ctrl+DELETE")
                 icon(MaterialDesignD.DELETE)
                 executes { obj, ev ->
-                    val delete = YesNoPrompt("Delete buffer?").showDialog(ev)
+                    val placement = ev?.nextToTarget() ?: obj.context.defaultPlacement
+                    val delete = YesNoPrompt("Delete buffer?").showDialog(placement)
                     if (delete == true) {
                         obj.registry.remove(obj)
                     }
@@ -142,8 +146,9 @@ class LiveBufferObject(
                 shortcut("F2")
                 icon(MaterialDesignR.RENAME_BOX)
                 executes { obj, ev ->
+                    val placement = ev?.nextToTarget() ?: obj.context.defaultPlacement
                     val newName = NamePrompt(obj.registry, "New name", obj.name.now)
-                        .showDialog(ev)
+                        .showDialog(placement)
                     if (newName != null) {
                         obj.rename(newName)
                     }

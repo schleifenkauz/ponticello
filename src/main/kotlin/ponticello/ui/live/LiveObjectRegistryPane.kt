@@ -3,12 +3,13 @@ package ponticello.ui.live
 import fxutils.actions.*
 import fxutils.bindPseudoClassState
 import fxutils.pad
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import fxutils.styleClass
 import fxutils.undo.ToggleEdit
 import fxutils.undo.UndoManager
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import javafx.event.Event
 import javafx.scene.Parent
 import javafx.scene.control.Button
 import javafx.scene.input.DataFormat
@@ -34,6 +35,7 @@ import ponticello.model.score.ScoreObject
 import ponticello.sc.editor.CodeBlockEditor
 import ponticello.ui.actions.undoable
 import ponticello.ui.dock.*
+import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.impl.getFrom
 import ponticello.ui.misc.CodePane
 import ponticello.ui.registry.ObjectBox
@@ -123,7 +125,7 @@ class LiveObjectRegistryPane(
         box.userData = box.bindPseudoClassState("playing", box.obj.isPlaying)
     }
 
-    override fun createNewObject(name: String, ev: Event?): LiveTaskObject =
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): LiveTaskObject =
         LiveTaskObject(EditorRoot(CodeBlockEditor().defaultState())).withName(name)
 
     companion object : Type(uid = 10, "Live Objects") {
@@ -143,16 +145,17 @@ class LiveObjectRegistryPane(
             toggleState { item -> item.quantization.enableQuantization }
             executes { item, ev ->
                 if (ev.isShiftDown()) {
+                    val promptPlacement = ev?.nextToTarget() ?: item.context.defaultPlacement
                     if (item.quantization.meter.now.isResolved.now.not()) {
                         val meter = SimpleRegistrySelectorPrompt(item.context[MeterRegistry], "Select meter")
-                            .showPopup(ev) ?: return@executes
+                            .showPopup(promptPlacement) ?: return@executes
                         item.quantization.meter.set(meter.reference())
                     }
                     val copy = item.quantization.copy()
                     copy.initialize(item.context)
                     copy.enableQuantization.set(true)
                     QuantizationConfigDialog(copy, "Configure live loop '${item.name.now}")
-                        .showDialog(ev) ?: return@executes
+                        .showDialog(promptPlacement) ?: return@executes
                     item.quantization.update(copy)
                 } else {
                     item.quantization.enableQuantization.toggle()

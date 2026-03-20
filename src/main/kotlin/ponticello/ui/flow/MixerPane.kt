@@ -5,6 +5,7 @@ import fxutils.actions.*
 import fxutils.controls.PropertySelectorButton
 import fxutils.drag.ConfiguredDropHandler
 import fxutils.drag.setupDropArea
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SelectorPrompt
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
@@ -328,10 +329,11 @@ class MixerPane(
     ): HBox {
         val valueLabel = label(volume.map { v -> "$v db" }) styleClass "fader-volume"
         val volumeBox = HBox(infiniteSpace(), valueLabel, infiniteSpace()) styleClass "fader-volume-box"
-        volumeBox.setOnMouseClicked { ev ->
+        volumeBox.setOnMouseClicked { _ ->
             val title = "Volume of ${bus.get().name.now}"
+            val placement = PromptPlacement.RelativeTo(volumeBox)
             volume.now = DecimalPrompt(title, volume.now, VOLUME_SPEC.range)
-                .showDialog(ev) ?: return@setOnMouseClicked
+                .showDialog(placement) ?: return@setOnMouseClicked
         }
         setMargin(volumeBox, Insets(0.0, 3.0, 0.0, 3.0))
         return volumeBox

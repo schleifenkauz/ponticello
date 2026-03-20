@@ -27,7 +27,7 @@ class BufferSelectorPrompt(
         val duration = DecimalPrompt(
             "Buffer duration", precision = ObjectPosition.TIME_PRECISION,
             initialValue = one, range = zero..Decimal.INF
-        ).showDialog(ownerWindow, anchor) ?: return null
+        ).showDialog(parentPrompt = this) ?: return null
         return AllocatedBufferObject.create(name, channels, duration)
     }
 }

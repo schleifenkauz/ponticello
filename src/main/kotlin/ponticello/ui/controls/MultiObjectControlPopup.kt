@@ -2,12 +2,12 @@ package ponticello.ui.controls
 
 import fxutils.SubWindow
 import fxutils.infiniteSpace
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SelectorPrompt
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.styleClass
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.event.Event
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -59,9 +59,9 @@ class MultiObjectControlPopup(
     data class Option(val controlName: String, val controlType: ControlType<*>, val controls: List<ParameterControl>?)
 
     companion object {
-        fun show(context: Context, selectedObjects: List<ParameterizedObject>, ev: Event?) {
+        fun show(context: Context, selectedObjects: List<ParameterizedObject>, placement: PromptPlacement) {
             val popup = MultiObjectControlPopup(selectedObjects)
-            val option = popup.showPopup(context[primaryStage], null) ?: return
+            val option = popup.showDialog(context[primaryStage]) ?: return
 
             @Suppress("UNCHECKED_CAST")
             val type = option.controlType as ControlType<ParameterControl>
@@ -73,7 +73,7 @@ class MultiObjectControlPopup(
                 context.compoundEdit("Update $name") {
                     val controls = selectedObjects.map { obj ->
                         val spec = obj.getSpec(name) ?: return@show
-                        type.createInitialControl(obj, spec, null, name, ev)
+                        type.createInitialControl(obj, spec, null, name, placement)
                     }
                     if (type.showDialogInput(name, specs, controls, context)) {
                         for ((obj, ctrl) in selectedObjects zip controls) {

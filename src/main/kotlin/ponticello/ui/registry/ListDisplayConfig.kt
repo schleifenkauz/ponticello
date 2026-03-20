@@ -7,7 +7,8 @@ import fxutils.actions.ActionBar
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.action
 import fxutils.drag.setupDropArea
-import javafx.event.Event
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -112,7 +113,7 @@ interface ListDisplayConfig<O : Any> {
             val obj = ev.dragboard.getFrom(source, format) ?: return emptyList()
             return if (ev.acceptedTransferMode == TransferMode.COPY) {
                 val newName = NamePrompt(source, "Name for copy", obj.name.now + "_copy")
-                    .showDialog(ev) ?: return emptyList()
+                    .showDialog(ev.nextToTarget()) ?: return emptyList()
                 listOf(duplicate(obj as O, newName))
             } else listOf(obj as O)
         }
@@ -132,14 +133,14 @@ interface ListDisplayConfig<O : Any> {
         list.add(obj, idx)
     }
 
-    fun createNewObject(ev: Event?, list: ObjectList<O>): O? {
+    fun createNewObject(promptPlacement: PromptPlacement, list: ObjectList<O>): O? {
         if (list !is NamedObjectList) return null
         val name = NamePrompt(list, "Name for new ${list.objectType}", initialName = "")
-            .showDialog(ev) ?: return null
-        return createNewObject(name, ev)
+            .showDialog(promptPlacement) ?: return null
+        return createNewObject(name, promptPlacement)
     }
 
-    fun createNewObject(name: String, ev: Event?): O? = null
+    fun createNewObject(name: String, promptPlacement: PromptPlacement?): O? = null
 
     fun defaultInsertionIndex(source: List<O>) = source.size
 
@@ -191,14 +192,14 @@ interface ListDisplayConfig<O : Any> {
             executes { box, ev ->
                 val listView = box.getParent<ObjectListView<*>>() ?: return@executes
                 val idx = listView.source.indexOf(box.obj) + 1
-                listView.addObject(ev, idx)
+                listView.addObject(idx = idx)
             }
         }
 
         val addObjectAction = action<ObjectListView<*>>("Add object") {
             icon(MaterialDesignP.PLUS)
             executes { view, ev ->
-                view.addObject(ev, idx = 0)
+                view.addObject(idx = 0)
             }
         }
     }

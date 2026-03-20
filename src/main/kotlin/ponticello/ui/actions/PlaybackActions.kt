@@ -1,8 +1,9 @@
 package ponticello.ui.actions
 
 import fxutils.actions.*
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import fxutils.sourceWindow
-import javafx.event.Event
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
@@ -74,12 +75,12 @@ object PlaybackActions {
         }
         executes { player, ev ->
             if (ev.isShiftDown()) {
-                selectRecordedBus(player, ev)
+                selectRecordedBus(player, ev?.nextToTarget() ?: PromptPlacement.Centered())
             } else player.context[Recorder].toggle()
         }
     }
 
-    fun selectRecordedBus(player: ScorePlayer, ev: Event?) {
+    fun selectRecordedBus(player: ScorePlayer, promptPlacement: PromptPlacement) {
         val context = player.context
         val project = context.project
         val currentSelected =
@@ -87,7 +88,7 @@ object PlaybackActions {
         val bus = BusSelectorPrompt(
             context[BusRegistry],
             "Select bus to record to", rate = Rate.Audio
-        ).selectInitialOption(currentSelected).showDialog(ev)
+        ).selectInitialOption(currentSelected).showDialog(promptPlacement)
         if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
     }
 
@@ -121,7 +122,7 @@ object PlaybackActions {
             executes { player, ev ->
                 val settings = player.context.project[PLAYBACK_SETTINGS]
                 val pane = PlaybackSettingsPrompt(settings)
-                pane.showDialog(ev.sourceWindow)
+                pane.showDialog(PromptPlacement.Centered(ev.sourceWindow))
             }
         }
     }

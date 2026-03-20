@@ -16,7 +16,7 @@ import ponticello.sc.client.SuperColliderClient
 object Utils {
     fun createDummyObject(name: String): ScoreObject {
         val dummy1 = SoundProcess.create(
-            name, InstrumentReference.UserDefined(ObjectReference("default"))
+            name, ObjectReference("default")
         )
         dummy1.setInitialSize(10.0.asTime, 100.0.toDecimal())
         return dummy1

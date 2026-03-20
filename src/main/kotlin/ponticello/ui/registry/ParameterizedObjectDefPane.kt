@@ -1,8 +1,8 @@
 package ponticello.ui.registry
 
 import fxutils.actions.registerShortcuts
+import fxutils.prompt.PromptPlacement
 import fxutils.registerShortcuts
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.VBox
@@ -17,14 +17,17 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
     protected val def: T,
 ) : ScrollPane() {
     private val config: ParameterListConfig = object : ParameterListConfig() {
-        override fun createNewObject(ev: Event?, list: ObjectList<ParameterDefObject>): ParameterDefObject? {
+        override fun createNewObject(
+            promptPlacement: PromptPlacement,
+            list: ObjectList<ParameterDefObject>
+        ): ParameterDefObject? {
             val defaultParameters = def.context[GlobalSettings].defaultParametersDefs
                 .filter { param -> !def.hasParameter(param.name.now) && def.supports(param.spec.now.type) }
             val listView = ParameterDefSelectorPrompt(
                 defaultParameters, "New parameter",
                 instrumentObject = def
             )
-            val param = listView.showPopup(ev) ?: return null
+            val param = listView.showPopup(promptPlacement) ?: return null
             return param.copy().withName(param.name.now)
         }
 

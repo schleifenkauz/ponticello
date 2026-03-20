@@ -2,12 +2,13 @@ package ponticello.ui.score
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.actions.isShiftDown
 import fxutils.actions.registerActions
 import fxutils.neverSquishVertically
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import fxutils.registerShortcuts
 import fxutils.styleClass
-import javafx.event.Event
+import hextant.fx.ModifierKeyTracker
 import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
@@ -71,16 +72,18 @@ class ParameterControlsPane(
         obj.controls.addListener(this)
     }
 
-    override fun createNewObject(ev: Event?, list: ObjectList<NamedParameterControl>): NamedParameterControl? {
-        if (ev.isShiftDown()) {
+    override fun createNewObject(
+        promptPlacement: PromptPlacement, list: ObjectList<NamedParameterControl>
+    ): NamedParameterControl? {
+        if (ModifierKeyTracker.isShiftDown.now) {
             obj.addControlsForAllObjectParameters()
             return null
         } else {
-            return createNewControl(ev)
+            return createNewControl(promptPlacement)
         }
     }
 
-    private fun createNewControl(ev: Event?): NamedParameterControl? {
+    private fun createNewControl(promptPlacement: PromptPlacement): NamedParameterControl? {
         val context = obj.context
         val defaultParameters = context[GlobalSettings].defaultParametersDefs
         val synthParameters = obj.getInstrument().allParameters()
@@ -88,14 +91,14 @@ class ParameterControlsPane(
             .filter { param -> param.name.now !in obj.controls.controlMap }
             .filter { param -> !(param in defaultParameters && synthParameters.any { p -> p.name.now == param.name.now }) }
         val option = ParameterDefSelectorPrompt(unassignedParameters, "Add parameter", obj)
-            .showPopup(ev) ?: return null
+            .showPopup(promptPlacement) ?: return null
         val parameter = option.name.now
         val spec = option.spec.now
         val customSpec = spec.takeIf { !obj.getInstrument().hasParameter(parameter) }
         val type = spec.defaultControlType()
         val control =
             if (!type.supportsDialogInput()) option.defaultControl()
-            else type.createInitialControl(obj, spec, oldControl = null, parameter, ev)
+            else type.createInitialControl(obj, spec, oldControl = null, parameter, promptPlacement)
         return NamedParameterControl(control, customSpec).withName(parameter)
     }
 
@@ -208,7 +211,8 @@ class ParameterControlsPane(
                 executes { box, ev ->
                     val pane = box.config as? ParameterControlsPane ?: return@executes
                     val editor = pane.editors[box.obj] ?: return@executes
-                    editor.showOptionPopup(ev)
+                    val placement = ev?.nextToTarget() ?: PromptPlacement.RelativeTo(box)
+                    editor.showOptionPopup(placement)
                 }
             }
             addAction("Increase value") {

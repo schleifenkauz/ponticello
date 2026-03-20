@@ -3,9 +3,9 @@ package ponticello.model.project
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
-import fxutils.actions.isShiftDown
+import fxutils.prompt.PromptPlacement
 import hextant.context.Context
-import javafx.event.Event
+import hextant.fx.ModifierKeyTracker
 import kotlinx.serialization.Serializable
 import ponticello.impl.DecimalRange
 import ponticello.model.instr.InstrumentObject
@@ -42,12 +42,14 @@ class UIState private constructor(
         context[UIState] = this
     }
 
-    fun getOrSelectInstrument(event: Event?): InstrumentObject? =
-        selectedInstrument.get()?.get().takeIf { !event.isShiftDown() } ?: selectInstrument(event)
+    fun getOrSelectInstrument(promptPlacement: PromptPlacement): InstrumentObject? =
+        selectedInstrument.get()?.get().takeIf { !ModifierKeyTracker.isShiftDown.now } ?: selectInstrument(
+            promptPlacement
+        )
 
-    fun selectInstrument(event: Event?): InstrumentObject? {
+    fun selectInstrument(promptPlacement: PromptPlacement): InstrumentObject? {
         val instrument = SimpleRegistrySelectorPrompt(context[InstrumentRegistry], "Select instrument")
-            .showPopup(event) ?: return null
+            .showPopup(promptPlacement) ?: return null
         selectedInstrument.now = instrument.reference()
         return instrument
     }

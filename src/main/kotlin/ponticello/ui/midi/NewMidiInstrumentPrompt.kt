@@ -1,12 +1,12 @@
 package ponticello.ui.midi
 
 import fxutils.infiniteSpace
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SelectorPrompt
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.setFixedWidth
 import fxutils.styleClass
 import hextant.context.Context
-import javafx.event.Event
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -61,7 +61,7 @@ class NewMidiInstrumentPrompt(
     }
 
     sealed class MidiInstrumentOption {
-        fun createInstrument(context: Context, ev: Event?): MidiInstrument? = when (this) {
+        fun createInstrument(context: Context, promptPlacement: PromptPlacement): MidiInstrument? = when (this) {
             is SoundProcess ->
                 SoundProcessMidiInstrument(reactiveVariable(instrument.reference()), ParameterControlList())
 
@@ -72,11 +72,11 @@ class NewMidiInstrumentPrompt(
                 val presets = VSTPlugins.globalPresetList(context, pluginName)
                 val preset = if (presets.isNotEmpty()) {
                     SimpleSelectorPrompt(listOf("<no preset>") + presets, "Select preset")
-                        .showPopup(ev)
+                        .showPopup(promptPlacement)
                         .takeIf { it != "<no preset>" }
                 } else null
                 val bus = BusSelectorPrompt(context[BusRegistry], "Target bus")
-                    .showPopup(ev) ?: return null
+                    .showPopup(promptPlacement) ?: return null
                 val flow = VSTPluginFlow.create(pluginName, preset, bus)
                 VSTMidiInstrument(flow)
             }

@@ -5,6 +5,8 @@ import fxutils.actions.registerActions
 import fxutils.actions.registerShortcuts
 import fxutils.centerChildren
 import fxutils.hspace
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import fxutils.registerShortcuts
 import fxutils.styleClass
 import javafx.scene.layout.BorderPane
@@ -97,7 +99,8 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) : ScoreObj
                 icon(MaterialDesignR.RESIZE)
                 executes { p, ev ->
                     val meter = p.liveScoreObject.quantization.meter.now
-                    ScoreObjectResizeDialog(p.obj, meter).showDialog(ev)
+                    val placement = ev?.nextToTarget() ?: PromptPlacement.RelativeTo(p.scorePane)
+                    ScoreObjectResizeDialog(p.obj, meter).showDialog(placement)
                 }
             }
         }

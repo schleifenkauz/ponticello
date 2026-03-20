@@ -5,10 +5,10 @@ import fxutils.actions.isAltDown
 import fxutils.actions.isShiftDown
 import fxutils.actions.isTargetTextInput
 import fxutils.prompt.IntegerPrompt
+import fxutils.prompt.PromptPlacement
 import hextant.context.compoundEdit
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
-import javafx.geometry.Point2D
 import javafx.scene.robot.Robot
 import ponticello.impl.times
 import ponticello.impl.zero
@@ -38,11 +38,10 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
             val (pane, _) = rootPane.getScorePaneAtCursor() ?: return@executes
             val anchor = Robot().mousePosition
             rootPane.context.compoundEdit("Add tempo grid") {
-                //If I set owner=rootPane.scene.window, it crashes the JVM somehow...
                 val meter = MeterSelectorPrompt(pane.context[MeterRegistry], "Select meter")
-                    .showDialog(owner = null, anchor) ?: return@executes
+                    .showDialog(rootPane.scene.window, anchor) ?: return@executes
                 val bars = IntegerPrompt("Number of bars", 1, 1..Int.MAX_VALUE)
-                    .showDialog(owner = null, anchor) ?: return@executes
+                    .showDialog(rootPane.scene.window, anchor) ?: return@executes
                 val name = pane.context[ScoreObjectRegistry].availableName(meter.name.now)
                 val obj = TempoGridObject(meter.reference())
                 obj.setInitialName(name)
@@ -107,7 +106,10 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         executes { _ ->
             val selection = RectangleSelection.get() ?: return@executes
             val pane = selection.pane as? RegularScorePane ?: return@executes
-            val synthObj = pane.createSoundObject(anchor = Robot().mousePosition) ?: return@executes
+            val parentWindow = pane.scene.window
+            val synthObj = pane.createSoundObject(
+                PromptPlacement.atMouseCoords(parentWindow)
+            ) ?: return@executes
             RectangleSelection.clear()
             pane.addObject(synthObj, selection)
         }
@@ -146,15 +148,15 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         return Pair(this, pos)
     }
 
-    private fun RegularScorePane.createSoundObject(anchor: Point2D): SoundProcess? {
-        val instrument = InstrumentSelectorPopup(context).showPopup(anchor, scene.window) ?: return null
+    private fun RegularScorePane.createSoundObject(promptPlacement: PromptPlacement): SoundProcess? {
+        val instrument = InstrumentSelectorPopup(context).showPopup(promptPlacement) ?: return null
         val defaultBus = (associatedObject as? ScoreObjectGroup)?.defaultBusRef?.now?.get()
         val controls = SoundProcessView.getInitialControls(
-            instrument.get()!!, context, defaultBus, anchor
+            instrument.get()!!, context, defaultBus, promptPlacement
         ) ?: return null
         val initialName = context[ScoreObjectRegistry].availableName(prefix = instrument.getName())
         val name = NamePrompt(context[ScoreObjectRegistry], "Name for object", initialName)
-            .showDialog(scene.window, anchor) ?: return null
+            .showDialog(promptPlacement) ?: return null
         return SoundProcess(reactiveVariable(instrument), controls).withName(name)
     }
 }

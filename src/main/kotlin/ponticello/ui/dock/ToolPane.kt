@@ -5,7 +5,7 @@ import fxutils.actions.*
 import fxutils.drag.setupWindowDragging
 import hextant.fx.initHextantScene
 import javafx.css.PseudoClass
-import javafx.event.Event
+import javafx.geometry.Point2D
 import javafx.scene.Cursor
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -170,7 +170,7 @@ abstract class ToolPane : VBox() {
         }
     }
 
-    fun showToolPaneConfigMenu(ev: Event?) {
+    fun showToolPaneConfigMenu(anchor: Point2D) {
         if (layout == null) {
             Logger.warn(
                 "Cannot show config menu for $this because it is not attached to any AppLayout",
@@ -193,7 +193,6 @@ abstract class ToolPane : VBox() {
         }
         menu.items.add(exclusiveItem)
         val ownerWindow = layout!!.scene.window
-        val anchor = ev.popupAnchor()
         menu.show(ownerWindow, anchor.x, anchor.y)
     }
 

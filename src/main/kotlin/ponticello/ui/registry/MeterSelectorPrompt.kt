@@ -11,7 +11,6 @@ import javafx.scene.layout.Region
 import ponticello.model.obj.withName
 import ponticello.model.player.MeterRegistry
 import ponticello.model.score.MeterObject
-import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.TempoGridObjectView
 import reaktive.value.binding.map
 
@@ -28,7 +27,7 @@ class MeterSelectorPrompt(
 
     override fun createObject(name: String): MeterObject? {
         val meter = MeterObject.createDefault()
-        MeterConfigDialog(meter, initialName = name).showDialog(registry.context[primaryStage], anchor) ?: return null
+        MeterConfigDialog(meter, initialName = name).showDialog(parentPrompt = this) ?: return null
         return meter.withName(name)
     }
 

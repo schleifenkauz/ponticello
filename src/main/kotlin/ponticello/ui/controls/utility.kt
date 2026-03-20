@@ -5,6 +5,7 @@ import fxutils.actions.ContextualizedAction
 import fxutils.button
 import fxutils.centerChildren
 import fxutils.prompt.InfoPrompt
+import fxutils.prompt.nextToTarget
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.geometry.Pos
@@ -62,14 +63,15 @@ fun missingSpecOptionsBar(control: NamedParameterControl): HBox = HBox(
     button("Sync") { ev ->
         val success = control.useSpecFromDefinition()
         if (!success) {
-            InfoPrompt("No spec found in '${control.parentObject.getInstrument().name.now}'").showDialog(ev)
+            InfoPrompt("No spec found in '${control.parentObject.getInstrument().name.now}'")
+                .showDialog(ev.nextToTarget())
         }
     },
     button("Custom") { ev ->
         val spec = NumericalControlSpecPrompt(
             control.name.now, control.parentObject, NumericalControlSpec.DEFAULT,
             "Provide custom specification"
-        ).showDialog(ev) ?: return@button
+        ).showDialog(ev.nextToTarget()) ?: return@button
         control.setCustomSpec(spec)
     }
 ).centerChildren()

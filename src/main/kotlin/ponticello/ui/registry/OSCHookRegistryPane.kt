@@ -1,12 +1,12 @@
 package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
+import fxutils.prompt.PromptPlacement
 import fxutils.styleClass
 import hextant.serial.EditorRoot
 import javafx.application.Platform
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.TableColumn
@@ -49,7 +49,8 @@ class OSCHookRegistryPane(
 
     override fun defaultState(): ToolPaneState = ListToolPaneState.docked
 
-    override fun createNewObject(name: String, ev: Event?): OSCHookObject = OSCHookObject.create(name)
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): OSCHookObject =
+        OSCHookObject.create(name)
 
     override fun getEditorRoot(obj: OSCHookObject): EditorRoot<out ScExprEditor<*>> = obj.function
 

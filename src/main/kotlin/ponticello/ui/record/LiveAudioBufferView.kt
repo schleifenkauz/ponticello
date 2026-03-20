@@ -1,6 +1,7 @@
 package ponticello.ui.record
 
 import fxutils.actions.registerShortcuts
+import fxutils.prompt.PromptPlacement
 import fxutils.registerShortcuts
 import fxutils.styleClass
 import fxutils.undo.AbstractEdit
@@ -8,7 +9,6 @@ import fxutils.undo.UndoManager
 import javafx.animation.Interpolator
 import javafx.animation.Transition
 import javafx.application.Platform
-import javafx.event.Event
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.Pane
 import javafx.scene.robot.Robot
@@ -208,9 +208,9 @@ class LiveAudioBufferView(
         }
     }
 
-    fun createSoundProcess(range: DecimalRange, ev: Event?) {
+    fun createSoundProcess(range: DecimalRange, promptPlacement: PromptPlacement) {
         val sample = associatedSampleObjects.getOrPut(range) {
-            val name = NamePrompt(context[BufferRegistry], "Sample name", "").showDialog(ev) ?: return
+            val name = NamePrompt(context[BufferRegistry], "Sample name", "").showDialog(promptPlacement) ?: return
             val samplesDir = context.project.projectDirectory.resolve("samples")
             samplesDir.mkdirs()
             val sampleFile = samplesDir.resolve("$name.wav")
@@ -219,7 +219,7 @@ class LiveAudioBufferView(
             context[BufferRegistry].add(sample)
             sample
         }
-        context[ScoreObjectDuplicator].enterDuplicateMode(sample, ev)
+        context[ScoreObjectDuplicator].enterDuplicateMode(sample, promptPlacement)
     }
 
     private fun zoom(amount: Double, evX: Double) {

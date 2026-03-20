@@ -3,11 +3,11 @@ package ponticello.ui.controls
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.label
+import fxutils.prompt.PromptPlacement
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.context.Context
 import hextant.context.compoundEdit
-import javafx.event.Event
 import javafx.scene.Node
 import org.kordamp.ikonli.evaicons.Evaicons
 import ponticello.impl.Logger
@@ -56,13 +56,14 @@ data object BufferControlType : ControlType<BufferControl>() {
 
 
     override fun createInitialControl(
-        obj: ParameterizedObject, spec: ControlSpec?, oldControl: ParameterControl?, parameterName: String, ev: Event?,
+        obj: ParameterizedObject, spec: ControlSpec?,
+        oldControl: ParameterControl?, parameterName: String, promptPlacement: PromptPlacement?,
     ): BufferControl {
-        if (ev == null) return BufferControl(reactiveVariable(ObjectReference.none()))
+        if (promptPlacement == null) return BufferControl(reactiveVariable(ObjectReference.none()))
         spec as BufferControlSpec
         val title = "Select '${parameterName}'"
         val selected = BufferSelectorPrompt(obj.context[BufferRegistry], title, channels = spec.channels)
-            .showPopup(ev, initialOption = null)
+            .showPopup(promptPlacement, initialOption = null)
         return BufferControl(reactiveVariable(selected?.reference() ?: ObjectReference.none()))
     }
 

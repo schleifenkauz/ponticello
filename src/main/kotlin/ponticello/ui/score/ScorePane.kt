@@ -2,6 +2,7 @@ package ponticello.ui.score
 
 import fxutils.*
 import fxutils.drag.setupDropArea
+import fxutils.prompt.atMouseCoords
 import hextant.context.Context
 import hextant.context.compoundEdit
 import javafx.geometry.Point2D
@@ -202,7 +203,8 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 obj = acceptObject(obj) ?: return
                 if (obj.height > score.maxY || obj.duration > score.maxTime) return
                 if (ev.isShiftDown) {
-                    val name = context[ScoreObjectRegistry].nameForClone(obj, ev) ?: return
+                    val placement = ev.atMouseCoords()
+                    val name = context[ScoreObjectRegistry].nameForClone(obj, placement) ?: return
                     obj = obj.clone(name)
                 }
                 val time = t.coerceIn(zero, score.maxTime - obj.duration)

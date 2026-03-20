@@ -4,6 +4,7 @@ import bundles.createBundle
 import fxutils.*
 import fxutils.actions.button
 import fxutils.controls.SliderBar
+import fxutils.prompt.nextToTarget
 import fxutils.undo.UndoManager
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -43,8 +44,8 @@ class MixerFlowView private constructor(
             undoManager = flow.context[UndoManager]
         ).alwaysHGrow()
         val addSourceBusBtn = MaterialDesignP.PLUS.button(
-            "Add source bus", "medium-icon-button", listConfig::addSourceBus
-        )
+            "Add source bus", "medium-icon-button"
+        ) { listConfig.addSourceBus(it.nextToTarget()) }
         children.addAll(
             HBox(5.0, label("Volume: "), totalVolumeSlider).centerChildren().pad(10.0),
             HBox(5.0, label("Target: "), selectorControl, addSourceBusBtn).centerChildren().pad(10.0),

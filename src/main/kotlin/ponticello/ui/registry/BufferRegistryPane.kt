@@ -7,16 +7,12 @@ import fxutils.controls.IntSpinner
 import fxutils.drag.hasFile
 import fxutils.drag.hasFiles
 import fxutils.label
-import fxutils.prompt.CompoundPrompt
-import fxutils.prompt.SimpleSelectorPrompt
-import fxutils.prompt.YesNoPrompt
-import fxutils.prompt.compoundPrompt
+import fxutils.prompt.*
 import fxutils.registerShortcuts
 import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.fx.HextantTextField
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Label
@@ -50,6 +46,7 @@ import ponticello.ui.dock.BufferRegistryPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
+import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.launcher.PonticelloFiles
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.TempoGridObjectView
@@ -123,7 +120,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         else -> super.getDroppedObjects(ev, targetView)
     }
 
-    override fun createNewObject(name: String, ev: Event?): BufferObject? {
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): BufferObject? {
         return compoundPrompt("Configure buffer $name", labelWidth = 100.0) {
             val channelsSpinner = IntSpinner(1, 12, 2).minColumns(2) named "Channels"
             val durationField = TextField() named "Duration (s)"
@@ -132,7 +129,7 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
                 val duration = durationField.text.parseDecimal() ?: return@onConfirm null
                 AllocatedBufferObject.create(name, channels, duration)
             }
-        }.showDialog(ev)
+        }.showDialog(promptPlacement ?: PromptPlacement.RelativeTo(this))
     }
 
     override fun getHeaderContent(obj: BufferObject): List<Node> = when (obj) {
@@ -293,14 +290,16 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
                 }
                 executes { obj: BufferObject, ev ->
                     if (obj !is SampleObject) return@executes
-                    SampleChannelMappingPrompt(obj).showDialog(ev)
+                    val placement = ev?.nextToTarget() ?: obj.context.defaultPlacement
+                    SampleChannelMappingPrompt(obj).showDialog(placement)
                 }
             }
             addAction("Configure meter") {
                 icon(MaterialDesignM.METRONOME)
                 executesOn { obj: SampleObject, ev ->
+                    val placement = ev?.nextToTarget() ?: obj.context.defaultPlacement
                     MeterConfigPrompt(obj, obj.context, "Edit meter")
-                        .showDialog(ev)
+                        .showDialog(placement)
                 }
             }
             addAction("Replace sample contents") {
@@ -316,7 +315,8 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
                 icon(MaterialDesignC.CONTENT_COPY)
                 executesOn { obj: SampleObject, ev ->
                     val duplicator = obj.context[ScoreObjectDuplicator]
-                    duplicator.enterDuplicateMode(obj, ev)
+                    val promptPlacement = ev?.nextToTarget() ?: obj.context.defaultPlacement
+                    duplicator.enterDuplicateMode(obj, promptPlacement)
                 }
             }
         }
@@ -325,11 +325,16 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
             addAction("Toggle copy to samples dir") {
                 toggles(
                     { registry -> registry.copyAudioFiles },
-                    toggle = { ev, ctx, now ->
+                    toggle = { ev, registry, now ->
+                        val placement = ev?.nextToTarget() ?: registry.context.defaultPlacement
                         when {
-                            ctx.isEmpty() -> !now
-                            now -> YesNoPrompt("Really delete samples from project directory?").showDialog(ev) != true
-                            else -> YesNoPrompt("Really copy all samples to project directory?").showDialog(ev) == true
+                            registry.isEmpty() -> !now
+
+                            now -> YesNoPrompt("Really delete samples from project directory?")
+                                .showDialog(placement) != true
+
+                            else -> YesNoPrompt("Really copy all samples to project directory?")
+                                .showDialog(placement) == true
                         }
                     },
                     whenTrue = MaterialDesignP.PACKAGE_VARIANT_CLOSED,

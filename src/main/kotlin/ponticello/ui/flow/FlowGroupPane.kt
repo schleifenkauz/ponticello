@@ -2,11 +2,8 @@ package ponticello.ui.flow
 
 import fxutils.*
 import fxutils.actions.*
-import fxutils.prompt.InfoPrompt
-import fxutils.prompt.SimpleSelectorPrompt
-import javafx.event.Event
+import fxutils.prompt.*
 import javafx.geometry.Orientation
-import javafx.geometry.Point2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Label
@@ -36,6 +33,7 @@ import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.flow.MidiTrackFlowView.MidiDeviceSelectorPrompt
 import ponticello.ui.impl.colorPicker
+import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.impl.getFrom
 import ponticello.ui.midi.MidiContext
 import ponticello.ui.registry.InstrumentRegistryPane
@@ -125,7 +123,7 @@ class FlowGroupPane(
                     val takenFlowNames = context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
                     val defaultName = flow.name.now + "_copy"
                     val name = FlowNamePrompt(takenFlowNames, "Name for duplicate", defaultName)
-                        .showDialog(ev) ?: return emptyList()
+                        .showDialog(ev.nextToTarget()) ?: return emptyList()
                     val copy = flow.copy().withName(name)
                     copy.setActive(flow.isActive.now)
                     listOf(copy)
@@ -135,9 +133,8 @@ class FlowGroupPane(
             ev.dragboard.hasContent(InstrumentObject.DATA_FORMAT) -> {
                 val registry = context[InstrumentRegistry]
                 val def = ev.dragboard.getFrom(registry, InstrumentObject.DATA_FORMAT) ?: return emptyList()
-                val anchor = Point2D(ev.screenX, ev.screenY)
                 val controls = SoundProcessView.getInitialControls(
-                    def, context, defaultBus = null, anchor
+                    def, context, defaultBus = null, ev.atMouseCoords()
                 ) ?: return emptyList()
                 listOf(InstrumentFlow.create(def, controls))
             }
@@ -232,13 +229,12 @@ class FlowGroupPane(
         }
     }
 
-    override fun createNewObject(ev: Event?, list: ObjectList<AudioFlow>): AudioFlow? {
+    override fun createNewObject(promptPlacement: PromptPlacement, list: ObjectList<AudioFlow>): AudioFlow? {
         val options = FlowOption.getOptions(context)
-        val option = SimpleSelectorPrompt(options, "Add flow").showPopup(ev) ?: return null
+        val option = SimpleSelectorPrompt(options, "Add flow").showDialog(promptPlacement) ?: return null
         val takenFlowNames = context[AudioFlows].allFlows().mapTo(mutableSetOf()) { f -> f.name.now }
-        val name = option.getNameForFlow(takenFlowNames, ev) ?: return null
-        val anchor = ev.popupAnchor()
-        val flow = option.createFlow(context, anchor) ?: return null
+        val name = option.getNameForFlow(takenFlowNames, promptPlacement) ?: return null
+        val flow = option.createFlow(context, promptPlacement) ?: return null
         flow.setInitialName(name)
         return flow
     }
@@ -340,7 +336,8 @@ class FlowGroupPane(
                 applicableIf { flow -> flow !is LevelMeterFlow }
                 executes { flow, ev ->
                     if (!flow.isValid.now) {
-                        InfoPrompt("Cannot activate flow").showDialog(ev) //TODO better error description
+                        val placement = ev?.nextToTarget() ?: flow.context.defaultPlacement
+                        InfoPrompt("Cannot activate flow").showDialog(placement) //TODO better error description
                         return@executes
                     }
                     flow.toggleActive()

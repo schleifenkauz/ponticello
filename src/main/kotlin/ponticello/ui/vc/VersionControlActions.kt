@@ -1,16 +1,16 @@
 package ponticello.ui.vc
 
 import fxutils.actions.Action
+import fxutils.prompt.nextToTarget
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignG
 import ponticello.impl.Logger
 import ponticello.impl.Platform
-import ponticello.model.git.ProjectVersionControl
 import ponticello.model.project.PonticelloProject
+import ponticello.ui.impl.defaultPlacement
 import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.impl.notNull
-import reaktive.value.binding.map
 import reaktive.value.now
 import reaktive.value.reactiveValue
 
@@ -48,7 +48,8 @@ object VersionControlActions : Action.Collector<PonticelloProject>({
         ifNotApplicable(Action.IfNotApplicable.Hide)
         executes { project, ev ->
             val vc = project.versionControl.now ?: return@executes
-            CommitPrompt(project, vc).showDialog(ev)
+            val placement = ev?.nextToTarget() ?: project.context.defaultPlacement
+            CommitPrompt(project, vc).showDialog(placement)
         }
     }
     addAction("Push changes") {

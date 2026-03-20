@@ -2,8 +2,8 @@ package ponticello.ui.controls
 
 import fxutils.centerChildren
 import fxutils.controls.SliderBar
+import fxutils.prompt.PromptPlacement
 import fxutils.undo.UndoManager
-import javafx.event.Event
 import javafx.scene.Node
 import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
@@ -79,7 +79,7 @@ data object AttackReleaseControlType : ControlType<AttackReleaseControl>() {
         spec: ControlSpec?,
         oldControl: ParameterControl?,
         parameterName: String,
-        ev: Event?,
+        promptPlacement: PromptPlacement?,
     ): AttackReleaseControl = AttackReleaseControl.createDefault()
 
     override fun toString(): String = "ASR"

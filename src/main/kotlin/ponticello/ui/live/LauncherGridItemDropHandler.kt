@@ -1,7 +1,8 @@
 package ponticello.ui.live
 
 import fxutils.drag.ConfiguredDropHandler
-import javafx.scene.input.DragEvent
+import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import javafx.scene.input.TransferMode
 import ponticello.impl.Decimal
 import ponticello.impl.zero
@@ -49,7 +50,7 @@ class LauncherGridItemDropHandler(
         handleTypedFormat(BufferObject.DATA_FORMAT, TransferMode.LINK) { ev, ref ->
             ref.resolve(grid.context[BufferRegistry])
             val buffer = ref.get() ?: return@handleTypedFormat false
-            createPlayBufTarget(ev, buffer, item)
+            createPlayBufTarget(ev.nextToTarget(), buffer, item)
             true
         }
         handleTypedFormat(ScriptObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
@@ -62,13 +63,13 @@ class LauncherGridItemDropHandler(
         }
         handleSingleFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) { ev, file ->
             val buffer = grid.context[BufferRegistry].getOrAdd(file)
-            createPlayBufTarget(ev, buffer, item)
+            createPlayBufTarget(ev.nextToTarget(), buffer, item)
             true
         }
     }
 
-    private fun createPlayBufTarget(ev: DragEvent, buffer: BufferObject, item: GridItem) {
-        val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(ev) ?: return
+    private fun createPlayBufTarget(promptPlacement: PromptPlacement, buffer: BufferObject, item: GridItem) {
+        val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(promptPlacement) ?: return
         val obj = buffer.createSoundProcess(synthDef) ?: return
         grid.context[ScoreObjectRegistry].add(obj)
         item.target = ItemTarget.Object(obj.reference(), yPosition = reactiveVariable(zero))
