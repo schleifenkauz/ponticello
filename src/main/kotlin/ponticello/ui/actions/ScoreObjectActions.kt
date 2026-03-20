@@ -178,6 +178,7 @@ object ScoreObjectActions {
             icon(Material2AL.FLIP)
             executesOn<SoundProcess> { obj, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executesOn
+                if (obj.usesGeneratedScore.now) return@executesOn
                 obj.reverse(reverseEnvelopes = ev.isShiftDown())
             }
         }
@@ -225,6 +226,7 @@ object ScoreObjectActions {
             shortcut("Alt?+E")
             executesOn<SoundProcess> { obj, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executesOn
+                if (obj.usesGeneratedScore.now) return@executesOn
                 SoundProcessView.showNewEnvelopePopup(obj, ev.atMouseCoords())
             }
         }
@@ -398,7 +400,7 @@ object ScoreObjectActions {
             icon { ctx ->
                 ctx.focusedView.flatMap { v ->
                     `if`(
-                        (v!!.obj as SoundProcess).useGeneratedScore,
+                        (v!!.obj as SoundProcess).usesGeneratedScore,
                         then = { MaterialDesignC.CHART_TIMELINE_VARIANT }, otherwise = { MaterialDesignG.GROUP }
                     )
                 }

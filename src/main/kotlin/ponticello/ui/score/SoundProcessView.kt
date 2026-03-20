@@ -242,8 +242,9 @@ class SoundProcessView(
                 .filter { ctrl -> ctrl.spec.now is NumericalControlSpec && ctrl.now !is EnvelopeControl }
                 .filter { ctrl -> !obj.getInstrument().hasParameter(ctrl.name.now) }
                 .map { ctrl -> ParameterDefObject(ctrl.name.now, ctrl.spec.now!!) }
+            if (possibleParameters.isEmpty()) return
             val listView = ParameterDefSelectorPrompt(
-                possibleParameters, "New parameter", obj, fixedParameterType = ParameterType.Numerical
+                possibleParameters, "Automate parameter", obj, fixedParameterType = ParameterType.Numerical
             )
             val param = listView.showPopup(placement) ?: return
             val name = param.name.now

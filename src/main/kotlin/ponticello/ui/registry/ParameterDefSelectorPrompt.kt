@@ -1,6 +1,5 @@
 package ponticello.ui.registry
 
-import fxutils.SubWindow
 import fxutils.prompt.SimpleSelectorPrompt
 import ponticello.model.instr.*
 import ponticello.model.obj.withName
@@ -16,9 +15,6 @@ class ParameterDefSelectorPrompt(
     private val fixedParameterType: ParameterType? = null,
 ) : SimpleSelectorPrompt<ParameterDefObject>(options, title) {
     override val canCreateItem: Boolean get() = true
-
-    override val windowType: SubWindow.Type
-        get() = SubWindow.Type.Prompt
 
     override fun extractText(option: ParameterDefObject): String = option.name.now
 

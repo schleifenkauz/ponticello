@@ -47,7 +47,7 @@ class SoundProcess(
     @JsonNames("synthDef", "processDef", "instrument") val instrumentRef: ReactiveVariable<InstrumentReference>,
     override val controls: ParameterControlList,
     @SerialName("generatedScore") private var _generatedScore: Score? = null,
-    @SerialName("useGeneratedScore") private val _useGeneratedScore: ReactiveVariable<Boolean> = reactiveVariable(false),
+    private val useGeneratedScore: ReactiveVariable<Boolean> = reactiveVariable(false),
     @SerialName("generatedScoreYScale") private var _generatedScoreYScale: Decimal = one,
 ) : ScoreObject(), ParameterizedObject {
     @SerialName("name")
@@ -73,7 +73,7 @@ class SoundProcess(
 
     val generatedScore: Score? get() = _generatedScore
     val generatedScoreYScale: Decimal get() = _generatedScoreYScale
-    val useGeneratedScore: ReactiveBoolean get() = _useGeneratedScore
+    val usesGeneratedScore: ReactiveBoolean get() = useGeneratedScore
 
     @Transient
     private val _hasGeneratedScore = reactiveVariable(generatedScore != null)
@@ -130,11 +130,11 @@ class SoundProcess(
     }
 
     override fun doClone(): ScoreObject = SoundProcess(
-        instrumentRef.copy(), controls.copy(), generatedScore?.clone(), _useGeneratedScore.copy()
+        instrumentRef.copy(), controls.copy(), generatedScore?.clone(), useGeneratedScore.copy()
     )
 
     override fun deepClone(): ScoreObject = SoundProcess(
-        instrumentRef.copy(), controls.copy(), generatedScore?.deepClone(), _useGeneratedScore.copy()
+        instrumentRef.copy(), controls.copy(), generatedScore?.deepClone(), useGeneratedScore.copy()
     )
 
     override fun doCut(position: Decimal, whichHalf: HorizontalDirection): ScoreObject = SoundProcess(
@@ -304,7 +304,7 @@ class SoundProcess(
         _generatedScore = score
         _generatedScoreYScale = this.height / score.objectInstances.maxOf { inst -> inst.y + inst.height }
         _hasGeneratedScore.now = true
-        _useGeneratedScore.now = true
+        useGeneratedScore.now = true
         notifyListeners<SoundProcessView> {
             generatedScore(score, generatedScoreYScale)
             useGeneratedScore(true)
@@ -315,22 +315,22 @@ class SoundProcess(
         val score = _generatedScore ?: return
         _generatedScore = null
         _hasGeneratedScore.now = false
-        _useGeneratedScore.now = false
+        useGeneratedScore.now = false
         notifyListeners<SoundProcessView> { generatedScore(null, one) }
         context[UndoManager].record(GeneratedScoreEdit(this, score, clear = true))
     }
 
     fun toggleUseGeneratedScore() {
-        _useGeneratedScore.toggle()
-        notifyListeners<SoundProcessView> { useGeneratedScore(_useGeneratedScore.now) }
-        context[UndoManager].record(ToggleEdit("Toggle use generated score", _useGeneratedScore))
+        useGeneratedScore.toggle()
+        notifyListeners<SoundProcessView> { useGeneratedScore(useGeneratedScore.now) }
+        context[UndoManager].record(ToggleEdit("Toggle use generated score", useGeneratedScore))
     }
 
     override fun addListener(view: Listener) {
         super.addListener(view)
         if (view is SoundProcessView && _generatedScore != null) {
             view.generatedScore(_generatedScore!!, generatedScoreYScale)
-            if (_useGeneratedScore.now) {
+            if (useGeneratedScore.now) {
                 view.useGeneratedScore(true)
             }
         }
