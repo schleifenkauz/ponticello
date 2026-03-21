@@ -9,8 +9,8 @@ import ponticello.model.code.OSCHookRegistry
 import ponticello.model.code.ScriptRegistry
 import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.InstrumentRegistry
-import ponticello.model.live.LauncherGrid
 import ponticello.model.live.LiveObjectRegistry
+import ponticello.model.midi.LauncherGrid
 import ponticello.model.obj.ContextualObject
 import ponticello.model.player.ClockRegistry
 import ponticello.model.player.MeterRegistry

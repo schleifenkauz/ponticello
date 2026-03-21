@@ -10,9 +10,9 @@ import ponticello.model.code.ScriptObject
 import ponticello.model.flow.AudioFlow
 import ponticello.model.live.GridItem
 import ponticello.model.live.ItemTarget
-import ponticello.model.live.LauncherGrid
-import ponticello.model.live.LauncherGrid.GridItemReference
 import ponticello.model.live.LiveObject
+import ponticello.model.midi.LauncherGrid
+import ponticello.model.midi.LauncherGrid.GridItemReference
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get

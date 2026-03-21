@@ -27,7 +27,8 @@ import ponticello.impl.one
 import ponticello.impl.toDecimal
 import ponticello.impl.zero
 import ponticello.model.live.*
-import ponticello.model.live.LauncherGrid.GridItemReference
+import ponticello.model.midi.LauncherGrid
+import ponticello.model.midi.LauncherGrid.GridItemReference
 import ponticello.model.player.ScorePlayer
 import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PonticelloProject

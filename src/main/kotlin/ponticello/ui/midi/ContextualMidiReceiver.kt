@@ -5,7 +5,7 @@ import bundles.publicProperty
 import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.impl.MidiPitch
-import ponticello.model.live.LauncherGrid
+import ponticello.model.midi.LauncherGrid
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.project
 import ponticello.model.player.ClockObject

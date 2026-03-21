@@ -1,11 +1,17 @@
 package ponticello.model.code
 
+import com.illposed.osc.OSCMessage
 import hextant.context.Context
+import ponticello.impl.Logger
+import ponticello.model.registry.IdProvider
 import ponticello.model.registry.ObjectRegistry
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.getArgument
 import reaktive.value.now
 
 class ScriptRegistry(override val objects: MutableList<ScriptObject>) : ObjectRegistry<ScriptObject>() {
+    val ids = IdProvider(this)
+
     override val objectType: String
         get() = "Script"
 
@@ -26,6 +32,19 @@ class ScriptRegistry(override val objects: MutableList<ScriptObject>) : ObjectRe
                 }
             }
         }
+        client.addListener("/run_script") { _, msg ->
+            runScript(msg, client)
+        }
+    }
+
+    private fun runScript(msg: OSCMessage, client: SuperColliderClient) {
+        val id = msg.getArgument<Int>(0, "Script ID") ?: return
+        val script = ids.getById(id)
+        if (script == null) {
+            Logger.warn("Received /run_script for unknown script ID: $id", Logger.Category.OSC)
+            return
+        }
+        script.executeContents(client)
     }
 
     companion object {

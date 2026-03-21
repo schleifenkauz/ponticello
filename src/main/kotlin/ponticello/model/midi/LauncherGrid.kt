@@ -1,4 +1,4 @@
-package ponticello.model.live
+package ponticello.model.midi
 
 import bundles.set
 import fxutils.drag.TypedDataFormat
@@ -14,8 +14,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
+import ponticello.impl.copy
 import ponticello.impl.zero
-import ponticello.model.obj.AbstractContextualObject
+import ponticello.model.flow.MidiTrackFlow
+import ponticello.model.flow.NodePlacement
+import ponticello.model.live.GridItem
+import ponticello.model.live.ItemTarget
+import ponticello.model.live.LauncherGridEdit
 import ponticello.model.obj.project
 import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
@@ -27,6 +32,9 @@ import ponticello.model.registry.reference
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
+import ponticello.sc.client.ScWriter
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.score.ScoreObjectSelectionManager
 import reaktive.value.ReactiveVariable
@@ -38,7 +46,7 @@ import kotlin.math.sqrt
 class LauncherGrid private constructor(
     @SerialName("items") private val banks: MutableList<Array<GridItem>>,
     val target: ReactiveVariable<Target> = reactiveVariable(Target.None),
-) : AbstractContextualObject() {
+) : MidiInstrument() {
     @Transient
     lateinit var undoManager: UndoManager
         private set
@@ -50,20 +58,20 @@ class LauncherGrid private constructor(
 
     private val columns get() = sqrt(banks[currentBank].size.toDouble()).toInt()
 
-    val isActive = reactiveVariable(false)
-
     @Transient
     lateinit var scheduler: ScoreObjectScheduler
 
     @Transient
     private val listeners = ListenerManager.createWeakListenerManager<View>()
 
+    private lateinit var client: SuperColliderClient
+
     fun items(): List<GridItem> = banks[currentBank].asList()
 
     override fun initialize(context: Context) {
-        undoManager = context[UndoManager]/*.createSubManager()*/
+        undoManager = context[UndoManager.Companion]/*.createSubManager()*/
         val myContext = context.extend {
-            set(UndoManager, undoManager)
+            set(UndoManager.Companion, undoManager)
         }
         super.initialize(myContext)
         scheduler = context[ScoreObjectScheduler]
@@ -77,12 +85,50 @@ class LauncherGrid private constructor(
                 item.initialize(myContext, this)
             }
         }
+        client = context[SuperColliderClient]
+    }
+
+    override fun copy(): MidiInstrument = LauncherGrid(
+        banks.mapTo(mutableListOf()) { arr -> arr.map { item -> item.copy() }.toTypedArray() },
+        target.copy()
+    )
+
+    private fun ScWriter.appendItems() {
+        append("[")
+        for ((idx, item) in banks[currentBank].withIndex()) {
+            if (idx != 0) append(",\n")
+            item.target.run { code() }
+        }
+        append("]")
+    }
+
+    private fun ScWriter.appendModes() {
+        append("[")
+        for ((idx, item) in banks[currentBank].withIndex()) {
+            if (idx != 0) append(", ")
+            append('\\')
+            append(item.mode.now.name.lowercase())
+        }
+    }
+
+    override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) = writer.run {
+        append(superColliderName, " = LauncherGridMidiInstrument(")
+        appendItems()
+        append(", ")
+        appendModes()
+        append("enabled: ", isEnabled.now, ")")
     }
 
     fun selectBank(index: Int) {
         require(index in banks.indices) { "Invalid bank index: $index" }
         if (currentBank == index) return
         currentBank = index
+        client.run {
+            append("$superColliderName.setItems(")
+            appendItems()
+            appendModes()
+            append(");")
+        }
         listeners.notifyListeners {
             selectedBank(index)
         }
@@ -115,6 +161,19 @@ class LauncherGrid private constructor(
         }
     }
 
+    fun updatedItem(item: GridItem, value: ItemTarget) {
+        val idx = banks[currentBank].indexOf(item)
+        if (idx != -1) {
+            client.run {
+                append("$superColliderName.setItem($idx, ")
+                value.run { code() }
+                append(", \\")
+                append(item.mode.now.name.lowercase())
+                append(");")
+            }
+        }
+    }
+
     fun getGridIndices(item: GridItem): Pair<Int, Int> {
         val index = items().indexOf(item)
         val row = index / columns
@@ -130,6 +189,7 @@ class LauncherGrid private constructor(
         val j = bank.indexOf(item2)
         bank[j] = item1
         bank[i] = item2
+        client.run("$superColliderName.swapItems($i, $j)")
         listeners.notifyListeners {
             updateItem(item1)
             updateItem(item2)
@@ -140,7 +200,7 @@ class LauncherGrid private constructor(
     fun noteOn(item: GridItem, velocity: Int) {
         when {
             ModifierKeyTracker.isAltDown.now -> {
-                val selectedView = context[ScoreObjectSelectionManager].focusedView.now
+                val selectedView = context[ScoreObjectSelectionManager.Companion].focusedView.now
                 if (selectedView == null) {
                     Logger.warn("No score object selected", Logger.Category.Midi)
                     return
@@ -163,18 +223,13 @@ class LauncherGrid private constructor(
                     return
                 }
                 Platform.runLater {
-                    context[ScoreObjectDuplicator].enterDuplicateMode(targetObject)
+                    context[ScoreObjectDuplicator.Companion].enterDuplicateMode(targetObject)
                 }
-            }
-
-            else -> {
-                item.target.pressed(velocity, item)
             }
         }
     }
 
     fun noteOff(item: GridItem) {
-        item.target.released(item)
     }
 
     fun deactivateAll() {
@@ -193,7 +248,7 @@ class LauncherGrid private constructor(
         var obj = scoreObject
         val cutoff = (time + obj.duration) - player.playHead.currentTime
         if (item.mode.now == GridItem.Mode.Gate && cutoff > zero) {
-            val name = context[ScoreObjectRegistry].availableName(obj.name.now)
+            val name = context[ScoreObjectRegistry.Companion].availableName(obj.name.now)
             obj = obj.cut(obj.duration - cutoff, HorizontalDirection.LEFT, name) ?: obj
         }
         runFXWithTimeout(50) { //timeout to avoid double playback (maybe solve this in a cleaner way...)
@@ -257,7 +312,7 @@ class LauncherGrid private constructor(
 
         companion object {
             fun options(context: Context): List<Target> {
-                val subScores = context[ScoreObjectRegistry].filterIsInstance<ScoreObjectGroup>()
+                val subScores = context[ScoreObjectRegistry.Companion].filterIsInstance<ScoreObjectGroup>()
                 val subScoreReferences = subScores.map { SubScore(it.reference()) }
                 return listOf(None, MainScore) + subScoreReferences
             }

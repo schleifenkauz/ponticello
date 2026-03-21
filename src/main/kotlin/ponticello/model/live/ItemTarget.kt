@@ -1,18 +1,15 @@
 package ponticello.model.live
 
 import hextant.context.Context
-import javafx.application.Platform
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
-import ponticello.impl.div
-import ponticello.impl.toDecimal
+import ponticello.impl.writeCode
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlows
-import ponticello.model.instr.ParameterDefObject
+import ponticello.model.midi.LauncherGrid
 import ponticello.model.obj.*
-import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.model.project.LIVE_BUFFERS
 import ponticello.model.project.get
 import ponticello.model.project.scripts
@@ -22,14 +19,9 @@ import ponticello.model.registry.reference
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
-import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ValueControl
-import ponticello.sc.client.SuperColliderClient
-import ponticello.ui.dock.AppLayout
-import ponticello.ui.score.ScoreObjectViewPane
+import ponticello.sc.client.ScWriter
 import reaktive.value.*
 import reaktive.value.binding.and
-import java.util.concurrent.CompletableFuture
 
 @Serializable
 sealed class ItemTarget : AbstractContextualObject() {
@@ -46,27 +38,13 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     abstract val canView: Boolean
 
-    open val canStop: Boolean get() = false
-
     abstract val isActive: ReactiveBoolean
 
-    abstract fun activate(velocity: Int, mode: GridItem.Mode)
+    abstract fun copy(): ItemTarget
 
-    abstract fun deactivate(mode: GridItem.Mode)
+    abstract fun ScWriter.code()
 
-    open fun pressed(velocity: Int, item: GridItem) {
-        if (!isActive.now || item.mode.now != GridItem.Mode.Toggle) {
-            activate(velocity, item.mode.now)
-        } else {
-            deactivate(item.mode.now)
-        }
-    }
-
-    open fun released(item: GridItem) {
-        if (item.mode.now == GridItem.Mode.Gate) {
-            deactivate(item.mode.now)
-        }
-    }
+    fun code() = writeCode { code() }
 
     fun initialize(grid: LauncherGrid) {
         initialize(grid.context)
@@ -88,10 +66,10 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val canView: Boolean
             get() = false
 
-        override fun activate(velocity: Int, mode: GridItem.Mode) {
-        }
+        override fun copy(): ItemTarget = None()
 
-        override fun deactivate(mode: GridItem.Mode) {
+        override fun ScWriter.code() {
+            append("nil")
         }
 
         override fun toString(): String = "None"
@@ -109,8 +87,6 @@ sealed class ItemTarget : AbstractContextualObject() {
         override lateinit var isActive: ReactiveBoolean
             private set
 
-        override val canStop get() = true
-
         override val name: ReactiveString get() = liveBuffer.name
 
         override fun toString(): String = "Toggle ${liveBuffer.getName()}"
@@ -121,14 +97,12 @@ sealed class ItemTarget : AbstractContextualObject() {
             isActive = liveBuffer.get()?.enabled ?: reactiveValue(false)
         }
 
-        override fun activate(velocity: Int, mode: GridItem.Mode) {
-            val buf = liveBuffer.get() ?: return
-            buf.setEnabled(true)
-        }
+        override fun copy(): ItemTarget = ToggleRecording(liveBuffer)
 
-        override fun deactivate(mode: GridItem.Mode) {
-            val buf = liveBuffer.get() ?: return
-            buf.setEnabled(false)
+        override fun ScWriter.code() {
+            val buf = liveBuffer.get() ?: return append("nil")
+            val id = context.project[LIVE_BUFFERS].ids.getId(buf) ?: return append("nil")
+            append("ToggleRecordingItem($id)")
         }
     }
 
@@ -138,11 +112,6 @@ sealed class ItemTarget : AbstractContextualObject() {
         val ref: ScoreObjectReference,
         val yPosition: ReactiveVariable<Decimal>,
     ) : ItemTarget() {
-        val velocityParameter: ReactiveVariable<String?> = reactiveVariable(null)
-
-        @Transient
-        private var instanceId: CompletableFuture<Int?>? = null
-
         override val canView: Boolean
             get() = ref.isResolved.now
 
@@ -153,8 +122,6 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override val supportedModes: List<GridItem.Mode>
             get() = GridItem.Mode.entries - GridItem.Mode.None
-
-        override val canStop: Boolean get() = true
 
         @Transient
         private val active = reactiveVariable(false)
@@ -167,41 +134,10 @@ sealed class ItemTarget : AbstractContextualObject() {
             ref.resolve(context[ScoreObjectRegistry])
         }
 
-        override fun activate(velocity: Int, mode: GridItem.Mode) {
-            active.set(true)
-            val obj = ref.get() ?: return
-            val player = grid.getPlayer()
-            val quantization = QuantizationConfig.createDefault() //TODO where to get the quantization???
-            player.getClock().scheduleAction(quantization) { quantizationDelay ->
-                val time = if (player.isPlaying.now) player.playHead.currentTime else zero
-                val position = ObjectPosition(time, yPosition.now)
-                val totalDelay = quantizationDelay.coerceAtMost(context.playbackSettings.lookAhead)
-                val extraArguments = mutableMapOf<ParameterDefObject, ParameterControl>()
-                extraArguments[ParameterDefObject.VELOCITY] = ValueControl.create(velocity.toDecimal())
-                if (mode != GridItem.Mode.Trigger) {
-                    extraArguments[ParameterDefObject.DURATION] = ValueControl.create(Decimal.INF)
-                }
-                val playbackInfo = ObjectPlaybackInfo(position, player, totalDelay / 2, extraArguments = extraArguments)
-                instanceId = grid.scheduler.scheduleObject(obj, playbackInfo, scLangLatency = totalDelay / 2)
-            }
-        }
+        override fun copy(): ItemTarget = Object(ref, yPosition)
 
-        override fun released(item: GridItem) {
-            if (item.mode.now == GridItem.Mode.Trigger) {
-                active.set(false)
-            }
-            super.released(item)
-        }
-
-        override fun deactivate(mode: GridItem.Mode) {
-            active.set(false)
-            val obj = ref.get() ?: return
-            instanceId?.thenAccept { id ->
-                if (id != null) {
-                    grid.scheduler.stopObjectInstantly(obj, id)
-                }
-            }
-            instanceId = null
+        override fun ScWriter.code() {
+            append("SoundProcessGridItem('${ref.name.now}')")
         }
 
         override fun toString() = ref.getName()
@@ -221,8 +157,6 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val targetObject: ScoreObject?
             get() = (ref.get() as? LiveScoreObject)?.scoreObject
 
-        override val canStop: Boolean get() = true
-
         override val isActive: ReactiveBoolean
             get() = liveObject?.isScheduled ?: reactiveValue(false)
 
@@ -231,19 +165,12 @@ sealed class ItemTarget : AbstractContextualObject() {
             ref.resolve(context[LiveObjectRegistry])
         }
 
-        override fun activate(velocity: Int, mode: GridItem.Mode) {
-            val obj = ref.get() ?: return
-            obj.play()
-            if (obj is LiveScoreObject) {
-                Platform.runLater {
-                    context[AppLayout].get<ScoreObjectViewPane>().showContent(obj)
-                }
-            }
-        }
+        override fun copy(): ItemTarget = LiveObjectRef(ref)
 
-        override fun deactivate(mode: GridItem.Mode) {
-            val obj = ref.get() ?: return
-            obj.pause()
+        override fun ScWriter.code() {
+            val obj = ref.get() ?: return append("nil")
+            val id = context[LiveObjectRegistry].ids.getId(obj) ?: return append("nil")
+            append("LiveObjectGridItem($id)")
         }
 
         override fun toString() = "LiveObject: ${ref.getName()}"
@@ -259,8 +186,6 @@ sealed class ItemTarget : AbstractContextualObject() {
         override lateinit var isActive: ReactiveBoolean
             private set
 
-        override val canStop: Boolean get() = true
-
         override val name: ReactiveString get() = ref.name
 
         override fun initialize(context: Context) {
@@ -272,17 +197,12 @@ sealed class ItemTarget : AbstractContextualObject() {
                 else flow.isActive and flow.parentGroup!!.isActive
         }
 
-        override fun deactivate(mode: GridItem.Mode) {
-            val flow = ref.get() ?: return
-            flow.setActive(false)
-        }
+        override fun copy(): ItemTarget = Flow(ref)
 
-        override fun activate(velocity: Int, mode: GridItem.Mode) {
-            val flow = ref.get() ?: return
-            if (!flow.parentGroup!!.isActive.now) {
-                flow.parentGroup!!.toggleActive()
-            }
-            flow.setActive(true)
+        override fun ScWriter.code() {
+            val obj = ref.get() ?: return append("nil")
+            val id = context[AudioFlows].ids.getId(obj) ?: return append("nil")
+            append("FlowGridItem($id)")
         }
 
         override fun toString(): String = "Flow $${ref.getName()}"
@@ -298,14 +218,20 @@ sealed class ItemTarget : AbstractContextualObject() {
         private val active = reactiveVariable(false)
         override val isActive: ReactiveBoolean get() = active
 
-        override fun activate(velocity: Int, mode: GridItem.Mode) {
-            active.set(true)
-            val script = ref.get() ?: return
-            script.executeContents(context[SuperColliderClient])
+        override val supportedModes: List<GridItem.Mode>
+            get() = listOf(GridItem.Mode.Trigger)
+
+        override fun initialize(context: Context) {
+            super.initialize(context)
+            ref.resolve(context.project.scripts)
         }
 
-        override fun deactivate(mode: GridItem.Mode) {
-            active.set(false)
+        override fun copy(): ItemTarget = Script(ref)
+
+        override fun ScWriter.code() {
+            val script = ref.get() ?: return append("nil")
+            val id = context.project.scripts.ids.getId(script) ?: return append("nil")
+            append("ScriptGridItem($id)")
         }
 
         override fun toString(): String = "Script ${ref.getName()}"

@@ -5,6 +5,8 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import ponticello.impl.copy
+import ponticello.model.midi.LauncherGrid
 import ponticello.model.obj.AbstractContextualObject
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
@@ -31,6 +33,7 @@ class GridItem(
                 mode.now = value.supportedModes.first()
             }
             value.initialize(grid)
+            grid.updatedItem(this, value)
             grid.undoManager.record(ChooseTarget(this, oldTarget, value, oldMode))
             grid.notifyViews { updateItem(this@GridItem) }
         }
@@ -48,6 +51,8 @@ class GridItem(
         this.grid = grid
         initialize(context)
     }
+
+    fun copy(): GridItem = GridItem(reactiveVariable(target.copy()), mode.copy())
 
     enum class Mode {
         None, Trigger, Gate, Toggle;

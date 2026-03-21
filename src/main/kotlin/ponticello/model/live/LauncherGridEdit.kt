@@ -1,6 +1,7 @@
 package ponticello.model.live
 
 import fxutils.undo.AbstractEdit
+import ponticello.model.midi.LauncherGrid
 
 abstract class LauncherGridEdit : AbstractEdit() {
     class SwapItems(
