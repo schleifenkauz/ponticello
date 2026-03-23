@@ -1,5 +1,5 @@
 LauncherGridMidiInstrument {
-	var <items, <modes, id, <>enabled, on;
+	var <items, <modes, id, <>enabled, on, track;
 
 	* new { |items, modes, id, enabled=true|
 		var on = List.fill(16, false);
@@ -30,26 +30,34 @@ LauncherGridMidiInstrument {
 	}
 
 	noteOn { |num, velocity, src|
-		var mode = modes[num];
+		var mode;
+		num = num - 36;
+		mode = modes[num];
 		if (items[num].notNil) {
-			items[num].noteOn(num, velocity, src, mode);
+			src.track = track;
+			items[num].noteOn(velocity, src, mode);
 		};
 		Ponticello.sendMsg('/grid_item_note_on', id, num);
+		^true
 	}
 
 	noteOff { |num, velocity, src|
 		var mode = modes[num];
 		if (items[num].notNil) {
-			items[num].noteOff(num, velocity, src, mode);
+			src.track = track;
+			items[num].noteOff(velocity, src, mode);
 		};
 		Ponticello.sendMsg('/grid_item_note_off', id, num);
+		^true
 	}
 
-	control { }
+	control { ^true }
 
 	allNotesOff { }
 
-	activate {}
+	activate { |trk|
+		track = trk;
+	}
 
 	dispose {}
 }
@@ -57,7 +65,7 @@ LauncherGridMidiInstrument {
 SoundProcessGridItem {
 	var proc, inst;
 
-	* new { |procName| ^super.new(SoundProcess.get(procName)) }
+	* new { |procName| ^super.newCopyArgs(SoundProcess.get(procName)) }
 
 	noteOn { |velocity, src, mode|
 		if (inst.isNil || (mode != \toggle)) {
@@ -82,7 +90,7 @@ SoundProcessGridItem {
 AudioFlowGridItem {
 	var flowId;
 
-	* new { |flowId| ^super.new(flowId) }
+	* new { |flowId| ^super.newCopyArgs(flowId) }
 
 	noteOn { |velocity, src, mode|
 		Ponticello.sendMsg('/activate_flow', flowId)
@@ -98,7 +106,7 @@ AudioFlowGridItem {
 ScriptGridItem {
 	var scriptId;
 
-	* new { |scriptId| ^super.new(scriptId) }
+	* new { |scriptId| ^super.newCopyArgs(scriptId) }
 
 	noteOn { |velocity, src, mode|
 		Ponticello.sendMsg('/run_script', scriptId)
@@ -111,16 +119,16 @@ ScriptGridItem {
 PlayerGridItem {
 	var playerId;
 
-	* new { |playerId| ^super.new(playerId) }
+	* new { |playerId| ^super.newCopyArgs(playerId) }
 
 	noteOn { |velocity, src, mode|
-		case (mode)
+		switch (mode)
 		{ \gate } { Ponticello.sendMsg('/start_live_obj', playerId) }
 		{ \toggle } { Ponticello.sendMsg('/toggle_live_obj', playerId) }
 	}
 
 	noteOff { |velocity, src, mode|
-		case (mode)
+		switch (mode)
 		{ \gate } { Ponticello.sendMsg('/pause_live_obj', playerId) }
 	}
 }
@@ -128,11 +136,34 @@ PlayerGridItem {
 ToggleRecordingGridItem {
 	var bufferId;
 
-	* new { |bufferId| ^super.new(bufferId) }
+	* new { |bufferId| ^super.newCopyArgs(bufferId) }
 
 	noteOn { |velocity, src, mode|
 		Ponticello.sendMsg('/toggle_recording', bufferId)
 	}
 
 	noteOff { |velocity, src, mode| }
+}
+
+PlaybackActionItem {
+	var type;
+
+	* new { |type| ^super.newCopyArgs(type) }
+
+	noteOn { |velocity, src, mode|
+		switch (type)
+		{ \play } {
+			switch (mode)
+			{ \gate } { Ponticello.sendMsg('/start_play') }
+			{ \toggle } { Ponticello.sendMsg('/toggle_play') }
+		}
+		{ \stop } { Ponticello.sendMsg('/stop_playback') }
+		{ \gotostart } { Ponticello.sendMsg('/go_to_start') }
+	}
+
+	noteOff { |velocity, src, mode|
+		if ((type == \play) && (mode == \gate)) {
+			Ponticello.sendMsg('/pause_play')
+		}
+	}
 }

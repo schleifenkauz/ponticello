@@ -10,6 +10,7 @@ import ponticello.impl.Logger
 import ponticello.model.midi.VSTMidiInstrument
 import ponticello.model.registry.IdProvider
 import ponticello.model.registry.ObjectRegistry
+import ponticello.model.score.ScoreObject
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.getArgument
 import reaktive.value.now
@@ -109,6 +110,8 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         }
         obj.flows.removeListener(ids)
     }
+
+    fun hasReferencesTo(obj: ScoreObject) = allFlows().any { flow -> flow.referencesScoreObject(obj) }
 
     companion object : PublicProperty<AudioFlows> by publicProperty("AudioFlows") {
         fun createDefault(): AudioFlows = AudioFlows(mutableListOf())

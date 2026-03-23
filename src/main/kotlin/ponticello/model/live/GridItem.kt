@@ -6,8 +6,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
-import ponticello.model.midi.LauncherGrid
+import ponticello.model.midi.MidiGridInstrument
 import ponticello.model.obj.AbstractContextualObject
+import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -19,7 +20,10 @@ class GridItem(
     val mode: ReactiveVariable<Mode> = reactiveVariable(_target.now.supportedModes.first()),
 ) : AbstractContextualObject() {
     @Transient
-    private lateinit var grid: LauncherGrid
+    private lateinit var grid: MidiGridInstrument
+
+    @Transient
+    private lateinit var modeObserver: Observer
 
     var target: ItemTarget
         get() = _target.now
@@ -47,9 +51,12 @@ class GridItem(
         target.initialize(grid)
     }
 
-    fun initialize(context: Context, grid: LauncherGrid) {
+    fun initialize(context: Context, grid: MidiGridInstrument) {
         this.grid = grid
         initialize(context)
+        modeObserver = mode.observe { _, _, newMode ->
+            grid.updatedMode(this, newMode)
+        }
     }
 
     fun copy(): GridItem = GridItem(reactiveVariable(target.copy()), mode.copy())

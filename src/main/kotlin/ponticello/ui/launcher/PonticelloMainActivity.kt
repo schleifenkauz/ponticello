@@ -64,7 +64,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         )
         context[ScorePlayer.MAIN] = player
         playbackMessageListener = PlaybackMessageListener(
-            project[PLAYBACK_SETTINGS], project.objects, project.flows
+            project.objects, project.flows, player
         )
         context[SuperColliderClient].addListener(playbackMessageListener)
     }

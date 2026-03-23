@@ -46,7 +46,6 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     }
 
     override fun ScWriter.createObject() {
-        writer.createSoundProcessObject(this@ParameterizedAudioFlow)
         isCreatedInSuperCollider = true
     }
 
@@ -58,7 +57,10 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
     }
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        +"$superColliderName = SoundProcess.get('flow_${name.now}').createInstance"
+        append("var proc = ")
+        writer.createSoundProcessObject(this@ParameterizedAudioFlow)
+        appendLine(";")
+        +"$superColliderName = proc.createInstance"
         +"$superColliderName.start($placement, latency: 0, playerId: -1, run: ${isActive.now})"
     }
 

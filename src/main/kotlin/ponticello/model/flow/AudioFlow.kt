@@ -9,19 +9,23 @@ import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.project
 import ponticello.model.project.flows
+import ponticello.model.score.ScoreObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import ponticello.ui.midi.MidiContext
 import reaktive.Observer
 import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import reaktive.value.reactiveVariable
 import java.util.concurrent.CompletableFuture
 
 @Serializable
 sealed class AudioFlow : AbstractSuperColliderObject() {
-    private val active = reactiveVariable(true)
+    //making this abstract and implementing it in the subclasses is just a workaround
+    //the kotlin serialization compiler plugin for some reason
+    //fails when there are fields in abstract @Serializable classes
+    protected abstract val active: ReactiveVariable<Boolean>
     val isActive: ReactiveValue<Boolean> get() = active
 
     @Transient
@@ -116,6 +120,8 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
     abstract override fun copy(): AudioFlow
 
     open fun usesBus(bus: BusObject): Boolean = false
+
+    open fun referencesScoreObject(obj: ScoreObject): Boolean = false
 
     companion object {
         val DATA_FORMAT = TypedDataFormat<FlowReference>("ponticello/audio-flow")

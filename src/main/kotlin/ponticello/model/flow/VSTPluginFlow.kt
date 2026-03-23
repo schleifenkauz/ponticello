@@ -31,6 +31,8 @@ class VSTPluginFlow private constructor(
     private val busRef: ReactiveVariable<BusReference>,
     val parameterMappings: VSTPluginParameterMappingList = VSTPluginParameterMappingList(),
 ) : AudioFlow(), ObjectList.Listener<VSTPluginParameterMapping> {
+    override val active = reactiveVariable(true)
+
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 

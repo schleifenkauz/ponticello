@@ -19,6 +19,8 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 class LevelMeterFlow private constructor(val targetRef: ReactiveVariable<BusReference>) : AudioFlow() {
+    override val active = reactiveVariable(true)
+
     override val isValid: ReactiveValue<Boolean> = targetRef.flatMap(BusReference::isResolved)
 
     @Transient

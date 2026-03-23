@@ -1,15 +1,15 @@
 package ponticello.model.live
 
 import fxutils.undo.AbstractEdit
-import ponticello.model.midi.LauncherGrid
+import ponticello.model.midi.MidiGridInstrument
 
-abstract class LauncherGridEdit : AbstractEdit() {
+abstract class MidiGridEdit : AbstractEdit() {
     class SwapItems(
-        val grid: LauncherGrid,
+        val grid: MidiGridInstrument,
         val bankIndex: Int,
         val item1: GridItem,
         val item2: GridItem,
-    ): LauncherGridEdit() {
+    ) : MidiGridEdit() {
         override val actionDescription: String
             get() = "Swap Launcher Grid items"
 
@@ -22,7 +22,7 @@ abstract class LauncherGridEdit : AbstractEdit() {
         }
     }
 
-    class AddBank(val grid: LauncherGrid, val bankIndex: Int) : LauncherGridEdit() {
+    class AddBank(val grid: MidiGridInstrument, val bankIndex: Int) : MidiGridEdit() {
         override val actionDescription: String
             get() = "Add pad bank"
 
@@ -35,7 +35,7 @@ abstract class LauncherGridEdit : AbstractEdit() {
         }
     }
 
-    class RemoveBank(val grid: LauncherGrid, val bankIndex: Int) : LauncherGridEdit() {
+    class RemoveBank(val grid: MidiGridInstrument, val bankIndex: Int) : MidiGridEdit() {
         override val actionDescription: String
             get() = "Remove pad bank"
 

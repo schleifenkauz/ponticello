@@ -9,12 +9,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.*
-import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.MidiInstrument
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.midi.MidiEvent
 import ponticello.model.obj.MidiTrackReference
+import ponticello.model.obj.project
+import ponticello.model.project.flows
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.ControlSpec
 import reaktive.Reactive
@@ -75,7 +76,7 @@ class MidiObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        track.now.resolve(context[AudioFlows].allMidiTracks())
+        track.now.resolve(context.project.flows.allMidiTracks())
         controls.initialize(context, this)
     }
 

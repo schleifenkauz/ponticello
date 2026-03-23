@@ -158,7 +158,7 @@ MidiTrack {
 		if (enabled) {
 			fork {
 				var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
-				//postf("Starting at index % (src instr: %)\n", idx, src.instr);
+				postf("Starting at index % (src instr: %)\n", idx, src.instr);
 				while { (continue == true) && (idx < instruments.size) } {
 					var instr = instruments[idx];
 					continue = fn.value(instr) ? true;
@@ -168,7 +168,7 @@ MidiTrack {
 					};
 					idx = idx + 1;
 				};
-				if (continue) {
+				if (continue == true) {
 					fn.value(recorder);
 				}
 			}
@@ -177,7 +177,7 @@ MidiTrack {
 
 	noteOn { |num, val, src|
 		src.track = this;
-		//postf("Note On %, % (src: %)\n", num, val, src);
+		postf("Note On %, % (src: %)\n", num, val, src);
 		activeNotes[num] = activeNotes[num].add(src);
 		notesInPedal.remove(num);
 		this.perform(src) { |instr|

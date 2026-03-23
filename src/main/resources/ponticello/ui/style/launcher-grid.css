@@ -1,10 +1,12 @@
 .launcher-grid-item {
     -fx-alignment: top-center;
     -fx-border-color: black;
-    -fx-padding: 5px;
-    -fx-spacing: 8px;
-    -fx-pref-height: 150px;
-    -fx-pref-width: 150px;
+    -fx-padding: 2px;
+    -fx-spacing: 2px;
+    -fx-min-height: 90px;
+    -fx-max-height: 90px;
+    -fx-min-width: 90px;
+    -fx-max-width: 90px;
 }
 
 .launcher-grid-item:hover {
@@ -17,6 +19,12 @@
 
 .launcher-grid-item:drop-possible {
     -fx-background-color: rgba(0, 128, 0, 0.5);
+}
+
+Text.grid-item-label {
+    -fx-max-width: 80px;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
 }
 
 Button.grid-bank-selector {

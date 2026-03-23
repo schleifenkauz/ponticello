@@ -25,6 +25,8 @@ class InstrumentFlow(
     private var defRef: ReactiveVariable<ObjectReference<InstrumentObject>>,
     override val controls: ParameterControlList,
 ) : ParameterizedAudioFlow() {
+    override val active = reactiveVariable(true)
+
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 

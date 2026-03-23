@@ -5,6 +5,7 @@ import kotlinx.serialization.Transient
 import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.AbstractNamedObject
+import ponticello.model.score.ScoreObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.midi.MidiContext
@@ -39,6 +40,8 @@ sealed class MidiInstrument : AbstractNamedObject() {
     open fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {}
 
     open fun midiContext(): MidiContext? = null
+
+    open fun referencesScoreObject(obj: ScoreObject): Boolean = false
 
     companion object {
         private var idCounter = 0

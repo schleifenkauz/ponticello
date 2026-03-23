@@ -5,13 +5,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
-import ponticello.impl.writeCode
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlows
-import ponticello.model.midi.LauncherGrid
+import ponticello.model.midi.MidiGridInstrument
 import ponticello.model.obj.*
+import ponticello.model.player.ScorePlayer
 import ponticello.model.project.LIVE_BUFFERS
 import ponticello.model.project.get
+import ponticello.model.project.objects
 import ponticello.model.project.scripts
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
@@ -20,8 +21,10 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.sc.client.ScWriter
+import ponticello.ui.actions.PlaybackActions
 import reaktive.value.*
 import reaktive.value.binding.and
+import reaktive.value.binding.`if`
 
 @Serializable
 sealed class ItemTarget : AbstractContextualObject() {
@@ -33,7 +36,7 @@ sealed class ItemTarget : AbstractContextualObject() {
     abstract val name: ReactiveString
 
     @Transient
-    protected lateinit var grid: LauncherGrid
+    protected lateinit var grid: MidiGridInstrument
         private set
 
     abstract val canView: Boolean
@@ -44,9 +47,7 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     abstract fun ScWriter.code()
 
-    fun code() = writeCode { code() }
-
-    fun initialize(grid: LauncherGrid) {
+    fun initialize(grid: MidiGridInstrument) {
         initialize(grid.context)
         this.grid = grid
     }
@@ -61,7 +62,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             get() = reactiveValue(false)
 
         override val name: ReactiveString
-            get() = reactiveValue("<select>")
+            get() = reactiveValue("")
 
         override val canView: Boolean
             get() = false
@@ -131,7 +132,7 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override fun initialize(context: Context) {
             super.initialize(context)
-            ref.resolve(context[ScoreObjectRegistry])
+            ref.resolve(context.project.objects)
         }
 
         override fun copy(): ItemTarget = Object(ref, yPosition)
@@ -235,6 +236,38 @@ sealed class ItemTarget : AbstractContextualObject() {
         }
 
         override fun toString(): String = "Script ${ref.getName()}"
+    }
+
+    @Serializable
+    data class PlaybackAction(@SerialName("_type") val type: PlaybackActions.Type) : ItemTarget() {
+        override lateinit var name: ReactiveString
+        override val canView: Boolean
+            get() = false
+        override val isActive: ReactiveBoolean
+            get() = when (type) {
+                PlaybackActions.Type.Play -> context[ScorePlayer.MAIN].isPlaying
+                else -> reactiveValue(false)
+            }
+
+        override fun initialize(context: Context) {
+            super.initialize(context)
+            name = when (type) {
+                PlaybackActions.Type.Play -> `if`(
+                    context[ScorePlayer.MAIN].isPlaying,
+                    then = { "pause" },
+                    otherwise = { "play" }
+                )
+
+                PlaybackActions.Type.Stop -> reactiveValue("stop")
+                PlaybackActions.Type.GoToStart -> reactiveValue("->start")
+            }
+        }
+
+        override fun copy(): ItemTarget = PlaybackAction(type)
+
+        override fun ScWriter.code() {
+            append("PlaybackActionItem(\\${type.name.lowercase()})")
+        }
     }
 
     companion object {

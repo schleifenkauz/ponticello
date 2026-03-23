@@ -20,7 +20,7 @@ import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.flow.NodePlacement
 import ponticello.model.live.GridItem
 import ponticello.model.live.ItemTarget
-import ponticello.model.live.LauncherGridEdit
+import ponticello.model.live.MidiGridEdit
 import ponticello.model.obj.project
 import ponticello.model.player.ScoreObjectScheduler
 import ponticello.model.player.ScorePlayer
@@ -43,7 +43,7 @@ import reaktive.value.reactiveVariable
 import kotlin.math.sqrt
 
 @Serializable
-class LauncherGrid private constructor(
+class MidiGridInstrument private constructor(
     @SerialName("items") private val banks: MutableList<Array<GridItem>>,
     val target: ReactiveVariable<Target> = reactiveVariable(Target.None),
 ) : MidiInstrument() {
@@ -57,6 +57,7 @@ class LauncherGrid private constructor(
     val availableBanks get() = banks.indices
 
     private val columns get() = sqrt(banks[currentBank].size.toDouble()).toInt()
+    val rows get() = columns
 
     @Transient
     lateinit var scheduler: ScoreObjectScheduler
@@ -64,6 +65,7 @@ class LauncherGrid private constructor(
     @Transient
     private val listeners = ListenerManager.createWeakListenerManager<View>()
 
+    @Transient
     private lateinit var client: SuperColliderClient
 
     fun items(): List<GridItem> = banks[currentBank].asList()
@@ -88,15 +90,21 @@ class LauncherGrid private constructor(
         client = context[SuperColliderClient]
     }
 
-    override fun copy(): MidiInstrument = LauncherGrid(
+    override fun copy(): MidiInstrument = MidiGridInstrument(
         banks.mapTo(mutableListOf()) { arr -> arr.map { item -> item.copy() }.toTypedArray() },
         target.copy()
     )
 
     private fun ScWriter.appendItems() {
         append("[")
-        for ((idx, item) in banks[currentBank].withIndex()) {
-            if (idx != 0) append(",\n")
+        val items = banks[currentBank]
+        for ((idx, item) in items.withIndex()) {
+            if (idx != 0) {
+                append(", ")
+                if (items[idx - 1].target is ItemTarget.None) {
+                    append("\n")
+                }
+            }
             item.target.run { code() }
         }
         append("]")
@@ -109,6 +117,7 @@ class LauncherGrid private constructor(
             append('\\')
             append(item.mode.now.name.lowercase())
         }
+        append("]")
     }
 
     override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) = writer.run {
@@ -116,7 +125,11 @@ class LauncherGrid private constructor(
         appendItems()
         append(", ")
         appendModes()
-        append("enabled: ", isEnabled.now, ")")
+        append(", enabled: ", isEnabled.now, ")")
+    }
+
+    override fun referencesScoreObject(obj: ScoreObject): Boolean = banks.any { bank ->
+        bank.any { item -> item.target.targetObject == obj }
     }
 
     fun selectBank(index: Int) {
@@ -126,6 +139,7 @@ class LauncherGrid private constructor(
         client.run {
             append("$superColliderName.setItems(")
             appendItems()
+            append(", ")
             appendModes()
             append(");")
         }
@@ -144,7 +158,7 @@ class LauncherGrid private constructor(
                 item.initialize(context, this)
             }
         }
-        undoManager.record(LauncherGridEdit.AddBank(this, bankIndex))
+        undoManager.record(MidiGridEdit.AddBank(this, bankIndex))
         notifyViews { addedBank(bankIndex) }
         selectBank(bankIndex)
     }
@@ -152,7 +166,7 @@ class LauncherGrid private constructor(
     fun removeBank(index: Int) {
         check(banks.size >= 2) { "Cannot remove the last bank" }
         banks.removeAt(index)
-        undoManager.record(LauncherGridEdit.RemoveBank(this, index))
+        undoManager.record(MidiGridEdit.RemoveBank(this, index))
         notifyViews { removedBank(index) }
         if (currentBank == index) {
             selectBank((currentBank - 1).coerceAtLeast(0))
@@ -169,6 +183,17 @@ class LauncherGrid private constructor(
                 value.run { code() }
                 append(", \\")
                 append(item.mode.now.name.lowercase())
+                append(");")
+            }
+        }
+    }
+
+    fun updatedMode(item: GridItem, newMode: GridItem.Mode) {
+        val idx = banks[currentBank].indexOf(item)
+        if (idx != -1) {
+            client.run {
+                append("$superColliderName.setMode($idx, \\")
+                append(newMode.name.lowercase())
                 append(");")
             }
         }
@@ -194,7 +219,7 @@ class LauncherGrid private constructor(
             updateItem(item1)
             updateItem(item2)
         }
-        undoManager.record(LauncherGridEdit.SwapItems(this, bankIndex, item1, item2))
+        undoManager.record(MidiGridEdit.SwapItems(this, bankIndex, item1, item2))
     }
 
     fun noteOn(item: GridItem, velocity: Int) {
@@ -225,6 +250,12 @@ class LauncherGrid private constructor(
                 Platform.runLater {
                     context[ScoreObjectDuplicator.Companion].enterDuplicateMode(targetObject)
                 }
+            }
+
+            else -> {
+                val idx = banks[currentBank].indexOf(item) + 36
+                val src = "(server_latency: 0, player_id: -1, chan: 0)"
+                client.run("$superColliderName.noteOn($idx, 64, $src)")
             }
         }
     }
@@ -264,8 +295,6 @@ class LauncherGrid private constructor(
         error("$item not found in grid")
     }
 
-    fun hasReferencesTo(obj: ScoreObject) = items().any { item -> item.target.targetObject == obj }
-
     private fun getScore() = when (val t = target.now) {
         is Target.SubScore -> t.ref.get()?.score
         Target.MainScore -> context.project.mainScore
@@ -288,7 +317,7 @@ class LauncherGrid private constructor(
     }
 
     class GridItemReference(private val bank: Int, private val index: Int) : java.io.Serializable {
-        fun getItem(grid: LauncherGrid) = grid.banks[bank][index]
+        fun getItem(grid: MidiGridInstrument) = grid.banks[bank][index]
 
         companion object {
             val DATA_FORMAT = TypedDataFormat<GridItemReference>("ponticello/grid-item-reference")
@@ -320,17 +349,17 @@ class LauncherGrid private constructor(
     }
 
     interface View {
-        fun updateItem(item: GridItem)
+        fun updateItem(item: GridItem) {}
 
-        fun selectedBank(bank: Int)
+        fun selectedBank(bank: Int) {}
 
-        fun addedBank(bankIndex: Int)
+        fun addedBank(bankIndex: Int) {}
 
-        fun removedBank(bankIndex: Int)
+        fun removedBank(bankIndex: Int) {}
     }
 
     companion object {
         fun createNByN(n: Int, banks: Int) =
-            LauncherGrid(MutableList(banks) { Array(n * n) { GridItem.createDefault() } })
+            MidiGridInstrument(MutableList(banks) { Array(n * n) { GridItem.createDefault() } })
     }
 }

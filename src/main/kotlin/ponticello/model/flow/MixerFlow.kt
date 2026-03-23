@@ -35,6 +35,8 @@ class MixerFlow(
     val monoMix: ReactiveVariable<Boolean> = reactiveVariable(false),
     val activateFilters: ReactiveVariable<Boolean> = reactiveVariable(false)
 ) : AudioFlow(), ObjectList.Listener<MixerFlow.MixerComponent> {
+    override val active = reactiveVariable(true)
+
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 

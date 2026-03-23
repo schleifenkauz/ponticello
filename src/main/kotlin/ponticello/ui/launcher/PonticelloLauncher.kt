@@ -420,7 +420,7 @@ class PonticelloLauncher {
             SubWindow.globalStylesheets.addAll(get(Stylesheets).all())
             val midiReceiver = ContextualMidiReceiver()
             midiReceiver.initialize(this)
-            midiReceiver.attachTo("Xjam")
+//            midiReceiver.attachTo("Xjam")
             set(ContextualMidiReceiver, midiReceiver)
         }
     }

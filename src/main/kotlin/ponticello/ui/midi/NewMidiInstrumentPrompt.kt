@@ -14,10 +14,7 @@ import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.flow.VSTPlugins
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.MidiEffectInstrument
-import ponticello.model.midi.MidiEffectObject
-import ponticello.model.midi.MidiInstrument
-import ponticello.model.midi.SoundProcessMidiInstrument
-import ponticello.model.midi.VSTMidiInstrument
+import ponticello.model.midi.*
 import ponticello.model.obj.project
 import ponticello.model.project.instruments
 import ponticello.model.registry.reference
@@ -40,7 +37,7 @@ class NewMidiInstrumentPrompt(
             .map(MidiInstrumentOption::MidiEffect)
         val vstInstruments: List<MidiInstrumentOption> = VSTPlugins.availablePlugins(context, midi = true)
             .map(MidiInstrumentOption::VST)
-        return userInstruments + midiEffects + vstInstruments
+        return userInstruments + midiEffects + vstInstruments + MidiInstrumentOption.Grid
     }
 
     override fun createCell(option: MidiInstrumentOption): Region {
@@ -48,6 +45,7 @@ class NewMidiInstrumentPrompt(
             is MidiInstrumentOption.SoundProcess -> option.instrument.instrumentType
             is MidiInstrumentOption.MidiEffect -> "MIDI Effect"
             is MidiInstrumentOption.VST -> "VST"
+            is MidiInstrumentOption.Grid -> "Grid"
         }
         val typeLabel = Label(type).setFixedWidth(80.0).styleClass("instrument-type-label")
         val name = extractText(option)
@@ -58,6 +56,7 @@ class NewMidiInstrumentPrompt(
         is MidiInstrumentOption.SoundProcess -> option.instrument.name.now
         is MidiInstrumentOption.MidiEffect -> option.instrument.name.now
         is MidiInstrumentOption.VST -> option.pluginName
+        is MidiInstrumentOption.Grid -> "Grid"
     }
 
     sealed class MidiInstrumentOption {
@@ -80,8 +79,11 @@ class NewMidiInstrumentPrompt(
                 val flow = VSTPluginFlow.create(pluginName, preset, bus)
                 VSTMidiInstrument(flow)
             }
+
+            is Grid -> MidiGridInstrument.createNByN(4, 1)
         }
 
+        object Grid : MidiInstrumentOption()
         data class SoundProcess(val instrument: InstrumentObject) : MidiInstrumentOption()
         data class MidiEffect(val instrument: MidiEffectInstrument) : MidiInstrumentOption()
         data class VST(val pluginName: String) : MidiInstrumentOption()

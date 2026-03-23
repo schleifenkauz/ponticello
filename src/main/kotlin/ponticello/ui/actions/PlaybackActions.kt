@@ -1,9 +1,11 @@
 package ponticello.ui.actions
 
 import fxutils.actions.*
+import fxutils.drag.TypedDataFormat
 import fxutils.prompt.PromptPlacement
 import fxutils.prompt.nextToTarget
 import fxutils.sourceWindow
+import kotlinx.serialization.Serializable
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignD
 import org.kordamp.ikonli.materialdesign2.MaterialDesignM
@@ -12,7 +14,6 @@ import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.project
 import ponticello.model.player.Recorder
 import ponticello.model.player.ScorePlayer
-import ponticello.model.project.LAUNCHER_GRID
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
@@ -92,24 +93,44 @@ object PlaybackActions {
         if (bus != null) project[SERVER_OPTIONS].recordedBus = bus.reference()
     }
 
-    val global = collectActions<ScorePlayer> {
-        add(goToStartAction("Alt?+DIGIT0")) { player -> player.playHead }
-        add(playAction("Alt?+SPACE"))
-        addAction("Stop") {
-            description("Stop playback and free all Synths")
-            shortcut("Ctrl+PERIOD")
-            icon(Material2MZ.STOP)
-            executes { p ->
-                p.context[AudioFlows].writeVSTPluginStates()
-                p.context[Recorder].stopRecording()
-                for (liveObject in p.context[LiveObjectRegistry]) {
-                    liveObject.pause()
-                }
-                p.context.project[LAUNCHER_GRID].deactivateAll()
-                p.context[SuperColliderClient].run("SoundProcess.stopAllProcesses; s.freeAll;") //TODO
-                p.pause()
-            }
+    val play = playAction("Alt?+SPACE")
+    val goToStart = goToStartAction("Ctrl+DIGIT0").map { player: ScorePlayer -> player.playHead }
+    val stop = action<ScorePlayer>("Stop") {
+        description("Stop playback and free all Synths")
+        shortcut("Ctrl+PERIOD")
+        icon(Material2MZ.STOP)
+        executes { p ->
+            stopAll(p)
         }
+    }
+
+    fun stopAll(p: ScorePlayer) {
+        p.context[AudioFlows].writeVSTPluginStates()
+        p.context[Recorder].stopRecording()
+        for (liveObject in p.context[LiveObjectRegistry]) {
+            liveObject.pause()
+        }
+        p.context[SuperColliderClient].run("SoundProcess.stopAllProcesses; s.freeAll;") //TODO
+        p.pause()
+    }
+
+    val DATA_FORMAT = TypedDataFormat<Type>("play-action")
+
+    val mainActions = listOf(
+        play to Type.Play,
+        stop to Type.Stop,
+        goToStart to Type.GoToStart
+    )
+
+    @Serializable
+    enum class Type {
+        Play, Stop, GoToStart
+    }
+
+    val global = collectActions<ScorePlayer> {
+        add(goToStart)
+        add(play)
+        add(stop)
         addAction("Recompute score object intervals") {
             shortcut("Shift+F5")
             executes { p ->

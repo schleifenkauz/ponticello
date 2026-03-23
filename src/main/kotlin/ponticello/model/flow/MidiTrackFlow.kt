@@ -14,6 +14,7 @@ import ponticello.model.midi.MidiRecorder
 import ponticello.model.player.ScorePlayer
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectListSerializer
+import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.client.ScWriter
@@ -26,6 +27,8 @@ class MidiTrackFlow(
     val sourceDevice: ReactiveVariable<MidiDeviceSpec> = reactiveVariable(MidiDeviceSpec.none()),
     val instruments: InstrumentList = InstrumentList(),
 ) : AudioFlow() {
+    override val active = reactiveVariable(true)
+
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
@@ -99,6 +102,9 @@ class MidiTrackFlow(
     fun allNotesOff(playerId: Int) {
         client.run("$trackVariable.allNotesOff(player_id: $playerId)")
     }
+
+    override fun referencesScoreObject(obj: ScoreObject): Boolean =
+        instruments.any { instr -> instr.referencesScoreObject(obj) }
 
     override fun copy(): AudioFlow = MidiTrackFlow(sourceDevice.copy(), instruments.copy())
 

@@ -28,6 +28,8 @@ class UtilityFlow(
     private val volumeDb: ReactiveVariable<Decimal> = reactiveVariable(zero),
     private val muted: ReactiveVariable<Boolean> = reactiveVariable(false),
 ) : ParameterizedAudioFlow() {
+    override val active = reactiveVariable(true)
+
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 

@@ -7,6 +7,7 @@ import fxutils.actions.registerActions
 import fxutils.drag.DropHandler
 import fxutils.prompt.PromptPlacement
 import fxutils.prompt.YesNoPrompt
+import fxutils.prompt.nextToTarget
 import fxutils.undo.UndoManager
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
@@ -241,7 +242,7 @@ class ObjectListView<O : Any>(
 
     private fun addObjectButton(): Node {
         val button = button("Add ${source.objectType}") { ev ->
-            addObject()
+            addObject(ev.nextToTarget())
         }
         button.tooltip = Tooltip("Type Ctrl+PLUS to add a new ${source.objectType}.")
         return if (config.centerAddObjectButton) VBox(button).centerChildren() else button
@@ -552,7 +553,10 @@ class ObjectListView<O : Any>(
                 applicableIf { list -> list.config.canCreateNewObject }
                 shortcut("Ctrl+PLUS")
                 icon(MaterialDesignP.PLUS)
-                executes { p, ev -> p.addObject() }
+                executes { p, ev ->
+                    val placement = ev?.nextToTarget() ?: PromptPlacement.RelativeTo(p)
+                    p.addObject(placement)
+                }
             }
             addAction("Select previous") {
                 shortcuts("UP", "LEFT")

@@ -187,19 +187,21 @@ interface ListDisplayConfig<O : Any> {
             executes { box -> box.setExpanded(true) }
         }
 
-        val insertObjectAction = action<ObjectBox<*>>("Insert flow") {
+        val insertObjectAction = action<ObjectBox<*>>("Insert object") {
             icon(MaterialDesignP.PLUS)
             executes { box, ev ->
                 val listView = box.getParent<ObjectListView<*>>() ?: return@executes
                 val idx = listView.source.indexOf(box.obj) + 1
-                listView.addObject(idx = idx)
+                val placement = ev?.nextToTarget() ?: PromptPlacement.RelativeTo(box)
+                listView.addObject(placement, idx)
             }
         }
 
         val addObjectAction = action<ObjectListView<*>>("Add object") {
             icon(MaterialDesignP.PLUS)
             executes { view, ev ->
-                view.addObject(idx = 0)
+                val placement = ev?.nextToTarget() ?: PromptPlacement.RelativeTo(view)
+                view.addObject(placement, idx = 0)
             }
         }
     }

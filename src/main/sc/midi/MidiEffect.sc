@@ -104,7 +104,6 @@ MidiEffect {
 
 	activate { |tr|
 		track = tr;
-		postf("Track: %\n", tr);
 		this.prCreateTask;
 		if (enabled) {
 			task.play;

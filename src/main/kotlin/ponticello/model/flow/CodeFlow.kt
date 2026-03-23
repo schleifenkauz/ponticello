@@ -12,10 +12,13 @@ import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.map
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("CodeFlow")
 class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioFlow() {
+    override val active = reactiveVariable(true)
+
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 

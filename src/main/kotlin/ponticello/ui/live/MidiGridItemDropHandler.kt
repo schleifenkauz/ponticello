@@ -11,8 +11,8 @@ import ponticello.model.flow.AudioFlow
 import ponticello.model.live.GridItem
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LiveObject
-import ponticello.model.midi.LauncherGrid
-import ponticello.model.midi.LauncherGrid.GridItemReference
+import ponticello.model.midi.MidiGridInstrument
+import ponticello.model.midi.MidiGridInstrument.GridItemReference
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
@@ -22,11 +22,12 @@ import ponticello.model.score.ScoreObject
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry
 import ponticello.model.server.SampleObject
+import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.record.LiveBuffersPane
 import reaktive.value.reactiveVariable
 
-class LauncherGridItemDropHandler(
-    private val grid: LauncherGrid, private val item: GridItem,
+class MidiGridItemDropHandler(
+    private val grid: MidiGridInstrument, private val item: GridItem,
 ) : ConfiguredDropHandler() {
     init {
         handleTypedFormat(GridItemReference.DATA_FORMAT, TransferMode.MOVE) { _, ref ->
@@ -36,6 +37,10 @@ class LauncherGridItemDropHandler(
         }
         handleTypedFormat(LiveBuffersPane.TOGGLE_RECORD, TransferMode.LINK) { _, ref ->
             item.target = ItemTarget.ToggleRecording(ref)
+            true
+        }
+        handleTypedFormat(PlaybackActions.DATA_FORMAT, TransferMode.LINK) { _, action ->
+            item.target = ItemTarget.PlaybackAction(action)
             true
         }
         handleTypedFormat(AudioFlow.DATA_FORMAT, TransferMode.LINK) { _, ref ->

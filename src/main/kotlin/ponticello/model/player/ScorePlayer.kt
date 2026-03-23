@@ -175,6 +175,14 @@ class ScorePlayer private constructor(
         freeActiveObjects()
     }
 
+    fun togglePlaying() {
+        if (isPlaying.now || isScheduled.now) {
+            pause()
+        } else {
+            play()
+        }
+    }
+
     private fun freeActiveObjects() = execute {
         Logger.info("Pausing playback", Logger.Category.Playback)
         client.run("SoundProcess.stopAllProcesses(player_id:$id)")

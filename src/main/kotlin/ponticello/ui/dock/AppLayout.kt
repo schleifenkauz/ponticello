@@ -15,6 +15,7 @@ import javafx.geometry.Orientation
 import javafx.scene.control.Button
 import javafx.scene.control.SplitPane
 import javafx.scene.image.ImageView
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import ponticello.impl.Logger
@@ -33,7 +34,6 @@ import ponticello.ui.launcher.PonticelloLauncher
 import ponticello.ui.launcher.PonticelloMainActivity
 import ponticello.ui.launcher.ProjectSelectorPrompt
 import ponticello.ui.live.ConductorPane
-import ponticello.ui.live.LauncherGridPane
 import ponticello.ui.live.LiveObjectRegistryPane
 import ponticello.ui.misc.*
 import ponticello.ui.record.LiveBuffersPane
@@ -323,7 +323,18 @@ class AppLayout(
             toolbarPart(VersionControlActions.withContext(project)),
             toolbarPart(UndoRedoActions.withContext(scoreView.context[UndoManager])),
         ).centerChildren()
+
         val playerBar = toolbarPart(PlaybackActions.global.withContext(context[ScorePlayer.MAIN]))
+        for ((action, type) in PlaybackActions.mainActions) {
+            val btn = playerBar.getButton(action)
+            btn.setOnDragDetected { ev ->
+                val db = btn.startDragAndDrop(TransferMode.LINK)
+                db.setContent(mapOf(PlaybackActions.DATA_FORMAT to type))
+                db.dragView = btn.snapshot(null, null)
+                ev.consume()
+            }
+        }
+
         center = VBox(
             HBox(
                 infiniteSpace(),
@@ -437,7 +448,6 @@ class AppLayout(
 
         private val allToolPaneTypes = buildList {
             //top
-            add(LauncherGridPane)
             add(SettingsPane)
 
             //default left side-pane

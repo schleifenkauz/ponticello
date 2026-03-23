@@ -6,6 +6,8 @@ import fxutils.actions.collectActions
 import fxutils.actions.makeButton
 import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SelectorPrompt
+import fxutils.prompt.SimpleSelectorPrompt
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.geometry.Orientation
 import javafx.scene.Node
@@ -21,6 +23,8 @@ import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.midi.*
 import ponticello.model.registry.ObjectList
 import ponticello.ui.dock.AppLayout
+import ponticello.ui.live.GridBanksBar
+import ponticello.ui.live.MidiGridPane
 import ponticello.ui.midi.MidiContext
 import ponticello.ui.midi.MidiEffectSelectorPrompt
 import ponticello.ui.midi.NewMidiInstrumentPrompt
@@ -34,7 +38,6 @@ import ponticello.ui.registry.ObjectListView
 import ponticello.ui.score.ParameterControlsPane
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
-import reaktive.value.reactiveValue
 import java.util.*
 
 class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayConfig<MidiInstrument> {
@@ -70,6 +73,8 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
     override fun getContent(obj: MidiInstrument, box: ObjectBox<MidiInstrument>): Parent? = when (val obj = box.obj) {
         is VSTMidiInstrument -> VSTPluginFlowView(obj.vst, showPluginSelector = false)
 
+        is MidiGridInstrument -> MidiGridPane(obj)
+
         is ParameterizedMidiInstrument -> ParameterControlsPane(obj, midiContext = midiContext(obj)).pad(3.0)
     }
 
@@ -94,6 +99,13 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
             hspace(1.0),
             MidiEffectSelectorPrompt(obj.context).selectorButton(obj.reference)
         )
+
+        is MidiGridInstrument -> {
+            val availableTargets = MidiGridInstrument.Target.options(obj.context)
+            val targetSelector = SimpleSelectorPrompt(availableTargets, "Choose target")
+                .selectorButton(obj.target, undoManager = obj.context[UndoManager])
+            listOf(Label("Grid"), GridBanksBar(obj), targetSelector)
+        }
     }
 
     override fun createSeparatorNode(box: ObjectBox<MidiInstrument>): Node {
@@ -124,24 +136,19 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
 
     companion object {
         private val instrumentActions = collectActions<MidiInstrument> {
-            addAction("View instrument") {
-                icon { obj ->
-                    when (obj) {
-                        is ParameterizedMidiInstrument -> reactiveValue(Codicons.CODE)
-                        is VSTMidiInstrument -> reactiveValue(MaterialDesignE.EYE)
-                    }
+            addAction("Show VST editor") {
+                icon(MaterialDesignE.EYE)
+                shortcut("I")
+                executesOn { instr: VSTMidiInstrument ->
+                    instr.vst.showEditor()
                 }
-                executes { obj ->
-                    when (obj) {
-                        is ParameterizedMidiInstrument -> {
-                            val pane = obj.context[AppLayout].get<InstrumentRegistryPane>()
-                            pane.showContent(obj.getInstrument())
-                        }
-
-                        is VSTMidiInstrument -> {
-                            obj.vst.showEditor()
-                        }
-                    }
+            }
+            addAction("View instrument") {
+                icon(Codicons.CODE)
+                shortcut("I")
+                executesOn { instr: ParameterizedMidiInstrument ->
+                    val pane = instr.context[AppLayout].get<InstrumentRegistryPane>()
+                    pane.showContent(instr.getInstrument())
                 }
             }
             addAction("Toggle active") {

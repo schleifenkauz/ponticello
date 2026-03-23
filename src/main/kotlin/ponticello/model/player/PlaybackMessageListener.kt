@@ -6,19 +6,30 @@ import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.asTime
 import ponticello.impl.toDecimal
-import ponticello.model.PlaybackSettings
 import ponticello.model.flow.AudioFlows
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.sc.client.getArgument
+import ponticello.ui.actions.PlaybackActions
+import reaktive.value.now
 
 class PlaybackMessageListener(
-    private val settings: PlaybackSettings,
     private val objects: ScoreObjectRegistry,
     private val flows: AudioFlows,
+    private val mainPlayer: ScorePlayer,
 ) : OSCMessageListener {
     override fun acceptMessage(event: OSCMessageEvent) = ScorePlayer.execute {
         when (event.message.address) {
+            "/start_play" -> mainPlayer.play()
+            "/pause_play" -> mainPlayer.pause()
+            "/toggle_play" -> mainPlayer.togglePlaying()
+            "/stop_playback" -> PlaybackActions.stopAll(mainPlayer)
+            "/go_to_start" -> {
+                if (!(mainPlayer.isPlaying.now)) {
+                    mainPlayer.playHead.movePlayHeadToStart()
+                }
+            }
+
             "/play" -> {
                 val name = event.message.getArgument<String>(1, "name") ?: return@execute
                 val timestamp = event.message.getArgument<Float>(2, "timestamp") ?: return@execute

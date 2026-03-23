@@ -137,7 +137,7 @@ class PonticelloProject private constructor(val components: Map<Component<out Co
 
     fun hasReferencesTo(obj: ScoreObject): Boolean = when {
         mainScore.hasInstancesOf(obj) -> true
-        get(LAUNCHER_GRID).hasReferencesTo(obj) -> true
+        get(FLOWS).hasReferencesTo(obj) -> true
         get(LIVE_OBJECTS).any { item -> item.hasReferencesTo(obj) } -> true
         else -> false
     }
