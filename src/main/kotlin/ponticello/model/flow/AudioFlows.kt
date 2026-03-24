@@ -7,6 +7,7 @@ import com.illposed.osc.OSCMessage
 import hextant.context.Context
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
+import ponticello.model.midi.MidiGridInstrument
 import ponticello.model.midi.VSTMidiInstrument
 import ponticello.model.registry.IdProvider
 import ponticello.model.registry.ObjectRegistry
@@ -35,13 +36,39 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
 
     override fun initialize(context: Context) {
         context[AudioFlows] = this
+        for (grp in this) {
+            grp.flows.addListener(ids)
+        }
         super.initialize(context)
         val client = context[SuperColliderClient]
         client.onTreeCleared {
             addedToServer = false
             createAllFlows()
         }
-        client.addListener("/toggle_flow") { _, msg -> toggleFlow(msg) }
+        client.addListener("/toggle_flow", "/activate_flow", "/deactivate_flow") { _, msg ->
+            toggleFlow(msg)
+        }
+        client.addListener("/grid_item_note_on", "/grid_item_note_off") { _, msg ->
+            val name = msg.getArgument<String>(0, "Grid name") ?: return@addListener
+            val grid = allMidiTracks().flatMap { t ->
+                t.instruments.filterIsInstance<MidiGridInstrument>()
+            }.find { it.name.now == name }
+            if (grid == null) {
+                Logger.warn("Received note event for unknown grid: $name", Logger.Category.OSC)
+                return@addListener
+            }
+            val idx = msg.getArgument<Int>(1, "Grid index") ?: return@addListener
+
+            val item = grid.items().getOrNull(idx)
+            if (item == null) {
+                Logger.warn("Received note event with invalid grid item index: $idx", Logger.Category.OSC)
+                return@addListener
+            }
+            when (msg.address) {
+                "/grid_item_note_on" -> item.noteOn()
+                "/grid_item_note_off" -> item.noteOff()
+            }
+        }
     }
 
     private fun toggleFlow(msg: OSCMessage) {
@@ -55,7 +82,11 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         if (!(group.isActive.now)) {
             group.toggleActive()
         }
-        flow.toggleActive()
+        when (msg.address) {
+            "/toggle_flow" -> flow.toggleActive()
+            "/activate_flow" -> flow.setActive(true)
+            "/deactivate_flow" -> flow.setActive(false)
+        }
     }
 
     private fun createAllFlows() {

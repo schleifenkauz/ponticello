@@ -40,12 +40,13 @@ typealias FlowReference = ObjectReference<@Contextual AudioFlow>
 typealias VSTPluginReference = ObjectReference<@Contextual VSTPluginFlow>
 typealias LiveBufferReference = ObjectReference<@Contextual LiveBufferObject>
 
-fun FlowReference.resolve(context: Context) {
+fun FlowReference.resolve(context: Context): AudioFlow? {
     val allFlows = context.project.flows.allFlows()
     val referenced = allFlows.find { f -> f.name.now == this.getName() }
     if (referenced != null) {
-        resolve(allFlows)
+        return resolve(allFlows)
     } else {
         setUnresolved()
+        return null
     }
 }

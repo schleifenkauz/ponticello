@@ -45,7 +45,7 @@ class DummySuperColliderClient(
     }
 
     override fun addListener(
-        address: String,
+        address: String, vararg moreAddresses: String,
         listener: (time: OSCTimeTag64, msg: OSCMessage) -> Unit
     ) {
     }

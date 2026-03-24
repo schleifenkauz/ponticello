@@ -41,7 +41,7 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     abstract val canView: Boolean
 
-    abstract val isActive: ReactiveBoolean
+    open val isActive: ReactiveBoolean? get() = null
 
     abstract fun copy(): ItemTarget
 
@@ -58,8 +58,7 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val supportedModes: List<GridItem.Mode>
             get() = listOf(GridItem.Mode.None)
 
-        override val isActive: ReactiveBoolean
-            get() = reactiveValue(false)
+        override val isActive: ReactiveBoolean? get() = null
 
         override val name: ReactiveString
             get() = reactiveValue("")
@@ -85,6 +84,8 @@ sealed class ItemTarget : AbstractContextualObject() {
     data class ToggleRecording(private val liveBuffer: LiveBufferReference) : ItemTarget() {
         override val canView: Boolean
             get() = true
+
+        @Transient
         override lateinit var isActive: ReactiveBoolean
             private set
 
@@ -114,7 +115,7 @@ sealed class ItemTarget : AbstractContextualObject() {
         val yPosition: ReactiveVariable<Decimal>,
     ) : ItemTarget() {
         override val canView: Boolean
-            get() = ref.isResolved.now
+            get() = true
 
         override val targetObject: ScoreObject?
             get() = ref.get()
@@ -123,12 +124,6 @@ sealed class ItemTarget : AbstractContextualObject() {
 
         override val supportedModes: List<GridItem.Mode>
             get() = GridItem.Mode.entries - GridItem.Mode.None
-
-        @Transient
-        private val active = reactiveVariable(false)
-
-        override val isActive: ReactiveBoolean
-            get() = active
 
         override fun initialize(context: Context) {
             super.initialize(context)
@@ -183,27 +178,20 @@ sealed class ItemTarget : AbstractContextualObject() {
         override val canView: Boolean
             get() = true
 
-        @Transient
-        override lateinit var isActive: ReactiveBoolean
-            private set
+        override val isActive: ReactiveBoolean by lazy {
+            val flow = ref.resolve(context)
+            if (flow == null) reactiveValue(false)
+            else flow.isActive and (flow.parentGroup?.isActive ?: reactiveValue(true))
+        }
 
         override val name: ReactiveString get() = ref.name
-
-        override fun initialize(context: Context) {
-            super.initialize(context)
-            ref.resolve(context)
-            val flow = ref.get()
-            isActive =
-                if (flow == null) reactiveValue(false)
-                else flow.isActive and flow.parentGroup!!.isActive
-        }
 
         override fun copy(): ItemTarget = Flow(ref)
 
         override fun ScWriter.code() {
-            val obj = ref.get() ?: return append("nil")
+            val obj = ref.resolve(context) ?: return append("nil")
             val id = context[AudioFlows].ids.getId(obj) ?: return append("nil")
-            append("FlowGridItem($id)")
+            append("AudioFlowGridItem($id)")
         }
 
         override fun toString(): String = "Flow $${ref.getName()}"
@@ -215,9 +203,6 @@ sealed class ItemTarget : AbstractContextualObject() {
             get() = true
 
         override val name: ReactiveString get() = ref.name
-
-        private val active = reactiveVariable(false)
-        override val isActive: ReactiveBoolean get() = active
 
         override val supportedModes: List<GridItem.Mode>
             get() = listOf(GridItem.Mode.Trigger)
@@ -240,18 +225,8 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     @Serializable
     data class PlaybackAction(@SerialName("_type") val type: PlaybackActions.Type) : ItemTarget() {
-        override lateinit var name: ReactiveString
-        override val canView: Boolean
-            get() = false
-        override val isActive: ReactiveBoolean
-            get() = when (type) {
-                PlaybackActions.Type.Play -> context[ScorePlayer.MAIN].isPlaying
-                else -> reactiveValue(false)
-            }
-
-        override fun initialize(context: Context) {
-            super.initialize(context)
-            name = when (type) {
+        override val name: ReactiveString by lazy {
+            when (type) {
                 PlaybackActions.Type.Play -> `if`(
                     context[ScorePlayer.MAIN].isPlaying,
                     then = { "pause" },
@@ -262,6 +237,13 @@ sealed class ItemTarget : AbstractContextualObject() {
                 PlaybackActions.Type.GoToStart -> reactiveValue("->start")
             }
         }
+        override val canView: Boolean get() = false
+
+        override val isActive: ReactiveValue<Boolean>?
+            get() = when (type) {
+                PlaybackActions.Type.Play -> context[ScorePlayer.MAIN].isPlaying
+                else -> null
+            }
 
         override fun copy(): ItemTarget = PlaybackAction(type)
 

@@ -10,7 +10,7 @@
 }
 
 .app-layout {
-    -fx-background-color: #1d1d20;
+    -fx-background-color: -fx-base;
 }
 
 .split-pane {

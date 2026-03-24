@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
 class ScorePlayer private constructor(
-    val id: Int, val score: Score, val playHead: PlayHead,
+    val id: Int, val score: Score,
     val scheduler: ScoreObjectScheduler,
     val quantization: QuantizationConfig?, private val loopingActivated: ReactiveBoolean,
 ) {
@@ -29,6 +29,9 @@ class ScorePlayer private constructor(
     var loopedTime: Decimal = zero
         private set
     var lastPlayFrom: Decimal = zero
+        private set
+
+    lateinit var playHead: PlayHead
         private set
 
     val isPlaying: ReactiveValue<Boolean> = playing
@@ -52,6 +55,10 @@ class ScorePlayer private constructor(
 
     init {
         score.addListener(updater)
+    }
+
+    fun connectPlayHead(playHead: PlayHead) {
+        this.playHead = playHead
         playHead.player = this
     }
 
@@ -221,13 +228,10 @@ class ScorePlayer private constructor(
 
         fun instances(): List<ScorePlayer> = all
 
-        fun create(
-            score: Score, playHead: PlayHead,
-            loopingActivated: ReactiveBoolean, quantization: QuantizationConfig?,
-        ): ScorePlayer {
+        fun create(score: Score, loopingActivated: ReactiveBoolean, quantization: QuantizationConfig?): ScorePlayer {
             val id = all.size
             val scheduler = score.context[ScoreObjectScheduler]
-            val player = ScorePlayer(id, score, playHead, scheduler, quantization, loopingActivated)
+            val player = ScorePlayer(id, score, scheduler, quantization, loopingActivated)
             all.add(player)
             return player
         }

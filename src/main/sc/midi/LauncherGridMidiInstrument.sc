@@ -1,23 +1,22 @@
 LauncherGridMidiInstrument {
-	var <items, <modes, id, <>enabled, on, track;
+	var <items, <modes, name, <>enabled, on, track;
 
-	* new { |items, modes, id, enabled=true|
+	* new { |items, modes, name, enabled=true|
 		var on = List.fill(16, false);
 		items = items ?? { List.fill(16) };
-		modes = items ?? { List.fill(16) };
-		^super.newCopyArgs(items, modes, id, enabled, on)
+		modes = modes ?? { List.fill(16) };
+		^super.newCopyArgs(items, modes, name, enabled, on)
 	}
 
 	setItems { |itemList, modeList|
 		items = itemList; modes = modeList;
 	}
 
-	setItem { |idx, item, mode|
+	setItem { |idx, item| //TODO there seems to be an issue here
 		if (items[idx].notNil && on[idx]) {
 			items[idx].noteOff(idx, 0, modes[idx]);
 		};
-		items[idx] = item;
-		modes[idx] = mode;
+		items[idx.postln] = item.postln;
 	}
 
 	setMode { |idx, mode|
@@ -33,21 +32,24 @@ LauncherGridMidiInstrument {
 		var mode;
 		num = num - 36;
 		mode = modes[num];
+		postf("Note On %: %, %\n", num, items[num], mode);
 		if (items[num].notNil) {
 			src.track = track;
 			items[num].noteOn(velocity, src, mode);
 		};
-		Ponticello.sendMsg('/grid_item_note_on', id, num);
+		Ponticello.sendMsg('/grid_item_note_on', name, num);
 		^true
 	}
 
 	noteOff { |num, velocity, src|
-		var mode = modes[num];
+		var mode;
+		num = num - 36;
+		mode = modes[num];
 		if (items[num].notNil) {
 			src.track = track;
 			items[num].noteOff(velocity, src, mode);
 		};
-		Ponticello.sendMsg('/grid_item_note_off', id, num);
+		Ponticello.sendMsg('/grid_item_note_off', name, num);
 		^true
 	}
 
@@ -93,7 +95,9 @@ AudioFlowGridItem {
 	* new { |flowId| ^super.newCopyArgs(flowId) }
 
 	noteOn { |velocity, src, mode|
-		Ponticello.sendMsg('/activate_flow', flowId)
+		switch (mode)
+		{ \gate } { Ponticello.sendMsg('/activate_flow', flowId) }
+		{ \toggle } { Ponticello.sendMsg('/toggle_flow', flowId) }
 	}
 
 	noteOff { |velocity, src, mode|

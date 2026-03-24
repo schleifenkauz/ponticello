@@ -101,7 +101,7 @@ class MidiGridInstrument private constructor(
         for ((idx, item) in items.withIndex()) {
             if (idx != 0) {
                 append(", ")
-                if (items[idx - 1].target is ItemTarget.None) {
+                if (items[idx - 1].target !is ItemTarget.None) {
                     append("\n")
                 }
             }
@@ -125,6 +125,7 @@ class MidiGridInstrument private constructor(
         appendItems()
         append(", ")
         appendModes()
+        append(", '", name.now, "'")
         append(", enabled: ", isEnabled.now, ")")
     }
 
@@ -181,8 +182,6 @@ class MidiGridInstrument private constructor(
             client.run {
                 append("$superColliderName.setItem($idx, ")
                 value.run { code() }
-                append(", \\")
-                append(item.mode.now.name.lowercase())
                 append(");")
             }
         }
@@ -222,7 +221,7 @@ class MidiGridInstrument private constructor(
         undoManager.record(MidiGridEdit.SwapItems(this, bankIndex, item1, item2))
     }
 
-    fun noteOn(item: GridItem, velocity: Int) {
+    fun noteOn(item: GridItem) {
         when {
             ModifierKeyTracker.isAltDown.now -> {
                 val selectedView = context[ScoreObjectSelectionManager.Companion].focusedView.now
@@ -261,6 +260,9 @@ class MidiGridInstrument private constructor(
     }
 
     fun noteOff(item: GridItem) {
+        val idx = banks[currentBank].indexOf(item) + 36
+        val src = "(server_latency: 0, player_id: -1, chan: 0)"
+        client.run("$superColliderName.noteOff($idx, 64, $src)")
     }
 
     fun deactivateAll() {

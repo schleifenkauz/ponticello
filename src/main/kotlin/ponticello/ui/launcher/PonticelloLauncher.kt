@@ -52,6 +52,7 @@ import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.vc.JavaFXGitUserInteraction
 import reaktive.Observer
 import reaktive.value.now
+import reaktive.value.reactiveValue
 import java.io.File
 import java.net.URL
 import kotlin.concurrent.thread
@@ -184,6 +185,10 @@ class PonticelloLauncher {
 
     private fun openProject(project: PonticelloProject) {
         ScorePlayer.clearInstances()
+        val player = ScorePlayer.create(
+            project.mainScore, loopingActivated = reactiveValue(false), quantization = null
+        )
+        project.context[ScorePlayer.MAIN] = player
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)
         getOrLaunchLoadingScreen().displayProgress(0.98, "Almost ready, launching project view...")
@@ -315,6 +320,7 @@ class PonticelloLauncher {
             is URL -> {
                 cloneRepository(projectRef!!)
             }
+
             else -> {
                 val recentProject = recentProjects.activeProject()
                 if (recentProject != null) openProject(recentProject, askSync = true)

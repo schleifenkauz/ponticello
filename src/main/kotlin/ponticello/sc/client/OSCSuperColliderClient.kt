@@ -76,11 +76,11 @@ class OSCSuperColliderClient(
     }
 
     override fun addListener(
-        address: String,
+        address: String, vararg moreAddresses: String,
         listener: (time: OSCTimeTag64, msg: OSCMessage) -> Unit
     ) {
         addListener { event ->
-            if (event.message.address == address) {
+            if (event.message.address == address || event.message.address in moreAddresses) {
                 listener(event.time, event.message)
             }
         }

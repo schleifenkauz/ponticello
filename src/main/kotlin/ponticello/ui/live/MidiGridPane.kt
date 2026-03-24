@@ -5,20 +5,24 @@ import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
 import fxutils.controls.OptionSpinner
+import fxutils.controls.SliderBar
 import fxutils.drag.setupDropArea
 import fxutils.prompt.PromptPlacement
 import fxutils.prompt.nextToTarget
+import fxutils.undo.UndoManager
 import javafx.application.Platform
+import javafx.scene.Node
+import javafx.scene.control.Label
+import javafx.scene.control.Tooltip
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Region
-import javafx.scene.layout.VBox
-import javafx.scene.text.Text
+import javafx.scene.layout.*
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
+import ponticello.impl.one
+import ponticello.impl.toDecimal
+import ponticello.impl.zero
 import ponticello.model.live.GridItem
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.LiveScoreObject
@@ -26,6 +30,8 @@ import ponticello.model.live.LiveTaskObject
 import ponticello.model.midi.MidiGridInstrument
 import ponticello.model.midi.MidiGridInstrument.GridItemReference
 import ponticello.model.player.ScorePlayer
+import ponticello.sc.NumericalControlSpec
+import ponticello.sc.Warp
 import ponticello.ui.actions.PlaybackActions
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.registry.ScriptRegistryPane
@@ -37,6 +43,7 @@ import reaktive.value.binding.and
 import reaktive.value.binding.map
 import reaktive.value.binding.not
 import reaktive.value.fx.asObservableValue
+import reaktive.value.reactiveValue
 
 class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.View, GridPane() {
     private val boxes = mutableMapOf<GridItem, Region>()
@@ -87,50 +94,59 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
         add(box, j, (grid.rows - 1) - i)
     }
 
-    private fun display(item: GridItem): VBox {
+    private fun display(item: GridItem): Region {
         val target = item.target
-        val label = Text() styleClass "grid-item-label"
+        val label = Label() styleClass "grid-item-label"
         label.textProperty().bind(item.target.name.asObservableValue())
-        label.wrappingWidth = 80.0
+        val centeredLabel = HBox(infiniteSpace(), label, infiniteSpace())
+
         val actions = itemActions.withContext(target)
         val actionBar = ActionBar(actions, buttonStyle = "small-icon-button")
         val centeredActionBar = HBox(infiniteSpace(), actionBar, infiniteSpace())
+
         val modeSpinner = OptionSpinner(item.mode, item.target.supportedModes)
-        modeSpinner.disableProperty().bind(item.target.isActive.asObservableValue())
+        modeSpinner.disableProperty().bind(item.isActive.asObservableValue())
         modeSpinner.visibleProperty().bind(item.target().map { t -> t !is ItemTarget.None }.asObservableValue())
         modeSpinner.label.minWidth = 45.0
-        val box = VBox(label, centeredActionBar, modeSpinner).styleClass("launcher-grid-item").centerChildren()
-//        if (target is ItemTarget.Object) {
-//            val obj = target.ref.get()
-//            if (obj != null) {
-//                val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), Warp.Linear, zero)
-//                val scoreYSlider = SliderBar(
-//                    target.yPosition, "Score Y", spec.converter(),
-//                    undoManager = grid.context[UndoManager],
-//                )
-//                scoreYSlider.maxWidth = 50.0
-//                box.children.add(scoreYSlider)
-//            }
-//        }
+
+        val box = BorderPane().styleClass("midi-grid-item")
+        box.top = centeredLabel
+        box.center = centeredActionBar
+        box.bottom = modeSpinner
+        if (target is ItemTarget.Object) {
+            val obj = target.ref.get()
+            if (obj != null) {
+                val spec = NumericalControlSpec(zero, zero, one, 0.01.toDecimal(), Warp.Linear, zero)
+                val scoreYSlider = SliderBar(
+                    target.yPosition, "Score Y", spec.converter(),
+                    undoManager = grid.context[UndoManager],
+                )
+                scoreYSlider.maxWidth = 50.0
+                box.bottom = VBox(modeSpinner, scoreYSlider)
+            }
+        }
+        val tooltip = Tooltip()
+        tooltip.textProperty().bind(item.target.name.asObservableValue())
+        Tooltip.install(box, tooltip)
         addMouseActions(box, item)
         setupDragAndDrop(box, item)
-        box.userData = box.bindPseudoClassState("active", target.isActive)
+        box.userData = box.bindPseudoClassState("active", item.isActive)
         return box
     }
 
-    private fun addMouseActions(cell: Region, item: GridItem) {
-        cell.setOnMousePressed { ev ->
-            if (ev.target == cell && ev.modifiers.isEmpty() && ev.button == MouseButton.PRIMARY) {
-                grid.noteOn(item, velocity = 64)
+    private fun addMouseActions(target: Node, item: GridItem) {
+        target.setOnMousePressed { ev ->
+            if (ev.button == MouseButton.PRIMARY) {
+                grid.noteOn(item)
             }
         }
-        cell.setOnMouseClicked { ev ->
-            if (ev.target == cell && ev.modifiers.isEmpty() && ev.button == MouseButton.SECONDARY) {
+        target.setOnMouseClicked { ev ->
+            if (ev.target == target && ev.button == MouseButton.SECONDARY) {
                 item.target = ItemTarget.None()
             }
         }
-        cell.setOnMouseReleased { ev ->
-            if (ev.target == cell && ev.modifiers.isEmpty() && ev.button == MouseButton.PRIMARY) {
+        target.setOnMouseReleased { ev ->
+            if (ev.button == MouseButton.PRIMARY) {
                 grid.noteOff(item)
             }
         }
@@ -204,7 +220,9 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
                 }
             }
             addAction("Configure recording") {
-                enableWhen { target -> target.isActive.not() and (target is ItemTarget.ToggleRecording) }
+                enableWhen { target ->
+                    (target.isActive?.not() ?: reactiveValue(false)) and (target is ItemTarget.ToggleRecording)
+                }
                 ifNotApplicable(Action.IfNotApplicable.Hide)
                 icon(Codicons.SYMBOL_PROPERTY)
                 executes { target, ev ->

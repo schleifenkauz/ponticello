@@ -1,39 +1,59 @@
-.launcher-grid-item {
-    -fx-alignment: top-center;
+.midi-grid-item {
+    -fx-alignment: center;
     -fx-border-color: black;
     -fx-padding: 2px;
     -fx-spacing: 2px;
-    -fx-min-height: 90px;
-    -fx-max-height: 90px;
-    -fx-min-width: 90px;
-    -fx-max-width: 90px;
+    -fx-min-height: 80px;
+    -fx-max-height: 80px;
+    -fx-min-width: 80px;
+    -fx-max-width: 80px;
+    -fx-background-color: -fx-base;
 }
 
-.launcher-grid-item:hover {
+.midi-grid-item:hover {
     -fx-background-color: rgba(0, 1000, 0, 0.1);
 }
 
-.launcher-grid-item:active {
+.midi-grid-item:active {
     -fx-background-color: rgba(100, 0, 0, 0.35) !important;
 }
 
-.launcher-grid-item:drop-possible {
+.midi-grid-item:drop-possible {
     -fx-background-color: rgba(0, 128, 0, 0.5);
 }
 
-Text.grid-item-label {
-    -fx-max-width: 80px;
-    -fx-wrap-text: true;
+Label.grid-item-label {
     -fx-text-alignment: center;
+    -fx-text-fill: white;
+    -fx-max-width: 80px;
 }
 
-Button.grid-bank-selector {
+Label.grid-item-label:hover {
+    -fx-font-weight: bold;
+}
+
+Text.grid-item-label {
+    -fx-text-alignment: center;
+    -fx-fill: white;
+    -fx-wrapping-width: 80px;
+}
+
+Text.grid-item-label:hover {
+    -fx-font-style: bold;
+}
+
+Button.grid-bank-selector, Button.grid-bank-selector:selected, Button.grid-bank-selector:focused {
     -fx-focus-traversable: false;
-    -fx-border-color: black;
+    -fx-padding: 2px;
     -fx-border-radius: 2px;
+    -fx-min-width: 18px;
+    -fx-text-alignment: center;
+    -fx-border-width: 1px;
+    -fx-background-radius: 2px;
+    -fx-border-color: black;
 }
 
-Button.grid-bank-selector:hover {
+Button.grid-bank-selector:hover, Button.grid-bank-selector:hover:selected {
     -fx-background-color: rgba(100, 0, 0, 0.35);
 }
 

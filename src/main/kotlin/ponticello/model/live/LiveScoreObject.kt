@@ -54,7 +54,8 @@ class LiveScoreObject(
         quantization.initialize(context)
         val score = Score.makeAuxiliaryScore(scoreObject, context)
         playHead = playHead ?: PlayHead()
-        player = ScorePlayer.create(score, playHead!!, loopingActivated, quantization)
+        player = ScorePlayer.create(score, loopingActivated, quantization)
+        player.connectPlayHead(playHead!!)
         playerObserver = player.isScheduled.forEach {
             scheduled.set(it)
         } and player.isPlaying.forEach {

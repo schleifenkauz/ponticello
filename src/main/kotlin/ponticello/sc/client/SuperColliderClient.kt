@@ -28,7 +28,11 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun addListener(listener: OSCMessageListener)
 
-    fun addListener(address: String, listener: (time: OSCTimeTag64, msg: OSCMessage) -> Unit)
+    fun addListener(
+        address: String,
+        vararg moreAddresses: String,
+        listener: (time: OSCTimeTag64, msg: OSCMessage) -> Unit
+    )
 
     fun quit()
 

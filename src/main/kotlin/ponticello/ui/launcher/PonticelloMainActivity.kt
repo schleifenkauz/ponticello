@@ -23,7 +23,6 @@ import ponticello.ui.midi.ContextualMidiReceiver
 import ponticello.ui.misc.InteractionConfigBar
 import ponticello.ui.score.*
 import ponticello.ui.vc.VersionControlActions
-import reaktive.value.reactiveValue
 
 class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     init {
@@ -35,7 +34,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     val interactionConfig = InteractionConfigBar(project.uiState)
 
     private lateinit var player: ScorePlayer
-    private lateinit var playbackMessageListener: PlaybackMessageListener
 
     override val context get() = project.context
 
@@ -58,14 +56,9 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
     }
 
     private fun setupPlayback() {
-        player = ScorePlayer.create(
-            project.mainScore, mainScoreView.playHead,
-            loopingActivated = reactiveValue(false), quantization = null
-        )
-        context[ScorePlayer.MAIN] = player
-        playbackMessageListener = PlaybackMessageListener(
-            project.objects, project.flows, player
-        )
+        val player = context[ScorePlayer.MAIN]
+        player.connectPlayHead(mainScoreView.playHead)
+        val playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
         context[SuperColliderClient].addListener(playbackMessageListener)
     }
 
