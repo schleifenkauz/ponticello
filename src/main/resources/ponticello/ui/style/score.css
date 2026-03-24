@@ -154,3 +154,13 @@ Label.memo-area {
 .single-object-score-pane:focused {
     -fx-border-color: orange;
 }*/
+
+.breakpoint-line {
+    -fx-stroke-dash-array: 5 5;
+    -fx-stroke-width: 2;
+    -fx-stroke: blue;
+}
+
+.breakpoint-line:focused {
+    -fx-stroke: purple;
+}

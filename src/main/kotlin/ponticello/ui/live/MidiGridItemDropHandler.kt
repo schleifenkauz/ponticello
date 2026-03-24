@@ -18,6 +18,7 @@ import ponticello.model.project.UI_STATE
 import ponticello.model.project.get
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.ScoreBreakpointObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry
@@ -41,6 +42,10 @@ class MidiGridItemDropHandler(
         }
         handleTypedFormat(PlaybackActions.DATA_FORMAT, TransferMode.LINK) { _, action ->
             item.target = ItemTarget.PlaybackAction(action)
+            true
+        }
+        handleTypedFormat(ScoreBreakpointObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
+            item.target = ItemTarget.Breakpoint(ref)
             true
         }
         handleTypedFormat(AudioFlow.DATA_FORMAT, TransferMode.LINK) { _, ref ->

@@ -11,7 +11,10 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.project
+import ponticello.model.player.ScorePlayer
 import ponticello.model.project.UIState
+import ponticello.model.project.mainScore
+import ponticello.model.score.ScoreBreakpointObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.SoundProcess
 import ponticello.model.score.UnresolvedScoreObject
@@ -35,6 +38,26 @@ class ScoreObjectRegistry(
         super.initialize(context)
         client.addListener("/sync_sound_proc") { _, msg -> syncSoundProcess(msg) }
         client.addListener("/generated_score") { _, msg -> generatedScore(msg) }
+        client.addListener("/go_to_breakpoint") { _, msg -> goToBreakpoint(msg) }
+    }
+
+    fun goToBreakpoint(msg: OSCMessage) {
+        val breakpointName = msg.getArgument<String>(0, "breakpoint_name") ?: return
+        val breakpoint = getOrNull(breakpointName)
+        if (breakpoint !is ScoreBreakpointObject) {
+            Logger.warn("Received /go_to_breakpoint for unknown breakpoint: $breakpointName", Logger.Category.Playback)
+            return
+        }
+        val breakpointPosition = breakpoint.getPositionInScore(context.project.mainScore)
+        if (breakpointPosition == null) {
+            Logger.warn("Breakpoint '$breakpointName' not found in score", Logger.Category.Playback)
+            return
+        }
+        val player = context[ScorePlayer.MAIN]
+        player.playHead.movePlayHead(breakpointPosition)
+        if (!(player.isPlaying.now)) {
+            player.play()
+        }
     }
 
     private fun generatedScore(msg: OSCMessage) {

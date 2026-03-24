@@ -35,7 +35,7 @@ class ScoreObjectScheduler(val context: Context) {
 
                 ScoreEvent.Type.ObjectEnd -> {
                     Logger.fine("ObjectEnd: $obj at $position", Logger.Category.Playback)
-                    objectEnd(obj, player, position, inst)
+                    objectEnd(obj, player, position)
                 }
 
                 else -> {}
@@ -43,7 +43,7 @@ class ScoreObjectScheduler(val context: Context) {
         }
     }
 
-    private fun objectEnd(obj: ScoreObject, player: ScorePlayer, pos: ObjectPosition, instance: ScoreObjectInstance) {
+    private fun objectEnd(obj: ScoreObject, player: ScorePlayer, pos: ObjectPosition) {
         when (obj) {
             is TempoGridObject -> {
                 if (obj.meter.isResolved.now) {
@@ -61,6 +61,13 @@ class ScoreObjectScheduler(val context: Context) {
                     }
                     val description = "stop ${obj.name.now}"
                     client.schedule(description, time, absolute = false, player, code)
+                }
+            }
+
+            is ScoreBreakpointObject -> {
+                val latency = sclangLatency + serverLatency - extraLatency
+                if (player.lastPlayFrom < pos.time - latency - 0.01.asTime) {
+                    player.pause()
                 }
             }
 

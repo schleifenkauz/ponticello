@@ -255,6 +255,7 @@ object ScoreObjectActions {
         addObjectAction("Duplicate object") {
             shortcut("Alt?+D")
             icon(MaterialDesignC.CONTENT_DUPLICATE)
+            applicableOn { view -> view.obj.canDuplicate }
             executeSingle { view, ev ->
                 if (ev.isTargetTextInput && !ev.isAltDown()) return@executeSingle
                 view.context[ScoreObjectSelectionManager].deselectAll()
@@ -278,7 +279,10 @@ object ScoreObjectActions {
         addObjectAction("Unlink from original") {
             shortcut("Alt?+Shift?+U")
             icon(MaterialDesignL.LINK_OFF)
-            enableWhen { ctx -> ctx.focusedView.map { focused -> focused == null || !focused.parentPane.isRoot(focused.obj) } }
+            enableWhen { ctx ->
+                ctx.focusedView.map { focused -> focused == null || !focused.parentPane.isRoot(focused.obj) }
+            }
+            ifNotApplicable(Action.IfNotApplicable.Hide)
             executes { ctx, ev ->
                 if (ev.isTargetTextInput) return@executes
                 if (ctx.selectedInstances.isEmpty()) return@executes
@@ -380,7 +384,7 @@ object ScoreObjectActions {
         }
         addObjectAction("Generate score") {
             enableWhen(::isRoutineSoundProcess)
-            ifNotApplicable(Action.IfNotApplicable.Disable)
+            ifNotApplicable(Action.IfNotApplicable.Hide)
             icon(MaterialDesignC.COG_SYNC)
             executeSingle { view, _ ->
                 val obj = view.obj as SoundProcess
@@ -389,6 +393,7 @@ object ScoreObjectActions {
         }
         addObjectAction("Clear generated score") {
             enableWhen { ctx -> isRoutineSoundProcess(ctx) { obj -> obj.hasGeneratedScore } }
+            ifNotApplicable(Action.IfNotApplicable.Hide)
             icon(MaterialDesignC.CLOSE)
             executeSingle { view, _ ->
                 val obj = view.obj as SoundProcess
@@ -397,10 +402,11 @@ object ScoreObjectActions {
         }
         addObjectAction("Toggle use generated score") {
             enableWhen { ctx -> isRoutineSoundProcess(ctx) { obj -> obj.hasGeneratedScore } }
+            ifNotApplicable(Action.IfNotApplicable.Hide)
             icon { ctx ->
                 ctx.focusedView.flatMap { v ->
                     `if`(
-                        (v!!.obj as SoundProcess).usesGeneratedScore,
+                        (v?.obj as? SoundProcess)?.usesGeneratedScore ?: reactiveValue(false),
                         then = { MaterialDesignC.CHART_TIMELINE_VARIANT }, otherwise = { MaterialDesignG.GROUP }
                     )
                 }

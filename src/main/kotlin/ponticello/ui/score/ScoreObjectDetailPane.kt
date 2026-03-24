@@ -84,6 +84,7 @@ class ScoreObjectDetailPane : ToolPane() {
     private fun noSelectedObject() = BorderPane(label("No object focused"))
 
     fun viewDetails(focusedView: ScoreObjectView?) {
+        if (focusedView != null && !(focusedView.hasDetailPane)) return
         if (focusedView != null && focusedView.obj in detached) {
             detached.getValue(focusedView.obj).showAndBringToFront()
             return

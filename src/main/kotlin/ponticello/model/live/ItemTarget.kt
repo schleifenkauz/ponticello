@@ -18,6 +18,7 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.ObjectPosition
+import ponticello.model.score.ScoreBreakpointObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.sc.client.ScWriter
@@ -250,6 +251,32 @@ sealed class ItemTarget : AbstractContextualObject() {
         override fun ScWriter.code() {
             append("PlaybackActionItem(\\${type.name.lowercase()})")
         }
+
+        override fun toString(): String = type.name
+    }
+
+    @Serializable
+    @SerialName("Breakpoint")
+    class Breakpoint(val ref: ObjectReference<ScoreBreakpointObject>) : ItemTarget() {
+        override val supportedModes: List<GridItem.Mode>
+            get() = listOf(GridItem.Mode.Trigger)
+
+        override val name: ReactiveString get() = ref.name
+
+        override val canView: Boolean get() = true
+
+        override fun copy(): ItemTarget = Breakpoint(ref)
+
+        override fun initialize(context: Context) {
+            super.initialize(context)
+            ref.resolve(context[ScoreObjectRegistry].filterIsInstance<ScoreBreakpointObject>())
+        }
+
+        override fun ScWriter.code() {
+            append("BreakpointItem('${ref.getName()}')")
+        }
+
+        override fun toString(): String = "Breakpoint: ${ref.getName()}"
     }
 
     companion object {

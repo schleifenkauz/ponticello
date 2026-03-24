@@ -108,7 +108,9 @@ open class Score(
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate() })
 
     fun addObject(inst: ScoreObjectInstance, autoSelect: Boolean) {
-        if (inst.obj.duration <= zero && (inst.obj !is MemoObject && inst.obj !is TaskObject)) {
+        if (inst.obj.duration <= zero &&
+            (inst.obj !is MemoObject && inst.obj !is TaskObject && inst.obj !is ScoreBreakpointObject)
+        ) {
             Logger.error("Attempt to add zero-duration object $inst to the score")
             return
         }

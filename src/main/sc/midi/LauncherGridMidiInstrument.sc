@@ -171,3 +171,13 @@ PlaybackActionItem {
 		}
 	}
 }
+
+BreakpointItem {
+	var <>name;
+
+	* new { |name| ^super.newCopyArgs(name) }
+
+	noteOn { |velocity, src, mode|
+		Ponticello.sendMsg('/go_to_breakpoint', name);
+	}
+}

@@ -59,7 +59,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
             }
             val idx = msg.getArgument<Int>(1, "Grid index") ?: return@addListener
 
-            val item = grid.items().getOrNull(idx)
+            val item = grid.activeItems().getOrNull(idx)
             if (item == null) {
                 Logger.warn("Received note event with invalid grid item index: $idx", Logger.Category.OSC)
                 return@addListener

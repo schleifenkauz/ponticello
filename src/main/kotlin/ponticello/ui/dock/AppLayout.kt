@@ -48,7 +48,7 @@ import kotlin.reflect.KClass
 class AppLayout(
     private val activity: PonticelloMainActivity,
     private val project: PonticelloProject,
-    private val scoreView: NavigableScorePane,
+    val scoreView: NavigableScorePane,
     private val interactionConfigBar: InteractionConfigBar,
 ) : BorderPane(), ObjectList.Listener<ToolPane.Type> {
     private val sideBarLists = project[UI_STATE].sideBarStates.associateTo(mutableMapOf()) { state ->

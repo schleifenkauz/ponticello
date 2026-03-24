@@ -50,6 +50,11 @@ class NavigableScorePane(score: Score, context: Context) : RootScorePane(score, 
         return repaint()
     }
 
+    fun setDisplayBegin(start: Decimal) {
+        val end = displayedDuration + start
+        display(start, end)
+    }
+
     override fun listenForEvents() {
         super.listenForEvents()
         setupNavigation()

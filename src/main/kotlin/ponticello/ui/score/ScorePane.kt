@@ -306,6 +306,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
             is ScoreObjectGroup -> ScoreObjectGroupView(obj, instance)
             is TempoGridObject -> TempoGridObjectView(obj, instance)
             is MidiObject -> MidiObjectView(obj, instance)
+            is ScoreBreakpointObject -> ScoreBreakpointObjectView(obj, instance)
             is UnresolvedScoreObject -> UnresolvedScoreObjectView(instance)
             else -> throw AssertionError("Unknown object type: $obj")
         }

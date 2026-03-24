@@ -78,7 +78,7 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
 
     override fun selectedBank(bank: Int) {
         this.children.clear()
-        for (item in grid.items()) {
+        for (item in grid.activeItems()) {
             val box = display(item)
             boxes[item] = box
             val (i, j) = grid.getGridIndices(item)
@@ -96,23 +96,25 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
 
     private fun display(item: GridItem): Region {
         val target = item.target
-        val label = Label() styleClass "grid-item-label"
+        val cell = BorderPane().styleClass("midi-grid-item")
+
+        val label = Label() styleClass "grid-item-label" //TODO indicate the type of target visually
         label.textProperty().bind(item.target.name.asObservableValue())
-        val centeredLabel = HBox(infiniteSpace(), label, infiniteSpace())
+        cell.top = HBox(infiniteSpace(), label, infiniteSpace())
 
         val actions = itemActions.withContext(target)
         val actionBar = ActionBar(actions, buttonStyle = "small-icon-button")
-        val centeredActionBar = HBox(infiniteSpace(), actionBar, infiniteSpace())
+        cell.center = HBox(infiniteSpace(), actionBar, infiniteSpace())
 
-        val modeSpinner = OptionSpinner(item.mode, item.target.supportedModes)
-        modeSpinner.disableProperty().bind(item.isActive.asObservableValue())
-        modeSpinner.visibleProperty().bind(item.target().map { t -> t !is ItemTarget.None }.asObservableValue())
-        modeSpinner.label.minWidth = 45.0
+        var modeSpinner: OptionSpinner<GridItem.Mode>? = null
+        if (target.supportedModes.size > 1) {
+            modeSpinner = OptionSpinner(item.mode, item.target.supportedModes)
+            modeSpinner.disableProperty().bind(item.isActive.asObservableValue())
+            modeSpinner.visibleProperty().bind(item.target().map { t -> t !is ItemTarget.None }.asObservableValue())
+            modeSpinner.label.minWidth = 45.0
+            cell.bottom = modeSpinner
+        }
 
-        val box = BorderPane().styleClass("midi-grid-item")
-        box.top = centeredLabel
-        box.center = centeredActionBar
-        box.bottom = modeSpinner
         if (target is ItemTarget.Object) {
             val obj = target.ref.get()
             if (obj != null) {
@@ -122,16 +124,19 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
                     undoManager = grid.context[UndoManager],
                 )
                 scoreYSlider.maxWidth = 50.0
-                box.bottom = VBox(modeSpinner, scoreYSlider)
+                cell.bottom = if (modeSpinner == null) scoreYSlider else VBox(modeSpinner, scoreYSlider)
             }
         }
-        val tooltip = Tooltip()
-        tooltip.textProperty().bind(item.target.name.asObservableValue())
-        Tooltip.install(box, tooltip)
-        addMouseActions(box, item)
-        setupDragAndDrop(box, item)
-        box.userData = box.bindPseudoClassState("active", item.isActive)
-        return box
+        if (target !is ItemTarget.None) {
+            val tooltip = Tooltip()
+            tooltip.textProperty().bind(item.target.name.asObservableValue())
+            Tooltip.install(cell, tooltip)
+            addMouseActions(cell, item)
+            setupDragAndDrop(cell, item)
+        }
+        cell.setupDropArea(MidiGridItemDropHandler(grid, item))
+        cell.userData = cell.bindPseudoClassState("active", item.isActive)
+        return cell
     }
 
     private fun addMouseActions(target: Node, item: GridItem) {
@@ -141,7 +146,7 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
             }
         }
         target.setOnMouseClicked { ev ->
-            if (ev.target == target && ev.button == MouseButton.SECONDARY) {
+            if (ev.button == MouseButton.SECONDARY) {
                 item.target = ItemTarget.None()
             }
         }
@@ -160,7 +165,6 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
             db.setContent(mapOf(GridItemReference.DATA_FORMAT to ref))
             ev.consume()
         }
-        cell.setupDropArea(MidiGridItemDropHandler(grid, item))
     }
 
     companion object {
@@ -205,6 +209,12 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
                         is ItemTarget.Script -> {
                             val obj = target.ref.get() ?: return@executes
                             target.context[AppLayout].get<ScriptRegistryPane>().showContent(obj)
+                        }
+
+                        is ItemTarget.Breakpoint -> {
+                            val scoreView = target.context[AppLayout].scoreView
+                            val pos = target.ref.get()?.getPositionInScore(scoreView.score) ?: return@executes
+                            scoreView.setDisplayBegin(pos)
                         }
 
                         else -> {}

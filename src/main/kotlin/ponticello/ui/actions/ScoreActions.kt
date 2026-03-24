@@ -6,6 +6,7 @@ import fxutils.actions.isShiftDown
 import fxutils.actions.isTargetTextInput
 import fxutils.prompt.IntegerPrompt
 import fxutils.prompt.PromptPlacement
+import fxutils.prompt.atMouseCoords
 import hextant.context.compoundEdit
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
@@ -32,7 +33,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
     addAction("Add tempo grid") {
         shortcut("Alt?+T")
         executes { rootPane, ev ->
-            if (ev.isTargetTextInput && !ev.isShiftDown()) return@executes
+            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
             if (RectangleSelection.get() != null) return@executes
             if (!rootPane.isFocusWithin) return@executes
             val (pane, _) = rootPane.getScorePaneAtCursor() ?: return@executes
@@ -52,6 +53,19 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
                 val inst = ScoreObjectInstance(obj, pos)
                 pane.score.addObject(inst, autoSelect = true)
             }
+        }
+    }
+    addAction("Add breakpoint") {
+        shortcut("Alt?+B")
+        executes { pane, ev ->
+            if (!pane.isFocusWithin) return@executes
+            if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
+            val cursorTime = pane.playHead.currentTime
+            val name = NamePrompt(pane.context[ScoreObjectRegistry], "Breakpoint name", "breakpoint")
+                .showDialog(ev.atMouseCoords()) ?: return@executes
+            val breakpoint = ScoreBreakpointObject().withName(name)
+            val inst = ScoreObjectInstance(breakpoint, ObjectPosition(cursorTime, zero))
+            pane.score.addObject(inst, autoSelect = false)
         }
     }
     addAction("Add task") {

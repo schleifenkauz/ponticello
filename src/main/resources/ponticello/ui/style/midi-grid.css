@@ -39,7 +39,7 @@ Text.grid-item-label {
 }
 
 Text.grid-item-label:hover {
-    -fx-font-style: bold;
+    -fx-font-weight: bold;
 }
 
 Button.grid-bank-selector, Button.grid-bank-selector:selected, Button.grid-bank-selector:focused {

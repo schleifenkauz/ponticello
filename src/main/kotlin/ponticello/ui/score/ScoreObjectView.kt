@@ -71,8 +71,11 @@ abstract class ScoreObjectView(
 
     val backgroundColor by lazy { obj.associatedColor.orElse(Color.BLACK) }
     protected open val borderColorWhenSelected: Color get() = Color.web("#2a66ff")
+    protected open val borderColorWhenFocused: Color get() = Color.ORANGE
     protected open val borderColorWhenNotSelected: Color get() = Color.TRANSPARENT
     protected open val borderColorWhenSameObjectSelected: Color get() = Color.GRAY
+
+    open val hasDetailPane: Boolean get() = true
 
     protected var _inlineControls: HBox? = null
         private set
@@ -401,11 +404,11 @@ abstract class ScoreObjectView(
         }
     }
 
-    fun updateIsFocused(value: Boolean) {
+    open fun updateIsFocused(value: Boolean) {
         updateBorder()
     }
 
-    fun updateIsSelected(value: Boolean) {
+    open fun updateIsSelected(value: Boolean) {
         updateBorder()
     }
 
@@ -416,7 +419,7 @@ abstract class ScoreObjectView(
     private fun updateBorder() {
         val selection = context[ScoreObjectSelectionManager]
         border = when {
-            selection.focusedView.now == this -> solidBorder(Color.ORANGE, 2.0, BORDER_RADIUS)
+            selection.focusedView.now == this -> solidBorder(borderColorWhenFocused, 2.0, BORDER_RADIUS)
             selection.isSelected(instance) -> solidBorder(borderColorWhenSelected, 2.0, BORDER_RADIUS)
             selection.isSelected(obj) -> solidBorder(borderColorWhenSameObjectSelected, 2.0, BORDER_RADIUS)
             else -> solidBorder(borderColorWhenNotSelected, 0.5, BORDER_RADIUS)

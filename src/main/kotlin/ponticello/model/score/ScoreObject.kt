@@ -33,6 +33,7 @@ import reaktive.value.*
 sealed class ScoreObject : AbstractSuperColliderObject() {
     abstract val type: String
     open val canMute: Boolean get() = true
+    open val canDuplicate: Boolean get() = false
     private val _associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> =
         reactiveVariable(null)
 
@@ -53,13 +54,13 @@ sealed class ScoreObject : AbstractSuperColliderObject() {
     @SerialName("height")
     private var _height = reactiveVariable(0.0.asY)
 
-    var duration: Decimal
+    open var duration: Decimal
         get() = _duration.now
         protected set(value) {
             _duration.now = value
         }
 
-    var height: Decimal
+    open var height: Decimal
         get() = _height.now
         protected set(value) {
             _height.now = value

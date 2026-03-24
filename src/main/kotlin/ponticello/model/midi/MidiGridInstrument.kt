@@ -68,7 +68,9 @@ class MidiGridInstrument private constructor(
     @Transient
     private lateinit var client: SuperColliderClient
 
-    fun items(): List<GridItem> = banks[currentBank].asList()
+    fun activeItems(): List<GridItem> = banks[currentBank].asList()
+
+    fun allItems(): Sequence<GridItem> = banks.asSequence().flatMap { b -> b.asSequence() }
 
     override fun initialize(context: Context) {
         undoManager = context[UndoManager.Companion]/*.createSubManager()*/
@@ -199,7 +201,7 @@ class MidiGridInstrument private constructor(
     }
 
     fun getGridIndices(item: GridItem): Pair<Int, Int> {
-        val index = items().indexOf(item)
+        val index = activeItems().indexOf(item)
         val row = index / columns
         val column = index % columns
         return Pair(row, column)
