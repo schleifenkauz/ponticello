@@ -35,7 +35,7 @@ class ScoreBreakpointObjectView(
         val tooltip = Tooltip()
         tooltip.textProperty().bind(obj.name.asObservableValue())
         Tooltip.install(line, tooltip)
-        line.setOnDragDetected { ev ->
+        setOnDragDetected { ev ->
             if (ev.isAltDown) {
                 val db = line.startDragAndDrop(TransferMode.LINK)
                 db.setContent(mapOf(ScoreBreakpointObject.DATA_FORMAT to obj.reference()))

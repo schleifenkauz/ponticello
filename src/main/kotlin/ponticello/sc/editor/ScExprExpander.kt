@@ -330,6 +330,10 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                 } else NumericalControlSpec.DEFAULT
                 SliderExprEditor(spec)
             }
+            "goto".expand(condition = { exp ->
+                val ctx = exp.context[PonticelloContext]
+                ctx is PonticelloContext.RoutineDef || ctx is PonticelloContext.Task
+            }) { _ -> GoToEditor().defaultState() }
         }
     }
 }

@@ -9,17 +9,19 @@ PonticelloPlayback {
 		time_warp = 1;
 	}
 
-	* start_play { |player_id, start_time|
-		postf("Start Play: %, start_time: %\n", player_id, start_time);
-		start_time = start_time.asFloat;
-		play_start.put(player_id.asInteger, SystemClock.seconds);
-		score_time_counter = Synth(\score_clock, [start: start_time, rate: time_warp_bus, out: score_time_bus]);
+	* start_play { |player_id, score_start_time, play_start_time|
+		score_start_time = score_start_time.asFloat;
+		play_start_time = play_start_time ?? { SystemClock.seconds };
+		postf("Start Play: %, score_start_time: %, play_start_time: %\n", player_id, score_start_time, play_start_time);
+		play_start.put(player_id.asInteger, play_start_time);
+		score_time_counter = Synth(\score_clock, [start: score_start_time, rate: time_warp_bus, out: score_time_bus]);
 	}
 
 	* pause_play { |player_id|
 		play_start.removeAt(player_id);
 		score_time_counter.free;
 		score_time_counter = nil;
+		SoundProcess.stopAllProcesses(player_id);
 	}
 
 	* set_time_warp { |tempo, score_time|

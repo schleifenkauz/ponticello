@@ -4,6 +4,7 @@ import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import fxutils.controls.CheckBox
 import fxutils.controls.OptionSpinner
 import fxutils.controls.SliderBar
 import fxutils.drag.setupDropArea
@@ -124,8 +125,14 @@ class MidiGridPane(private val grid: MidiGridInstrument) : MidiGridInstrument.Vi
                     undoManager = grid.context[UndoManager],
                 )
                 scoreYSlider.maxWidth = 50.0
-                cell.bottom = if (modeSpinner == null) scoreYSlider else VBox(modeSpinner, scoreYSlider)
+                cell.bottom = VBox(modeSpinner, scoreYSlider)
             }
+        }
+        if (target is ItemTarget.Breakpoint) {
+            val playCheckBox = CheckBox(target.play, "Play: ").setupUndo(
+                grid.context[UndoManager], variableDescription = "Toggle play"
+            )
+            cell.bottom = HBox(infiniteSpace(), playCheckBox, infiniteSpace())
         }
         if (target !is ItemTarget.None) {
             val tooltip = Tooltip()

@@ -24,7 +24,7 @@ interface SuperColliderClient : SuperColliderContext {
 
     fun send(address: String, arguments: List<Any> = emptyList(), description: String? = null): CompletableFuture<String>
 
-    fun sendAsync(address: String, arguments: List<Any> = emptyList())
+    fun sendAsync(address: String, arguments: List<Any?> = emptyList())
 
     fun addListener(listener: OSCMessageListener)
 

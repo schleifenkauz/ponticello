@@ -19,7 +19,6 @@ import javafx.stage.Window
 import ponticello.model.obj.NamedObject
 import ponticello.model.obj.project
 import ponticello.model.project.*
-import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.ScoreObject
@@ -32,7 +31,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
-fun <T : NamedObject> Dragboard.getFrom(registry: NamedObjectList<T>, format: DataFormat): T? {
+fun <T : NamedObject> Dragboard.getFrom(registry: List<T>, format: DataFormat): T? {
     val ref = getContent(format) as? ObjectReference<T> ?: return null
     ref.resolve(registry)
     return ref.get()

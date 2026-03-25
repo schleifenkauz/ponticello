@@ -86,7 +86,7 @@ class OSCSuperColliderClient(
         }
     }
 
-    override fun sendAsync(address: String, arguments: List<Any>) {
+    override fun sendAsync(address: String, arguments: List<Any?>) {
         val adr = if (!address.startsWith('/')) "/$address" else address
         val msg = OSCMessage(adr, arguments)
         synchronized(clientTransport) {

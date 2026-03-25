@@ -61,7 +61,8 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
             if (!pane.isFocusWithin) return@executes
             if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
             val cursorTime = pane.playHead.currentTime
-            val name = NamePrompt(pane.context[ScoreObjectRegistry], "Breakpoint name", "breakpoint")
+            val initialName = pane.context[ScoreObjectRegistry].availableName("breakpoint")
+            val name = NamePrompt(pane.context[ScoreObjectRegistry], "Breakpoint name", initialName)
                 .showDialog(ev.atMouseCoords()) ?: return@executes
             val breakpoint = ScoreBreakpointObject().withName(name)
             val inst = ScoreObjectInstance(breakpoint, ObjectPosition(cursorTime, zero))

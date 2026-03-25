@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Decimal
+import ponticello.impl.copy
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlows
 import ponticello.model.midi.MidiGridInstrument
@@ -22,7 +23,9 @@ import ponticello.model.score.ScoreBreakpointObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.ScoreObjectGroup
 import ponticello.sc.client.ScWriter
+import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.PlaybackActions
+import reaktive.Observer
 import reaktive.value.*
 import reaktive.value.binding.and
 import reaktive.value.binding.`if`
@@ -257,26 +260,43 @@ sealed class ItemTarget : AbstractContextualObject() {
 
     @Serializable
     @SerialName("Breakpoint")
-    class Breakpoint(val ref: ObjectReference<ScoreBreakpointObject>) : ItemTarget() {
-        override val supportedModes: List<GridItem.Mode>
-            get() = listOf(GridItem.Mode.Trigger)
+    class Breakpoint(
+        val ref: ObjectReference<ScoreBreakpointObject>,
+        val play: ReactiveVariable<Boolean> = reactiveVariable(false)
+    ) : ItemTarget() {
+        private var id: Int = -1
+        private val superColliderVar get() = "~breakpoint_item_$id"
+
+        @Transient
+        private lateinit var playObserver: Observer
 
         override val name: ReactiveString get() = ref.name
 
+        override val supportedModes: List<GridItem.Mode>
+            get() = listOf(GridItem.Mode.Trigger)
+
         override val canView: Boolean get() = true
 
-        override fun copy(): ItemTarget = Breakpoint(ref)
+        override fun copy(): ItemTarget = Breakpoint(ref, play.copy())
 
         override fun initialize(context: Context) {
             super.initialize(context)
             ref.resolve(context[ScoreObjectRegistry].filterIsInstance<ScoreBreakpointObject>())
+            id = idCounter++
+            playObserver = play.observe { _, _, value ->
+                context[SuperColliderClient].run("$superColliderVar.play = $value")
+            }
         }
 
         override fun ScWriter.code() {
-            append("BreakpointItem('${ref.getName()}')")
+            append("$superColliderVar = BreakpointItem('${ref.getName()}', ${play.now})")
         }
 
         override fun toString(): String = "Breakpoint: ${ref.getName()}"
+
+        companion object {
+            private var idCounter = 0
+        }
     }
 
     companion object {

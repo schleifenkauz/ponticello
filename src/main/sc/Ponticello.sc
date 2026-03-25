@@ -99,7 +99,7 @@ Ponticello {
 		Ponticello.respondId('/eval', this.eval(_, _));
 		Ponticello.respondId('/schedule', PonticelloPlayback.schedule(_, _, _, _, _, _));
 		Ponticello.respond('/set_time_warp', PonticelloPlayback.set_time_warp(_, _));
-		Ponticello.respond('/start_play', PonticelloPlayback.start_play(_, _));
+		Ponticello.respond('/start_play', PonticelloPlayback.start_play(_, _, _));
 		Ponticello.respond('/pause_play', PonticelloPlayback.pause_play(_));
 
 		postf("Successfully setup OSC handling. Replying to % \n", ponticello_addr);

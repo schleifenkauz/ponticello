@@ -7,6 +7,7 @@ import com.illposed.osc.OSCMessage
 import fxutils.prompt.PromptPlacement
 import hextant.context.Context
 import hextant.context.compoundEdit
+import javafx.application.Platform
 import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
 import ponticello.model.obj.SuperColliderObject
@@ -41,7 +42,7 @@ class ScoreObjectRegistry(
         client.addListener("/go_to_breakpoint") { _, msg -> goToBreakpoint(msg) }
     }
 
-    fun goToBreakpoint(msg: OSCMessage) {
+    fun goToBreakpoint(msg: OSCMessage) { //TODO maybe move this to [ScorePlayer]
         val breakpointName = msg.getArgument<String>(0, "breakpoint_name") ?: return
         val breakpoint = getOrNull(breakpointName)
         if (breakpoint !is ScoreBreakpointObject) {
@@ -53,10 +54,15 @@ class ScoreObjectRegistry(
             Logger.warn("Breakpoint '$breakpointName' not found in score", Logger.Category.Playback)
             return
         }
+        val scTime = msg.getArgument<Float>(1, "SystemClock.seconds")
+        val play = msg.arguments.getOrNull(2) as? Int == 1
         val player = context[ScorePlayer.MAIN]
-        player.playHead.movePlayHead(breakpointPosition)
-        if (!(player.isPlaying.now)) {
-            player.play()
+        val wasPlaying = player.isPlaying.now
+        Platform.runLater {
+            player.playHead.movePlayHead(breakpointPosition, scTime)
+            if (play && !wasPlaying) {
+                player.play()
+            }
         }
     }
 

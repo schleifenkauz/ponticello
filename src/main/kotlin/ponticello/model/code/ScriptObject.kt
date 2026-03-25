@@ -10,6 +10,7 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ponticello.model.ctx.PonticelloContext
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.ScriptObjectReference
 import ponticello.model.obj.project
@@ -36,6 +37,7 @@ class ScriptObject private constructor(
         super.initialize(context)
         root.initialize(context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
+            set(PonticelloContext, PonticelloContext.Script(this@ScriptObject))
             //set(UndoManager, context[UndoManager])
         })
     }

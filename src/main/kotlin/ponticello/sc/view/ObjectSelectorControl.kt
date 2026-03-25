@@ -4,6 +4,7 @@ import bundles.Bundle
 import bundles.createBundle
 import fxutils.drag.DropHandler
 import fxutils.drag.setupDropArea
+import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.compoundEdit
 import hextant.core.view.SimpleChoiceEditorControl
 import javafx.scene.input.DragEvent
@@ -11,6 +12,8 @@ import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import ponticello.model.obj.NamedObject
+import ponticello.model.registry.NamedObjectList
+import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.sc.editor.ObjectSelector
@@ -36,7 +39,7 @@ class ObjectSelectorControl<O : NamedObject>(
 
     private fun extractObject(dragboard: Dragboard): O? {
         val format = selector.dataFormat() ?: return null
-        return dragboard.getFrom(selector.getList(), format)
+        return dragboard.getFrom(selector.getOptions(), format)
     }
 
     override fun acceptedTransferModes(event: DragEvent): Array<out TransferMode> {
@@ -52,18 +55,32 @@ class ObjectSelectorControl<O : NamedObject>(
     }
 
     public override fun showChoicePopup() {
-        val registry = selector.getList()
-        val view = object : RegistrySelectorPrompt<O>(registry, "Select ${registry.objectType}") {
-            override val canCreateItem: Boolean get() = true
+        val registry = selector.getOptions()
 
-            override fun createObject(name: String): O? = selector.createNewObject(name)
-
-            override fun displayText(option: O): String = selector.toString(option).now
-        }
+        val view =
+            if (registry is NamedObjectList) SimpleRegistrySelectorPrompt(registry)
+            else SimpleListSelectorPrompt(registry)
         view.setFilter { obj -> selector.filter(obj) }
-        context.compoundEdit("Select ${registry.objectType}") {
+        val objectType =
+            if (registry is ObjectList) registry.objectType
+            else registry.javaClass.simpleName
+        context.compoundEdit("Select $objectType") {
             val option = view.showPopup(anchorNode = this, initialOption = selector.result.now.get())
             if (option != null) selector.select(option.reference())
         }
+    }
+
+    private inner class SimpleRegistrySelectorPrompt(
+        registry: NamedObjectList<O>
+    ) : RegistrySelectorPrompt<O>(registry, "Select ${registry.objectType}") {
+        override val canCreateItem: Boolean get() = true
+
+        override fun createObject(name: String): O? = selector.createNewObject(name)
+
+        override fun displayText(option: O): String = selector.toString(option).now
+    }
+
+    private inner class SimpleListSelectorPrompt(registry: List<O>) : SimpleSelectorPrompt<O>(registry, "Select") {
+        override fun displayText(option: O): String = selector.toString(option).now
     }
 }

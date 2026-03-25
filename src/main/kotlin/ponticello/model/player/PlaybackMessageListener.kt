@@ -2,6 +2,7 @@ package ponticello.model.player
 
 import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
+import javafx.application.Platform
 import ponticello.impl.Decimal
 import ponticello.impl.Logger
 import ponticello.impl.asTime
@@ -20,11 +21,23 @@ class PlaybackMessageListener(
 ) : OSCMessageListener {
     override fun acceptMessage(event: OSCMessageEvent) = ScorePlayer.execute {
         when (event.message.address) {
-            "/start_play" -> mainPlayer.play()
-            "/pause_play" -> mainPlayer.pause()
-            "/toggle_play" -> mainPlayer.togglePlaying()
-            "/stop_playback" -> PlaybackActions.stopAll(mainPlayer)
-            "/go_to_start" -> {
+            "/start_play" -> Platform.runLater {
+                mainPlayer.play()
+            }
+
+            "/pause_play" -> Platform.runLater {
+                mainPlayer.pause()
+            }
+
+            "/toggle_play" -> Platform.runLater {
+                mainPlayer.togglePlaying()
+            }
+
+            "/stop_playback" -> Platform.runLater {
+                PlaybackActions.stopAll(mainPlayer)
+            }
+
+            "/go_to_start" -> Platform.runLater {
                 if (!(mainPlayer.isPlaying.now)) {
                     mainPlayer.playHead.movePlayHeadToStart()
                 }
@@ -42,13 +55,17 @@ class PlaybackMessageListener(
             "/pause" -> { //TODO add the corresponding expression types
                 val name = event.message.getArgument<String>(1, "name") ?: return@execute
                 val flow = flows.getFlow(name) ?: return@execute
-                flow.setActive(false)
+                Platform.runLater {
+                    flow.setActive(false)
+                }
             }
 
             "/resume" -> {
                 val name = event.message.getArgument<String>(1, "name") ?: return@execute
                 val flow = flows.getFlow(name) ?: return@execute
-                flow.setActive(true)
+                Platform.runLater {
+                    flow.setActive(true)
+                }
             }
         }
     }

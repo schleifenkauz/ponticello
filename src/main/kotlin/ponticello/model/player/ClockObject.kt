@@ -119,7 +119,7 @@ class ClockObject(
                 player.startPlaying()
             }
             if (!player.isPlaying.now) continue
-            if (startTime + lookAhead <= time) {
+            if (startTime + player.lookAhead <= time) {
                 player.doCycle(time - startTime + offset, delta)
             }
         }

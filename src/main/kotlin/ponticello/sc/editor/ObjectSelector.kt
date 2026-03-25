@@ -6,7 +6,6 @@ import javafx.scene.input.DataFormat
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import ponticello.model.obj.NamedObject
-import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import reaktive.value.*
@@ -20,7 +19,7 @@ abstract class ObjectSelector<O : NamedObject> :
 
     private var excluded: () -> Collection<O> = { emptyList() }
 
-    abstract fun getList(): NamedObjectList<O>
+    abstract fun getOptions(): List<O>
 
     open fun filter(obj: O): Boolean = true
 
@@ -34,7 +33,7 @@ abstract class ObjectSelector<O : NamedObject> :
     }
 
     override fun doInitialize() {
-        result.now.resolve(getList())
+        result.now.resolve(getOptions())
         isResolved = result.flatMap { ref -> ref.isResolved }
     }
 
@@ -43,7 +42,7 @@ abstract class ObjectSelector<O : NamedObject> :
     }
 
     override fun choices(): List<ObjectReference<O>> =
-        (getList().all() - excluded().toSet()).filter(::filter).map { obj -> obj.reference() }
+        (getOptions() - excluded().toSet()).filter(::filter).map { obj -> obj.reference() }
 
     abstract fun createNewObject(name: String): O?
 

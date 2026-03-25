@@ -62,12 +62,6 @@
 
 - this means ability to do NRT bouncing!
 
-### Live mode
-
-- time jumps
-    - like goto statements
-    - can have conditions (examples...?)
-
 ### DJ functionality
 
 - split stems with demucs
@@ -76,8 +70,6 @@
 ### Different curvatures for envelopes
 
 ### Is vertical scroll/zoom needed?
-
-### Drum sequencer objects
 
 ## Was unterscheidet Ponticello von anderen DAWs?
 

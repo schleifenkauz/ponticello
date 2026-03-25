@@ -4,7 +4,6 @@ import bundles.getOrNull
 import ponticello.impl.Logger
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 
 class ParameterControlSelector : ObjectSelector<NamedParameterControl>() {
@@ -20,7 +19,7 @@ class ParameterControlSelector : ObjectSelector<NamedParameterControl>() {
         super.doInitialize()
     }
 
-    override fun getList(): ParameterControlList = associatedObject.controls
+    override fun getOptions(): List<NamedParameterControl> = associatedObject.controls
 
     override fun createNewObject(name: String): NamedParameterControl? = null
 }

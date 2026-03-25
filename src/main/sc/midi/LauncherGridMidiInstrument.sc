@@ -173,11 +173,13 @@ PlaybackActionItem {
 }
 
 BreakpointItem {
-	var <>name;
+	var <>name, <>play;
 
-	* new { |name| ^super.newCopyArgs(name) }
+	* new { |name, play| ^super.newCopyArgs(name, play) }
 
 	noteOn { |velocity, src, mode|
-		Ponticello.sendMsg('/go_to_breakpoint', name);
+		Ponticello.sendMsg('/go_to_breakpoint', name, SystemClock.seconds, play);
 	}
+
+	noteOff { |velocity, src, mode| }
 }

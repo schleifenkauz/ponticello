@@ -39,6 +39,7 @@ class ScoreBreakpointObject : ScoreObject() {
 
     override var duration: Decimal
         get() {
+            if (!initialized) return one
             val settings = context.project[PLAYBACK_SETTINGS]
             return settings.scLangLatency.now + settings.serverLatency.now - settings.extraLatency.now
         }

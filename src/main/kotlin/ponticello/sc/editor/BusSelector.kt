@@ -2,7 +2,6 @@ package ponticello.sc.editor
 
 import javafx.scene.input.DataFormat
 import ponticello.model.instr.BusObject
-import ponticello.model.registry.ObjectRegistry
 import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import reaktive.value.ReactiveValue
@@ -10,7 +9,7 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class BusSelector : ObjectSelector<BusObject>() {
-    override fun getList(): ObjectRegistry<BusObject> = context[BusRegistry]
+    override fun getOptions(): List<BusObject> = context[BusRegistry]
 
     private var expectedRate: ReactiveValue<Rate?> = reactiveValue(null)
     private var expectedChannels: ReactiveValue<Int?> = reactiveValue(null)
@@ -37,5 +36,5 @@ class BusSelector : ObjectSelector<BusObject>() {
         return BusObject.create(rate, name, channels)
     }
 
-    override fun dataFormat(): DataFormat? = BusObject.DATA_FORMAT
+    override fun dataFormat(): DataFormat = BusObject.DATA_FORMAT
 }

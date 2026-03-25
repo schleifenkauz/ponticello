@@ -1,8 +1,13 @@
 package ponticello.sc
 
+import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.context.Context
+import ponticello.model.registry.ObjectReference
+import ponticello.model.score.ScoreBreakpointObject
 import ponticello.sc.client.ScWriter
+import ponticello.sc.editor.ScoreBreakpointSelector
+import reaktive.value.now
 
 @Compound(nodeType = ScExpr::class)
 fun IfExpr(condition: ScExpr, then: ScExpr, otherwise: ScExpr): ScExpr =
@@ -50,4 +55,18 @@ data class PlayObject(val scoreObjectNameExpr: ScExpr, val extraArgs: List<ScExp
         writer.appendList(extraArgs, separator = ", ", context)
         writer.append("])")
     }
+}
+
+@Compound(nodeType = ScExpr::class)
+data class GoTo(
+    @Component(ScoreBreakpointSelector::class) val breakpoint: ObjectReference<ScoreBreakpointObject>
+) : ScExpr {
+    override val isValid: Boolean
+        get() = breakpoint.isValid
+
+    override fun code(writer: ScWriter, context: Context) {
+        writer.append("Ponticello.sendMsg('/go_to_breakpoint', '${breakpoint.name.now}', SystemClock.seconds)")
+    }
+
+    override fun toString(): String = "GoTo(${breakpoint.name.now})"
 }

@@ -11,10 +11,7 @@ import ponticello.ui.score.RootScorePane
 import ponticello.ui.score.ScorePane
 import ponticello.ui.score.TimeCodeView
 import reaktive.Observer
-import reaktive.value.ReactiveValue
-import reaktive.value.forEach
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 
 class PlayHead {
     private val attached = mutableListOf<AttachedScorePane>()
@@ -23,8 +20,9 @@ class PlayHead {
     private lateinit var playerObserver: Observer
 
     var currentTime = 0.0.asTime
-        private set(value) {
+        set(value) {
             field = value.withPrecision(ObjectPosition.TIME_PRECISION)
+            Platform.runLater { updatePosition() }
         }
 
     var player: ScorePlayer
@@ -37,7 +35,7 @@ class PlayHead {
             }
         }
 
-    val canMoveManually: ReactiveValue<Boolean> get() = _canMoveManually
+    val canMoveManually: ReactiveValue<Boolean> get() = reactiveValue(true)
 
     fun attachTo(pane: RootScorePane) {
         val playHead = Line() styleClass "play-head"
@@ -50,9 +48,12 @@ class PlayHead {
         attached.add(AttachedScorePane(pane, pane.timeCodeView, playHead))
     }
 
-    fun movePlayHead(pos: Decimal) {
+    fun movePlayHead(pos: Decimal, scTime: Float? = null) {
+        if (player.isScheduled.now && !(player.isPlaying.now)) return
+        val wasPlaying = player.isPlaying.now
+        if (wasPlaying) player.pause()
         currentTime = pos
-        Platform.runLater { updatePosition() }
+        if (wasPlaying) player.play(scTime)
     }
 
     fun centerInScorePane() {

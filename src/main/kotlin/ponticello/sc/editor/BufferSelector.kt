@@ -1,7 +1,6 @@
 package ponticello.sc.editor
 
 import javafx.scene.input.DataFormat
-import ponticello.model.registry.ObjectRegistry
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry
 import ponticello.ui.dock.AppLayout
@@ -11,7 +10,7 @@ import reaktive.value.now
 import reaktive.value.reactiveValue
 
 class BufferSelector : ObjectSelector<BufferObject>() {
-    override fun getList(): ObjectRegistry<BufferObject> = context[BufferRegistry]
+    override fun getOptions(): List<BufferObject> = context[BufferRegistry]
 
     private var expectedChannels: ReactiveValue<Int?> = reactiveValue(null)
 

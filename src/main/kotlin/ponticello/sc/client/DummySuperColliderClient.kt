@@ -38,7 +38,7 @@ class DummySuperColliderClient(
         description: String?
     ): CompletableFuture<String> = CompletableFuture.completedFuture("dummy")
 
-    override fun sendAsync(address: String, arguments: List<Any>) {
+    override fun sendAsync(address: String, arguments: List<Any?>) {
     }
 
     override fun addListener(listener: OSCMessageListener) {

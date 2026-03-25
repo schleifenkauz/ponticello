@@ -39,7 +39,10 @@ class ScorePlayer private constructor(
 
     val context get() = score.context
 
-    val lookAhead get() = context.playbackSettings.lookAhead
+    private var scTime: Float? = null
+    private val zeroLookAhead: Boolean get() = scTime != null
+
+    val lookAhead get() = if (zeroLookAhead) zero else context.playbackSettings.lookAhead
 
     private val client: SuperColliderClient = context[SuperColliderClient]
     private val updater = LiveScoreUpdater(score, this)
@@ -81,7 +84,7 @@ class ScorePlayer private constructor(
                 playHead.centerInScorePane()
             }
         }
-        playHead.movePlayHead(playHeadPos)
+        playHead.currentTime = playHeadPos
 
         if (scoreTime >= maxTime) {
             if (!loopingActivated.now) {
@@ -137,13 +140,14 @@ class ScorePlayer private constructor(
         }
     }
 
-    fun play() {
+    fun play(scTime: Float? = null) {
+        this.scTime = scTime
         if (isScheduled.now) return
         scheduled.set(true)
-        val quantization = quantization
         val clock = getClock()
         currentClock = clock
-        clock.scheduleStart(this, quantization)
+        val quant = quantization.takeUnless { scTime != null }
+        clock.scheduleStart(this, quant)
     }
 
     fun getClock(): ClockObject = currentClock
@@ -154,18 +158,20 @@ class ScorePlayer private constructor(
         playing.set(true)
         System.err.println("Start Player [$id]")
         val time = playHead.currentTime
-        client.sendAsync("start_play", listOf(id, time.toString()))
+        client.sendAsync("/start_play", listOf(id, time.toString(), scTime))
         context[Recorder].startingPlayback()
         Logger.fine("Starting playback at $time", Logger.Category.Playback)
         lastPlayFrom = time
         loopedTime = zero
-        val timeRange = time..time + lookAhead
-        val events = mutableListOf<ScoreEvent>()
-        events.collectEvents(score, timeRange, withCutoff = true)
-        events.sortBy { ev -> ev.absolutePosition.y }
-        for ((type, position, inst) in events) {
-            if (type == ScoreEvent.Type.ObjectStart) {
-                scheduleInstantly(inst, position)?.join()
+        if (!zeroLookAhead) {
+            val timeRange = time..time + lookAhead
+            val events = mutableListOf<ScoreEvent>()
+            events.collectEvents(score, timeRange, withCutoff = true)
+            events.sortBy { ev -> ev.absolutePosition.y }
+            for ((type, position, inst) in events) {
+                if (type == ScoreEvent.Type.ObjectStart) {
+                    scheduleInstantly(inst, position)?.join()
+                }
             }
         }
     }
@@ -178,8 +184,13 @@ class ScorePlayer private constructor(
         lastPlayFrom = zero
         getClock().stop(this)
         currentClock = null
-        client.sendAsync("pause_play", listOf(id))
-        freeActiveObjects()
+        execute {
+            client.sendAsync("/pause_play", listOf(id))
+            Logger.info("Pausing playback", Logger.Category.Playback)
+            for (track in context[AudioFlows].allMidiTracks()) {
+                track.allNotesOff(id)
+            }
+        }
     }
 
     fun togglePlaying() {

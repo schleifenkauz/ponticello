@@ -1,11 +1,15 @@
 package ponticello.model.score
 
+import bundles.set
 import hextant.context.Context
+import hextant.context.SelectionDistributor
+import hextant.context.extend
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import ponticello.model.ctx.PonticelloContext
 import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.sc.client.ScWriter
 import ponticello.sc.editor.CodeBlockEditor
@@ -37,7 +41,10 @@ class TaskObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        code.initialize(context)
+        code.initialize(context.extend {
+            set(SelectionDistributor, SelectionDistributor.newInstance())
+            set(PonticelloContext, PonticelloContext.Task(this@TaskObject))
+        })
         synchronizer = code.editor.result.observe { _ ->
             isCreatedInSuperCollider = false
         }

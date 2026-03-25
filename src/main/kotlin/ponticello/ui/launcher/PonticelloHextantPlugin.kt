@@ -276,6 +276,8 @@ object PonticelloHextantPlugin : PluginInitializer({
                         editor.setText(name)
                     }
                 }
+
+                else -> throw AssertionError("Unexpected context type: $ctx")
             }
         }
     }
