@@ -2,16 +2,18 @@ package ponticello.sc.view
 
 import bundles.Bundle
 import fxutils.runAfterLayout
+import hextant.completion.CompletionStrategy
+import hextant.completion.CompoundCompleter
 import hextant.core.Editor
+import hextant.core.editor.Expander
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.EditorControl
 import hextant.core.view.ExpanderControl
 import ponticello.sc.editor.BusExprEditor
 import ponticello.sc.editor.ScExprExpander
 
-class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderControl(expander, args) {
+class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderControl(expander, args, Completer) {
     override fun onExpansion(editor: Editor<*>, control: EditorControl<*>) {
-        if (control.scene == null) return
         runAfterLayout { //TODO check if this works as well as runFXWithTimeout
             if (control is ObjectSelectorControl<*>) {
                 control.showChoicePopup()
@@ -30,4 +32,13 @@ class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderCont
 //            }
         }
     }
+
+    object Completer : CompoundCompleter<Expander<*, *>, Any>({
+        addCompleter(BoundVariableCompleter)
+        addCompleter(BufferReferenceCompleter)
+        addCompleter(GlobalPatternReferenceCompleter)
+        addCompleter(BusReferenceCompleter)
+        addCompleter(ScoreObjectReferenceCompleter)
+        addCompleter(ScExprExpander.config.completer(CompletionStrategy.simple))
+    })
 }

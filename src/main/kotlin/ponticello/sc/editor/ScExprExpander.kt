@@ -9,7 +9,11 @@ import hextant.command.meta.ProvideCommand
 import hextant.core.editor.*
 import hextant.serial.parentChain
 import kotlinx.serialization.json.*
+import ponticello.model.code.GlobalPatternObject
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.instr.BusObject
+import ponticello.model.score.ScoreObject
+import ponticello.model.server.BufferObject
 import ponticello.sc.*
 import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
@@ -334,6 +338,11 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
                 val ctx = exp.context[PonticelloContext]
                 ctx is PonticelloContext.RoutineDef || ctx is PonticelloContext.Task
             }) { _ -> GoToEditor().defaultState() }
+
+            registerInterceptor { item: BusObject, _ -> BusSelector().selectInitial(item) }
+            registerInterceptor { item: ScoreObject, _ -> ScoreObjectSelector().selectInitial(item) }
+            registerInterceptor { item: BufferObject, _ -> BufferSelector().selectInitial(item) }
+            registerInterceptor { item: GlobalPatternObject, _ -> GlobalPatternSelector().selectInitial(item) }
         }
     }
 }

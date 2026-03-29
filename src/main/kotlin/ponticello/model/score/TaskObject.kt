@@ -52,7 +52,6 @@ class TaskObject(
 
     override fun createInSuperCollider(writer: ScWriter) {
         writer.appendBlock("$name = Task", endLine = null) {
-//            +"s.latency.wait"
             val block = code.editor.result.now
             block.writeCode(writer.writer, context)
             +"$name = nil"

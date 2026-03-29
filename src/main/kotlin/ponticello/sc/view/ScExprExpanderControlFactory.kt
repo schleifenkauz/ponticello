@@ -1,31 +1,23 @@
 package ponticello.sc.view
 
 import bundles.Bundle
-import bundles.set
 import fxutils.bindPseudoClassState
 import fxutils.registerShortcuts
 import fxutils.styleClass
 import hextant.codegen.ProvideImplementation
-import hextant.completion.CompletionStrategy
-import hextant.completion.CompoundCompleter
 import hextant.context.ControlFactory
-import hextant.core.editor.Expander
 import hextant.core.view.ExpanderControl
 import javafx.css.PseudoClass.getPseudoClass
 import ponticello.sc.*
-import ponticello.sc.editor.ReferenceCompleter
+import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.misc.HelpBrowser
 import reaktive.and
 import reaktive.value.now
 
 @ProvideImplementation(ControlFactory::class)
-object ScExprExpanderControlFactory : ControlFactory<ponticello.sc.editor.ScExprExpander> {
-    override fun createControl(editor: ponticello.sc.editor.ScExprExpander, arguments: Bundle): ExpanderControl {
-        val completer = CompoundCompleter<Expander<*, *>, String>()
-        completer.addCompleter(ponticello.sc.editor.ScExprExpander.config.completer(CompletionStrategy.simple))
-        completer.addCompleter(ReferenceCompleter)
-        arguments[ExpanderControl.COMPLETER] = completer
+object ScExprExpanderControlFactory : ControlFactory<ScExprExpander> {
+    override fun createControl(editor: ScExprExpander, arguments: Bundle): ExpanderControl {
         val control = ExprExpanderControl(editor, arguments) styleClass "sc-expr"
         control.textField.styleClass("simple-sc-expr")
         control.userData = editor.result.observe { _, oldResult, result ->

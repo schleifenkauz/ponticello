@@ -16,6 +16,7 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.withName
 import ponticello.model.score.controls.AttackReleaseControl
@@ -58,6 +59,18 @@ class CustomizableSynthDefObject(
         } || super<ConfigurableInstrumentObject>.hasParameter(name)
 
         else -> super<ConfigurableInstrumentObject>.hasParameter(name)
+    }
+
+    override fun initialize(context: Context) {
+        if (initialized) return
+        val myContext = context.extend {
+            set(PonticelloContext, PonticelloContext.SynthDef(this@CustomizableSynthDefObject))
+            set(SelectionDistributor, SelectionDistributor.newInstance())
+            set(Scope, Scope.fromList(parameters, parent = null, ::ParameterDefVariable))
+        }
+        super.initialize(myContext)
+        parameters.initialize(myContext)
+        ugenGraph?.initialize(myContext)
     }
 
     override fun copy(): CustomizableSynthDefObject = CustomizableSynthDefObject(
@@ -121,17 +134,6 @@ class CustomizableSynthDefObject(
     override fun onRemoved() {
         super<AbstractRenamableObject>.onRemoved()
         context[SuperColliderClient].send("removeSynthDef", listOf(name.now))
-    }
-
-    override fun initialize(context: Context) {
-        if (initialized) return
-        val myContext = context.extend {
-            set(PonticelloContext, PonticelloContext.SynthDef(this@CustomizableSynthDefObject))
-            set(SelectionDistributor, SelectionDistributor.newInstance())
-        }
-        super.initialize(myContext)
-        parameters.initialize(myContext)
-        ugenGraph?.initialize(myContext)
     }
 
     override fun rename(newName: String) {

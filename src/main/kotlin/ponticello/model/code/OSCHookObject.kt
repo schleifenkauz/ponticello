@@ -12,6 +12,8 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
 import ponticello.sc.DisabledExpr
@@ -44,6 +46,8 @@ class OSCHookObject(
         super.initialize(context)
         function.initialize(context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
+            set(PonticelloContext, PonticelloContext.OSCHook(this@OSCHookObject))
+            set(Scope, Scope.createEmpty())
         })
     }
 

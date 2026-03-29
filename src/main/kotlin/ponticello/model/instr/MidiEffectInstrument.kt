@@ -11,6 +11,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
 import ponticello.sc.*
@@ -48,6 +49,7 @@ class MidiEffectInstrument(
         val subContext = context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
             set(PonticelloContext, PonticelloContext.MidiEffect(this@MidiEffectInstrument))
+            set(Scope, Scope.fromList(parameters, parent = null, ::ParameterDefVariable))
         }
         parameters.initialize(subContext)
         for (component in listOf(start, stop, noteOn, noteOff, cc)) {

@@ -1,12 +1,16 @@
 package ponticello.model.code
 
+import bundles.set
 import fxutils.drag.TypedDataFormat
 import hextant.context.Context
+import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.GlobalPatternReference
 import ponticello.model.obj.withName
@@ -34,7 +38,11 @@ class GlobalPatternObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        patternCode.initialize(context)
+        val myContext = context.extend {
+            set(PonticelloContext, PonticelloContext.GlobalPattern(this@GlobalPatternObject))
+            set(Scope, Scope.createEmpty())
+        }
+        patternCode.initialize(myContext)
     }
 
     override fun ScWriter.freeObject() {

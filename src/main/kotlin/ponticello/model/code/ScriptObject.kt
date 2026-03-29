@@ -11,6 +11,7 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.ScriptObjectReference
 import ponticello.model.obj.project
@@ -38,6 +39,7 @@ class ScriptObject private constructor(
         root.initialize(context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
             set(PonticelloContext, PonticelloContext.Script(this@ScriptObject))
+            set(Scope, Scope.createEmpty())
             //set(UndoManager, context[UndoManager])
         })
     }

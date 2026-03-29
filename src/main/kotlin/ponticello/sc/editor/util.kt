@@ -1,11 +1,15 @@
 package ponticello.sc.editor
 
 import bundles.getOrNull
+import bundles.set
+import hextant.context.Context
+import hextant.context.extend
 import hextant.core.Editor
 import hextant.core.editor.Expander
 import hextant.core.editor.ExpanderConfig
 import hextant.core.editor.isSubEditor
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.instr.BusObject
 import ponticello.model.registry.reference
 import ponticello.sc.Rate
@@ -69,3 +73,10 @@ fun `in`(bus: ScExprExpander, rate: Rate, channels: Int) = ScExprExpander(
 
 fun assign(name: String, expr: ScExprExpander) =
     AssignmentEditor(AssignableExprExpander(name), expr).exp()
+
+fun Context.makeSubScope(variables: IdentifierListEditor, type: String): Context = extend {
+    val scope = Scope.fromList(variables.editors, parent = get(Scope)) { editor ->
+        BoundIdentifier(editor, type)
+    }
+    set(Scope, scope)
+}

@@ -233,7 +233,7 @@ data class RawScExpr(val code: String) : ScExpr {
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class)
+@UseEditor(CodeBlockEditor::class)
 data class CodeBlock(val variables: List<Identifier> = emptyList(), val statements: List<ScExpr>) : ScExpr {
     override val isValid: Boolean
         get() = variables.all { it.isValid } && statements.all { it.isValid }
@@ -260,7 +260,7 @@ data class CodeBlock(val variables: List<Identifier> = emptyList(), val statemen
 }
 
 @Serializable
-@Compound(nodeType = ScExpr::class)
+@UseEditor(ScFunctionEditor::class)
 data class ScFunction(val parameters: List<Identifier> = emptyList(), val body: CodeBlock) : ScExpr {
     override val children: List<ScElement>
         get() = parameters + body

@@ -15,6 +15,7 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.withName
 import ponticello.sc.*
@@ -84,6 +85,7 @@ class RoutineDefObject(
         val myContext = context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
             set(PonticelloContext, PonticelloContext.RoutineDef(this@RoutineDefObject))
+            set(Scope, Scope.fromList(parameters, parent = null, ::ParameterDefVariable))
         }
         super.initialize(myContext)
         parameters.initialize(myContext)
