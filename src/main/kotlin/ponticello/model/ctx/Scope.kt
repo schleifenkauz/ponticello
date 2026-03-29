@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import kollektion.Counter
 import ponticello.model.registry.ObjectList
+import ponticello.sc.Identifier
 import reaktive.Observer
 import reaktive.collection.observeCollection
 import reaktive.list.ReactiveList
@@ -11,23 +12,29 @@ import reaktive.value.*
 import reaktive.value.binding.or
 import java.util.*
 
-class Scope private constructor(
-    private val parent: Scope? = null
-) {
+class Scope private constructor(private val parent: Scope? = null) {
     private var observer: Any? = null
 
     private val boundVariables = mutableMapOf<BoundVariable, Observer>()
     private val boundVariableNames = Counter<String>()
-    private val queries = WeakHashMap<ReactiveString, Query>()
+    private val queries = WeakHashMap<ReactiveValue<String?>, Query>()
 
-    fun isResolved(name: ReactiveString): ReactiveBoolean {
-        val resolved = queries.getOrPut(name) {
-            val resolved = reactiveVariable(name.now in boundVariableNames)
-            val observer = name.observe { _, _, str -> resolved.set(str in boundVariableNames) }
+    fun isResolved(identifier: ReactiveValue<String?>): ReactiveBoolean {
+        val resolved = queries.getOrPut(identifier) {
+            val resolved = reactiveVariable(isResolvedNow(identifier.now))
+            val observer = identifier.observe { _, _, str -> resolved.set(isResolvedNow(str)) }
             Query(observer, resolved)
         }.isResolved
         return if (parent == null) resolved
-        else resolved or parent.isResolved(name)
+        else resolved or parent.isResolved(identifier)
+    }
+
+    private fun isResolvedNow(str: String?): Boolean = when {
+        str == null -> true
+        str.isBlank() -> true
+        str.first().isUpperCase() -> true
+        !(Identifier.isValid(str)) -> true
+        else -> str in boundVariableNames
     }
 
     fun boundVariables(): Set<BoundVariable> {
@@ -42,10 +49,30 @@ class Scope private constructor(
 
     fun add(variable: BoundVariable) {
         if (boundVariables.containsKey(variable)) return
-        boundVariableNames.add(variable.name.now)
+        addVariable(variable.name.now)
         boundVariables[variable] = variable.name.observe { _, old, new ->
-            boundVariableNames.remove(old)
-            boundVariableNames.add(new)
+            removeVariable(old)
+            addVariable(new)
+        }
+    }
+
+    private fun addVariable(new: String) {
+        if (boundVariableNames.add(new)) {
+            for ((identifier, query) in queries) {
+                if (identifier.now == new) {
+                    query.isResolved.set(true)
+                }
+            }
+        }
+    }
+
+    private fun removeVariable(old: String) {
+        if (boundVariableNames.remove(old)) {
+            for ((identifier, query) in queries) {
+                if (identifier.now == old) {
+                    query.isResolved.set(false)
+                }
+            }
         }
     }
 
@@ -53,7 +80,7 @@ class Scope private constructor(
         val observer = boundVariables.remove(variable)
         if (observer != null) {
             observer.kill()
-            boundVariableNames.remove(variable.name.now)
+            removeVariable(variable.name.now)
         }
     }
 

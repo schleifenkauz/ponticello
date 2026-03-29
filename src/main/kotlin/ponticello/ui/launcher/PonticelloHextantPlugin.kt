@@ -18,11 +18,13 @@ import ponticello.impl.one
 import ponticello.impl.randomColor
 import ponticello.impl.toDecimal
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.instr.InstrumentRegistry
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.DecimalLiteral
+import ponticello.sc.Identifier
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.sc.editor.*
@@ -35,6 +37,7 @@ import ponticello.ui.controls.NumericalControlSpecPrompt
 import ponticello.ui.controls.SimpleNumericalControlSpecPrompt
 import ponticello.ui.launcher.PonticelloHextantPlugin.multilineCommand
 import ponticello.ui.launcher.PonticelloHextantPlugin.singleLineCommand
+import reaktive.value.binding.map
 import reaktive.value.now
 
 object PonticelloHextantPlugin : PluginInitializer({
@@ -77,6 +80,40 @@ object PonticelloHextantPlugin : PluginInitializer({
 
     on(PluginBuilder.Phase.Initialize) { ctx ->
         ctx[Aspects].implement(ControlFactory::class, ScExprExpander::class, ScExprExpanderControlFactory)
+    }
+
+    registerInspection<ScExprExpander> {
+        isSevere(true)
+        appliesIf { inspected.context.hasProperty(Scope) }
+        checkingThat { inspected.context[Scope].isResolved(inspected.text) }
+        message { "Unresolved identifier: ${inspected.text.now}" }
+        id = "unresolved-identifier"
+        description = "Detects unresolved variable usages"
+        addFix {
+            description = "Add variable to enclosing block"
+            applicableIf { inspected.getParent<CodeBlockEditor>() != null }
+            fixingBy {
+                val block = inspected.getParent<CodeBlockEditor>() ?: return@fixingBy
+                block.variables.addLast(IdentifierEditor(inspected.text.now!!))
+            }
+        }
+        addFix {
+            description = "Add parameter to enclosing function"
+            applicableIf { inspected.getParent<ScFunctionEditor>() != null }
+            fixingBy {
+                val func = inspected.getParent<ScFunctionEditor>() ?: return@fixingBy
+                func.parameters.addLast(IdentifierEditor(inspected.text.now!!))
+            }
+        }
+        addFix {
+            description = "Add parameter to enclosing instrument"
+            applicableIf { inspected.context.getOrNull(PonticelloContext) is PonticelloContext.InstrumentDef }
+            fixingBy {
+                val ctx = inspected.context.getOrNull(PonticelloContext) as? PonticelloContext.InstrumentDef
+                ctx?.def ?: return@fixingBy
+                TODO()
+            }
+        }
     }
 
     multilineCommand<MessageSendEditorControl>("arguments")
