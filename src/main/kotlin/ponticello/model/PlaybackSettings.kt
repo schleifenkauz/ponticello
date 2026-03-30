@@ -9,12 +9,14 @@ import ponticello.impl.copy
 import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.LevelMeterFlow
 import ponticello.model.live.DjMode
+import ponticello.model.midi.MidiDeviceSpec
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.player.ConductorOptions
 import ponticello.model.server.BusRegistry
 import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.flow.TabbedAudioFlowsPane
+import ponticello.ui.midi.ContextualMidiReceiver
 import reaktive.Observer
 import reaktive.value.*
 
@@ -27,6 +29,7 @@ class PlaybackSettings(
     val djMode: DjMode = DjMode(),
     val scrollWithPlayHead: ReactiveVariable<Boolean> = reactiveVariable(false),
     @SerialName("enableLevelMeters") private val _enableLevelMeters: ReactiveVariable<Boolean> = reactiveVariable(true),
+    private var knobDevice: MidiDeviceSpec = MidiDeviceSpec.None,
     val conductorOptions: ConductorOptions = ConductorOptions.createDefault(),
 ) : AbstractContextualObject() {
     val lookAhead get() = scLangLatency.now + serverLatency.now
@@ -42,7 +45,13 @@ class PlaybackSettings(
         serverLatencyUpdater = serverLatency.forEach { latency ->
             client.run("s.latency = $latency")
         }
+        context[ContextualMidiReceiver].attachTo(knobDevice!!)
         djMode.initialize(context)
+    }
+
+    fun selectKnobDevice(device: MidiDeviceSpec) {
+        knobDevice = device
+        context[ContextualMidiReceiver].attachTo(device)
     }
 
     fun setEnableLevelMeters(enable: Boolean) {

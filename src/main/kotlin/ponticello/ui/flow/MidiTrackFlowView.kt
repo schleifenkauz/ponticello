@@ -5,10 +5,8 @@ import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.actions.makeButton
 import fxutils.prompt.PromptPlacement
-import fxutils.prompt.SelectorPrompt
 import fxutils.prompt.SimpleSelectorPrompt
 import fxutils.undo.UndoManager
-import hextant.context.Context
 import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -116,23 +114,6 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
     override fun createNewObject(promptPlacement: PromptPlacement, list: ObjectList<MidiInstrument>): MidiInstrument? =
         NewMidiInstrumentPrompt(flow.context, "Insert instrument")
             .showPopup(promptPlacement)?.createInstrument(flow.context, promptPlacement)
-
-    class MidiDeviceSelectorPrompt(
-        private val type: MidiDeviceSpec.Type,
-        private val context: Context
-    ) : SelectorPrompt<MidiDeviceSpec>("Select ${type.name.lowercase()} device") {
-        override fun options(): List<MidiDeviceSpec> = MidiDeviceSpec.getOptions(type, context)
-
-        override fun displayText(option: MidiDeviceSpec): String = when (option) {
-            is MidiDeviceSpec.ByName -> option.name
-            MidiDeviceSpec.None -> "<none>"
-        }
-
-        override fun extractText(option: MidiDeviceSpec): String = when (option) {
-            is MidiDeviceSpec.ByName -> option.name
-            MidiDeviceSpec.None -> ""
-        }
-    }
 
     companion object {
         private val instrumentActions = collectActions<MidiInstrument> {

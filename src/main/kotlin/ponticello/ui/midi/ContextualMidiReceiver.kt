@@ -7,6 +7,7 @@ import com.illposed.osc.OSCMessageEvent
 import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import ponticello.impl.Logger
+import ponticello.model.midi.MidiDeviceSpec
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.project
 import ponticello.model.player.ClockObject
@@ -39,10 +40,15 @@ class ContextualMidiReceiver : AbstractContextualObject(), OSCMessageListener {
         timeWarpPopup = TimeWarpPopup(context)
     }
 
-    fun attachTo(device: String) {
-        attached.now = context[SuperColliderClient].eval(
-            "OSCMidiForward.attachTo(\"$device\")"
-        ).get().toBooleanStrictOrNull() ?: false
+    fun attachTo(device: MidiDeviceSpec) {
+        attached.now = try {
+            context[SuperColliderClient].eval(
+                "OSCMidiForward.attachTo(${device.code})"
+            ).get().toBooleanStrictOrNull() ?: false
+        } catch (e: Exception) {
+            Logger.error("Failed to attach to MIDI device $device", e, Logger.Category.Midi)
+            false
+        }
     }
 
     fun toggleActive(context: MidiContext) {
@@ -67,10 +73,7 @@ class ContextualMidiReceiver : AbstractContextualObject(), OSCMessageListener {
         }
     }
 
-    private fun cc(
-        ctx: MidiContext?,
-        index: Int, midiDelta: Int
-    ) {
+    private fun cc(ctx: MidiContext?, index: Int, midiDelta: Int) {
         if (!context.hasProperty(currentProject)) return
         val djMode = context.project[PLAYBACK_SETTINGS].djMode
         if (index - CC_INDEX_OFFSET == 5 && djMode.activated.now) {
@@ -84,14 +87,5 @@ class ContextualMidiReceiver : AbstractContextualObject(), OSCMessageListener {
 
     companion object : PublicProperty<ContextualMidiReceiver> by publicProperty("Midi receiver") {
         private const val CC_INDEX_OFFSET = 20
-
-        private const val GRID_INDEX_OFFSET = 36
-
-        private fun xjamGridIndex(midiPitch: Int): Int {
-            val index = midiPitch - GRID_INDEX_OFFSET
-            val row = 3 - (index / 4)
-            val column = index % 4
-            return row * 4 + column
-        }
     }
 }

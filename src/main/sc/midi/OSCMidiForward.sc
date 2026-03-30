@@ -15,6 +15,7 @@ OSCMidiForward {
 		if (device_uid.notNil) {
 			MIDIIn.disconnect(1, device_uid);
 		};
+		device_uid = MidiTrack.getDeviceUID(device_name);
 		^if (device_uid.notNil) {
 			try {
 				MIDIIn.connect(1, device_uid);

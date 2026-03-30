@@ -31,11 +31,11 @@ import ponticello.model.registry.reference
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
-import ponticello.ui.flow.MidiTrackFlowView.MidiDeviceSelectorPrompt
 import ponticello.ui.impl.colorPicker
 import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.impl.getFrom
 import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.MidiDeviceSelectorPrompt
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ListDisplayConfig.Companion.addObjectAction

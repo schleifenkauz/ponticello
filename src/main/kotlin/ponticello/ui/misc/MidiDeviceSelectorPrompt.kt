@@ -4,6 +4,7 @@ import fxutils.prompt.SelectorPrompt
 import javax.sound.midi.MidiDevice
 import javax.sound.midi.MidiSystem
 
+//TODO delete
 class MidiDeviceSelectorPrompt : SelectorPrompt<MidiDeviceSelectorPrompt.Option>("Select MIDI device") {
     override fun options(): List<Option> {
         val inputDevices = MidiSystem.getMidiDeviceInfo()

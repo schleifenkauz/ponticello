@@ -72,7 +72,7 @@ SoundProcess {
 			postf("Waiting for %\n", cond);
 			cond.wait;
 		};
-		postf("Accessing %\n", name);
+		//postf("Accessing %\n", name);
 		proc = dict[name];
 		if (proc.isNil) {
 			Exception("SoundProcess % not found".format(name)).throw;

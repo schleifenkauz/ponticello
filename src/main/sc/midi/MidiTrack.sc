@@ -92,6 +92,7 @@ MidiTrack {
 			track.prConnect;
 			^track.activate;
 		}
+		^track;
 	}
 
 	* freeAll {
@@ -160,9 +161,10 @@ MidiTrack {
 		if (enabled) {
 			fork {
 				var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
-				postf("Starting at index % (src instr: %)\n", idx, src.instr);
+				//postf("Starting at index % (src instr: %)\n", idx, src.instr);
 				while { (continue == true) && (idx < instruments.size) } {
 					var instr = instruments[idx];
+					//postf("Performing on %\n", instr);
 					continue = fn.value(instr) ? true;
 					if (continue.isKindOf(Function)) {
 						fn = continue;
@@ -170,7 +172,7 @@ MidiTrack {
 					};
 					idx = idx + 1;
 				};
-				if (continue == true) {
+				if ((continue == true) && recorder.notNil) {
 					fn.value(recorder);
 				}
 			}
@@ -179,7 +181,7 @@ MidiTrack {
 
 	noteOn { |num, val, src|
 		src.track = this;
-		postf("Note On %, % (src: %)\n", num, val, src);
+		//postf("Note On %, % (src: %)\n", num, val, src);
 		activeNotes[num] = activeNotes[num].add(src);
 		notesInPedal.remove(num);
 		this.perform(src) { |instr|
@@ -189,7 +191,7 @@ MidiTrack {
 
 	noteOff { |num, val, src|
 		src.track = this;
-		recorder.noteOff(num, val, src);
+		//recorder.noteOff(num, val, src);
 		//postf("Note Off %, % (src: %)\n", num, val, src);
 		if (this.isPedalDown.not) {
 			activeNotes[num].remove(src);
