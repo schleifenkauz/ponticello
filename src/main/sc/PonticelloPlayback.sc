@@ -55,9 +55,11 @@ PonticelloPlayback {
 		} {
 			SystemClock.schedAbs(abs_time) {
 				if (my_play_start.isNil || (my_play_start == play_start[player_id])) {
-					Ponticello.attempt(id) {
-						var answer = fct.value(player_id);
-						Ponticello.sendMsg('/reply', id, answer.asString);
+					fork {
+						Ponticello.attempt(id) {
+							var answer = fct.value(player_id);
+							Ponticello.sendMsg('/reply', id, answer.asString);
+						}
 					}
 				} {
 					postf("Rejecting % scheduled for % because % != %\n",

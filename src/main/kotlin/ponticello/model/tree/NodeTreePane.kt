@@ -12,6 +12,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
 import ponticello.model.obj.InstrumentReference
 import ponticello.model.project.PonticelloProject
+import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.dock.*
 import ponticello.ui.flow.TabbedAudioFlowsPane
 import ponticello.ui.registry.InstrumentRegistryPane
@@ -21,7 +22,7 @@ import ponticello.ui.score.ScoreObjectViewPane
 import reaktive.value.binding.flatMap
 import reaktive.value.fx.asObservableValue
 
-class NodeTreePane(list: AudioNodeTree) : ListToolPane<AudioNode>(list) {
+class NodeTreePane(private val tree: AudioNodeTree) : ListToolPane<AudioNode>(tree) {
     override val type: Type
         get() = NodeTreePane
 
@@ -32,7 +33,7 @@ class NodeTreePane(list: AudioNodeTree) : ListToolPane<AudioNode>(list) {
 
     override fun defaultState(): ToolPaneState = ToolPaneState.window
 
-    override val headerActions: List<ContextualizedAction> get() = emptyList()
+    override val headerActions: List<ContextualizedAction> get() = paneActions.withContext(tree)
 
     override fun getHeaderContent(obj: AudioNode): List<Node> = buildList {
         val nameLabel = label(obj.name).setFixedWidth(150.0)
@@ -48,7 +49,7 @@ class NodeTreePane(list: AudioNodeTree) : ListToolPane<AudioNode>(list) {
         }
     }
 
-    override fun getActions(box: ObjectBox<AudioNode>): List<ContextualizedAction> = actions.withContext(box.obj)
+    override fun getActions(box: ObjectBox<AudioNode>): List<ContextualizedAction> = itemActions.withContext(box.obj)
 
     override fun configureBox(
         box: ObjectBox<AudioNode>,
@@ -73,7 +74,17 @@ class NodeTreePane(list: AudioNodeTree) : ListToolPane<AudioNode>(list) {
 
         override fun createToolPane(project: PonticelloProject): ToolPane = NodeTreePane(project.context[AudioNodeTree])
 
-        private val actions = collectActions<AudioNode> {
+        private val paneActions = collectActions<AudioNodeTree> {
+            addAction("Show Server Tree") {
+                icon(MaterialDesignF.FILE_TREE)
+                executes { pane ->
+                    val client = pane.context[SuperColliderClient]
+                    client.run("AppClock.sched(0) { s.plotTree }")
+                }
+            }
+        }
+
+        private val itemActions = collectActions<AudioNode> {
             addAction("View") {
                 icon(MaterialDesignE.EYE)
                 executes { node -> viewObject(node) }

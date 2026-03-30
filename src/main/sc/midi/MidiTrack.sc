@@ -96,8 +96,10 @@ MidiTrack {
 	}
 
 	* freeAll {
-		tracksBySource.keysValuesDo { |src, tracks|
-			tracks.copy.do(_.release);
+		if (initialized) {
+			tracksBySource.keysValuesDo { |src, tracks|
+				tracks.copy.do(_.release);
+			}
 		}
 	}
 

@@ -4,7 +4,10 @@ import fxutils.actions.Action
 import fxutils.actions.action
 import fxutils.actions.isShiftDown
 import org.kordamp.ikonli.evaicons.Evaicons
-import org.kordamp.ikonli.materialdesign2.*
+import org.kordamp.ikonli.materialdesign2.MaterialDesignG
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import org.kordamp.ikonli.materialdesign2.MaterialDesignT
+import org.kordamp.ikonli.materialdesign2.MaterialDesignW
 import ponticello.impl.Logger
 import ponticello.model.obj.BusReference
 import ponticello.model.project.PonticelloProject
@@ -32,11 +35,6 @@ object ServerActions : Action.Collector<PonticelloProject>({
     addAction("Sync with SuperCollider") {
         shortcut("Ctrl+F5")
         executes { project -> project.syncWithSuperCollider() }
-    }
-    addAction("Show Server Tree") {
-        shortcut("Ctrl+Alt+T")
-        icon(MaterialDesignF.FILE_TREE)
-        executes { project -> project.client.run("AppClock.sched(0) { s.plotTree }") }
     }
     addAction("Scope output buses") {
         shortcut("Ctrl+Shift+M")

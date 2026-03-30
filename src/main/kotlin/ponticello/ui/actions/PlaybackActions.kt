@@ -21,6 +21,7 @@ import ponticello.model.registry.reference
 import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.run
 import ponticello.ui.misc.PlayHead
 import ponticello.ui.misc.PlaybackSettingsPrompt
 import ponticello.ui.registry.BusSelectorPrompt
@@ -110,7 +111,10 @@ object PlaybackActions {
         for (liveObject in p.context[LiveObjectRegistry]) {
             liveObject.pause()
         }
-        p.context[SuperColliderClient].run("SoundProcess.stopAllProcesses; s.freeAll;") //TODO
+        p.context[SuperColliderClient].run {
+            +"SoundProcess.stopAllProcesses"
+            +"s.freeAll"
+        }
         p.pause()
     }
 
@@ -127,7 +131,7 @@ object PlaybackActions {
         Play, Stop, GoToStart
     }
 
-    val global = collectActions<ScorePlayer> {
+    val global = collectActions {
         add(goToStart)
         add(play)
         add(stop)

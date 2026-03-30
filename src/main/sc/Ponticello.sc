@@ -82,6 +82,7 @@ Ponticello {
 	* doOnStartUp {
 		ServerTree.add {
 			AudioNodeOrder.clear;
+			MidiTrack.freeAll;
 			Ponticello.sendMsg('/cleared');
 		};
 		ServerBoot.add {

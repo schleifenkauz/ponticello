@@ -1,6 +1,7 @@
 package ponticello.sc.view
 
 import bundles.PublicProperty
+import bundles.getOrNull
 import hextant.completion.Completion
 import hextant.completion.CompletionStrategy
 import hextant.completion.ConfiguredCompleter
@@ -24,7 +25,7 @@ import reaktive.value.now
 
 object BoundVariableCompleter : ConfiguredCompleter<Expander<*, *>, Scope.BoundVariable>(CompletionStrategy.simple) {
     override fun completionPool(context: Expander<*, *>): Collection<Scope.BoundVariable> =
-        context.context[Scope].boundVariables()
+        context.context.getOrNull(Scope)?.boundVariables() ?: emptyList()
 
     override fun extractText(context: Expander<*, *>, item: Scope.BoundVariable): String = item.name.now
 

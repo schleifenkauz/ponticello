@@ -204,7 +204,12 @@ SoundProcess {
 		var inst = this.createInstance(pos, cutoff, extra_controls);
 		var placement = AudioNodeOrder.insert(inst);
 		postf("Placement for %: %\n", name, placement);
-		inst.start(placement, server_latency, player_id, midiTrack);
+		try {
+			inst.start(placement, server_latency, player_id, midiTrack);
+		} { |err|
+			AudioNodeOrder.remove(inst);
+			err.throw;
+		};
 		^inst.idx;
 	}
 
