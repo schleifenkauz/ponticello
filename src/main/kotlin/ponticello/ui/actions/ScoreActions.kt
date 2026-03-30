@@ -56,7 +56,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
         }
     }
     addAction("Add breakpoint") {
-        shortcut("Alt?+B")
+        shortcut("Ctrl+Alt+B")
         executes { pane, ev ->
             if (!pane.isFocusWithin) return@executes
             if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
