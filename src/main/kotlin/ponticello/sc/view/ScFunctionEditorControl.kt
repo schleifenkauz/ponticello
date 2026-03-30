@@ -4,10 +4,14 @@ import bundles.Bundle
 import bundles.createBundle
 import bundles.publicProperty
 import hextant.core.view.CompoundEditorControl
+import javafx.scene.Node
+import ponticello.sc.editor.IdentifierListEditor
 import reaktive.collection.binding.isEmpty
+import reaktive.collection.binding.isNotEmpty
 import reaktive.collection.binding.size
 import reaktive.value.binding.and
 import reaktive.value.binding.equalTo
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
 
 class ScFunctionEditorControl (
@@ -26,17 +30,26 @@ class ScFunctionEditorControl (
 
     override fun build(): Layout = if (arguments[SINGLE_LINE_FUNCTION] && canBeSingleLine.now) horizontal {
         styleClass("compound-expr", "function", "function-singleline")
-        viewHorizontal(editor.parameters)
+        viewParameters(editor.parameters)
         operator(" -> ")
         view(editor.body.statements.editors.now[0])
     } else vertical {
         styleClass("compound-expr", "function", "function-multiline")
         horizontal {
-            keyword("arg")
-            space()
-            viewHorizontal(editor.parameters)
+            val argKW = keyword("arg")
+            val space = space()
+            viewParameters(editor.parameters, argKW, space)
         }
         CodeBlockEditorControl.displayVarsAndStatements(this@vertical, editor.body)
+    }
+
+    private fun Layout.viewParameters(parameters: IdentifierListEditor, vararg extraNodes: Node) {
+        val view = viewHorizontal(parameters)
+        val notEmpty = parameters.editors.isNotEmpty().asObservableValue()
+        for (node in listOf(view) + extraNodes) {
+            node.visibleProperty().bind(notEmpty)
+            node.managedProperty().bind(notEmpty)
+        }
     }
 
     companion object {

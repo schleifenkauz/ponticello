@@ -16,6 +16,8 @@ import hextant.core.view.ListEditorControl.Orientation.Horizontal
 import hextant.core.view.ListEditorControl.Orientation.Vertical
 import hextant.core.view.ListEditorControl.SeparatorCell
 import javafx.scene.layout.HBox
+import reaktive.collection.binding.isNotEmpty
+import reaktive.value.fx.asObservableValue
 
 class CodeBlockEditorControl (
     val editor: ponticello.sc.editor.CodeBlockEditor,
@@ -31,7 +33,7 @@ class CodeBlockEditorControl (
 
     companion object {
         fun displayVarsAndStatements(layout: Vertical, editor: ponticello.sc.editor.CodeBlockEditor) = with(layout) {
-            horizontal {
+            val variableLayout = horizontal {
                 keyword("var")
                 space()
                 view(editor.variables) {
@@ -40,6 +42,9 @@ class CodeBlockEditorControl (
                     set(ADD_WITH_COMMA, true)
                 }
             }
+            val hasVariables = editor.variables.editors.isNotEmpty().asObservableValue()
+            variableLayout.root.visibleProperty().bind(hasVariables)
+            variableLayout.root.managedProperty().bind(hasVariables)
             view(editor.statements) {
                 set(ORIENTATION, Vertical)
                 set(EMPTY_DISPLAY) { button("Add statement") }

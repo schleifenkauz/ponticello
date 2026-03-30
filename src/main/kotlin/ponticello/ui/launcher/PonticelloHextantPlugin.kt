@@ -79,7 +79,7 @@ object PonticelloHextantPlugin : PluginInitializer({
     stylesheet("fxutils/general.css")
 
     on(PluginBuilder.Phase.Initialize) { ctx ->
-        ctx[Aspects].implement(ControlFactory::class, ScExprExpander::class, ScExprExpanderControlFactory)
+        ctx[Aspects].implement(ControlFactory::class, AbstractScExprExpander::class, ScExprExpanderControlFactory)
     }
 
     registerInspection<AbstractScExprExpander<*>> {
