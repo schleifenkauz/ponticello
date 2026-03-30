@@ -6,7 +6,10 @@ import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
-import hextant.core.editor.*
+import hextant.core.editor.Expander
+import hextant.core.editor.ExpanderConfig
+import hextant.core.editor.defaultState
+import hextant.core.editor.snapshot
 import hextant.serial.parentChain
 import kotlinx.serialization.json.*
 import ponticello.model.code.GlobalPatternObject
@@ -20,7 +23,7 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEditor<ScExpr> {
+class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
     private val disabled: ReactiveVariable<Boolean> = reactiveVariable(false)
 
     val isDisabled: ReactiveBoolean get() = disabled
@@ -107,6 +110,7 @@ class ScExprExpander() : ConfiguredExpander<ScExpr, ScExprEditor<*>>(), ScExprEd
             editor is TopLevelFunctionCallEditor && editor.function.text.now != "" -> {
                 editor.arguments.notifyViews { receiveFocus() }
             }
+            else -> super.onExpansion(editor)
         }
     }
 

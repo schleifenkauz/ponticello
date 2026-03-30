@@ -24,7 +24,6 @@ import ponticello.model.instr.ParameterDefObject
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.DecimalLiteral
-import ponticello.sc.Identifier
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.sc.editor.*
@@ -37,7 +36,6 @@ import ponticello.ui.controls.NumericalControlSpecPrompt
 import ponticello.ui.controls.SimpleNumericalControlSpecPrompt
 import ponticello.ui.launcher.PonticelloHextantPlugin.multilineCommand
 import ponticello.ui.launcher.PonticelloHextantPlugin.singleLineCommand
-import reaktive.value.binding.map
 import reaktive.value.now
 
 object PonticelloHextantPlugin : PluginInitializer({
@@ -82,7 +80,7 @@ object PonticelloHextantPlugin : PluginInitializer({
         ctx[Aspects].implement(ControlFactory::class, ScExprExpander::class, ScExprExpanderControlFactory)
     }
 
-    registerInspection<ScExprExpander> {
+    registerInspection<AbstractScExprExpander<*>> {
         isSevere(true)
         appliesIf { inspected.context.hasProperty(Scope) }
         checkingThat { inspected.context[Scope].isResolved(inspected.text) }
@@ -319,12 +317,11 @@ object PonticelloHextantPlugin : PluginInitializer({
         }
     }
 
-    registerCommand<ScExprEditor<*>, Unit> {
+    registerCommand<ScExprExpander, Unit> {
         shortName = "slider"
         name = "Convert to slider"
-        applicableIf { editor -> editor is ScExprExpander && editor.result.now is DecimalLiteral }
+        applicableIf { editor -> editor.result.now is DecimalLiteral }
         executing { editor ->
-            editor as ScExprExpander
             val value = (editor.result.now as DecimalLiteral).get()
             val step = one(value.precision) / value.precision.toDecimal()
             val initialSpec = NumericalControlSpec(value, value, value, step)
