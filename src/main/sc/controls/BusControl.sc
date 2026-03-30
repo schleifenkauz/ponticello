@@ -13,11 +13,11 @@ BusControl : ParameterControl {
 
 	getUGen { |inst| ^bus.kr }
 
-    getSynthArgument { |inst| ^bus }
+    getSynthArgument { |inst| ^bus.asMap }
 
 	update { |new_bus|
 		bus = new_bus;
-		updateInstances { |inst|
+		this.updateInstances { |inst|
 			inst.mapParameter(this.name, bus);
 		}
 	}
