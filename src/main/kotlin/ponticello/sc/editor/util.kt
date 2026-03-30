@@ -8,6 +8,7 @@ import hextant.core.Editor
 import hextant.core.editor.Expander
 import hextant.core.editor.ExpanderConfig
 import hextant.core.editor.isSubEditor
+import ponticello.model.ctx.BoundIdentifier
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
 import ponticello.model.instr.BusObject

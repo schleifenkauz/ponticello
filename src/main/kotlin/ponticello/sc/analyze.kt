@@ -14,9 +14,11 @@ inline fun <reified R> ScElement.allChildren(): List<R> = buildList {
     }
 }
 
-fun ScElement.visit(visitor: (ScElement) -> Unit) {
-    visitor(this)
-    for (element in children) visitor(element)
+fun ScElement.visitTree(visitor: (parent: ScElement, child: ScElement) -> Unit) {
+    for (child in children) {
+        visitor(this, child)
+        child.visitTree(visitor)
+    }
 }
 
 fun ScExpr.transform(f: (ScExpr) -> ScExpr): ScExpr = when (this) {

@@ -10,6 +10,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
+import ponticello.model.ctx.ParameterDefVariable
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractSuperColliderObject

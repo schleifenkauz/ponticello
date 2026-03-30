@@ -3,6 +3,8 @@ package ponticello.model.ctx
 import bundles.PublicProperty
 import bundles.publicProperty
 import kollektion.Counter
+import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import ponticello.model.registry.ObjectList
 import ponticello.sc.Identifier
 import reaktive.Observer
@@ -105,6 +107,9 @@ class Scope private constructor(private val parent: Scope? = null) {
         abstract val name: ReactiveString
 
         abstract val info: ReactiveString
+
+        open val icon: Ikon get() = MaterialDesignA.ALPHA_V_CIRCLE
+
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false

@@ -7,7 +7,6 @@ import hextant.completion.ConfiguredCompleter
 import hextant.core.editor.Expander
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
-import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
 import ponticello.model.code.GlobalPatternObject
@@ -31,7 +30,7 @@ object BoundVariableCompleter : ConfiguredCompleter<Expander<*, *>, Scope.BoundV
 
     override fun Completion.Builder<Scope.BoundVariable>.configure(context: Expander<*, *>) {
         infoText = completion.info.now
-        icon = MaterialDesignA.ALPHA_V_CIRCLE
+        icon = completion.icon
     }
 }
 

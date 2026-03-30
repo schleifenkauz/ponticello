@@ -26,3 +26,11 @@
         ^str;
     }
 }
+
++ Number {
+	midilin { |min, max| this.linlin(0, 127, min, max) }
+
+	midiexp { |min, max| this.linexp(0, 127, min, max) }
+
+	midicurve { |min, max, curve| this.lincurve(0, 127, min, max, curve) }
+}

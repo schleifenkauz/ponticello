@@ -1,6 +1,7 @@
-package ponticello.model.score.controls
+package ponticello.model.ctx
 
-import ponticello.model.ctx.Scope
+import org.kordamp.ikonli.Ikon
+import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
@@ -11,4 +12,8 @@ object InstanceVariable : Scope.BoundVariable() {
         get() = reactiveValue("inst")
     override val info: ReactiveString
         get() = reactiveValue("")
+
+    override val icon: Ikon
+        get() = MaterialDesignA.ALPHA_I_CIRCLE
 }
+

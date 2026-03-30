@@ -1,9 +1,7 @@
 package ponticello.model.score.controls
 
 import hextant.serial.EditorRoot
-import ponticello.sc.ParameterReference
-import ponticello.sc.ScExpr
-import ponticello.sc.allChildren
+import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander
 import reaktive.value.now
 
@@ -27,3 +25,11 @@ fun ParameterControl.getCode(): EditorRoot<ScExprExpander>? = when (this) {
 }
 
 fun ScExpr.parameterReferences() = allChildren<ParameterReference>().map(ParameterReference::parameter)
+
+fun ScExpr.parameterReferences(controls: ParameterControlList) = buildSet {
+    visitTree { parent, expr ->
+        if (expr is Identifier && controls.has(expr.text) && !(parent is Assignment && expr == parent.assignee)) {
+            add(expr.text)
+        }
+    }
+}
