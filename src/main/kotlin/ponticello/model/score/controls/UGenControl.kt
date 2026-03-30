@@ -52,7 +52,7 @@ data class UGenControl(
         val expr = expr.editor.result.now
         val references = expr.parameterReferences().joinToString(", ", "[", "]") { name -> "'${name.getName()}'" }
         val subst = substituteParameterReferences(expr)
-        return "LFOControl('$parameter', $references) { |cutoff| ${subst.code(context)} }"
+        return "LFOControl('$parameter', $references) { |inst| ${subst.code(context)} }"
     }
 
     companion object {
