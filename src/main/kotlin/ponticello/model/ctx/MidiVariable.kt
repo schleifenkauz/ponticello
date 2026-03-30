@@ -5,7 +5,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignM
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
-data class MidiVariable(val controlName: String, val type: String) : Scope.BoundVariable() {
+data class MidiVariable(val controlName: String, val type: String) : BoundVariable() {
     override val name: ReactiveString get() = reactiveValue(controlName)
 
     override val origin: Any get() = name

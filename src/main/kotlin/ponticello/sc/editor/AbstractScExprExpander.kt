@@ -1,12 +1,25 @@
 package ponticello.sc.editor
 
+import bundles.getOrNull
 import hextant.core.editor.ConfiguredExpander
 import hextant.core.editor.defaultState
+import ponticello.model.ctx.BoundVariable
+import ponticello.model.ctx.Scope
 import ponticello.sc.EmptyExpr
 import ponticello.sc.ScExpr
+import reaktive.value.ReactiveValue
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 abstract class AbstractScExprExpander<E : ScExpr> : ConfiguredExpander<E, ScExprEditor<E>>(), ScExprEditor<E> {
+    lateinit var identifierResolution: ReactiveValue<BoundVariable?>
+        private set
+
+    override fun doInitialize() {
+        super.doInitialize()
+        identifierResolution = context.getOrNull(Scope)?.resolve(text) ?: reactiveValue(null)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun autoExpand(text: String): Boolean = when {
         text.endsWith(".") -> {

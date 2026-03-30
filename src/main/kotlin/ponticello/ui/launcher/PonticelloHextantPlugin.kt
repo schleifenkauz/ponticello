@@ -24,6 +24,7 @@ import ponticello.model.instr.ParameterDefObject
 import ponticello.model.score.controls.AttackReleaseControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.sc.DecimalLiteral
+import ponticello.sc.Identifier
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
 import ponticello.sc.editor.*
@@ -36,6 +37,9 @@ import ponticello.ui.controls.NumericalControlSpecPrompt
 import ponticello.ui.controls.SimpleNumericalControlSpecPrompt
 import ponticello.ui.launcher.PonticelloHextantPlugin.multilineCommand
 import ponticello.ui.launcher.PonticelloHextantPlugin.singleLineCommand
+import reaktive.value.binding.and
+import reaktive.value.binding.equalTo
+import reaktive.value.binding.map
 import reaktive.value.now
 
 object PonticelloHextantPlugin : PluginInitializer({
@@ -83,7 +87,11 @@ object PonticelloHextantPlugin : PluginInitializer({
     registerInspection<AbstractScExprExpander<*>> {
         isSevere(true)
         appliesIf { inspected.context.hasProperty(Scope) }
-        checkingThat { inspected.context[Scope].isResolved(inspected.text) }
+        preventingThat {
+            val isIdentifier = inspected.result.map { r -> r is Identifier && !r.text.first().isUpperCase() }
+            val isUnresolved = inspected.identifierResolution.equalTo(null)
+            isIdentifier and isUnresolved
+        }
         message { "Unresolved identifier: ${inspected.text.now}" }
         id = "unresolved-identifier"
         description = "Detects unresolved variable usages"

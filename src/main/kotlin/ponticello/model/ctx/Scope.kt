@@ -2,91 +2,93 @@ package ponticello.model.ctx
 
 import bundles.PublicProperty
 import bundles.publicProperty
-import kollektion.Counter
-import org.kordamp.ikonli.Ikon
-import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import ponticello.model.registry.ObjectList
 import ponticello.sc.Identifier
 import reaktive.Observer
 import reaktive.collection.observeCollection
 import reaktive.list.ReactiveList
-import reaktive.value.*
-import reaktive.value.binding.or
+import reaktive.value.ReactiveValue
+import reaktive.value.ReactiveVariable
+import reaktive.value.binding.orElse
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 import java.util.*
 
 class Scope private constructor(private val parent: Scope? = null) {
     private var observer: Any? = null
 
-    private val boundVariables = mutableMapOf<BoundVariable, Observer>()
-    private val boundVariableNames = Counter<String>()
+    private val boundVariableObservers = mutableMapOf<BoundVariable, Observer>()
+    private val boundVariables = mutableMapOf<String, MutableSet<BoundVariable>>()
     private val queries = WeakHashMap<ReactiveValue<String?>, Query>()
 
-    fun isResolved(identifier: ReactiveValue<String?>): ReactiveBoolean {
+    fun resolve(identifier: ReactiveValue<String?>): ReactiveValue<BoundVariable?> {
         val resolved = queries.getOrPut(identifier) {
-            val resolved = reactiveVariable(isResolvedNow(identifier.now))
-            val observer = identifier.observe { _, _, str -> resolved.set(isResolvedNow(str)) }
+            val resolved = reactiveVariable(resolveNow(identifier.now))
+            val observer = identifier.observe { _, _, str -> resolved.set(resolveNow(str)) }
             Query(observer, resolved)
-        }.isResolved
+        }.resolution
         return if (parent == null) resolved
-        else resolved or parent.isResolved(identifier)
+        else resolved.orElse(parent.resolve(identifier))
     }
 
-    private fun isResolvedNow(str: String?): Boolean = when {
-        str == null -> true
-        str.isBlank() -> true
-        str.first().isUpperCase() -> true
-        !(Identifier.isValid(str)) -> true
-        else -> str in boundVariableNames
+    private fun resolveNow(str: String?): BoundVariable? = when {
+        str == null -> null
+        str.isBlank() -> null
+        str.first().isUpperCase() -> null
+        !(Identifier.isValid(str)) -> null
+        else -> boundVariables[str]?.singleOrNull()
     }
 
     fun boundVariables(): Set<BoundVariable> {
         val set = mutableSetOf<BoundVariable>()
         var scope: Scope? = this
         while (scope != null) {
-            set.addAll(scope.boundVariables.keys)
+            set.addAll(scope.boundVariableObservers.keys)
             scope = scope.parent
         }
         return set
     }
 
     fun add(variable: BoundVariable) {
-        if (boundVariables.containsKey(variable)) return
-        addVariable(variable.name.now)
-        boundVariables[variable] = variable.name.observe { _, old, new ->
-            removeVariable(old)
-            addVariable(new)
+        if (boundVariableObservers.containsKey(variable)) return
+        addVariable(variable.name.now, variable)
+        boundVariableObservers[variable] = variable.name.observe { _, oldName, newName ->
+            removeVariable(oldName, variable)
+            addVariable(newName, variable)
         }
     }
 
-    private fun addVariable(new: String) {
-        if (boundVariableNames.add(new)) {
+    private fun addVariable(name: String, variable: BoundVariable) {
+        val variables = boundVariables.getOrPut(name, ::mutableSetOf)
+        if (variables.add(variable)) {
             for ((identifier, query) in queries) {
-                if (identifier.now == new) {
-                    query.isResolved.set(true)
+                if (identifier.now == name) {
+                    query.resolution.set(variables.singleOrNull())
                 }
             }
         }
     }
 
-    private fun removeVariable(old: String) {
-        if (boundVariableNames.remove(old)) {
+    private fun removeVariable(name: String, variable: BoundVariable) {
+        val variables = boundVariables[name] ?: return
+        if (variables.remove(variable)) {
             for ((identifier, query) in queries) {
-                if (identifier.now == old) {
-                    query.isResolved.set(false)
+                if (identifier.now == name) {
+                    query.resolution.set(variables.singleOrNull())
                 }
             }
         }
     }
 
     fun remove(variable: BoundVariable) {
-        val observer = boundVariables.remove(variable)
+        val observer = boundVariableObservers.remove(variable)
         if (observer != null) {
             observer.kill()
-            removeVariable(variable.name.now)
+            removeVariable(variable.name.now, variable)
         }
     }
 
-    private data class Query(val observer: Observer, val isResolved: ReactiveVariable<Boolean>)
+    private data class Query(val observer: Observer, val resolution: ReactiveVariable<BoundVariable?>)
 
     private class ScopeListener<O>(
         private val scope: Scope,
@@ -98,29 +100,6 @@ class Scope private constructor(private val parent: Scope? = null) {
 
         override fun removed(obj: O, idx: Int) {
             scope.remove(getVariable(obj))
-        }
-    }
-
-    abstract class BoundVariable {
-        abstract val origin: Any
-
-        abstract val name: ReactiveString
-
-        abstract val info: ReactiveString
-
-        open val icon: Ikon get() = MaterialDesignA.ALPHA_V_CIRCLE
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as BoundVariable
-
-            return origin == other.origin
-        }
-
-        override fun hashCode(): Int {
-            return origin.hashCode()
         }
     }
 

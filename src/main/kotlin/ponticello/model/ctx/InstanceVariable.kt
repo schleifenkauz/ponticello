@@ -5,7 +5,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
-object InstanceVariable : Scope.BoundVariable() {
+object InstanceVariable : BoundVariable() {
     override val origin: Any
         get() = 0
     override val name: ReactiveString

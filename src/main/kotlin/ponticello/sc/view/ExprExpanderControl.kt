@@ -2,6 +2,7 @@ package ponticello.sc.view
 
 import bundles.Bundle
 import fxutils.runAfterLayout
+import hextant.completion.CompletionCollector
 import hextant.completion.CompletionStrategy
 import hextant.completion.CompoundCompleter
 import hextant.core.Editor
@@ -40,5 +41,15 @@ class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderCont
         addCompleter(BusReferenceCompleter)
         addCompleter(ScoreObjectReferenceCompleter)
         addCompleter(ScExprExpander.config.completer(CompletionStrategy.simple))
-    })
+    }) {
+        override suspend fun collectCompletions(
+            context: Expander<*, *>, input: String, collector: CompletionCollector
+        ) {
+            if (input.isBlank() || input.all { ch -> ch.isDigit() }) {
+                collector.finished()
+            } else {
+                super.collectCompletions(context, input, collector)
+            }
+        }
+    }
 }

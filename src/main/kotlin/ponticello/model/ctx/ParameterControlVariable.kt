@@ -6,7 +6,7 @@ import ponticello.model.score.controls.ParameterControlList.NamedParameterContro
 import reaktive.value.ReactiveString
 import reaktive.value.binding.map
 
-data class ParameterControlVariable(override val origin: NamedParameterControl) : Scope.BoundVariable() {
+data class ParameterControlVariable(override val origin: NamedParameterControl) : BoundVariable() {
     override val name: ReactiveString get() = origin.name
 
     override val icon: Ikon get() = MaterialDesignA.ALPHA_P_CIRCLE

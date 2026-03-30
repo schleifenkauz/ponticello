@@ -12,6 +12,7 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
 import ponticello.model.code.GlobalPatternObject
 import ponticello.model.code.GlobalPatternRegistry
+import ponticello.model.ctx.BoundVariable
 import ponticello.model.ctx.Scope
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.NamedObject
@@ -23,13 +24,13 @@ import ponticello.model.server.BufferRegistry
 import ponticello.model.server.BusRegistry
 import reaktive.value.now
 
-object BoundVariableCompleter : ConfiguredCompleter<Expander<*, *>, Scope.BoundVariable>(CompletionStrategy.simple) {
-    override fun completionPool(context: Expander<*, *>): Collection<Scope.BoundVariable> =
+object BoundVariableCompleter : ConfiguredCompleter<Expander<*, *>, BoundVariable>(CompletionStrategy.simple) {
+    override fun completionPool(context: Expander<*, *>): Collection<BoundVariable> =
         context.context.getOrNull(Scope)?.boundVariables() ?: emptyList()
 
-    override fun extractText(context: Expander<*, *>, item: Scope.BoundVariable): String = item.name.now
+    override fun extractText(context: Expander<*, *>, item: BoundVariable): String = item.name.now
 
-    override fun Completion.Builder<Scope.BoundVariable>.configure(context: Expander<*, *>) {
+    override fun Completion.Builder<BoundVariable>.configure(context: Expander<*, *>) {
         infoText = completion.info.now
         icon = completion.icon
     }
