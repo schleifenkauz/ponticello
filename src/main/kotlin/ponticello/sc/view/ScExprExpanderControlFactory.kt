@@ -10,15 +10,17 @@ import hextant.core.view.ExpanderControl
 import javafx.css.PseudoClass.getPseudoClass
 import ponticello.model.ctx.*
 import ponticello.sc.*
+import ponticello.sc.editor.AbstractScExprExpander
 import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.misc.HelpBrowser
+import reaktive.Observer
 import reaktive.and
 import reaktive.value.now
 
 @ProvideImplementation(ControlFactory::class)
-object ScExprExpanderControlFactory : ControlFactory<ScExprExpander> {
-    override fun createControl(editor: ScExprExpander, arguments: Bundle): ExpanderControl {
+object ScExprExpanderControlFactory : ControlFactory<AbstractScExprExpander<*>> {
+    override fun createControl(editor: AbstractScExprExpander<*>, arguments: Bundle): ExpanderControl {
         val control = ExprExpanderControl(editor, arguments) styleClass "sc-expr"
         control.textField.styleClass("simple-sc-expr")
         val resolution = editor.identifierResolution
@@ -27,7 +29,9 @@ object ScExprExpanderControlFactory : ControlFactory<ScExprExpander> {
             updatePseudoStyleClass(oldResult, newResult, resolution.now, resolution.now, control)
         } and editor.identifierResolution.observe { _, oldResolution, newResolution ->
             updatePseudoStyleClass(result.now, result.now, oldResolution, newResolution, control)
-        } and control.bindPseudoClassState("disabled", editor.isDisabled)
+        } and if (editor is ScExprExpander) {
+            control.bindPseudoClassState("disabled", editor.isDisabled)
+        } else Observer.nothing
         val initialStyle = pseudoStyleClass(result.now, resolution.now)
         if (initialStyle != null) {
             control.textField.pseudoClassStateChanged(getPseudoClass(initialStyle), true)

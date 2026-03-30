@@ -12,11 +12,30 @@ import hextant.core.view.EditorControl
 import hextant.core.view.ExpanderControl
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectReference
+import ponticello.sc.editor.AbstractScExprExpander
 import ponticello.sc.editor.BusExprEditor
 import ponticello.sc.editor.ScExprExpander
 import reaktive.value.now
 
-class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderControl(expander, args, Completer) {
+class ExprExpanderControl(
+    expander: AbstractScExprExpander<*>, args: Bundle
+) : ExpanderControl(expander, args, Completer) {
+    init {
+        textField.focusedProperty().addListener { _, _, focused ->
+            if (!focused) {
+                expander.unbindDefinition()
+            }
+        }
+    }
+
+    override fun displayText(text: String) {
+        super.displayText(text)
+        val expander = target as? AbstractScExprExpander ?: return
+        if (text == "" && expander.associatedDefinition != null) {
+            receiveFocus()
+        }
+    }
+
     override fun onExpansion(editor: Editor<*>, control: EditorControl<*>) {
         runAfterLayout { //TODO check if this works as well as runFXWithTimeout
             if (control is ObjectSelectorControl<*> && control.editor.result.now == ObjectReference.none<NamedObject>()) {
@@ -26,6 +45,10 @@ class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderCont
                 val selectorCtrl =
                     control.getSubControl(editor.busSelector) as? ObjectSelectorControl<*> ?: return@runAfterLayout
                 selectorCtrl.showChoicePopup()
+            }
+            val expander = target as? AbstractScExprExpander
+            if (expander?.associatedDefinition != null) {
+                control.receiveFocus()
             }
             //just a useful example how to do things like this
 //            if (editor is TransformSignalEditor) {

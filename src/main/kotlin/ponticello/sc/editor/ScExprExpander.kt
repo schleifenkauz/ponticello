@@ -6,10 +6,7 @@ import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import hextant.command.Command
 import hextant.command.meta.ProvideCommand
-import hextant.core.editor.Expander
-import hextant.core.editor.ExpanderConfig
-import hextant.core.editor.defaultState
-import hextant.core.editor.snapshot
+import hextant.core.editor.*
 import hextant.serial.parentChain
 import kotlinx.serialization.json.*
 import ponticello.model.code.GlobalPatternObject
@@ -110,6 +107,7 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
             editor is TopLevelFunctionCallEditor && editor.function.text.now != "" -> {
                 editor.arguments.notifyViews { receiveFocus() }
             }
+
             else -> super.onExpansion(editor)
         }
     }
@@ -342,6 +340,26 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
                 val ctx = exp.context[PonticelloContext]
                 ctx is PonticelloContext.RoutineDef || ctx is PonticelloContext.Task
             }) { _ -> GoToEditor().defaultState() }
+
+            "var".expand(condition = { exp -> exp.getParent<CodeBlockEditor>() != null }) { exp ->
+                val enclosingBlock = exp.getParent<CodeBlockEditor>() ?: return@expand null
+                val variable = IdentifierEditor().defaultState()
+                enclosingBlock.variables.addLast(variable)
+                val assignee = AssignableExprExpander()
+                assignee.bindToDefinition(variable)
+                AssignmentEditor(assignee).defaultState()
+            }
+
+            "param".expand(condition = { exp -> exp.getParent<ScFunctionEditor>() != null }) { exp ->
+                val enclosingFunction = exp.getParent<ScFunctionEditor>() ?: return@expand null
+                val parameter = IdentifierEditor().defaultState()
+                enclosingFunction.parameters.addLast(parameter)
+                if (exp is AbstractScExprExpander) {
+                    exp.bindToDefinition(parameter)
+                }
+                exp.setText("")
+                null
+            }
 
             registerInterceptor { item: BusObject, _ -> BusSelector().selectInitial(item) }
             registerInterceptor { item: ScoreObject, _ -> ScoreObjectSelector().selectInitial(item) }
