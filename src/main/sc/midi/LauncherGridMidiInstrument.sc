@@ -1,4 +1,4 @@
-LauncherGridMidiInstrument {
+LauncherGridMidiInstrument : MidiInstrument {
 	var <items, <modes, name, <>enabled, on, track;
 
 	* new { |items, modes, name, enabled=true|
@@ -12,7 +12,7 @@ LauncherGridMidiInstrument {
 		items = itemList; modes = modeList;
 	}
 
-	setItem { |idx, item| //TODO there seems to be an issue here
+	setItem { |idx, item|
 		if (items[idx].notNil && on[idx]) {
 			items[idx].noteOff(idx, 0, modes[idx]);
 		};
@@ -53,15 +53,9 @@ LauncherGridMidiInstrument {
 		^true
 	}
 
-	control { ^true }
-
-	allNotesOff { }
-
 	activate { |trk|
 		track = trk;
 	}
-
-	dispose {}
 }
 
 SoundProcessGridItem {

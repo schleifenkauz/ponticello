@@ -45,7 +45,7 @@ class PlaybackSettings(
         serverLatencyUpdater = serverLatency.forEach { latency ->
             client.run("s.latency = $latency")
         }
-        context[ContextualMidiReceiver].attachTo(knobDevice!!)
+        context[ContextualMidiReceiver].attachTo(knobDevice)
         djMode.initialize(context)
     }
 

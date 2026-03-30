@@ -42,7 +42,7 @@ MidiEffectInstrument {
 	asString { ^"MidiEffect: %".format(name) }
 }
 
-MidiEffect {
+MidiEffect : MidiInstrument {
 	var procName, instr, controls, env, <enabled = true, task, track;
 
 	* create { |name, instr, controls, enabled|

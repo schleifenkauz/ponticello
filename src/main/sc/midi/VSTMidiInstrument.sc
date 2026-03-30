@@ -1,4 +1,4 @@
-VSTMidiInstrument {
+VSTMidiInstrument : MidiInstrument {
 	var <vst, <>enabled;
 
 	* new { |vst, enabled=true|
@@ -55,8 +55,4 @@ VSTMidiInstrument {
 	}
 
 	allNotesOff { vst.midi.allNotesOff(0) }
-
-	activate {}
-
-	dispose {}
 }

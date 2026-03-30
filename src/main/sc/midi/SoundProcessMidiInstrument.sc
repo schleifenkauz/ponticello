@@ -1,4 +1,4 @@
-SoundProcessMidiInstrument {
+SoundProcessMidiInstrument : MidiInstrument {
 	var procName, activeNotes, <>enabled;
 
 	* create { |name, instr, controls, enabled=true|
@@ -31,10 +31,6 @@ SoundProcessMidiInstrument {
 		^true
 	}
 
-	control { |num, val, src|
-		^true
-	}
-
 	allNotesOff { |player_id|
 		activeNotes.keysValuesDo { |num, instances|
 			instances.copy.do { |note|
@@ -44,8 +40,4 @@ SoundProcessMidiInstrument {
 			}
 		};
 	}
-
-	activate {}
-
-	dispose {}
 }
