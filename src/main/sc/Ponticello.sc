@@ -79,6 +79,17 @@ Ponticello {
 		};
 	}
 
+	* send_classes {
+		var i = 0, chunkSize = 100;
+		var classes = Class.allClasses;
+		while { i < classes.size } {
+			var chunk = classes.copyRange(i, i + chunkSize - 1).collect(_.name);
+			Ponticello.sendMsg('/classes', *chunk);
+			i = i + chunkSize;
+		};
+		Ponticello.sendMsg('/classes_finished');
+	}
+
 	* doOnStartUp {
 		ServerTree.add {
 			AudioNodeOrder.clear;
@@ -96,6 +107,7 @@ Ponticello {
 		DefaultSynthDefs.addAll;
 
 		Ponticello.respond('/save_plugin_state', this.save_plugin_state(_, _, _));
+		Ponticello.respond('/send_classes') { this.send_classes };
 		Ponticello.respond('/run', this.run(_));
 		Ponticello.respondId('/eval', this.eval(_, _));
 		Ponticello.respondId('/schedule', PonticelloPlayback.schedule(_, _, _, _, _, _));

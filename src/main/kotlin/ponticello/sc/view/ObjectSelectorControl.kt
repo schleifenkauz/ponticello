@@ -7,6 +7,7 @@ import fxutils.drag.setupDropArea
 import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.compoundEdit
 import hextant.core.view.SimpleChoiceEditorControl
+import javafx.application.Platform
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
@@ -54,9 +55,8 @@ class ObjectSelectorControl<O : NamedObject>(
         return true
     }
 
-    public override fun showChoicePopup() {
+    public override fun showChoicePopup() = Platform.runLater {
         val registry = selector.getOptions()
-
         val view =
             if (registry is NamedObjectList) SimpleRegistrySelectorPrompt(registry)
             else SimpleListSelectorPrompt(registry)

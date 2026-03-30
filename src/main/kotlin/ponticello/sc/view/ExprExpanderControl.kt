@@ -10,13 +10,16 @@ import hextant.core.editor.Expander
 import hextant.core.view.CompoundEditorControl
 import hextant.core.view.EditorControl
 import hextant.core.view.ExpanderControl
+import ponticello.model.obj.NamedObject
+import ponticello.model.registry.ObjectReference
 import ponticello.sc.editor.BusExprEditor
 import ponticello.sc.editor.ScExprExpander
+import reaktive.value.now
 
 class ExprExpanderControl(expander: ScExprExpander, args: Bundle) : ExpanderControl(expander, args, Completer) {
     override fun onExpansion(editor: Editor<*>, control: EditorControl<*>) {
         runAfterLayout { //TODO check if this works as well as runFXWithTimeout
-            if (control is ObjectSelectorControl<*>) {
+            if (control is ObjectSelectorControl<*> && control.editor.result.now == ObjectReference.none<NamedObject>()) {
                 control.showChoicePopup()
             }
             if (editor is BusExprEditor && control is CompoundEditorControl) {

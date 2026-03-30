@@ -1,5 +1,6 @@
 package ponticello.model.score.controls
 
+import bundles.getOrNull
 import bundles.set
 import fxutils.undo.UndoManager
 import hextant.context.Context
@@ -28,7 +29,8 @@ sealed class CodeControl : ParameterControl() {
             val myContext = context.extend {
                 set(UndoManager, context[UndoManager]/*.createSubManager()*/)
                 set(PonticelloContext, PonticelloContext.Control(namedControl))
-                val scope = Scope.fromList(namedControl.controls, null, ::ParameterControlVariable)
+                val parent = context.getOrNull(Scope)
+                val scope = Scope.fromList(namedControl.controls, parent, ::ParameterControlVariable)
                 with(scope) {
                     add(InstanceVariable)
                     if (namedControl.parentObject is ParameterizedMidiInstrument) {

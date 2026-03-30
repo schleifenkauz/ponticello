@@ -8,6 +8,7 @@ import hextant.codegen.ProvideImplementation
 import hextant.context.ControlFactory
 import hextant.core.view.ExpanderControl
 import javafx.css.PseudoClass.getPseudoClass
+import ponticello.model.ctx.*
 import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander
 import ponticello.ui.dock.AppLayout
@@ -20,18 +21,14 @@ object ScExprExpanderControlFactory : ControlFactory<ScExprExpander> {
     override fun createControl(editor: ScExprExpander, arguments: Bundle): ExpanderControl {
         val control = ExprExpanderControl(editor, arguments) styleClass "sc-expr"
         control.textField.styleClass("simple-sc-expr")
-        control.userData = editor.result.observe { _, oldResult, result ->
-            val oldStyleClass = pseudoStyleClass(oldResult)
-            val newStyleClass = pseudoStyleClass(result)
-            if (oldStyleClass == newStyleClass) return@observe
-            if (oldStyleClass != null) {
-                control.textField.pseudoClassStateChanged(getPseudoClass(oldStyleClass), false)
-            }
-            if (newStyleClass != null) {
-                control.textField.pseudoClassStateChanged(getPseudoClass(newStyleClass), true)
-            }
+        val resolution = editor.identifierResolution
+        val result = editor.result
+        control.userData = result.observe { _, oldResult, newResult ->
+            updatePseudoStyleClass(oldResult, newResult, resolution.now, resolution.now, control)
+        } and editor.identifierResolution.observe { _, oldResolution, newResolution ->
+            updatePseudoStyleClass(result.now, result.now, oldResolution, newResolution, control)
         } and control.bindPseudoClassState("disabled", editor.isDisabled)
-        val initialStyle = pseudoStyleClass(editor.result.now)
+        val initialStyle = pseudoStyleClass(result.now, resolution.now)
         if (initialStyle != null) {
             control.textField.pseudoClassStateChanged(getPseudoClass(initialStyle), true)
         }
@@ -44,12 +41,33 @@ object ScExprExpanderControlFactory : ControlFactory<ScExprExpander> {
         return control
     }
 
-    private fun pseudoStyleClass(result: ScExpr): String? {
+    private fun updatePseudoStyleClass(
+        oldResult: ScExpr, result: ScExpr,
+        oldResolution: BoundVariable?, newResolution: BoundVariable?,
+        control: ExprExpanderControl
+    ) {
+        val oldStyleClass = pseudoStyleClass(oldResult, oldResolution)
+        val newStyleClass = pseudoStyleClass(result, newResolution)
+        if (oldStyleClass == newStyleClass) return
+        if (oldStyleClass != null) {
+            control.textField.pseudoClassStateChanged(getPseudoClass(oldStyleClass), false)
+        }
+        if (newStyleClass != null) {
+            control.textField.pseudoClassStateChanged(getPseudoClass(newStyleClass), true)
+        }
+    }
+
+    private fun pseudoStyleClass(result: ScExpr, resolution: BoundVariable?): String? {
         val styleClass = when (result) {
             is Identifier -> when {
                 result.text.first() == '~' -> "env-ref"
                 result.text.first().isUpperCase() -> "class-ref"
-                else -> "variable-ref"
+                else -> when (resolution) {
+                    is MidiVariable, is InstanceVariable -> "keyword"
+                    is BoundIdentifier -> "variable-ref"
+                    is ParameterControlVariable, is ParameterDefVariable -> "parameter-ref"
+                    else -> null
+                }
             }
 
             is BooleanLiteral, Nil -> "keyword"

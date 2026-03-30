@@ -40,10 +40,7 @@ import ponticello.model.player.ScorePlayer
 import ponticello.model.project.*
 import ponticello.model.project.PonticelloProject.Companion.projectDirectory
 import ponticello.model.tree.AudioNodeTree
-import ponticello.sc.client.ConsoleMonitor
-import ponticello.sc.client.DummySuperColliderClient
-import ponticello.sc.client.OSCSuperColliderClient
-import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.*
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
@@ -355,6 +352,7 @@ class PonticelloLauncher {
                         context[MidiRecorder] = MidiRecorder(context)
                         context[ScoreObjectScheduler] = ScoreObjectScheduler(context)
                         context[ScoreObjectDuplicator] = ScoreObjectDuplicator()
+                        SuperColliderClassList.query(context)
                         val midiReceiver = ContextualMidiReceiver()
                         midiReceiver.initialize(context)
                         context[Recorder] = Recorder(context)

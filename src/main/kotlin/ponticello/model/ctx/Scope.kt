@@ -4,6 +4,7 @@ import bundles.PublicProperty
 import bundles.publicProperty
 import ponticello.model.registry.ObjectList
 import ponticello.sc.Identifier
+import ponticello.sc.client.SuperColliderClassList
 import reaktive.Observer
 import reaktive.collection.observeCollection
 import reaktive.list.ReactiveList
@@ -33,10 +34,8 @@ class Scope private constructor(private val parent: Scope? = null) {
 
     private fun resolveNow(str: String?): BoundVariable? = when {
         str == null -> null
-        str.isBlank() -> null
-        str.first().isUpperCase() -> null
         !(Identifier.isValid(str)) -> null
-        else -> boundVariables[str]?.singleOrNull()
+        else -> boundVariables[str]?.maxByOrNull(BoundVariable::priority)
     }
 
     fun boundVariables(): Set<BoundVariable> {
@@ -63,7 +62,7 @@ class Scope private constructor(private val parent: Scope? = null) {
         if (variables.add(variable)) {
             for ((identifier, query) in queries) {
                 if (identifier.now == name) {
-                    query.resolution.set(variables.singleOrNull())
+                    query.resolution.set(variables.maxByOrNull(BoundVariable::priority))
                 }
             }
         }
@@ -74,7 +73,7 @@ class Scope private constructor(private val parent: Scope? = null) {
         if (variables.remove(variable)) {
             for ((identifier, query) in queries) {
                 if (identifier.now == name) {
-                    query.resolution.set(variables.singleOrNull())
+                    query.resolution.set(variables.maxByOrNull(BoundVariable::priority))
                 }
             }
         }
@@ -106,7 +105,7 @@ class Scope private constructor(private val parent: Scope? = null) {
     companion object : PublicProperty<Scope> by publicProperty("Scope") {
         fun createEmpty(parent: Scope? = null) = Scope(parent)
 
-        inline fun buildScope(parent: Scope? = null, block: Scope.() -> Unit) = createEmpty(parent).apply(block)
+        inline fun buildScope(parent: Scope? = null, block: Scope.() -> Unit): Scope = createEmpty(parent).apply(block)
 
         fun <O> fromList(
             list: ObjectList<O>, parent: Scope? = null, getVariable: (O) -> BoundVariable
@@ -127,12 +126,18 @@ class Scope private constructor(private val parent: Scope? = null) {
                 )
             }
 
-        fun constant(variables: Collection<BoundVariable>) = buildScope {
+        fun constant(parent: Scope?, variables: Collection<BoundVariable>) = buildScope(parent) {
             for (variable in variables) {
                 add(variable)
             }
         }
 
-        fun constant(vararg variables: BoundVariable) = constant(variables.asList())
+        fun constant(parent: Scope?, vararg variables: BoundVariable) = constant(parent, variables.asList())
+
+        fun root(classList: SuperColliderClassList) = buildScope {
+            for (className in classList.getClassNames()) {
+                add(SuperColliderClass(className))
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package ponticello.model.instr
 
+import bundles.getOrNull
 import bundles.set
 import hextant.context.Context
 import hextant.context.SelectionDistributor
@@ -50,7 +51,8 @@ class MidiEffectInstrument(
         val subContext = context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
             set(PonticelloContext, PonticelloContext.MidiEffect(this@MidiEffectInstrument))
-            set(Scope, Scope.fromList(parameters, parent = null, ::ParameterDefVariable))
+            val parent = context.getOrNull(Scope)
+            set(Scope, Scope.fromList(parameters, parent, ::ParameterDefVariable))
         }
         parameters.initialize(subContext)
         for (component in listOf(start, stop, noteOn, noteOff, cc)) {

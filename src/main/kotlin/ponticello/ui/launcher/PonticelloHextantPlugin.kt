@@ -37,9 +37,7 @@ import ponticello.ui.controls.NumericalControlSpecPrompt
 import ponticello.ui.controls.SimpleNumericalControlSpecPrompt
 import ponticello.ui.launcher.PonticelloHextantPlugin.multilineCommand
 import ponticello.ui.launcher.PonticelloHextantPlugin.singleLineCommand
-import reaktive.value.binding.and
-import reaktive.value.binding.equalTo
-import reaktive.value.binding.map
+import reaktive.value.binding.binding
 import reaktive.value.now
 
 object PonticelloHextantPlugin : PluginInitializer({
@@ -88,9 +86,15 @@ object PonticelloHextantPlugin : PluginInitializer({
         isSevere(true)
         appliesIf { inspected.context.hasProperty(Scope) }
         preventingThat {
-            val isIdentifier = inspected.result.map { r -> r is Identifier && !r.text.first().isUpperCase() }
-            val isUnresolved = inspected.identifierResolution.equalTo(null)
-            isIdentifier and isUnresolved
+            binding(inspected.result, inspected.identifierResolution) { result, resolution ->
+                if (result !is Identifier) false
+                else {
+                    val firstChar = result.text.first()
+                    val isVariableReference = !firstChar.isUpperCase() && firstChar != '~'
+                    isVariableReference && resolution == null
+                }
+
+            }
         }
         message { "Unresolved identifier: ${inspected.text.now}" }
         id = "unresolved-identifier"

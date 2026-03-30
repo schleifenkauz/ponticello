@@ -3,7 +3,7 @@
 }
 
 .simple-sc-expr:variable-ref {
-    -fx-text-fill: white !important;
+    -fx-text-fill: #2b7800 !important;
 }
 
 .simple-sc-expr:class-ref {
@@ -12,6 +12,10 @@
 
 .simple-sc-expr:env-ref {
     -fx-text-fill: #ff7300;
+}
+
+.simple-sc-expr:parameter-ref {
+    -fx-text-fill: #bd4f4f;
 }
 
 .keyword, .simple-sc-expr:keyword {

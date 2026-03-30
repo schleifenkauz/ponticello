@@ -8,4 +8,6 @@ class BoundIdentifier(override val origin: IdentifierEditor, val type: String) :
     override val name: ReactiveString get() = origin.text
 
     override val info: ReactiveString get() = reactiveValue(type)
+
+    override val priority: Int get() = 1
 }

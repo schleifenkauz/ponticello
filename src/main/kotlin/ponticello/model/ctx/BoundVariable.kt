@@ -11,6 +11,8 @@ abstract class BoundVariable {
 
     abstract val info: ReactiveString
 
+    open val priority: Int get() = 0
+
     open val icon: Ikon get() = MaterialDesignA.ALPHA_V_CIRCLE
 
     override fun equals(other: Any?): Boolean {

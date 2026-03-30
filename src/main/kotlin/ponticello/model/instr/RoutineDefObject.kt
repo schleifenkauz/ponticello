@@ -1,5 +1,6 @@
 package ponticello.model.instr
 
+import bundles.getOrNull
 import bundles.set
 import hextant.context.Context
 import hextant.context.SelectionDistributor
@@ -86,7 +87,8 @@ class RoutineDefObject(
         val myContext = context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
             set(PonticelloContext, PonticelloContext.RoutineDef(this@RoutineDefObject))
-            set(Scope, Scope.fromList(parameters, parent = null, ::ParameterDefVariable))
+            val parent = context.getOrNull(Scope)
+            set(Scope, Scope.fromList(parameters, parent, ::ParameterDefVariable))
         }
         super.initialize(myContext)
         parameters.initialize(myContext)
