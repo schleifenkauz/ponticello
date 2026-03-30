@@ -2,6 +2,9 @@ package ponticello.ui.midi
 
 import bundles.PublicProperty
 import bundles.publicProperty
+import bundles.set
+import com.illposed.osc.OSCMessageEvent
+import com.illposed.osc.OSCMessageListener
 import hextant.context.Context
 import ponticello.impl.Logger
 import ponticello.model.obj.AbstractContextualObject
@@ -10,6 +13,9 @@ import ponticello.model.player.ClockObject
 import ponticello.model.project.CLOCKS
 import ponticello.model.project.PLAYBACK_SETTINGS
 import ponticello.model.project.get
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.eval
+import ponticello.sc.client.getArgument
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import ponticello.ui.misc.TimeWarpPopup
 import reaktive.value.ReactiveBoolean
@@ -17,14 +23,8 @@ import reaktive.value.ReactiveVariable
 import reaktive.value.binding.equalTo
 import reaktive.value.now
 import reaktive.value.reactiveVariable
-import javax.sound.midi.MidiDevice
-import javax.sound.midi.MidiMessage
-import javax.sound.midi.Receiver
-import javax.sound.midi.ShortMessage
 
-class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
-    private var device: MidiDevice? = null
-
+class ContextualMidiReceiver : AbstractContextualObject(), OSCMessageListener {
     private var activeContext: ReactiveVariable<MidiContext?> = reactiveVariable(null)
 
     private lateinit var timeWarpPopup: TimeWarpPopup
@@ -34,8 +34,15 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
     val isAttached: ReactiveBoolean get() = attached
 
     override fun initialize(context: Context) {
+        context[ContextualMidiReceiver] = this
         super.initialize(context)
         timeWarpPopup = TimeWarpPopup(context)
+    }
+
+    fun attachTo(device: String) {
+        attached.now = context[SuperColliderClient].eval(
+            "OSCMidiForward.attachTo(\"$device\")"
+        ).get().toBooleanStrictOrNull() ?: false
     }
 
     fun toggleActive(context: MidiContext) {
@@ -48,24 +55,20 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
 
     fun isActive(context: MidiContext) = activeContext.equalTo(context)
 
-    override fun send(message: MidiMessage, timeStamp: Long) {
+    override fun acceptMessage(event: OSCMessageEvent) {
+        if (event.message.address != "/forward_cc") return
+        val num = event.message.getArgument<Int>(0, "num") ?: return
+        val value = event.message.getArgument<Int>(1, "val") ?: return
+        val ctx = activeContext.now?.takeIf { it.canReceiveMidi }
         try {
-            if (message !is ShortMessage) return
-            val ctx = activeContext.now?.takeIf { it.canReceiveMidi }
-            val index = message.data1
-            val velocity = message.data2
-            when (message.command) {
-                ShortMessage.CONTROL_CHANGE -> cc(ctx, message, index, velocity)
-            }
+            cc(ctx, num, value)
         } catch (e: Exception) {
-            val deviceName = device!!.deviceInfo.name
-            val message = message.message?.asList()
-            Logger.error("Exception while processing MIDI message from $deviceName: $message", e, Logger.Category.Midi)
+            Logger.error("Exception while processing MIDI message from /forward_cc", e, Logger.Category.Midi)
         }
     }
 
     private fun cc(
-        ctx: MidiContext?, message: ShortMessage,
+        ctx: MidiContext?,
         index: Int, midiDelta: Int
     ) {
         if (!context.hasProperty(currentProject)) return
@@ -75,12 +78,8 @@ class ContextualMidiReceiver : Receiver, AbstractContextualObject() {
             clock.timeWarp.adjustByMidiDelta(midiDelta, ClockObject.TIME_WARP_SPEC, context, "Adjust playback speed")
             timeWarpPopup.update(clock.timeWarp.now)
         } else {
-            ctx?.cc(message.channel, index - CC_INDEX_OFFSET, midiDelta)
+            ctx?.cc(index - CC_INDEX_OFFSET, midiDelta)
         }
-    }
-
-    override fun close() {
-        device?.close()
     }
 
     companion object : PublicProperty<ContextualMidiReceiver> by publicProperty("Midi receiver") {

@@ -60,6 +60,9 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         player.connectPlayHead(mainScoreView.playHead)
         val playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
         context[SuperColliderClient].addListener(playbackMessageListener)
+        var midiReceiver = context[ContextualMidiReceiver]
+        midiReceiver.attachTo("Xjam")
+        context[SuperColliderClient].addListener(midiReceiver)
     }
 
     override fun beforeShowing() {

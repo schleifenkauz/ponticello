@@ -5,7 +5,7 @@ import ponticello.model.server.BusRegistry
 import reaktive.value.now
 
 class ControlBusesMidiContext(private val buses: BusRegistry) : AbstractMidiContext(buses.context) {
-    override fun cc(channel: Int, index: Int, value: Int) {
+    override fun cc(index: Int, value: Int) {
         val controlBuses = buses
             .filterIsInstance<BusObject.ControlBus>()
             .filter { b -> b.spec.now != null }

@@ -4,7 +4,9 @@ MidiTrack {
 
 	* init {
 		if (initialized.not) {
-			MIDIClient.init(1, 1, verbose: false);
+			if (MIDIClient.initialized.not) {
+				MIDIClient.init(inports: 2, outports: 1, verbose: false);
+			};
 			tracksBySource = Dictionary.new;
 			noteOn = MIDIFunc.noteOn { |val, num, chan, uid|
 			    var src = (player_id: -1, server_latency: 0, chan: chan);

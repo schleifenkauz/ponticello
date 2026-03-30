@@ -11,7 +11,7 @@ class ParameterControlsMidiContext(
 ) : AbstractMidiContext(context) {
     constructor(controls: ParameterControlList) : this(controls.context, { controls })
 
-    override fun cc(channel: Int, index: Int, value: Int) {
+    override fun cc(index: Int, value: Int) {
         val ctrls = controls() ?: return
         val numericalControls = ctrls.all().filter { ctrl -> ctrl.now is ValueControl }
         if (index !in numericalControls.indices) return

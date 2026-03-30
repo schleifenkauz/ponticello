@@ -11,6 +11,7 @@
     - re-sync parameter controls in some way...
 - asr parameter type?
   - with curve parameter
+- find another shortcut for creating breakpoints
 
 ## New Functionality
 

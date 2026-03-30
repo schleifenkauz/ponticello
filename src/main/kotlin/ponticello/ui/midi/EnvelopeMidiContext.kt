@@ -8,7 +8,7 @@ class EnvelopeMidiContext(
     private val spec: NumericalControlSpec,
     private val focusedIndex: Int
 ) : AbstractMidiContext(envelope.context) {
-    override fun cc(channel: Int, index: Int, value: Int) {
+    override fun cc(index: Int, value: Int) {
         if (focusedIndex == -1) return
         val idx = focusedIndex + index
         if (idx !in envelope.points.indices) return

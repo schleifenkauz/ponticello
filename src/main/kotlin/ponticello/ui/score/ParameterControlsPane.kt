@@ -60,7 +60,7 @@ class ParameterControlsPane(
 
     override val canDuplicate: Boolean get() = true
 
-    override val nameDisplayWidth: Double get() = 80.0
+    override val nameDisplayWidth: Double get() = 120.0
 
     init {
         styleClass("parameter-controls")

@@ -3,7 +3,6 @@ package ponticello.ui.midi
 import fxutils.actions.action
 import hextant.context.Context
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
-import ponticello.impl.MidiPitch
 import reaktive.value.ReactiveBoolean
 import reaktive.value.binding.`if`
 
@@ -18,11 +17,7 @@ interface MidiContext {
 
     fun setCondition(condition: () -> Boolean)
 
-    fun cc(channel: Int, index: Int, value: Int) {}
-
-    fun noteOn(channel: Int, midiPitch: MidiPitch, velocity: Int) {}
-
-    fun noteOff(channel: Int, midiPitch: MidiPitch) {}
+    fun cc(index: Int, value: Int) {}
 
     companion object {
         val toggleActiveAction = action<MidiContext>("Toggle Activate") {

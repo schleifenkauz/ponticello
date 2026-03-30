@@ -42,4 +42,6 @@ MidiRecorder {
 			events.add([t, 0, num, val, src.chan]);
 		}
 	}
+
+	control {}
 }

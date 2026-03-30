@@ -270,13 +270,13 @@ class MixerFlow(
     }
 
     private inner class MixerMidiContext : AbstractMidiContext(context) {
-        override fun cc(channel: Int, index: Int, value: Int) {
+        override fun cc(index: Int, value: Int) {
             if (index == 0) {
                 masterVolume.adjustByMidiDelta(value, VOLUME_SPEC, context, "Adjust master volume")
                 return
             }
-            if (channel + 1 !in components.indices) return
-            val comp = components[channel + 1]
+            if (index + 1 !in components.indices) return
+            val comp = components[index + 1]
             comp.volume.adjustByMidiDelta(value, VOLUME_SPEC, context, "Adjust channel volume")
         }
     }
