@@ -17,6 +17,8 @@ SynthInstrument {
 
 	type { ^\synth }
 
+	isAutoRelease { ^true }
+
 	getDefaultValue {| param | ^synthDesc.controlDict[param] !? { |ctrl| ctrl.defaultValue }}
 
 	create {| inst |

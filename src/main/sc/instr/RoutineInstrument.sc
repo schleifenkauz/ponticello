@@ -38,6 +38,8 @@ RoutineInstrument { //TODO common superclass with MidiEffectInstrument
 
 	type { ^\routine }
 
+	isAutoRelease { ^false }
+
 	getDefaultValue {| param | ^parameterDefaults[param]}
 
 	create {| inst | ^RoutineInstance(inst, func, onFinished) }

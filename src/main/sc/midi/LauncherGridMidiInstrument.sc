@@ -71,6 +71,11 @@ SoundProcessGridItem {
 			inst = proc.createInstance(nil, 0, extra_controls);
 			inst.onDispose { inst = nil };
 			inst.start(placement, src.server_latency, src.player_id, midiTrack: src.track);
+			if ((mode != \toggle) && proc.instr.isAutoRelease.not) {
+				TempoClock.sched(proc.duration) {
+					inst.release(src.server_latency);
+				};
+			}
 		} {
 			inst.release;
 		}

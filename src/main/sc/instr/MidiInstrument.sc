@@ -1,6 +1,8 @@
 MIDIInstrument {
 	type { ^\midi }
 
+	isAutoRelease { ^false }
+
 	getDefaultValue { |param| ^nil }
 
 	create {| inst |
