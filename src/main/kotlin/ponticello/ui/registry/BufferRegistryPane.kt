@@ -1,15 +1,12 @@
 package ponticello.ui.registry
 
+import fxutils.*
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
-import fxutils.addAfter
 import fxutils.controls.IntSpinner
 import fxutils.drag.hasFile
 import fxutils.drag.hasFiles
-import fxutils.label
 import fxutils.prompt.*
-import fxutils.registerShortcuts
-import fxutils.styleClass
 import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.fx.HextantTextField
@@ -23,7 +20,7 @@ import javafx.scene.input.DataFormat
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.StackPane
+import javafx.scene.layout.Pane
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.evaicons.Evaicons
 import org.kordamp.ikonli.material2.Material2AL
@@ -169,15 +166,17 @@ class BufferRegistryPane(private val buffers: BufferRegistry) : ObjectRegistryPa
         return when (obj) {
             is AllocatedBufferObject -> null
             is SampleObject -> {
+                val pane = Pane().alwaysHGrow()
                 val view = ImageView()
                 view.imageProperty().bind(obj.spectrogramImage.asObservableValue())
                 view.fitHeight = SPECTROGRAM_HEIGHT
-                view.fitWidthProperty().bind(box.widthProperty().subtract(10.0))
+                view.fitWidthProperty().bind(pane.widthProperty())
                 view.isPreserveRatio = false
                 view.managedProperty().bind(view.imageProperty().isNotNull)
                 val notFoundLabel = Label("Spectrogram file not found...")
                 notFoundLabel.managedProperty().bind(view.imageProperty().isNull)
-                StackPane(view, notFoundLabel)
+                pane.children.addAll(view, notFoundLabel)
+                pane
             }
         }
     }

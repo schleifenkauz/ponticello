@@ -15,6 +15,7 @@ import javafx.application.Platform
 import javafx.scene.layout.StackPane
 import javafx.scene.paint.Color
 import javafx.stage.Popup
+import ponticello.model.ctx.PonticelloContext
 import ponticello.model.obj.project
 import ponticello.sc.EmptyExpr
 import ponticello.sc.client.SuperColliderClient
@@ -68,6 +69,7 @@ class CodePopup private constructor(private val context: Context) : Popup() {
             val selector = SelectionDistributor.newInstance()
             set(SelectionDistributor, selector)
             set(UndoManager, undoManager)
+            set(PonticelloContext, PonticelloContext.CodePopup)
         }
         val root = EditorRoot.initialize(editor, ctx)
         root.control.registerShortcuts(UndoRedoActions.withContext(undoManager))

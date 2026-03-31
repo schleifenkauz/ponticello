@@ -33,5 +33,7 @@ sealed class PonticelloContext {
 
     data class OSCHook(val hook: OSCHookObject) : PonticelloContext()
 
+    object CodePopup : PonticelloContext()
+
     companion object : PublicProperty<PonticelloContext> by publicProperty("PonticelloContext")
 }
