@@ -5,6 +5,7 @@ import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.action
 import fxutils.actions.collectActions
+import hextant.context.compoundEdit
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Control
@@ -184,7 +185,10 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
     }
 
     fun removeObject() {
-        parent.source.remove(obj)
+        val list = parent.source
+        list.context.compoundEdit("Remove ${list.objectType}") {
+            list.remove(obj)
+        }
     }
 
     fun showSubWindow(): SubWindow? {

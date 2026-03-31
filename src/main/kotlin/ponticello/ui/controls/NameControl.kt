@@ -4,9 +4,11 @@ import fxutils.*
 import fxutils.actions.Action
 import fxutils.actions.ActionBar
 import fxutils.actions.collectActions
+import javafx.geometry.Pos
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.HBox
+import javafx.scene.layout.StackPane
 import org.kordamp.ikonli.material2.Material2AL
 import ponticello.model.obj.RenamableObject
 import ponticello.sc.Identifier
@@ -15,7 +17,7 @@ import reaktive.value.binding.not
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-class NameControl(val obj: RenamableObject) : HBox() {
+class NameControl(val obj: RenamableObject) : StackPane() {
     val isEditing = reactiveVariable(false)
 
     private val field = TextField().alwaysHGrow() styleClass "name-field"
@@ -30,7 +32,9 @@ class NameControl(val obj: RenamableObject) : HBox() {
     init {
         styleClass("name-control")
         field.text = obj.name.now
-        children.addAll(label, actionBar)
+        children.addAll(label, HBox(infiniteSpace(), actionBar))
+        actionBar.visibleProperty().bind(hoverProperty())
+        setAlignment(actionBar, Pos.CENTER_RIGHT)
         field.addEventFilter(KeyEvent.ANY) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
                 ev.consume()
