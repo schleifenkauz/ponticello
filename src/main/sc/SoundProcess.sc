@@ -202,12 +202,19 @@ SoundProcess {
 
 	startNewInstance { |pos, cutoff=0, extra_controls, server_latency, player_id, midiTrack=nil|
 		var inst = this.createInstance(pos, cutoff, extra_controls);
-		var placement = AudioNodeOrder.insert(inst);
+		var placement;
+		if (midiTrack.notNil) {
+			placement = (addAction: \addToTail, target: midiTrack.group);
+		} {
+			placement = AudioNodeOrder.insert(inst);
+		};
 		postf("Placement for %: %\n", name, placement);
 		try {
 			inst.start(placement, server_latency, player_id, midiTrack);
 		} { |err|
-			AudioNodeOrder.remove(inst);
+			if (midiTrack.notNil) {
+				AudioNodeOrder.remove(inst);
+			};
 			err.throw;
 		};
 		^inst.idx;
