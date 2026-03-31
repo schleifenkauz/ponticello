@@ -9,6 +9,7 @@ import ponticello.model.score.MeterObject
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
 import ponticello.sc.client.OSCSuperColliderClient
+import ponticello.ui.launcher.PonticelloFiles
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable
@@ -92,7 +93,7 @@ abstract class Conductor(
         receiver.startListening()
         receiver.dispatcher.addListener(OSCSuperColliderClient.ALL_MESSAGES, this)
 
-        val rubatoDir = File(System.getProperty("user.home"), "dev/rubato")
+        val rubatoDir = player.context[PonticelloFiles].resolve("lib/rubato")
         val pythonExe = rubatoDir.resolve(".venv/bin/python").absolutePath
         val startAt = System.currentTimeMillis() / 1000 + options.countdownTime.now
         analysisProcess = startVideoAnalysis(pythonExe, rubatoDir, startAt)

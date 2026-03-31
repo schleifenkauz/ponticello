@@ -20,14 +20,16 @@
 	};
 };
 ~execute = { |... command|
-	var cond = Condition.new(false);
+	var cond = Condition.new(false), exit_code;
 	postf("Executing %\n", command);
-	command.unixCmd(postOutput: false) { |exit_code|
-		postf("% finished with exit code %\n", command[0], exit_code);
+	command.unixCmd(postOutput: false) { |code|
+		postf("% finished with exit code %\n", command[0], code);
+		exit_code = code;
 		cond.test = true;
 		cond.signal;
 	};
 	cond.wait;
+	^exit_code;
 };
 
 ~unzip = { |archive, dest, label|
@@ -254,7 +256,7 @@ if (thisProcess.platform.name == \linux) {
 			["chmod", "+x", ~startCommandFile].unixCmd;
 		};
 
-		if (~launcher.postln == true) {
+		if (~launcher == true) {
 			~desktop_file_content = File.use((~installDir +/+ "resources/Ponticello.desktop").postln, "r", _.readAllString)
 			.replace("<ponticello_home>", ~installDir).postln;
 			~desktop_files = Platform.userHomeDir +/+ ".local/share/applications";
@@ -263,9 +265,38 @@ if (thisProcess.platform.name == \linux) {
 			~delete.(~installDir +/+ "resources");
 		};
 
-		if (~conductor) {
-			//TODO install Conductor Interface
+		if (~conductor == true) {
+			var python_installed = ~execute.("python3.11") == 0;
+			if (python_installed.not) {
+				~install_python.();
+			};
+
+			~time_warp_version = "v0.1.1";
+			~time_warp_ext_url = "https://github.com/schleifenkauz/time_warp/releases/download" +/+ ~time_warp_version;
+			~file_name = Platform.case(
+				\osx, "TimeWarp-macOS.zip",
+				\linux, "TimeWarp-Linux-x64.zip",
+				\windows, "TimeWarp-Windows-x64.zip"
+			);
+			~time_warp_zip = ~tmp +/+ "timewarp.zip";
+			~download.(~time_warp_ext_url +/+ ~file_name, ~time_warp_zip);
+			~extract.(~time_warp_zip, Platform.userExtensionDir);
+
+			~rubato_version = "0.1.0"
+			~rubato_warp_url = "https://github.com/schleifenkauz/rubato/archive/refs/tags/v%.zip".format(~rubato_version);
+			~rubato_zip = ~tmp +/+ "rubato.zip";
+			~download.(~rubato_warp_url, ~rubato_zip);
+			~extract.(~rubato_zip, ~libDir);
+			~rubato_dir = ~libDir +/+ "rubato";
+			~move.(~libDir +/+ "rubato-%".format(~rubato_version), ~rubato_dir);
+
+			~venv = ~rubato_dir +/+ ".venv"
+			~pip = ~venv +/+ "lib/python3.11/site-packages/pip";
+			~execute.("python3.11", "-m", "venv", ~venv);
+			~execute.(~pip, "install", "-r", ~rubato_dir +/+ "requirements.txt");
 		};
+
+		//TODO add PONTICELLO_HOME and PONTICELLO_PROJECTS to environment variables.
 
 		//File.delete(~tmp);
 
