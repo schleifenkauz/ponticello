@@ -1,10 +1,16 @@
 package ponticello.ui.registry
 
 import fxutils.actions.registerShortcuts
+import fxutils.button
+import fxutils.centerChildren
 import fxutils.prompt.PromptPlacement
+import fxutils.prompt.nextToTarget
 import fxutils.registerShortcuts
+import fxutils.styleClass
 import javafx.scene.Node
+import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
+import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import ponticello.model.GlobalSettings
 import ponticello.model.instr.ConfigurableInstrumentObject
@@ -30,14 +36,24 @@ abstract class ParameterizedObjectDefPane<T : ConfigurableInstrumentObject>(
             val param = listView.showPopup(promptPlacement) ?: return null
             return param.copy().withName(param.name.now)
         }
-
-        override val enableAddObjectButton: Boolean
-            get() = true
     }
     private val parametersList = ObjectListView(def.parameters, config, scrollable = false)
 
     init {
-        val layout = VBox(parametersList, this.getContent(def))
+        val layout = VBox(
+            3.0,
+            HBox(
+                5.0,
+                Label("Parameters") styleClass "small-heading",
+                button("Add") { ev ->
+                    val promptPlacement = ev.nextToTarget()
+                    parametersList.addObject(promptPlacement)
+                }
+            ).centerChildren(),
+            parametersList,
+            Label("Code") styleClass "small-heading",
+            this.getContent(def)
+        )
         this.content = layout
 //        val actions = InstrumentRegistryPane.actions.withContext(def)
 //        if (ownWindow) {

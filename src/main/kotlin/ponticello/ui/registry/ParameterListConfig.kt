@@ -142,6 +142,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                     popup.showBelow(box.actionBar)
                 }
             }
+            add(ObjectBox.removeObjectAction)
         }
     }
 }
