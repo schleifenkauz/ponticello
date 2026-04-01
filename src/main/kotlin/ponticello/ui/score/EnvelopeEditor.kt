@@ -8,7 +8,6 @@ import hextant.context.compoundEdit
 import javafx.beans.binding.Bindings
 import javafx.geometry.HorizontalDirection
 import javafx.geometry.Point2D
-import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton.PRIMARY
@@ -16,7 +15,8 @@ import javafx.scene.input.MouseButton.SECONDARY
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
-import javafx.scene.shape.*
+import javafx.scene.shape.Circle
+import javafx.scene.shape.Polyline
 import ponticello.impl.*
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.Envelope
@@ -57,19 +57,17 @@ class EnvelopeEditor(
     private val mouseInfo = Label() styleClass "coordinate-info"
     private val handles = mutableListOf<Circle>()
     private val innerCircles = mutableListOf<Circle>()
-    private val curveHandles = mutableListOf<Circle>()
-    private val innerCurveHandles = mutableListOf<Circle>()
-    private val path = Path() styleClass "envelope-line"
+    private val line = Polyline() styleClass "envelope-line"
 
     var singleEnvelopeMode = false
 
     init {
         mouseInfo.isVisible = false
-        path.strokeProperty().bind(color.asObservableValue())
-        path.strokeWidthProperty().bind(Bindings.createDoubleBinding({
-            if (pane.prefWidth > WIDTH_THRESHOLD && path.isHover) 4.0
+        line.strokeProperty().bind(color.asObservableValue())
+        line.strokeWidthProperty().bind(Bindings.createDoubleBinding({
+            if (pane.prefWidth > WIDTH_THRESHOLD && line.isHover) 4.0
             else 2.0
-        }, pane.prefWidthProperty(), path.hoverProperty()))
+        }, pane.prefWidthProperty(), line.hoverProperty()))
         mouseInfo.textFillProperty().bind(objectView.backgroundColor.map(Color::invert).asObservableValue())
         configureMouseActions()
         setupPositionInfo()
@@ -78,11 +76,11 @@ class EnvelopeEditor(
     }
 
     private fun setupPositionInfo() {
-        path.setOnMouseEntered {
+        line.setOnMouseEntered {
             if (pane.prefWidth >= WIDTH_THRESHOLD) mouseInfo.isVisible = true
         }
-        path.setOnMouseExited { mouseInfo.isVisible = false }
-        path.setOnMouseMoved { ev ->
+        line.setOnMouseExited { mouseInfo.isVisible = false }
+        line.setOnMouseMoved { ev ->
             if (pane.prefWidth < WIDTH_THRESHOLD) return@setOnMouseMoved
             val t = objectView.getDuration(ev.x)
             val v = envelope.interpolateValueAt(t, spec.warp)
@@ -92,7 +90,7 @@ class EnvelopeEditor(
 
     private fun setupLineDragging() {
         var draggingSegment = false
-        path.setupDragging(
+        line.setupDragging(
             defaultCursor = Cursors.CROSS_HAIR, dragCursor = Cursors.RESIZE_VERTICAL,
             onPressed = { ev: MouseEvent ->
                 if (ev.modifiers.isNotEmpty()) return@setupDragging false
@@ -133,7 +131,7 @@ class EnvelopeEditor(
                 ev.consume()
             }
         }
-        path.setOnMouseClicked { ev ->
+        line.setOnMouseClicked { ev ->
             when {
                 ev.button == PRIMARY && ev.isControlDown -> {
                     val root = parentPane.root
@@ -208,66 +206,18 @@ class EnvelopeEditor(
     }
 
     override fun addedPoint(idx: Int, point: EnvelopePoint) {
-        val pathElement = getPathElement(idx, point)
-        path.elements.add(idx, pathElement)
-        addHandle(idx, point)
-        if (idx > 0) {
-            addCurveHandle(idx, point)
-        }
-    }
-
-    private fun addCurveHandle(idx: Int, point: EnvelopePoint) {
-        val prevPoint = envelope.points[idx - 1]
-        val (x, y) = getMiddlePoint(prevPoint, point)
-        val handle = Circle(x, y, CURVE_HANDLE_RADIUS)
-        val innerCircle = Circle(x, y, 0.0)
-        setHandleStyle(handle, innerCircle)
-        setupCurveHandle(handle)
-        pane.children.add(innerCircle)
-        pane.children.add(handle)
-        curveHandles.add(idx - 1, handle)
-        innerCurveHandles.add(idx - 1, innerCircle)
-    }
-
-    private fun setupCurveHandle(handle: Circle) {
-        handle.setupDragging(
-            startDragEvent = MouseEvent.MOUSE_PRESSED,
-            defaultCursor = Cursors.CROSS_HAIR, dragCursor = Cursors.CROSS_HAIR
-        ) { ev, start, old, dx, dy ->
-            val idx = curveHandles.indexOf(handle)
-            val pathElement = path.elements[idx + 1] as? QuadCurveTo ?: return@setupDragging
-            val x = old.centerX + dx
-            val y = old.centerY + dy
-            pathElement.controlX = x
-            pathElement.controlY = y
-            handle.centerX = x
-            handle.centerY = y
-        }
-    }
-
-    private fun setHandleStyle(handle: Circle, innerCircle: Circle): Circle {
-        handle.visibleProperty().bind(pane.prefWidthProperty().greaterThanOrEqualTo(WIDTH_THRESHOLD))
-        innerCircle.centerXProperty().bind(handle.centerXProperty())
-        innerCircle.centerYProperty().bind(handle.centerYProperty())
-        innerCircle.fillProperty().bind(color.asObservableValue())
-        handle.fill = Color.TRANSPARENT
-        handle.strokeProperty().bind(Bindings.createObjectBinding({
-            if (handle.isFocused) color.now.invert() else color.now.darker()
-        }, handle.focusedProperty(), color.asObservableValue()))
-        handle.viewOrder = -1000.0
-        return innerCircle
+        val x = objectView.getWidth(point.time)
+        val y = yTransform.map(point.value.toDouble())
+        line.points.addAll(idx * 2, listOf(x, y))
+        addHandle(idx, x, y)
     }
 
     override fun removedPoint(idx: Int, point: EnvelopePoint) {
         val handle = handles.removeAt(idx)
         val innerCircle = innerCircles.removeAt(idx)
-        val curveHandle = curveHandles.removeAt(idx)
-        val innerCurveHandle = innerCurveHandles.removeAt(idx)
         pane.children.remove(handle)
         pane.children.remove(innerCircle)
-        pane.children.remove(curveHandle)
-        pane.children.remove(innerCurveHandle)
-        path.elements.removeAt(idx)
+        line.points.remove(idx * 2, (idx + 1) * 2)
     }
 
     override fun changedPoint(idx: Int, newPoint: EnvelopePoint) {
@@ -280,24 +230,8 @@ class EnvelopeEditor(
         handles[idx].centerX = tx
         handles[idx].centerY = ty
 
-        if (idx != 0) {
-            val prevPoint = envelope.points[idx - 1]
-            val middleT = (prevPoint.time + newPoint.time) / 2
-            val warp = prevPoint.curve ?: spec.warp
-            val value = envelope.interpolateValueAt(middleT, warp)
-            curveHandles[idx - 1].centerX = objectView.getWidth(middleT)
-            curveHandles[idx - 1].centerY = yTransform.map(value.toDouble())
-        }
-        if (idx != envelope.points.indices.last) {
-            val nextPoint = envelope.points[idx + 1]
-            val middleT = (newPoint.time + nextPoint.time) / 2
-            val warp = newPoint.curve ?: spec.warp
-            val value = envelope.interpolateValueAt(middleT, warp)
-            curveHandles[idx].centerX = objectView.getWidth(middleT)
-            curveHandles[idx].centerY = yTransform.map(value.toDouble())
-        }
-
-        path.elements[idx] = getPathElement(idx, newPoint)
+        line.points[idx * 2] = tx
+        line.points[idx * 2 + 1] = ty
     }
 
     private fun transformXToTime(x: Double): Decimal {
@@ -323,59 +257,29 @@ class EnvelopeEditor(
     }
 
     override fun repaint() {
-        val myNodes = mutableSetOf<Node>()
-        for (nodes in listOf(handles, innerCircles, curveHandles, innerCurveHandles)) {
-            myNodes.addAll(nodes)
-            nodes.clear()
-        }
-        pane.children.removeIf { it in myNodes }
-        path.elements.clear()
+        pane.children.removeAll(handles)
+        pane.children.removeAll(innerCircles)
+        handles.clear()
+        innerCircles.clear()
+        line.points.clear()
         if (mouseInfo !in pane.children) pane.children.add(mouseInfo)
-        if (path !in pane.children) pane.children.add(path)
+        if (line !in pane.children) pane.children.add(line)
         for ((idx, p) in envelope.points.withIndex()) {
-            val pathElement = getPathElement(idx, p)
-            path.elements.add(pathElement)
-            addHandle(idx, p)
-            if (idx != 0) {
-                addCurveHandle(idx, p)
-            }
+            val x = objectView.getWidth(p.time)
+            val y = yTransform.map(p.value.toDouble())
+            line.points.addAll(x, y)
+            addHandle(idx, x, y)
         }
-    }
-
-    private fun getPathElement(idx: Int, p: EnvelopePoint): PathElement {
-        val tx = objectView.getWidth(p.time)
-        val ty = yTransform.map(p.value.toDouble())
-        return if (idx == 0) MoveTo(tx, ty) else {
-            val prev = envelope.points[idx - 1]
-            val (mx, my) = getMiddlePoint(prev, p)
-            QuadCurveTo(mx, my, tx, ty)
-        }
-    }
-
-    private fun getViewCoords(p: EnvelopePoint): Point {
-        val tx = objectView.getWidth(p.time)
-        val ty = yTransform.map(p.value.toDouble())
-        return Point(tx, ty)
-    }
-
-    private fun getMiddlePoint(p1: EnvelopePoint, p2: EnvelopePoint): Point {
-        val middleT = (p1.time + p2.time) / 2
-        val warp = p1.curve ?: spec.warp
-        val value = envelope.interpolateValueAt(middleT, warp)
-        val mx = objectView.getWidth(middleT)
-        val my = yTransform.map(value.toDouble())
-        return Point(mx, my)
     }
 
     private fun removeChildren() {
         pane.children.removeAll(handles)
         pane.children.removeAll(innerCircles)
-        pane.children.remove(path)
+        pane.children.remove(line)
         pane.children.remove(mouseInfo)
     }
 
-    private fun addHandle(idx: Int, p: EnvelopePoint) {
-        val (x, y) = getViewCoords(p)
+    private fun addHandle(idx: Int, x: Double, y: Double) {
         val handle = Circle(x, y, HANDLE_RADIUS)
         handle.visibleProperty().bind(pane.prefWidthProperty().greaterThanOrEqualTo(WIDTH_THRESHOLD))
         val midiContext = EnvelopeMidiContext(envelope, spec, idx)
@@ -386,8 +290,15 @@ class EnvelopeEditor(
         innerCircle.radiusProperty().bind(midiContext.isActive.asObservableValue().map { midiActive ->
             if (midiActive) HANDLE_RADIUS / 2 else HANDLE_RADIUS / 3
         })
+        innerCircle.centerXProperty().bind(handle.centerXProperty())
+        innerCircle.centerYProperty().bind(handle.centerYProperty())
         handle.isFocusTraversable = true
-        setHandleStyle(handle, innerCircle)
+        innerCircle.fillProperty().bind(color.asObservableValue())
+        handle.fill = Color.TRANSPARENT
+        handle.strokeProperty().bind(Bindings.createObjectBinding({
+            if (handle.isFocused) color.now.invert() else color.now.darker()
+        }, handle.focusedProperty(), color.asObservableValue()))
+        handle.viewOrder = -1000.0
         setupHandle(handle)
         pane.children.add(innerCircle)
         pane.children.add(handle)
@@ -552,11 +463,9 @@ class EnvelopeEditor(
     }
 
     private fun bringToFront() {
-        path.toFront()
+        line.toFront()
         innerCircles.forEach { h -> h.toFront() }
         handles.forEach { h -> h.toFront() }
-        curveHandles.forEach { h -> h.toFront() }
-        innerCurveHandles.forEach { h -> h.toFront() }
     }
 
     fun dispose() {
@@ -566,7 +475,6 @@ class EnvelopeEditor(
 
     companion object {
         private const val HANDLE_RADIUS = 8.0
-        private const val CURVE_HANDLE_RADIUS = 5.0
         private const val WIDTH_THRESHOLD = 50.0
     }
 }
