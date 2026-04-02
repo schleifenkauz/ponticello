@@ -15,7 +15,7 @@ import ponticello.model.obj.project
 import ponticello.model.project.instruments
 import ponticello.model.registry.reference
 
-class InstrumentSelectorPopup(
+class InstrumentSelectorPrompt(
     private val context: Context,
 ) : SelectorPrompt<InstrumentReference>("Select instrument") {
     override fun options(): List<InstrumentReference> = context.project.instruments

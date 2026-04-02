@@ -33,6 +33,7 @@ import ponticello.ui.registry.ListDisplayConfig.Companion.insertObjectAction
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectBox.Companion.removeObjectAction
 import ponticello.ui.registry.ObjectListView
+import ponticello.ui.score.InstrumentSelectorPrompt
 import ponticello.ui.score.ParameterControlsPane
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
@@ -78,7 +79,7 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
 
     override fun getHeaderContent(obj: MidiInstrument): List<Node> = when (obj) {
         is SoundProcessMidiInstrument -> {
-            val selectorButton = InstrumentSelectorPopup(obj.context).selectorButton(obj.reference)
+            val selectorButton = InstrumentSelectorPrompt(obj.context).selectorButton(obj.reference)
             listOf(
                 label(obj.reference.map { it.get()?.instrumentType ?: "<unresolved>" }),
                 hspace(1.0),

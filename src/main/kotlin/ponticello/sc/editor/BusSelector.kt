@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import fxutils.prompt.PromptPlacement
 import javafx.scene.input.DataFormat
 import ponticello.model.instr.BusObject
 import ponticello.model.server.BusRegistry
@@ -30,7 +31,7 @@ class BusSelector : ObjectSelector<BusObject>() {
         (expectedRate.now == null || obj.rate == expectedRate.now) &&
                 (expectedChannels.now == null || obj.channels.now == expectedChannels.now)
 
-    override fun createNewObject(name: String): BusObject {
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement): BusObject {
         val rate = expectedRate.now ?: Rate.Audio
         val channels = expectedChannels.now ?: if (rate == Rate.Audio) 2 else 1
         return BusObject.create(rate, name, channels)

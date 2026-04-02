@@ -164,7 +164,7 @@ object ScoreActions : Action.Collector<NavigableScorePane>({
     }
 
     private fun RegularScorePane.createSoundObject(promptPlacement: PromptPlacement): SoundProcess? {
-        val instrument = InstrumentSelectorPopup(context).showPopup(promptPlacement) ?: return null
+        val instrument = InstrumentSelectorPrompt(context).showPopup(promptPlacement) ?: return null
         val defaultBus = (associatedObject as? ScoreObjectGroup)?.defaultBusRef?.now?.get()
         val controls = SoundProcessView.getInitialControls(
             instrument.get()!!, context, defaultBus, promptPlacement

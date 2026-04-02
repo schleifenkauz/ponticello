@@ -42,8 +42,9 @@ class GlobalPatternRegistryPane(
 
     override fun defaultState(): ToolPaneState = ListToolPaneState.docked
 
-    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): GlobalPatternObject =
-        GlobalPatternObject.create(name)
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): GlobalPatternObject {
+        return GlobalPatternObject.create(name)
+    }
 
     override fun getEditorRoot(obj: GlobalPatternObject): EditorRoot<out ScExprEditor<*>> = obj.patternCode
 

@@ -84,7 +84,7 @@ class SoundProcessView(
     }
 
     override fun configureInlineControls() {
-        val instrumentSelector = InstrumentSelectorPopup(context).selectorButton(
+        val instrumentSelector = InstrumentSelectorPrompt(context).selectorButton(
             obj.instrumentRef,
             undoManager = context[UndoManager], actionDescription = "Select instrument"
         )
@@ -121,7 +121,7 @@ class SoundProcessView(
             val viewInstrumentBtn = ScoreObjectActions.localObjectActions.getAction("View definition")
                 .withContext(obj)
                 .makeButton("medium-icon-button")
-            val selectorBtn = InstrumentSelectorPopup(context).selectorButton(
+            val selectorBtn = InstrumentSelectorPrompt(context).selectorButton(
                 obj.instrumentRef, undoManager = context[UndoManager], actionDescription = "Select instrument"
             )
             selectorBtn.setupDropArea(InstrumentDropHandler(obj.instrumentRef, context))

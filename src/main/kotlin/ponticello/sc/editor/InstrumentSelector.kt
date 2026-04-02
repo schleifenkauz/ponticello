@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import fxutils.prompt.PromptPlacement
 import javafx.scene.input.DataFormat
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.InstrumentRegistry
@@ -9,7 +10,7 @@ import ponticello.ui.registry.InstrumentRegistryPane
 class InstrumentSelector : ObjectSelector<InstrumentObject>() {
     override fun getOptions(): List<InstrumentObject> = context[InstrumentRegistry]
 
-    override fun createNewObject(name: String): InstrumentObject? =
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement): InstrumentObject? =
         context[AppLayout].get<InstrumentRegistryPane>().createNewObject(name, null)
 
     override fun dataFormat(): DataFormat = InstrumentObject.DATA_FORMAT

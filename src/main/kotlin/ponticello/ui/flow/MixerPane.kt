@@ -48,6 +48,7 @@ import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.getFrom
 import ponticello.ui.midi.AkaiMidiMix
+import ponticello.ui.midi.MidiDeviceSelectorPrompt
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
@@ -108,11 +109,13 @@ class MixerPane(
             field = value
         }
 
-    private val deviceSelector = PropertySelectorButton(
-        this::selectedDevice,
-        prompt = ponticello.ui.midi.MidiDeviceSelectorPrompt(MidiDeviceSpec.Type.SOURCE, context),
-        defaultValue = MidiDeviceSpec.none()
-    )
+    private val deviceSelector by lazy {
+        PropertySelectorButton(
+            this::selectedDevice,
+            prompt = MidiDeviceSelectorPrompt(MidiDeviceSpec.Type.SOURCE, context),
+            defaultValue = MidiDeviceSpec.none()
+        )
+    }
 
     private val mixerSelector = PropertySelectorButton(
         this::selectedMixer,
@@ -153,6 +156,7 @@ class MixerPane(
         val state = initialState
         if (state is MixerPaneState) {
             state.flowReference.resolve(allMixerFlows())
+            midiMixer.initialize(context)
             mixerSelector.update(state.flowReference)
             if (state.midiDevice !is MidiDeviceSpec.None) {
                 deviceSelector.update(state.midiDevice)

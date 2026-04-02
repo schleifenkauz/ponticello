@@ -1,11 +1,13 @@
 package ponticello.sc.editor
 
+import fxutils.prompt.PromptPlacement
 import hextant.core.editor.SimpleChoiceEditor
 import hextant.serial.string
 import javafx.scene.input.DataFormat
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import ponticello.model.obj.NamedObject
+import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import reaktive.value.*
@@ -18,6 +20,10 @@ abstract class ObjectSelector<O : NamedObject> :
         private set
 
     private var excluded: () -> Collection<O> = { emptyList() }
+
+    open val objectType: String
+        get() = (getOptions() as? ObjectList)?.objectType
+            ?: throw NotImplementedError("getOptions() did not return an ObjectList and objectType is not defined")
 
     abstract fun getOptions(): List<O>
 
@@ -44,7 +50,7 @@ abstract class ObjectSelector<O : NamedObject> :
     override fun choices(): List<ObjectReference<O>> =
         (getOptions() - excluded().toSet()).filter(::filter).map { obj -> obj.reference() }
 
-    abstract fun createNewObject(name: String): O?
+    abstract fun createNewObject(name: String, promptPlacement: PromptPlacement): O?
 
     override fun toString(choice: ObjectReference<O>): ReactiveString = choice.isResolved.flatMap { resolved ->
         when {

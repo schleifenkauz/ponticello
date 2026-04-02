@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import fxutils.prompt.PromptPlacement
 import javafx.scene.input.DataFormat
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry
@@ -25,8 +26,8 @@ class BufferSelector : ObjectSelector<BufferObject>() {
     override fun filter(obj: BufferObject): Boolean =
         expectedChannels.now == null || obj.channels() == expectedChannels.now
 
-    override fun createNewObject(name: String): BufferObject? =
-        context[AppLayout].get<BufferRegistryPane>().createNewObject(name, null)
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement): BufferObject? =
+        context[AppLayout].get<BufferRegistryPane>().createNewObject(name, promptPlacement)
 
     override fun dataFormat(): DataFormat = BufferObject.DATA_FORMAT
 }

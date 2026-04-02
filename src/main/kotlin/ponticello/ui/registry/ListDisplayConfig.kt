@@ -97,7 +97,7 @@ interface ListDisplayConfig<O : Any> {
 
     fun configureSubWindow(window: SubWindow, obj: O) {}
 
-    fun getDragTarget(box: ObjectBox<O>): Node = box.nameLabel ?: box.header
+    fun getDragTarget(box: ObjectBox<O>): Node = box.header
 
     fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> =
         if (dragboard.hasContent(dataFormat)) {

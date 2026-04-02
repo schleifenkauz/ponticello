@@ -158,7 +158,7 @@ object ScoreObjectActions {
                     .map { obj -> (obj as ParameterizedObject).getInstrument() }
                     .singleOrNull()?.reference()
                 val placement = ev?.nextToTarget() ?: ctx.context.defaultPlacement
-                val newInstrument = InstrumentSelectorPopup(ctx.context)
+                val newInstrument = InstrumentSelectorPrompt(ctx.context)
                     .selectInitialOption(commonInstrument)
                     .showDialog(placement) ?: return@executes
                 for (obj in ctx.selectedObjects) {

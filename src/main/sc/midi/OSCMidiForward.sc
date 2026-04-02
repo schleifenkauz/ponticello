@@ -1,10 +1,9 @@
 OSCMidiForward : MidiInstrument {
-	var track, inst;
+	var track;
 
 	attachTo { |device_name|
 		if (track.isNil) {
-			inst = super.new;
-			track = MidiTrack.new(nil, device_name, [inst]);
+			track = MidiTrack.new(nil, device_name, [this]);
 		} {
 			track.sourceDevice = device_name;
 		}

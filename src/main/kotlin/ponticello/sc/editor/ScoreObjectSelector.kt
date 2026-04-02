@@ -1,5 +1,6 @@
 package ponticello.sc.editor
 
+import fxutils.prompt.PromptPlacement
 import javafx.scene.input.DataFormat
 import ponticello.model.obj.project
 import ponticello.model.project.objects
@@ -16,5 +17,5 @@ class ScoreObjectSelector : ObjectSelector<ScoreObject>() {
 
     override fun dataFormat(): DataFormat = ScoreObject.DATA_FORMAT
 
-    override fun createNewObject(name: String): ScoreObject? = null
+    override fun createNewObject(name: String, promptPlacement: PromptPlacement): ScoreObject? = null
 }

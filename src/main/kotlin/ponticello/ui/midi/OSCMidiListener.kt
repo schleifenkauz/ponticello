@@ -31,9 +31,8 @@ abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() 
 
     fun attachTo(device: MidiDeviceSpec) {
         attached.now = try {
-            client.eval(
-                "$superColliderVar.attachTo(${device.code})"
-            ).get().toBooleanStrictOrNull() ?: false
+            client.eval("$superColliderVar.attachTo(${device.code})")
+                .get().toBooleanStrictOrNull() ?: false
         } catch (e: Exception) {
             Logger.error("Failed to attach to MIDI device $device", e, Logger.Category.Midi)
             false

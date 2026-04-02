@@ -2,16 +2,21 @@ package ponticello.sc.view
 
 import bundles.Bundle
 import bundles.createBundle
+import fxutils.centerChildren
 import fxutils.drag.DropHandler
 import fxutils.drag.setupDropArea
+import fxutils.prompt.PromptPlacement
 import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.compoundEdit
 import hextant.core.view.SimpleChoiceEditorControl
 import javafx.application.Platform
+import javafx.scene.control.Label
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
@@ -24,11 +29,22 @@ import reaktive.value.now
 
 class ObjectSelectorControl<O : NamedObject>(
     private val selector: ObjectSelector<O>, arguments: Bundle = createBundle(),
+    private val displayType: Boolean = false
 ) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments), DropHandler {
     init {
         root.setupDropArea(this)
-        root.setOnDragDetected(::dragDetected)
+        selectorButton.setOnDragDetected(::dragDetected)
     }
+
+    override fun createDefaultRoot(): Region =
+        if (displayType) {
+            val label = Label(selector.objectType)
+            label.setOnMouseClicked { ev ->
+                select()
+                ev.consume()
+            }
+            HBox(5.0, label, selectorButton).centerChildren()
+        } else super.createDefaultRoot()
 
     @Suppress("unused")
     private fun dragDetected(ev: MouseEvent) {
@@ -75,7 +91,8 @@ class ObjectSelectorControl<O : NamedObject>(
     ) : RegistrySelectorPrompt<O>(registry, "Select ${registry.objectType}") {
         override val canCreateItem: Boolean get() = true
 
-        override fun createObject(name: String): O? = selector.createNewObject(name)
+        override fun createObject(name: String): O? =
+            selector.createNewObject(name, PromptPlacement.RelativeTo(this@ObjectSelectorControl))
 
         override fun displayText(option: O): String = selector.toString(option).now
     }

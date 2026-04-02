@@ -320,8 +320,8 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
-    registerControlFactory { editor: BusSelector, arguments ->
-        ObjectSelectorControl(editor, arguments)
+    registerControlFactory { editor: ObjectSelector<*>, arguments ->
+        ObjectSelectorControl(editor, arguments, displayType = true)
     }
 
     registerControlFactory { editor: EventDictionaryEditor, arguments ->
