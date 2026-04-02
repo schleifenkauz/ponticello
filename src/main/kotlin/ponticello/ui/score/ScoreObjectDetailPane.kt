@@ -25,7 +25,6 @@ import ponticello.model.instr.ParameterizedObject
 import ponticello.model.project.PonticelloProject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.UnresolvedScoreObject
-import ponticello.ui.actions.ArrowKeys
 import ponticello.ui.actions.ObjectActionContext
 import ponticello.ui.actions.ScoreObjectActions
 import ponticello.ui.controls.NameControl
@@ -152,7 +151,6 @@ class ScoreObjectDetailPane : ToolPane() {
         popup.isAutoFix = true
         popup.sizeToScene()
         popup.sceneFill(DEFAULT_SCENE_FILL.opacity(0.5))
-        ArrowKeys.registerArrowKeys(popup.scene, context)
         return popup
     }
 

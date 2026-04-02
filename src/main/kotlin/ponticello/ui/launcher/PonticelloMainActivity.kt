@@ -73,7 +73,7 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         }
         registerMainActivityShortcuts()
         primaryStage.initStyle(StageStyle.UNDECORATED)
-        ArrowKeys.registerArrowKeys(primaryStage.scene, context)
+        ArrowKeys.registerArrowKeys(mainScoreView, context)
         primaryStage.title = "Ponticello: ${project.name}"
         primaryStage.isResizable = true
         primaryStage.sceneFill(DEFAULT_SCENE_FILL)

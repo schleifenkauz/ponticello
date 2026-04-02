@@ -12,9 +12,9 @@ import javafx.geometry.HorizontalDirection.LEFT
 import javafx.geometry.HorizontalDirection.RIGHT
 import javafx.geometry.VerticalDirection.DOWN
 import javafx.geometry.VerticalDirection.UP
-import javafx.scene.Scene
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
+import javafx.scene.layout.Region
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.ScoreObject
@@ -22,9 +22,9 @@ import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.ScoreObjectSelectionManager
 
 object ArrowKeys {
-    fun registerArrowKeys(scene: Scene, context: Context) {
+    fun registerArrowKeys(region: Region, context: Context) {
         val selector = context[ScoreObjectSelectionManager]
-        scene.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
+        region.addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
             if (ev.code in setOf(KeyCode.PAGE_UP, KeyCode.PAGE_DOWN)) {
                 val rootPane = selector.focusedScorePane.root
                 if (rootPane is NavigableScorePane) {
