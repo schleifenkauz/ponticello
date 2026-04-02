@@ -2,6 +2,8 @@ package ponticello.sc.view
 
 import bundles.Bundle
 import bundles.createBundle
+import fxutils.actions.action
+import fxutils.actions.makeButton
 import fxutils.centerChildren
 import fxutils.drag.DropHandler
 import fxutils.drag.setupDropArea
@@ -17,6 +19,7 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
+import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
@@ -25,15 +28,21 @@ import ponticello.model.registry.reference
 import ponticello.sc.editor.ObjectSelector
 import ponticello.ui.impl.getFrom
 import ponticello.ui.registry.RegistrySelectorPrompt
+import reaktive.value.fx.asObservableValue
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 class ObjectSelectorControl<O : NamedObject>(
     private val selector: ObjectSelector<O>, arguments: Bundle = createBundle(),
     private val displayType: Boolean = false
 ) : SimpleChoiceEditorControl<ObjectReference<O>>(selector, arguments), DropHandler {
+    private val viewSelected = viewSelectedAction.withContext(selector)
+    private val viewButton = viewSelected.makeButton("small-icon-button")
+
     init {
         root.setupDropArea(this)
         selectorButton.setOnDragDetected(::dragDetected)
+        viewButton.managedProperty().bind(viewSelected.isApplicable.asObservableValue())
     }
 
     override fun createDefaultRoot(): Region =
@@ -43,7 +52,7 @@ class ObjectSelectorControl<O : NamedObject>(
                 select()
                 ev.consume()
             }
-            HBox(5.0, label, selectorButton).centerChildren()
+            HBox(3.0, label, selectorButton, viewButton).centerChildren()
         } else super.createDefaultRoot()
 
     @Suppress("unused")
@@ -99,5 +108,16 @@ class ObjectSelectorControl<O : NamedObject>(
 
     private inner class SimpleListSelectorPrompt(registry: List<O>) : SimpleSelectorPrompt<O>(registry, "Select") {
         override fun displayText(option: O): String = selector.toString(option).now
+    }
+
+    companion object {
+        private val viewSelectedAction = action<ObjectSelector<*>>("View") {
+            icon(MaterialDesignE.EYE)
+            enableWhen { selector ->
+                if (selector.canViewSelected) selector.isResolved
+                else reactiveValue(false)
+            }
+            executes { selector -> selector.viewSelected() }
+        }
     }
 }

@@ -17,7 +17,9 @@ import javafx.scene.paint.Color
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC
 import ponticello.model.code.GlobalPatternObject
 import ponticello.model.code.GlobalPatternRegistry
+import ponticello.ui.dock.AppLayout
 import ponticello.ui.misc.CodePane
+import ponticello.ui.registry.GlobalPatternRegistryPane
 
 class GlobalPatternSelector : ObjectSelector<GlobalPatternObject>() {
     override fun getOptions(): List<GlobalPatternObject> = context[GlobalPatternRegistry]
@@ -26,6 +28,13 @@ class GlobalPatternSelector : ObjectSelector<GlobalPatternObject>() {
         NewGlobalPatternPrompt(name, context).showDialog(promptPlacement)
 
     override fun dataFormat(): DataFormat = GlobalPatternObject.DATA_FORMAT
+
+    override val canViewSelected: Boolean
+        get() = true
+
+    override fun viewObject(obj: GlobalPatternObject) {
+        context[AppLayout].get<GlobalPatternRegistryPane>().showContent(obj)
+    }
 
     private class NewGlobalPatternPrompt(
         name: String, private val context: Context

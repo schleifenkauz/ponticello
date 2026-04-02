@@ -14,4 +14,11 @@ class InstrumentSelector : ObjectSelector<InstrumentObject>() {
         context[AppLayout].get<InstrumentRegistryPane>().createNewObject(name, null)
 
     override fun dataFormat(): DataFormat = InstrumentObject.DATA_FORMAT
+
+    override val canViewSelected: Boolean
+        get() = true
+
+    override fun viewObject(obj: InstrumentObject) {
+        context[AppLayout].get<InstrumentRegistryPane>().showContent(obj)
+    }
 }

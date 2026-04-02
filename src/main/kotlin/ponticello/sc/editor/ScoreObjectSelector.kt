@@ -6,6 +6,8 @@ import ponticello.model.obj.project
 import ponticello.model.project.objects
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.SoundProcess
+import ponticello.ui.dock.AppLayout
+import ponticello.ui.score.ScoreObjectViewPane
 
 class ScoreObjectSelector : ObjectSelector<ScoreObject>() {
     override fun filter(obj: ScoreObject): Boolean = when {
@@ -18,4 +20,11 @@ class ScoreObjectSelector : ObjectSelector<ScoreObject>() {
     override fun dataFormat(): DataFormat = ScoreObject.DATA_FORMAT
 
     override fun createNewObject(name: String, promptPlacement: PromptPlacement): ScoreObject? = null
+
+    override val canViewSelected: Boolean
+        get() = true
+
+    override fun viewObject(obj: ScoreObject) {
+        context[AppLayout].get<ScoreObjectViewPane>().showContent(obj)
+    }
 }

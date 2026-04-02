@@ -29,6 +29,17 @@ abstract class ObjectSelector<O : NamedObject> :
 
     open fun filter(obj: O): Boolean = true
 
+    open val canViewSelected: Boolean get() = false
+
+    protected open fun viewObject(obj: O) {
+        throw NotImplementedError("view() is not implemented for ${javaClass.simpleName}")
+    }
+
+    fun viewSelected() {
+        val obj = result.now.get() ?: return
+        viewObject(obj)
+    }
+
     fun exclude(excluded: () -> Collection<O>) {
         this.excluded = excluded
     }

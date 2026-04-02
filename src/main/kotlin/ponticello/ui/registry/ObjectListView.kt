@@ -477,8 +477,10 @@ class ObjectListView<O : Any>(
             return getBox(obj).showSubWindow()
         } else {
             select(obj)
+            val box = getBox(obj) ?: return null
+            box.setExpanded(true)
             runAfterLayout {
-                getBox(obj).content()?.requestFocus()
+                box.content()?.requestFocus()
             }
             return null
         }
