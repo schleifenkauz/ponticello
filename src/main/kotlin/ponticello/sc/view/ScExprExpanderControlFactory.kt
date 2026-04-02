@@ -67,7 +67,7 @@ object ScExprExpanderControlFactory : ControlFactory<AbstractScExprExpander<*>> 
                 result.text.first() == '~' -> "env-ref"
                 result.text.first().isUpperCase() -> "class-ref"
                 else -> when (resolution) {
-                    is MidiVariable, is InstanceVariable -> "keyword"
+                    is MidiVariable, is InstanceVariable, is MathConstantVariable -> "keyword"
                     is BoundIdentifier -> "variable-ref"
                     is ParameterControlVariable, is ParameterDefVariable -> "parameter-ref"
                     else -> null

@@ -10,7 +10,6 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.ctx.PonticelloContext
-import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractSuperColliderObject
 import ponticello.model.obj.GlobalPatternReference
 import ponticello.model.obj.withName
@@ -38,11 +37,12 @@ class GlobalPatternObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        val myContext = context.extend {
-            set(PonticelloContext, PonticelloContext.GlobalPattern(this@GlobalPatternObject))
-            set(Scope, Scope.createEmpty())
+        if (!patternCode.editor.isInitialized) {
+            val myContext = context.extend {
+                set(PonticelloContext, PonticelloContext.GlobalPattern(this@GlobalPatternObject))
+            }
+            patternCode.initialize(myContext)
         }
-        patternCode.initialize(myContext)
     }
 
     override fun ScWriter.freeObject() {
