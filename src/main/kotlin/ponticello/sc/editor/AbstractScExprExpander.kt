@@ -45,7 +45,7 @@ abstract class AbstractScExprExpander<E : ScExpr> : ConfiguredExpander<E, ScExpr
 
     @Suppress("UNCHECKED_CAST")
     override fun autoExpand(text: String): Boolean = when {
-        text.endsWith(".") -> {
+        text.endsWith(".") && text.dropLast(1).toIntOrNull() == null -> {
             val objExpr = ScExprExpander(text.removeSuffix("."))
             val propertyName = IdentifierEditor("")
             autoExpandTo(PropertyAccessExprEditor(objExpr, propertyName) as ScExprEditor<E>)
@@ -57,7 +57,7 @@ abstract class AbstractScExprExpander<E : ScExpr> : ConfiguredExpander<E, ScExpr
             autoExpandTo(AccessKeyEditor(objExpr, keyExpr) as ScExprEditor<E>)
         }
 
-        else -> false
+        else -> super.autoExpand(text)
     }
 
     override fun onExpansion(editor: ScExprEditor<E>) {
