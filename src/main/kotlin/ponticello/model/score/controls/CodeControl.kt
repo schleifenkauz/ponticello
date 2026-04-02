@@ -7,7 +7,9 @@ import hextant.context.Context
 import hextant.context.extend
 import hextant.serial.EditorRoot
 import kotlinx.serialization.Transient
-import ponticello.model.ctx.*
+import ponticello.model.ctx.ParameterControlVariable
+import ponticello.model.ctx.PonticelloContext
+import ponticello.model.ctx.Scope
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.midi.ParameterizedMidiInstrument
 import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
@@ -31,18 +33,14 @@ sealed class CodeControl : ParameterControl() {
                 set(PonticelloContext, PonticelloContext.Control(namedControl))
                 val parent = context.getOrNull(Scope)
                 val scope = Scope.fromList(namedControl.controls, parent, ::ParameterControlVariable)
-                with(scope) {
-                    add(InstanceVariable)
-                    if (namedControl.parentObject is ParameterizedMidiInstrument) {
-                        add(MidiVariable.PITCH)
-                        add(MidiVariable.VELOCITY)
-                    }
-                }
+                scope.defineBoundVariables(namedControl)
                 set(Scope, scope)
             }
             expr.initialize(myContext)
         }
     }
+
+    protected open fun Scope.defineBoundVariables(namedControl: NamedParameterControl) {}
 
     companion object {
         @JvmStatic

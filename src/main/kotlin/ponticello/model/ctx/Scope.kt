@@ -138,6 +138,8 @@ class Scope private constructor(private val parent: Scope? = null) {
             for (className in classList.getClassNames()) {
                 add(SuperColliderClass(className))
             }
+            add(MathConstantVariable("pi"))
+            add(MathConstantVariable("inf"))
         }
     }
 }

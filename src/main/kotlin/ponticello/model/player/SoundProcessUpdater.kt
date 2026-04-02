@@ -85,7 +85,7 @@ class SoundProcessUpdater<O>(
                 val expr = control.expr.editor.result.now
                 val (subst, references) = UGenControl.substituteParameterReferences(expr, obj)
                 val code = subst.code(control.context)
-                updateControl(parameter, "update($references) { |inst| $code } ")
+                updateControl(parameter, "update($references) { $code } ")
             }
 
             is ExprControl -> control.update.stream.observe { _ ->

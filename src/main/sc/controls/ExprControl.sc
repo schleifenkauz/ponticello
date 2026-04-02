@@ -17,7 +17,7 @@ ExprControl : ParameterControl {
 		func = new_func;
 		if (this.sound_proc.type != \routine) {
 			this.updateInstances { |inst|
-				inst.set(func.value(inst));
+				inst.set(this.name, func.value(inst));
 			}
 		}
 	}

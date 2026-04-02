@@ -171,7 +171,7 @@ data class NumericalControlSpec(
             return if (value !in spec.range) {
                 val newMin = minOf(spec.min.get(), value)
                 val newMax = maxOf(spec.max.get(), value)
-                if (updateRange(newMin, newMax)) null else value
+                if (updateRange(newMin, newMax)) value else null
             } else value
         }
 

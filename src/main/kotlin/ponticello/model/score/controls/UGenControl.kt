@@ -24,7 +24,7 @@ data class UGenControl(
     override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String {
         val expr = expr.editor.result.now
         val (subst, referencesStr) = substituteParameterReferences(expr, obj)
-        return "LFOControl('$parameter', $referencesStr) { |inst| ${subst.code(context)} }"
+        return "LFOControl('$parameter', $referencesStr) { ${subst.code(context)} }"
     }
 
     companion object {

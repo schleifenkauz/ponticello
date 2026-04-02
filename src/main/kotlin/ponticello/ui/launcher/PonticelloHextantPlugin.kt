@@ -283,7 +283,7 @@ object PonticelloHextantPlugin : PluginInitializer({
             }
         }
         executing { editor ->
-            val control = editor.context[EditorControlGroup].getViewOf(editor)
+            val anchor = editor.context[EditorControlGroup].getViewOf(editor)
             val defaultValue = editor.result.now
             if (defaultValue !is DecimalLiteral) {
                 Logger.error("Could not extract parameter default value.")
@@ -293,38 +293,31 @@ object PonticelloHextantPlugin : PluginInitializer({
                 defaultValue, defaultValue, defaultValue,
                 Warp.Linear, DecimalLiteral(one), DecimalLiteral(AttackReleaseControl.DEFAULT), randomColor()
             )
-            when (val ctx = editor.context[PonticelloContext]) {
-                is PonticelloContext.Control -> {
-                    val controls = ctx.control.parentObject.controls
-                    val name = NamePrompt(controls, "Control name", "")
-                        .showDialog(control) ?: return@executing
-                    val spec = NumericalControlSpecPrompt(
-                        name, ctx.control.parentObject, initialSpec, "Configure parameter"
-                    ).showDialog(control) ?: return@executing
-                    val ctrl = ValueControl.create(defaultValue.get())
-                    val idx = controls.indexOf(ctx.control)
-                    editor.context.compoundEdit("Extract parameter") {
-                        controls.addControl(name, ctrl, customSpec = spec, idx)
-                        val selector = ParameterControlSelector()
-                        selector.selectInitial(controls.get(name))
-                        editor.expand(ParameterReferenceEditor(selector))
+            val controls = when (val ctx = editor.context[PonticelloContext]) {
+                is PonticelloContext.Control -> ctx.control.parentObject.controls
+                is PonticelloContext.InstrumentDef -> ctx.def.parameters
+                else -> return@executing
+            }
+            val name = NamePrompt(controls, "${controls.objectType} name", "")
+                .showDialog(anchor) ?: return@executing
+            val spec = NumericalControlSpecPrompt(name, null, initialSpec, "Configure parameter")
+                .showDialog(anchor) ?: return@executing
+            editor.context.compoundEdit("Extract parameter") {
+                when (val ctx = editor.context[PonticelloContext]) {
+                    is PonticelloContext.Control -> {
+                        val ctrl = ValueControl.create(defaultValue.get())
+                        val idx = controls.indexOf(ctx.control)
+                        ctx.control.controls.addControl(name, ctrl, customSpec = spec, idx)
                     }
-                }
 
-                is PonticelloContext.InstrumentDef -> {
-                    val parameters = ctx.def.parameters
-                    val name = NamePrompt(parameters, "Parameter name", "")
-                        .showDialog(control) ?: return@executing
-                    val spec = NumericalControlSpecPrompt(name, null, initialSpec, "Configure parameter")
-                        .showDialog(control) ?: return@executing
-                    val param = ParameterDefObject(name, spec)
-                    editor.context.compoundEdit("Extract parameter") {
-                        parameters.add(param)
-                        editor.setText(name)
+                    is PonticelloContext.InstrumentDef -> {
+                        val param = ParameterDefObject(name, spec)
+                        ctx.def.parameters.add(param)
                     }
-                }
 
-                else -> throw AssertionError("Unexpected context type: $ctx")
+                    else -> throw AssertionError()
+                }
+                editor.setText(name)
             }
         }
     }
