@@ -3,6 +3,7 @@ package ponticello.ui.dock
 import kotlinx.serialization.Serializable
 import ponticello.model.flow.AudioFlowGroup
 import ponticello.model.flow.MixerFlow
+import ponticello.model.midi.MidiDeviceSpec
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectReference
 import ponticello.ui.misc.HelpBrowser
@@ -67,7 +68,7 @@ class FlowPaneState private constructor(): ListToolPaneState() {
 @Serializable
 class MixerPaneState private constructor(): ToolPaneState() {
     var flowReference: ObjectReference<MixerFlow> = ObjectReference.none()
-    var midiDeviceName: String? = null
+    var midiDevice: MidiDeviceSpec = MidiDeviceSpec.None
 
     companion object {
         fun default() = MixerPaneState().apply {

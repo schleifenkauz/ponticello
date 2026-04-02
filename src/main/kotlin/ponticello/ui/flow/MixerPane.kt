@@ -30,6 +30,7 @@ import ponticello.model.flow.AudioFlows
 import ponticello.model.flow.MixerFlow
 import ponticello.model.flow.MixerFlow.Companion.VOLUME_SPEC
 import ponticello.model.instr.BusObject
+import ponticello.model.midi.MidiDeviceSpec
 import ponticello.model.obj.BusReference
 import ponticello.model.obj.project
 import ponticello.model.project.PonticelloProject
@@ -47,7 +48,6 @@ import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.getFrom
 import ponticello.ui.midi.AkaiMidiMix
-import ponticello.ui.misc.MidiDeviceSelectorPrompt
 import ponticello.ui.registry.ListDisplayConfig
 import ponticello.ui.registry.ObjectBox
 import ponticello.ui.registry.ObjectListView
@@ -57,8 +57,6 @@ import reaktive.value.binding.equalTo
 import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.fx.asObservableValue
-import javax.sound.midi.MidiDevice
-import javax.sound.midi.MidiSystem
 
 class MixerPane(
     private val listConfig: MixerComponentListConfig,
@@ -97,32 +95,23 @@ class MixerPane(
             val flow = value.get()
             listConfig.setMixer(flow)
             channelsList = flow?.let { m -> ObjectListView(m.components, this, scrollable = true) }
-            midiMixer.flow = flow
+            midiMixer.connectedFlow = flow
             relayout()
             runAfterLayout {
                 window?.sizeToScene()
             }
         }
 
-    private var selectedDevice: MidiDeviceSelectorPrompt.Option = MidiDeviceSelectorPrompt.Option.NoDevice
+    private var selectedDevice: MidiDeviceSpec = MidiDeviceSpec.none()
         set(value) {
-            if (value is MidiDeviceSelectorPrompt.Option.Device) {
-                try {
-                    midiMixer.detach()
-                    midiMixer.attachTo(value.info)
-                } catch (e: Exception) {
-                    Logger.error("Unable to attach to $value")
-                    field = MidiDeviceSelectorPrompt.Option.NoDevice
-                    return
-                }
-            }
+            midiMixer.attachTo(value)
             field = value
         }
 
     private val deviceSelector = PropertySelectorButton(
         this::selectedDevice,
-        prompt = MidiDeviceSelectorPrompt(),
-        defaultValue = MidiDeviceSelectorPrompt.Option.NoDevice
+        prompt = ponticello.ui.midi.MidiDeviceSelectorPrompt(MidiDeviceSpec.Type.SOURCE, context),
+        defaultValue = MidiDeviceSpec.none()
     )
 
     private val mixerSelector = PropertySelectorButton(
@@ -135,8 +124,8 @@ class MixerPane(
         mixerSelector.update(mixer.reference())
     }
 
-    fun selectDevice(info: MidiDevice.Info) {
-        deviceSelector.update(MidiDeviceSelectorPrompt.Option.Device(info))
+    fun selectDevice(device: MidiDeviceSpec) {
+        deviceSelector.update(device)
     }
 
     override val headerContent: Node
@@ -165,15 +154,8 @@ class MixerPane(
         if (state is MixerPaneState) {
             state.flowReference.resolve(allMixerFlows())
             mixerSelector.update(state.flowReference)
-            if (state.midiDeviceName != null) {
-                val device = MidiSystem.getMidiDeviceInfo().find { d ->
-                    d.name == state.midiDeviceName && d.javaClass.simpleName.startsWith("MidiIn")
-                }
-                if (device != null) {
-                    deviceSelector.update(MidiDeviceSelectorPrompt.Option.Device(device))
-                } else {
-                    Logger.warn("Unable to find midi device ${state.midiDeviceName}", Logger.Category.AudioFlow)
-                }
+            if (state.midiDevice !is MidiDeviceSpec.None) {
+                deviceSelector.update(state.midiDevice)
             }
         }
         setupVolumeChangeWithArrowKeys()
@@ -227,8 +209,7 @@ class MixerPane(
         super.saveState(dest)
         if (dest is MixerPaneState) {
             dest.flowReference = selectedMixer
-            val device = selectedDevice as? MidiDeviceSelectorPrompt.Option.Device
-            dest.midiDeviceName = device?.info?.name
+            dest.midiDevice = selectedDevice
         }
     }
 
