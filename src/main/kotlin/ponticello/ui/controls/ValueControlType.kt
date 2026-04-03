@@ -62,7 +62,7 @@ data object ValueControlType : ControlType<ValueControl>() {
             if (ev.clickCount == 2 && ev.button == MouseButton.PRIMARY) {
                 val spec = namedControl.spec.now as? NumericalControlSpec ?: return@setOnMouseClicked
                 val oldValue = control.value.now
-                val newValue = DecimalPrompt(namedControl.name.now, oldValue, spec.range)
+                val newValue = DecimalPrompt(namedControl.name.now, oldValue, spec.precision, spec.range)
                     .showDialog(anchorNode = valueLabel) ?: return@setOnMouseClicked
                 val actionDescription = "Update ${namedControl.name.now}"
                 VariableEdit.updateVariable(control.value, newValue, control.context[UndoManager], actionDescription)

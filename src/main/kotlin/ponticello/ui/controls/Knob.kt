@@ -145,7 +145,8 @@ class Knob(
 
     private fun showValueInput() {
         val range = spec.min.get()..spec.max.get()
-        val v = DecimalPrompt("$parameter ($range)", variable.get(), range).showDialog(anchorNode = this) ?: return
+        val v = DecimalPrompt("$parameter ($range)", variable.get(), spec.precision, range)
+            .showDialog(anchorNode = this) ?: return
         variable.set(v.withPrecision(spec.precision))
     }
 
@@ -167,6 +168,7 @@ class Knob(
                 }
                 ev.consume()
             }
+
             decreaseKey, "MINUS" -> {
                 if (ev.eventType == KeyEvent.KEY_PRESSED) {
                     decrease()

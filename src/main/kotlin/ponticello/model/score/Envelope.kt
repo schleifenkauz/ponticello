@@ -16,7 +16,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.listSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import ponticello.impl.*
+import ponticello.impl.Decimal
+import ponticello.impl.withPrecision
+import ponticello.impl.zero
 import ponticello.sc.*
 import ponticello.ui.score.EnvelopeView
 import kotlin.math.max
@@ -28,6 +30,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
 
     @Transient
     lateinit var context: Context
+        private set
 
     val points: List<EnvelopePoint> get() = _points
 
@@ -46,16 +49,6 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
 
     fun initialize(context: Context) {
         this.context = context
-        //this is only for needed when opening projects that were created before the decimal-precision update
-        val itr = _points.listIterator()
-        for (p in itr) {
-            itr.set(
-                EnvelopePoint(
-                    p.time.withPrecision(ObjectPosition.TIME_PRECISION),
-                    p.value.withPrecision(ObjectPosition.Y_PRECISION)
-                )
-            )
-        }
     }
 
     fun code(defaultWarp: Warp): String {
@@ -85,10 +78,10 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         val (x2, y2) = if (i == points.size) points[i - 2] else points[i]
         if (x1 == x2) return y1 //to prevent NaN
         val precision = max(y1.precision, y2.precision)
-        val slope = (warp.map(y2.value) - warp.map(y1.value)) / (x2 - x1)
+        val slope = (warp.map(y2.value) - warp.map(y1.value)) / (x2 - x1).value
         val dx = t - x1
-        val dy = slope * dx
-        return warp.unmap((warp.map(y1.toDouble()) + dy).toDouble()).withPrecision(precision)
+        val dy = slope * dx.value
+        return warp.unmap((warp.map(y1.toDouble()) + dy)).withPrecision(precision)
     }
 
     fun copy() = Envelope(_points.toMutableList())

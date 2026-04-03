@@ -33,7 +33,7 @@ import reaktive.value.*
 sealed class ScoreObject : AbstractSuperColliderObject() {
     abstract val type: String
     open val canMute: Boolean get() = true
-    open val canDuplicate: Boolean get() = false
+    open val canDuplicate: Boolean get() = true
     private val _associatedColor: ReactiveVariable<@Serializable(with = ColorSerializer::class) Color?> =
         reactiveVariable(null)
 

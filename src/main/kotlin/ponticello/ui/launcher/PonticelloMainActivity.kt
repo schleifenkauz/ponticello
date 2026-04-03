@@ -60,7 +60,6 @@ class PonticelloMainActivity(val project: PonticelloProject) : Activity() {
         player.connectPlayHead(mainScoreView.playHead)
         val playbackMessageListener = PlaybackMessageListener(project.objects, project.flows, player)
         context[SuperColliderClient].addListener(playbackMessageListener)
-        context[SuperColliderClient].addListener(context[ContextualMidiReceiver])
     }
 
     override fun beforeShowing() {

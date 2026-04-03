@@ -317,7 +317,7 @@ class MixerPane(
         volumeBox.setOnMouseClicked { _ ->
             val title = "Volume of ${bus.get().name.now}"
             val placement = PromptPlacement.RelativeTo(volumeBox)
-            volume.now = DecimalPrompt(title, volume.now, VOLUME_SPEC.range)
+            volume.now = DecimalPrompt(title, volume.now, VOLUME_SPEC.precision, VOLUME_SPEC.range)
                 .showDialog(placement) ?: return@setOnMouseClicked
         }
         setMargin(volumeBox, Insets(0.0, 3.0, 0.0, 3.0))

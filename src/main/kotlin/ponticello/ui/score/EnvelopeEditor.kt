@@ -422,21 +422,10 @@ class EnvelopeEditor(
         envelope.editPoint(idx, value.value.snap(valueGrid))
     }
 
-    private fun showValuePrompt(point: EnvelopePoint, anchor: Point2D): Decimal? {
-        val value = DecimalPrompt("Value for $parameterName", point.value)
+    private fun showValuePrompt(point: EnvelopePoint, anchor: Point2D): Decimal? =
+        DecimalPrompt("Value for $parameterName", point.value, spec.precision)
             .showDialog(pane.scene.window, anchor)
-            ?.checkRange(anchor) ?: return null
-        if (value !in spec.range) {
-            val adjustSpec = YesNoPrompt("The value is not in the range ${spec.range}. Adjust the spec?")
-                .showDialog(pane.scene.window, anchor) ?: return null
-            if (adjustSpec) {
-                val min = DecimalLiteral(minOf(value, spec.range.start))
-                val max = DecimalLiteral(maxOf(value, spec.range.endInclusive))
-                namedControl.setCustomSpec(spec.copy(min = min, max = max))
-            } else return null
-        }
-        return value
-    }
+            ?.checkRange(anchor)
 
     private fun removePoint(idx: Int) {
         when (idx) {
