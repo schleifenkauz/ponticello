@@ -22,6 +22,8 @@ abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() 
 
     private val superColliderVar = "~midi_forward_${idCounter++}"
 
+    private var sourceDevice: String? = "nil"
+
     override fun initialize(context: Context) {
         super.initialize(context)
         client = context[SuperColliderClient]
@@ -30,8 +32,9 @@ abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() 
     }
 
     fun attachTo(device: MidiDeviceSpec) {
+        sourceDevice = device.code
         attached.now = try {
-            client.eval("$superColliderVar.attachTo(${device.code})")
+            client.eval("$superColliderVar.attachTo($sourceDevice)")
                 .get().toBooleanStrictOrNull() ?: false
         } catch (e: Exception) {
             Logger.error("Failed to attach to MIDI device $device", e, Logger.Category.Midi)
@@ -41,25 +44,16 @@ abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() 
 
     override fun acceptMessage(event: OSCMessageEvent) {
         val address = event.message.address
+        if (address !in ACCEPTED_MESSAGES) return
+        val sourceDevice = event.message.getArgument<String>(0, "sourceDevice") ?: return
+        if (sourceDevice != this.sourceDevice) return
+        val num = event.message.getArgument<Int>(1, "num") ?: return
+        val vel = event.message.getArgument<Int>(2, "vel") ?: return
         try {
             when (address) {
-                "/forward_note_on" -> {
-                    val num = event.message.getArgument<Int>(0, "num") ?: return
-                    val vel = event.message.getArgument<Int>(1, "vel") ?: return
-                    noteOn(num, vel)
-                }
-
-                "/forward_note_off" -> {
-                    val num = event.message.getArgument<Int>(0, "num") ?: return
-                    val vel = event.message.getArgument<Int>(1, "vel") ?: return
-                    noteOff(num, vel)
-                }
-
-                "/forward_cc" -> {
-                    val num = event.message.getArgument<Int>(0, "num") ?: return
-                    val vel = event.message.getArgument<Int>(1, "vel") ?: return
-                    controlChange(num, vel)
-                }
+                "/forward_note_on" -> noteOn(num, vel)
+                "/forward_note_off" -> noteOff(num, vel)
+                "/forward_cc" -> controlChange(num, vel)
             }
         } catch (e: Exception) {
             Logger.error("Exception while processing MIDI message from $address", e, Logger.Category.Midi)
@@ -74,5 +68,6 @@ abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() 
 
     companion object {
         private var idCounter = 0
+        private val ACCEPTED_MESSAGES = setOf("/forward_note_on", "/forward_note_off", "/forward_cc")
     }
 }

@@ -80,9 +80,8 @@ class GridItem(
 
     fun noteOff() {
         if (activeObserver == null) {
-            when (mode.now) {
-                Mode.Toggle -> active!!.toggle()
-                else -> active!!.set(false)
+            if (mode.now != Mode.Toggle) {
+                active!!.set(false)
             }
         }
     }

@@ -11,14 +11,14 @@ OSCMidiForward : MidiInstrument {
 	}
 
 	noteOn { |num, val, src|
-		Ponticello.sendMsg('/forward_note_on', num, val);
+		Ponticello.sendMsg('/forward_note_on', track.sourceDevice, num, val);
 	}
 
 	noteOff { |num, val, src|
-		Ponticello.sendMsg('/forward_note_off', num, val);
+		Ponticello.sendMsg('/forward_note_off', track.sourceDevice, num, val);
 	}
 
 	control { |num, val, src|
-		Ponticello.sendMsg('/forward_cc', num, val);
+		Ponticello.sendMsg('/forward_cc', track.sourceDevice, num, val);
 	}
 }
