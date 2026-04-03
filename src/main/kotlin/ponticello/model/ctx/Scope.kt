@@ -140,6 +140,9 @@ class Scope private constructor(private val parent: Scope? = null) {
             }
             add(MathConstantVariable("pi"))
             add(MathConstantVariable("inf"))
+            for (char in 'a'..'z') {
+                add(SingleLetterVariable(char))
+            }
         }
     }
 }
