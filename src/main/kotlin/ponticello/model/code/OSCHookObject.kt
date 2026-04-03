@@ -15,7 +15,10 @@ import kotlinx.serialization.Transient
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
 import ponticello.model.obj.AbstractSuperColliderObject
+import ponticello.model.obj.project
 import ponticello.model.obj.withName
+import ponticello.model.project.OSC_HOOKS
+import ponticello.model.project.get
 import ponticello.sc.DisabledExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.getArgument
@@ -41,6 +44,9 @@ class OSCHookObject(
     @Transient
     private val _eventCount = reactiveVariable(0)
     val eventCount: ReactiveInt get() = _eventCount
+
+    override val registry: OSCHookRegistry
+        get() = context.project[OSC_HOOKS]
 
     override fun initialize(context: Context) {
         super.initialize(context)

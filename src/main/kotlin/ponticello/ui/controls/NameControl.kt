@@ -35,7 +35,7 @@ class NameControl(val obj: RenamableObject) : StackPane() {
         children.addAll(label, HBox(infiniteSpace(), actionBar))
         actionBar.visibleProperty().bind(hoverProperty())
         setAlignment(actionBar, Pos.CENTER_RIGHT)
-        field.addEventFilter(KeyEvent.KEY_TYPED) { ev ->
+        field.addEventFilter(KeyEvent.ANY) { ev ->
             if ("ENTER".shortcut.matches(ev)) {
                 ev.consume()
                 if (ev.eventType == KeyEvent.KEY_RELEASED) {

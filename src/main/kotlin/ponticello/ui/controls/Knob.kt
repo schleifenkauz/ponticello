@@ -6,6 +6,7 @@ import fxutils.styleClass
 import fxutils.undo.UndoManager
 import fxutils.undo.VariableEdit
 import javafx.geometry.Point2D
+import javafx.scene.Cursor
 import javafx.scene.control.Control
 import javafx.scene.control.Label
 import javafx.scene.control.Tooltip
@@ -13,6 +14,7 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
+import javafx.scene.robot.Robot
 import javafx.scene.shape.Arc
 import javafx.scene.shape.Circle
 import javafx.scene.shape.Line
@@ -77,6 +79,7 @@ class Knob(
                     if (inputMethod == InputMethod.Vertical || inputMethod == InputMethod.Horizontal) {
                         valueBefore = variable.now
                         dragStart = Point2D(ev.screenX, ev.screenY)
+                        cursor = Cursor.NONE
                         startFullDrag()
                     }
                     ev.consume()
@@ -120,6 +123,8 @@ class Knob(
                         val actionDescription = "Update $parameter"
                         undoManager.record(VariableEdit(variable, valueBefore, actionDescription))
                     }
+                    cursor = Cursor.DEFAULT
+                    robot.mouseMove(dragStart.x, dragStart.y)
                     dragStart = Point2D.ZERO
                     valueBefore = Decimal.NaN
                 }
@@ -256,5 +261,7 @@ class Knob(
         private const val DOT_RADIUS = 3.0
         private const val MAX_DOTS = 20
         private const val DRAG_RANGE = 200.0
+
+        private val robot = Robot()
     }
 }

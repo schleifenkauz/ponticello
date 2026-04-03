@@ -159,7 +159,7 @@ SoundProcessInstance : AudioNode {
 		placement = plcmnt;
 		start_time = TempoClock.beats;
 		server_latency = latency ? Server.local.latency;
-		player_id = playerId;
+		player_id = playerId ? -1;
 		midi_track = midiTrack;
 		forkIfNeeded {
 			if (placement.notNil && (def.type != \midi)) {

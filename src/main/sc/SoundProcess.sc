@@ -201,7 +201,7 @@ SoundProcess {
 	}
 
 	startNewInstance { |pos, cutoff=0, extra_controls, server_latency, player_id, midiTrack=nil|
-		var inst = this.createInstance(pos, cutoff, extra_controls);
+		var inst = this.createInstance(pos ? (t: 0, y: 0), cutoff, extra_controls);
 		var placement;
 		if (midiTrack.notNil) {
 			placement = (addAction: \addToTail, target: midiTrack.group);

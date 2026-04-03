@@ -1,7 +1,6 @@
 package ponticello.model.instr
 
 import bundles.getOrNull
-import bundles.publicProperty
 import bundles.set
 import hextant.context.Context
 import hextant.context.SelectionDistributor
@@ -146,8 +145,6 @@ class CustomizableSynthDefObject(
     }
 
     companion object {
-        val editedSynthDef = publicProperty<CustomizableSynthDefObject>("edited synth def")
-
         fun create(name: String) = CustomizableSynthDefObject(
             color = reactiveVariable(randomColor()),
             parameters = ParameterDefList(),
