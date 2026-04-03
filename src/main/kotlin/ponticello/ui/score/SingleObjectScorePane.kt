@@ -4,6 +4,7 @@ import fxutils.background
 import fxutils.styleClass
 import hextant.context.Context
 import javafx.scene.canvas.Canvas
+import javafx.scene.input.MouseButton
 import javafx.scene.paint.Color
 import javafx.scene.shape.Line
 import ponticello.impl.*
@@ -100,7 +101,7 @@ class SingleObjectScorePane(
         gridCanvas.height = TempoGrid.GRID_HEIGHT
         gridCanvas.setOnMouseClicked { ev ->
             val (t, _) = snapToGrid(ev.x, ev.y)
-            if (playHead.canMoveManually.now) {
+            if (!playHead.player.isScheduled.now || ev.button == MouseButton.SECONDARY) {
                 playHead.movePlayHead(t)
             }
             ev.consume()

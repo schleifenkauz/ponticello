@@ -192,7 +192,7 @@ abstract class RootScorePane(
             } else g.unmark()
         }
         positionTracker.layoutX = getX(t)
-        if (playHead.canMoveManually.now) {
+        if (!playHead.player.isScheduled.now) {
             timeCodeView.displayTime(t)
         }
     }

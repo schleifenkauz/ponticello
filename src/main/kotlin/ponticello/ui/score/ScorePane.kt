@@ -232,7 +232,7 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
                 ev.consume()
                 selector.deselectAll()
                 requestFocus()
-                if (playHead.canMoveManually.now) { //TODO pause and replay if currently playing
+                if (!playHead.player.isScheduled.now) {
                     playHead.movePlayHead(t)
                 }
             }
@@ -245,6 +245,15 @@ abstract class ScorePane(val score: Score, val context: Context) : Pane(), Score
         when (ev.modifiers) {
             setOf(Alt, Shift) -> {
                 pasteFromSystemClipboard(ev)
+            }
+            noModifiers -> {
+                if (this is RootScorePane) {
+                    val (t, y) = snapToGrid(ev.x, ev.y)
+                    playHead.movePlayHead(t)
+                    if (!playHead.player.isScheduled.now) {
+                        playHead.player.play()
+                    }
+                }
             }
         }
     }
