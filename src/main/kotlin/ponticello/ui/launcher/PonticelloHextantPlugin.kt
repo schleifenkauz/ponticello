@@ -195,6 +195,28 @@ object PonticelloHextantPlugin : PluginInitializer({
 
     commandDelegation<ScExprEditor<*>> { editor -> editor.expander }
 
+    registerCommand<SymbolLiteralEditor, Unit> {
+        shortName = "convert-to-string"
+        name = "Convert to string"
+        applicableIf { editor -> editor.expander is ScExprExpander }
+        executing { editor ->
+            val expander = editor.expander as? ScExprExpander ?: return@executing
+            val newEditor = StringLiteralEditor(editor.text.now)
+            expander.expand(newEditor, "Convert symbol to string")
+        }
+    }
+
+    registerCommand<StringLiteralEditor, Unit> {
+        shortName = "convert-to-symbol"
+        name = "Convert to symbol"
+        applicableIf { editor -> editor.expander is ScExprExpander }
+        executing { editor ->
+            val expander = editor.expander as? ScExprExpander ?: return@executing
+            val newEditor = SymbolLiteralEditor(editor.text.now)
+            expander.expand(newEditor, "Convert string to symbol")
+        }
+    }
+
     registerCommand<ScExprEditor<*>, Unit> {
         shortName = "unwrap"
         name = "Unwrap and replace parent"

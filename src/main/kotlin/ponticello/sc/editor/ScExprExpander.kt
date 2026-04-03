@@ -77,9 +77,11 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
             )
 
             text == "\\" -> SymbolLiteralEditor().defaultState()
+            text == "'" -> SymbolLiteralEditor().defaultState()
             text == "\"" -> StringLiteralEditor().defaultState()
             text == "{" -> ScFunctionEditor().defaultState()
             text == "(" -> CodeBlockEditor().defaultState()
+            text == "[" -> ArrayExprEditor().defaultState()
             text.endsWith("(") && Identifier.isValid(text.dropLast(1)) -> {
                 val function = IdentifierEditor(text.dropLast(1))
                 val arguments = ScExprListEditor(ScExprExpander().defaultState())

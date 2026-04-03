@@ -51,7 +51,7 @@ abstract class AbstractScExprExpander<E : ScExpr> : ConfiguredExpander<E, ScExpr
             autoExpandTo(PropertyAccessExprEditor(objExpr, propertyName) as ScExprEditor<E>)
         }
 
-        text.endsWith("[") -> {
+        text.endsWith("[") && text.removeSuffix("[").isNotBlank() -> {
             val objExpr = ScExprExpander(text.removeSuffix("["))
             val keyExpr = ScExprExpander().defaultState()
             autoExpandTo(AccessKeyEditor(objExpr, keyExpr) as ScExprEditor<E>)
