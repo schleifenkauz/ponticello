@@ -29,6 +29,7 @@ sealed interface ScElement {
 }
 
 fun ScElement.code(context: Context): String {
+    if (!isValid) return "nil /*invalid expr*/"
     val writer = StringWriter()
     val scWriter = ScWriter(writer)
     code(scWriter, context)

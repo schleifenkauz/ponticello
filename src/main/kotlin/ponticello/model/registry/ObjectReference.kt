@@ -41,7 +41,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
 
     fun resolve(registry: List<O>): O? {
         if (obj != null) return obj as O
-        if (_name == "<none>") {
+        if (_name == "<>") {
             isResolved = reactiveValue(false)
             return null
         }
@@ -70,8 +70,8 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
         get() {
             val obj = get()
             return when {
-                _name == NONE -> "<none>"
-                obj == null -> "<unresolved: $_name>"
+                _name == NONE -> "nil /*<none>*/"
+                obj == null -> "nil/*unresolved: $_name*/"
                 obj is SuperColliderObject -> obj.superColliderName
                 else -> error("$obj has no SuperCollider name")
             }

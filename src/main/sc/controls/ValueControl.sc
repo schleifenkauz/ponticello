@@ -81,7 +81,7 @@ ValueControl : ParameterControl {
 				};
 			};
 		} {
-			if (this.sound_proc.notNil && (this.sound_proc.type != \routine)) {
+			if (this.sound_proc.notNil && {this.sound_proc.type != \routine}) {
 				this.updateInstances { |inst|
 					inst.set(this.name, value);
 				}
