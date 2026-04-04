@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/../Hextant" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../fx-utils" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../kollektion" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../krobot" vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
   </component>
 </project>

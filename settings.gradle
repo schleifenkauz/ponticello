@@ -1,1 +1,5 @@
 rootProject.name = "ponticello"
+
+if (file("../Hextant").exists()) {
+    includeBuild("../Hextant")
+}

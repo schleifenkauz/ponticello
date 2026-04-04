@@ -4,10 +4,62 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/../fx-utils" name="fx-utils">
+                <projects>
+                  <project path="$PROJECT_DIR$/../fx-utils" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/../Hextant" name="hextant">
+                <projects>
+                  <project path="$PROJECT_DIR$/../Hextant" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-cli" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-codegen" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-core" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-expr" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-launcher" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-main" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-plugin-plugin" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-plugins" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-plugins/hextant-common" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-plugins/server" />
+                  <project path="$PROJECT_DIR$/../Hextant/hextant-test" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/../kollektion" name="kollektion">
+                <projects>
+                  <project path="$PROJECT_DIR$/../kollektion" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/../krobot" name="krobot">
+                <projects>
+                  <project path="$PROJECT_DIR$/../krobot" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleJvm" value="corretto-19" />
         <option name="modules">
           <set>
+            <option value="$PROJECT_DIR$/../Hextant" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-cli" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-codegen" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-core" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-expr" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-launcher" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-main" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-plugin-plugin" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-plugins" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-plugins/hextant-common" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-plugins/server" />
+            <option value="$PROJECT_DIR$/../Hextant/hextant-test" />
+            <option value="$PROJECT_DIR$/../fx-utils" />
+            <option value="$PROJECT_DIR$/../kollektion" />
+            <option value="$PROJECT_DIR$/../krobot" />
             <option value="$PROJECT_DIR$" />
           </set>
         </option>

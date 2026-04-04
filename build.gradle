@@ -12,12 +12,14 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group 'com.github.nkb03'
+group 'de.schleifenkauz'
 version '0.2.2'
 
 repositories {
     mavenCentral()
-    mavenLocal()
+    maven {
+        url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+    }
 }
 
 ext {
@@ -25,16 +27,7 @@ ext {
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(19))
-    }
-}
-
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = 19
-        freeCompilerArgs += '-opt-in=kotlin.RequiresOptIn'
-    }
+    jvmToolchain(19)
 }
 
 javafx {
@@ -57,7 +50,7 @@ dependencies {
 
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3'
 
-    implementation 'de.schleifenkauz:hextant-core:1.1-SNAPSHOT'
+    implementation 'de.schleifenkauz:hextant-core:1.0-SNAPSHOT'
     implementation 'de.schleifenkauz:hextant-codegen:1.0-SNAPSHOT'
     kapt 'de.schleifenkauz:hextant-codegen:1.0-SNAPSHOT'
 
