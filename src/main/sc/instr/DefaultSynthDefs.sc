@@ -40,7 +40,7 @@ DefaultSynthDefs {
 		var name = ("level_send_" ++ channels.asString).asSymbol;
 		SynthDef(name) {
 			arg bus, id;
-			var sig = In.ar(bus, channels), rms, peak;
+			var sig = In.ar(bus, channels), rms, peak, msgValues;
 
 			rms = Amplitude.kr(sig, 0.01, 0.3).ampdb;
 			rms = rms.lag(\lag.kr(0.05));
@@ -50,7 +50,8 @@ DefaultSynthDefs {
 
 			FreeSelf.kr(1 - \gate.kr(1));
 
-			SendReply.kr(Impulse.kr(\rate.kr(10)), '/bus_levels', rms ++ peak, replyID: id)
+			msgValues = if (channels == 1) { [rms, peak] } { rms ++ peak };
+			SendReply.kr(Impulse.kr(\rate.kr(10)), '/bus_levels', msgValues, replyID: id)
 		}.add;
 		available_send_level_synth_defs.add(channels);
 	}

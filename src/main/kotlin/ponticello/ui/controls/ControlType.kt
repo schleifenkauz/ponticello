@@ -41,19 +41,8 @@ sealed class ControlType<C : ParameterControl> {
         namedControl: NamedParameterControl, control: C, view: ScoreObjectView?,
     ): List<ContextualizedAction> = emptyList()
 
-
     companion object {
-        val all: List<ControlType<*>> = listOf(
-            BusControlType,
-            BufferControlType,
-            ValueControlType,
-            EnvelopeControlType,
-            AttackReleaseControlType,
-            BusValueControlType,
-            ExprControlType,
-            UGenControlType
-        )
-
+        val all: List<ControlType<*>> = ControlType::class.sealedSubclasses.map { it.objectInstance!! }
         @Suppress("UNCHECKED_CAST")
         fun <O : ParameterControl> getType(option: O) = when (option) {
             is ValueControl -> ValueControlType
@@ -63,6 +52,7 @@ sealed class ControlType<C : ParameterControl> {
             is BusValueControl -> BusValueControlType
             is BufferControl -> BufferControlType
             is ExprControl -> ExprControlType
+            is TriggerControl -> TriggerControlType
             is AttackReleaseControl -> AttackReleaseControlType
         } as ControlType<O>
     }

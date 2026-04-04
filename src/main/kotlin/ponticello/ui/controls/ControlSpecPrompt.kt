@@ -114,6 +114,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
 
             ParameterType.BufferPosition -> BufferPositionControlSpec()
             ParameterType.Expr -> ExprControlSpec()
+            ParameterType.Trig -> NumericalControlSpec.TRIGGER
         }
     }
 }

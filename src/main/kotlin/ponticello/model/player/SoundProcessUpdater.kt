@@ -94,6 +94,9 @@ class SoundProcessUpdater<O>(
                 val code = expr.code(control.context)
                 updateControl(parameter, "update { |inst| $code }")
             }
+            is TriggerControl -> control.trigger.stream.observe { _ ->
+                updateControl(parameter, "trigger")
+            }
         }
     }
 

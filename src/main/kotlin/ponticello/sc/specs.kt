@@ -19,7 +19,7 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 enum class ParameterType {
-    Bus, Buffer, Numerical, Expr, BufferPosition, AttackRelease;
+    Bus, Buffer, Numerical, Expr, BufferPosition, Trig, AttackRelease;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
@@ -27,6 +27,7 @@ enum class ParameterType {
         Numerical -> "num"
         Expr -> "expr"
         BufferPosition -> "buf-pos"
+        Trig -> "trig"
         AttackRelease -> "attack-release"
     }
 
@@ -40,6 +41,7 @@ fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
     ParameterType.Buffer -> BufferControlSpec(channels = 2)
     ParameterType.Numerical -> NumericalControlSpec.DEFAULT
     ParameterType.Expr -> ExprControlSpec()
+    ParameterType.Trig -> NumericalControlSpec.TRIGGER
     ParameterType.BufferPosition -> BufferPositionControlSpec()
     ParameterType.AttackRelease -> AttackReleaseControlSpec()
 }
@@ -187,6 +189,7 @@ data class NumericalControlSpec(
         )
 
         val GATE = NumericalControlSpec(one, zero, one, one, Warp.Linear, zero)
+        val TRIGGER = NumericalControlSpec(zero, zero, one, one, Warp.Linear, zero)
 
         val LEVEL = NumericalControlSpec(
             one, zero, one, 0.01.toDecimal(),

@@ -43,6 +43,7 @@ class MidiEffectInstrument(
 
     override fun supports(type: ParameterType): Boolean = when (type) {
         ParameterType.BufferPosition -> false
+        ParameterType.Trig -> false
         else -> true
     }
 
