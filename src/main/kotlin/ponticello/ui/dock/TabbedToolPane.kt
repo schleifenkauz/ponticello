@@ -42,6 +42,7 @@ abstract class TabbedToolPane<T : NamedObject>(protected val items: ObjectList<T
         items.addListener(this)
         val state = initialState
         if (state is TabbedToolPaneState) {
+            @Suppress("UNCHECKED_CAST")
             val selected = state.selected.get() as T?
             if (selected != null) select(selected)
             else if (items.isNotEmpty()) select(items.first())

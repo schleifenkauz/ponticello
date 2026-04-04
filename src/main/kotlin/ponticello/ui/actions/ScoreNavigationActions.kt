@@ -16,6 +16,7 @@ import ponticello.ui.controls.NamePrompt
 import ponticello.ui.score.NavigableScorePane
 import ponticello.ui.score.RectangleSelection
 import ponticello.ui.score.ScoreObjectSelectionManager
+import reaktive.value.binding.not
 import reaktive.value.now
 
 object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
@@ -39,9 +40,9 @@ object ScoreNavigationActions : Action.Collector<NavigableScorePane>({
     addAction("Move playback cursor to start") {
         shortcut("Ctrl+Shift?+DIGIT0")
         icon(Material2MZ.SKIP_PREVIOUS)
-        enableWhen { pane -> pane.playHead.canMoveManually }
+        enableWhen { pane -> pane.playHead.isPlaying.not() }
         executes { pane, ev ->
-            if (!pane.playHead.canMoveManually.now) return@executes
+            if (pane.playHead.isPlaying.now) return@executes
             if (ev.isShiftDown()) {
                 pane.display(0.0.asTime, pane.displayedDuration)
             }

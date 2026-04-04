@@ -11,12 +11,15 @@ import ponticello.ui.score.RootScorePane
 import ponticello.ui.score.ScorePane
 import ponticello.ui.score.TimeCodeView
 import reaktive.Observer
-import reaktive.value.*
+import reaktive.value.ReactiveValue
+import reaktive.value.forEach
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class PlayHead {
     private val attached = mutableListOf<AttachedScorePane>()
     private var _player: ScorePlayer? = null
-    private var _canMoveManually = reactiveVariable(true)
+    private var playing = reactiveVariable(false)
     private lateinit var playerObserver: Observer
 
     var currentTime = 0.0.asTime
@@ -31,11 +34,11 @@ class PlayHead {
             check(_player == null) { "A player is already attached to the play head" }
             _player = p
             playerObserver = p.isScheduled.forEach { scheduled ->
-                _canMoveManually.set(!scheduled)
+                playing.set(scheduled)
             }
         }
 
-    val canMoveManually: ReactiveValue<Boolean> get() = reactiveValue(true)
+    val isPlaying: ReactiveValue<Boolean> get() = playing
 
     fun attachTo(pane: RootScorePane) {
         val playHead = Line() styleClass "play-head"
@@ -74,7 +77,7 @@ class PlayHead {
         for ((pane, timeCodeView, playHead) in attached) {
             if (!pane.children.contains(playHead)) pane.children.add(playHead)
             playHead.layoutX = pane.getX(currentTime)
-            if (!canMoveManually.now) {
+            if (!isPlaying.now) {
                 timeCodeView.displayTime(currentTime)
             }
         }
