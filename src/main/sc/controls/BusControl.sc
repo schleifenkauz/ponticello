@@ -1,11 +1,11 @@
 BusControl : ParameterControl {
-	var bus;
+	var bus, offset;
 
-	* new { |name, bus|
-		^super.new(name).init(bus)
+	* new { |name, bus, offset|
+		^super.new(name).init(bus, offset ? 0)
 	}
 
-	init { |b| bus = b }
+	init { |b, off| bus = b; offset = off }
 
 	getBus { ^bus }
 
@@ -13,14 +13,21 @@ BusControl : ParameterControl {
 
 	getUGen { |inst| ^bus.kr }
 
-    getSynthArgument { |inst| ^bus.asMap }
+    getSynthArgument { |inst| ^bus.subBus(offset).asMap }
 
 	update { |new_bus|
 		bus = new_bus;
 		this.updateInstances { |inst|
-			inst.mapParameter(this.name, bus);
+			inst.mapParameter(this.name, bus.subBus(offset));
 		}
 	}
+
+	offset_ { |val|
+	    offset = val;
+	    this.updateInstances { |inst|
+	        inst.mapParameter(this.name, bus.subBus(offset));
+	    }
+    }
 
 	asString { ^"%: %".format(name, bus) }
 }

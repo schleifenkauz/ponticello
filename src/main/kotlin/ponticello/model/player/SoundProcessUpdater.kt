@@ -10,6 +10,7 @@ import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.code
 import reaktive.Observer
 import reaktive.and
+import reaktive.dependencies
 import reaktive.value.now
 import reaktive.value.observe
 
@@ -53,12 +54,17 @@ class SoundProcessUpdater<O>(
 
     private fun observeControl(parameter: NamedParameterControl, control: ParameterControl) {
         controlObservers[control] = when (control) {
-            is BusControl -> control.bus.observe { _, bus ->
-                updateControl(parameter, "update(${bus.superColliderName})")
+            is BusControl -> dependencies(control.bus, control.offset).observe { _ ->
+                val varName = control.bus.now.superColliderName
+                val offset = control.offset.now
+                val busExpr = if (offset == 0) varName else "$varName.subBus($offset)"
+                updateControl(parameter, "update($busExpr)")
             }
 
             is BusValueControl -> control.bus.observe { _, bus ->
                 updateControl(parameter, "update(${bus.superColliderName})")
+            } and control.offset.observe { _, offset ->
+                updateControl(parameter, "offset = $offset")
             }
 
             is ValueControl -> control.value.observe { _, value ->

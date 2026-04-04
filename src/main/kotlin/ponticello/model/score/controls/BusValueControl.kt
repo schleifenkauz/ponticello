@@ -12,10 +12,14 @@ import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("BusValue")
-class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
+class BusValueControl(
+    val bus: ReactiveVariable<BusReference>,
+    val offset: ReactiveVariable<Int> = reactiveVariable(0)
+) : ParameterControl() {
     override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
         super.initialize(context, namedControl)
         bus.now.resolve(context[BusRegistry])
@@ -32,5 +36,5 @@ class BusValueControl(val bus: ReactiveVariable<BusReference>) : ParameterContro
     }
 
     override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String =
-        "BusControl('$parameter', ${bus.get().superColliderName})"
+        "BusControl('$parameter', ${bus.get().superColliderName}, ${offset.now})"
 }

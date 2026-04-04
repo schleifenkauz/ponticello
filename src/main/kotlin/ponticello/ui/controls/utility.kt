@@ -4,8 +4,10 @@ import fxutils.SubWindow
 import fxutils.actions.ContextualizedAction
 import fxutils.button
 import fxutils.centerChildren
+import fxutils.controls.IntSpinner
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.nextToTarget
+import fxutils.styleClass
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.geometry.Pos
@@ -26,19 +28,39 @@ import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.impl.sceneFill
 import ponticello.ui.misc.CodePane
 import reaktive.value.ReactiveVariable
+import reaktive.value.binding.flatMap
 import reaktive.value.binding.map
 import reaktive.value.now
+import reaktive.value.reactiveValue
 
 fun busSelector(
-    control: ReactiveVariable<BusReference>,
+    variable: ReactiveVariable<BusReference>,
     spec: ControlSpec?, context: Context,
 ): ObjectSelectorControl<BusObject> {
     val editor = BusSelector()
     if (spec is BusControlSpec) editor.setFilter(spec.rate, spec.channels)
     else editor.setFilter(rate = Rate.Control, channels = 1)
-    editor.syncWith(control)
+    editor.syncWith(variable)
     editor.initialize(context)
     return ObjectSelectorControl(editor)
+}
+
+fun busSelectorWithOffsetSpinner(
+    reference: ReactiveVariable<BusReference>, offset: ReactiveVariable<Int>,
+    spec: ControlSpec?, context: Context,
+): HBox {
+    val selector = busSelector(reference, spec, context)
+    val spinner = IntSpinner(offset, 0, (reference.now.get()?.channels?.now ?: 1) - 1)
+    val channels = reference.flatMap { ref -> ref.get()?.channels ?: reactiveValue(1) }
+    spinner.userData = channels.observe { _, _, channels ->
+        spinner.setMax(channels - 1)
+    }
+    return HBox(
+        5.0,
+        selector,
+        Label("+").styleClass("keyword"),
+        spinner
+    ).centerChildren()
 }
 
 fun makeCodePaneWindow(

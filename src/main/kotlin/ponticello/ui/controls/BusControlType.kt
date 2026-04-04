@@ -31,7 +31,7 @@ data object BusControlType : ControlType<BusControl>() {
         namedControl: ParameterControlList.NamedParameterControl,
         control: BusControl,
         view: ScoreObjectView?,
-    ): Node = busSelector(control.bus, namedControl.spec.now, namedControl.context)
+    ): Node = busSelectorWithOffsetSpinner(control.bus, control.offset, namedControl.spec.now, namedControl.context)
 
     override fun createSimpleInput(
         namedControl: ParameterControlList.NamedParameterControl, control: BusControl,

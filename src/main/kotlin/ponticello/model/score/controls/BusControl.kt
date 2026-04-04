@@ -18,13 +18,16 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("Bus")
-class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
+class BusControl(
+    val bus: ReactiveVariable<BusReference>,
+    val offset: ReactiveVariable<Int> = reactiveVariable(0),
+) : ParameterControl() {
     override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
         super.initialize(context, namedControl)
         bus.now.resolve(context[BusRegistry])
     }
 
-    override fun copy(): ParameterControl = BusControl(bus.copy())
+    override fun copy(): ParameterControl = BusControl(bus.copy(), offset.copy())
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
         if (spec !is BusControlSpec) {
@@ -34,8 +37,11 @@ class BusControl(val bus: ReactiveVariable<BusReference>) : ParameterControl() {
         return checkResolution(obj, bus.now, "Bus")
     }
 
-    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String =
-        "ValueControl('$parameter', ${bus.now.superColliderName})"
+    override fun writeCode(parameter: String, spec: ControlSpec?, obj: ParameterizedObject): String {
+        val bus = bus.now.superColliderName
+        val busRef = if (offset.now == 0) bus else "$bus.subBus(${offset.now})"
+        return "ValueControl('$parameter', $busRef)"
+    }
 
     companion object {
         fun create(bus: BusObject) = BusControl(reactiveVariable(bus.reference()))
