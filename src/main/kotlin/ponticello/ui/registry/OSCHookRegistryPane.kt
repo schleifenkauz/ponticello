@@ -1,6 +1,7 @@
 package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
+import fxutils.actions.collectActions
 import fxutils.prompt.PromptPlacement
 import fxutils.styleClass
 import hextant.serial.EditorRoot
@@ -16,6 +17,7 @@ import javafx.scene.input.MouseButton
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
+import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.code.OSCHookObject
 import ponticello.model.code.OSCHookRegistry
 import ponticello.model.obj.SuperColliderObject
@@ -29,6 +31,7 @@ import ponticello.ui.dock.ToolPane
 import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.impl.makeSubWindow
 import ponticello.ui.registry.ObjectListView.DisplayMode
+import reaktive.value.binding.`if`
 import reaktive.value.forEach
 import reaktive.value.now
 
@@ -55,7 +58,9 @@ class OSCHookRegistryPane(
     override fun getEditorRoot(obj: OSCHookObject): EditorRoot<out ScExprEditor<*>> = obj.function
 
     override fun getActions(box: ObjectBox<OSCHookObject>): List<ContextualizedAction> =
-        SuperColliderObject.actions.withContext(box.obj)
+        actions.withContext(box.obj) +
+                SuperColliderObject.actions.withContext(box.obj) +
+                ObjectBox.removeObjectAction.withContext(box)
 
     override fun getHeaderContent(obj: OSCHookObject): List<Node> {
         val btn = Button() styleClass "event-count-button"
@@ -95,6 +100,19 @@ class OSCHookRegistryPane(
     }
 
     companion object : Type(uid = 20, "OSC Hooks") {
+        private val actions = collectActions<OSCHookObject> {
+            addAction("Toggle enabled") {
+                icon { obj ->
+                    `if`(
+                        obj.isEnabled,
+                        then = { MaterialDesignR.RADIOBOX_MARKED },
+                        otherwise = { MaterialDesignR.RADIOBOX_BLANK }
+                    )
+                }
+                executes(OSCHookObject::toggleEnabled)
+            }
+        }
+
         override val defaultSide: Side
             get() = Side.RIGHT
 

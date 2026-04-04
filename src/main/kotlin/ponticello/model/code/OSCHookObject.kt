@@ -22,7 +22,9 @@ import ponticello.model.project.get
 import ponticello.sc.DisabledExpr
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.getArgument
+import ponticello.sc.client.run
 import ponticello.sc.editor.ScFunctionEditor
+import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveInt
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -31,6 +33,7 @@ import reaktive.value.reactiveVariable
 @Serializable
 class OSCHookObject(
     val function: EditorRoot<@Contextual ScFunctionEditor>,
+    private val enabled: ReactiveVariable<Boolean> = reactiveVariable(true),
 ) : AbstractSuperColliderObject() {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
@@ -57,6 +60,17 @@ class OSCHookObject(
         })
     }
 
+    val isEnabled: ReactiveBoolean
+        get() = enabled
+
+    fun toggleEnabled() {
+        enabled.now = !enabled.now
+        client.run {
+            if (enabled.now) +"$superColliderName.enable"
+            else +"$superColliderName.disable"
+        }
+    }
+
     override fun ScWriter.createObject() {
         val path = name.now
         val func = function.editor.result.now
@@ -79,7 +93,8 @@ class OSCHookObject(
             +"{ |error| error.reportError }"
             +"Ponticello.sendMsg(\\osc_hook, '$path', time, addr.ip, addr.port, *msg[1..])"
         }
-        appendLine(", '$path');")
+        appendLine(", '$path').fix;")
+        if (!enabled.now) +"$superColliderName.disable"
     }
 
     override fun onRename(oldName: String, newName: String) {
