@@ -20,6 +20,8 @@ class AudioNodeTree(override val objects: MutableList<AudioNode> = mutableListOf
     override val objectType: String
         get() = "AudioNode"
 
+    private val byID = mutableMapOf<Int, AudioNode>()
+
     override fun initialize(context: Context) {
         context[AudioNodeTree] = this
         super.initialize(context)
@@ -27,7 +29,7 @@ class AudioNodeTree(override val objects: MutableList<AudioNode> = mutableListOf
             context.withoutUndo {
                 when (ev.message.address) {
                     "/inserted_flow_group" -> insertedFlowGroup(ev.message)
-                    "/inserted_instance" -> insertedSoundProcessInstance(ev.message)
+                    "/started_sound_proc" -> startedSoundProcessInstance(ev.message)
                     "/moved_node" -> movedNode(ev.message)
                     "/removed_node" -> removedNode(ev.message)
                     "/cleared_node_tree" -> clear()
@@ -36,21 +38,55 @@ class AudioNodeTree(override val objects: MutableList<AudioNode> = mutableListOf
         }
     }
 
+    override fun onRemoved(obj: AudioNode, idx: Int) {
+        if (obj.nodeID !in byID) {
+            Logger.warn("Could not find AudioNode with id ${obj.nodeID}", Logger.Category.OSC)
+            return
+        }
+        byID.remove(obj.nodeID)
+    }
+
+    override fun onAdded(obj: AudioNode, idx: Int) {
+        if (obj.nodeID in byID) {
+            Logger.warn("Duplicate nodeID: ${obj.nodeID}", Logger.Category.OSC)
+            return
+        }
+        byID[obj.nodeID] = obj
+    }
+
+    private fun getNode(nodeID: Int, messageAddress: String): AudioNode? {
+        val node = byID[nodeID]
+        if (node == null) {
+            Logger.warn("Unknown nodeID: $nodeID in message $messageAddress", Logger.Category.OSC)
+        }
+        return node
+    }
+
     private fun movedNode(message: OSCMessage) {
-        val oldIdx = message.getArgument<Int>(0, "old index") ?: return
-        val newIdx = message.getArgument<Int>(1, "new index") ?: return
-        val node = get(oldIdx)
+        val nodeID = message.getArgument<Int>(0, "nodeID") ?: return
+        val newScoreY = message.getArgument<Float>(1, "score_y") ?: return
+        val node = getNode(nodeID, "/moved_node") ?: return
+        val newIdx = binarySearchBy(newScoreY, selector = AudioNode::scoreY)
         move(node, newIdx)
+        if (node is AudioNode.FlowGroup) {
+            node.scoreY = newScoreY
+        }
     }
 
     private fun removedNode(message: OSCMessage) {
-        val idx = message.getArgument<Int>(0, "index") ?: return
-        val node = get(idx)
+        val id = message.getArgument<Int>(0, "nodeID") ?: return
+        val node = getNode(id, "/removed_node") ?: return
         remove(node)
     }
 
-    private fun insertedSoundProcessInstance(message: OSCMessage) {
-        val idx = message.getArgument<Int>(0, "index") ?: return
+    private fun insert(node: AudioNode) {
+        var idx = binarySearchBy(node.scoreY, selector = AudioNode::scoreY)
+        if (idx < 0) idx = -idx - 1
+        add(node, idx)
+    }
+
+    private fun startedSoundProcessInstance(message: OSCMessage) {
+        val nodeID = message.getArgument<Int>(0, "nodeID") ?: return
         val name = message.getArgument<String>(1, "process name") ?: return
         val process = context[ScoreObjectRegistry].getOrNull(name) ?: return
         if (process !is SoundProcess) {
@@ -60,17 +96,17 @@ class AudioNodeTree(override val objects: MutableList<AudioNode> = mutableListOf
             )
             return
         }
-        val scoreTime = message.arguments[2] as? Float
-        val scoreY = message.arguments[3] as? Float
-        val position = if (scoreTime != null && scoreY != null) {
-            ObjectPosition(scoreTime.toDecimal(), scoreY.toDecimal())
-        } else null
-        add(AudioNode.SoundProcessInstance(process, position), idx)
+        val scoreTime = message.getArgument<Float>(2, "score time") ?: return
+        val scoreY = message.getArgument<Float>(3, "score y") ?: return
+        val position = ObjectPosition(scoreTime.toDecimal(), scoreY.toDecimal())
+        val node = AudioNode.SoundProcessInstance(nodeID, process, position)
+        insert(node)
     }
 
     private fun insertedFlowGroup(msg: OSCMessage) {
-        val idx = msg.getArgument<Int>(0, "index") ?: return
+        val nodeID = msg.getArgument<Int>(0, "nodeID") ?: return
         val name = msg.getArgument<String>(1, "name") ?: return
+        val scoreY = msg.getArgument<Float>(2, "score_y") ?: return
         val group = context[AudioFlows].getOrNull(name)
         if (group == null) {
             Logger.warn(
@@ -79,7 +115,8 @@ class AudioNodeTree(override val objects: MutableList<AudioNode> = mutableListOf
             )
             return
         }
-        add(AudioNode.FlowGroup(group), idx)
+        val node = AudioNode.FlowGroup(nodeID, group, scoreY)
+        insert(node)
     }
 
     companion object : PublicProperty<AudioNodeTree> by publicProperty("AudioNodeTree")

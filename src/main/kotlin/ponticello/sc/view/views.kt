@@ -234,6 +234,7 @@ internal fun PluginBuilder.registerControlFactories() {
     registerControlFactory { editor: BufferControlSpecEditor, arguments ->
         CompoundEditorControl(editor, arguments) {
             horizontal {
+                space()
                 keyword("channels: ")
                 view(editor.channels) {
                     set(IntSpinnerControl.MIN, 1)

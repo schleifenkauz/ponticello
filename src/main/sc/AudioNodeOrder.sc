@@ -1,5 +1,5 @@
 AudioNodeOrder {
-	classvar nodes;
+	classvar nodes, idCounter = 0;
 
 	* binarySearch { |score_y|
 		var low = 0, high = nodes.size, mid;
@@ -29,12 +29,6 @@ AudioNodeOrder {
             nodes.removeAt(prev);
 		    prev = prev - 1;
 		};
-		if (node.isKindOf(SoundProcessInstance)) {
-			Ponticello.sendMsg('/inserted_instance', idx, node.def.name, node.pos.t, node.pos.y);
-		};
-		if (done != nil) {
-			done.value(idx);
-		}
 		^if (prev < 0) {
 			(target: Server.local.defaultGroup, addAction: \addToHead);
 		} {
@@ -60,10 +54,9 @@ AudioNodeOrder {
 
 	* insertFlowGroup { |score_y, name|
 		var node = SimpleAudioNode.new(score_y);
-		var placement = this.insert(node) { |idx|
-			Ponticello.sendMsg('/inserted_flow_group', idx, name);
-		};
+		var placement = this.insert(node);
 		var group = Group.new(placement.target, placement.addAction);
+		Ponticello.sendMsg('/inserted_flow_group', group.nodeID, name, score_y);
 		node.node = group;
 		^node
 	}
@@ -81,15 +74,15 @@ AudioNodeOrder {
                 var prev = nodes[new_idx - 1];
                 node.moveAfter(prev.node);
             };
-			Ponticello.sendMsg('/moved_node', old_idx, new_idx);
-		}
+		};
+		Ponticello.sendMsg('/moved_node', node.nodeID, new_y);
 	}
 
 	* remove { |node|
 		var idx = nodes.indexOf(node);
 		if (idx != nil) {
 			nodes.removeAt(idx);
-			Ponticello.sendMsg('/removed_node', idx);
+			Ponticello.sendMsg('/removed_node', node.nodeID);
 		} {
 			Exception("% not found in AudioNodeOrder\n".format(node)).reportError;
 		}

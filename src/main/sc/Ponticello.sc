@@ -81,7 +81,9 @@ Ponticello {
 
 	* send_classes {
 		var i = 0, chunkSize = 100;
-		var classes = Class.allClasses;
+		var classes = Class.allClasses.select { |cls|
+			cls.name.asString.beginsWith("Meta_").not
+		};
 		while { i < classes.size } {
 			var chunk = classes.copyRange(i, i + chunkSize - 1).collect(_.name);
 			Ponticello.sendMsg('/classes', *chunk);

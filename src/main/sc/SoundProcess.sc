@@ -172,21 +172,26 @@ SoundProcess {
 		var parameter = new_ctrl.name;
 		var old_ctrl = control_map[parameter];
 		var idx = controls.indexOf(old_ctrl);
-		new_ctrl.sound_proc = this;
-		control_map[parameter] = new_ctrl;
-		controls[idx] = new_ctrl;
+		if (old_ctrl.isNil) {
+			postf("WARNING: .replaceControl(%, %). Control not found. Adding instead. \n", parameter, new_ctrl);
+			addControl(new_ctrl, idx: controls.size);
+		} {
+			new_ctrl.sound_proc = this;
+			control_map[parameter] = new_ctrl;
+			controls[idx] = new_ctrl;
 
-		if (old_ctrl.allocatesBus && new_ctrl.allocatesBus.not) {
-			this.updateInstances { |inst|
-				inst.freeControlBus(parameter);
+			if (old_ctrl.allocatesBus && new_ctrl.allocatesBus.not) {
+				this.updateInstances { |inst|
+					inst.freeControlBus(parameter);
+				};
 			};
-		};
-		this.updateInstances { |inst|
-			new_ctrl.prepare(inst);
-		};
-		old_ctrl.dispose;
-		this.updateInstances { |inst|
-			new_ctrl.apply(inst);
+			this.updateInstances { |inst|
+				new_ctrl.prepare(inst);
+			};
+			old_ctrl.dispose;
+			this.updateInstances { |inst|
+				new_ctrl.apply(inst);
+			}
 		}
 	}
 

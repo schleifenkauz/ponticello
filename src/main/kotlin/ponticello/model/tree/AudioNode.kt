@@ -10,19 +10,29 @@ import reaktive.value.ReactiveValue
 
 sealed interface AudioNode {
     val name: ReactiveString
+    val scoreY: Float
+    val nodeID: Int
     val context: Context
     val associatedColor: ReactiveValue<Color?>
 
-    data class SoundProcessInstance(val process: SoundProcess, val position: ObjectPosition?) : AudioNode {
+    data class SoundProcessInstance(
+        override val nodeID: Int,
+        val process: SoundProcess, val position: ObjectPosition
+    ) : AudioNode {
         override val name: ReactiveString
             get() = process.name
+        override val scoreY: Float
+            get() = position.y.toFloat()
         override val context: Context
             get() = process.context
         override val associatedColor: ReactiveValue<Color?>
             get() = process.associatedColor
     }
 
-    data class FlowGroup(val group: AudioFlowGroup) : AudioNode {
+    data class FlowGroup(
+        override val nodeID: Int,
+        val group: AudioFlowGroup, override var scoreY: Float
+    ) : AudioNode {
         override val name: ReactiveString
             get() = group.name
 

@@ -58,7 +58,7 @@ LFOControl : ParameterControl {
 					synth.set (ref, ctrl.getValue (inst) );
 				}
 			} {
-				postf("Could not resolve control % on SoundProcess %", ref, inst.def.name);
+				postf("Could not resolve control % on SoundProcess %\n", ref, inst.def.name);
 			}
 		}
 	}

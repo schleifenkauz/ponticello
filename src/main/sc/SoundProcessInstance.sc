@@ -141,11 +141,11 @@ SoundProcessInstance : AudioNode {
 			control_buses.do (_.free);
 			control_buses = Dictionary.new;
 			if (group != nil) {
-				group.free;
-				group = nil;
 				if (midi_track.isNil && parent_instance.isNil) {
 					AudioNodeOrder.remove(this);
-				}
+				};
+				group.free;
+				group = nil;
 			};
 			on_dispose.do(_.value);
             Ponticello.sendMsg ('/stopped', -1, def.name, idx);
@@ -165,6 +165,9 @@ SoundProcessInstance : AudioNode {
 			if (placement.notNil && (def.type != \midi)) {
 				Server.local.sync;
 				group = Group.new(placement.target, placement.addAction);
+				if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
+					Ponticello.sendMsg('/started_sound_proc', this.nodeID, def.name, pos.t, pos.y);
+				};
 				//group.register(assumePlaying: true);
 			};
 			control_map.copy.keysValuesDo { |name, ctrl|
