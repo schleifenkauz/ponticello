@@ -32,7 +32,7 @@ import reaktive.value.now
 
 class ParameterizedObjectDropHandler(
     private val obj: ParameterizedObject, private val view: Region,
-) : ConfiguredDropHandler() {
+) : ConfiguredDropHandler(json) {
     private val context get() = obj.context
     private var borderBefore: javafx.scene.layout.Border? = null
 

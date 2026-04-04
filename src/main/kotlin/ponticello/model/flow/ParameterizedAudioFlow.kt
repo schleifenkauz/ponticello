@@ -7,7 +7,9 @@ import ponticello.impl.Decimal
 import ponticello.impl.writeCode
 import ponticello.model.instr.BusObject
 import ponticello.model.instr.ParameterizedObject
+import ponticello.model.instr.ParameterizedObjectReference
 import ponticello.model.player.SoundProcessUpdater
+import ponticello.model.registry.reference
 import ponticello.model.score.SoundProcess.Companion.createSoundProcessObject
 import ponticello.model.score.controls.BusControl
 import ponticello.sc.client.ScWriter
@@ -70,4 +72,6 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
         val c = control.now
         c is BusControl && c.bus.now.get() == bus
     }
+
+    override fun makeReference(): ParameterizedObjectReference? = ParameterizedObjectReference.Flow(reference())
 }

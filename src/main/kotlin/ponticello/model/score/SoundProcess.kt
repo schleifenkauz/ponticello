@@ -25,6 +25,7 @@ import ponticello.model.obj.InstrumentReference
 import ponticello.model.obj.withName
 import ponticello.model.player.ObjectPlaybackInfo
 import ponticello.model.player.SoundProcessUpdater
+import ponticello.model.registry.reference
 import ponticello.model.score.controls.*
 import ponticello.sc.BufferControlSpec
 import ponticello.sc.BufferPositionControlSpec
@@ -360,6 +361,8 @@ class SoundProcess(
         if (midiTrack != null) append(", midiTrack: ", midiTrack.trackVariable)
         append(")")
     }
+
+    override fun makeReference(): ParameterizedObjectReference = ParameterizedObjectReference.ScoreObject(reference())
 
     private class GeneratedScoreEdit(
         private val obj: SoundProcess,

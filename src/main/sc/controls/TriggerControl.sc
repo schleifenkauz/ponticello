@@ -45,3 +45,14 @@ TriggerControl : ParameterControl {
 		this.getControl(param).onTrig(this, action);
 	}
 }
+
++SoundProcess {
+	trigger { |parameter|
+		var ctrl = this.getControl(parameter);
+		if (ctrl.respondsTo(\trigger)) {
+			ctrl.trigger;
+		} {
+			postf("WARNING: control % does not respond to .trigger\n", ctrl);
+		}
+	}
+}

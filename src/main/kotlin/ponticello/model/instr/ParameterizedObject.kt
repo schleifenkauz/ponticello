@@ -26,6 +26,8 @@ interface ParameterizedObject : NamedObject {
     fun getSpec(parameter: String): ControlSpec? =
         controls.getOrNull(parameter)?.spec?.now ?: getInstrument().getSpec(parameter)?.now
 
+    fun makeReference(): ParameterizedObjectReference? = null
+
     fun addControlsForAllObjectParameters() {
         for (param in getInstrument().allParameters()) {
             val name = param.name.now

@@ -17,6 +17,7 @@ import ponticello.model.record.LiveBufferObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.MeterObject
 import ponticello.model.score.ScoreObject
+import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.server.BufferObject
 import reaktive.value.now
 
@@ -37,6 +38,7 @@ typealias ScriptObjectReference = ObjectReference<@Contextual ScriptObject>
 typealias LiveObjectReference = ObjectReference<@Contextual LiveObject>
 typealias LiveTaskReference = ObjectReference<@Contextual LiveTaskObject>
 typealias FlowReference = ObjectReference<@Contextual AudioFlow>
+typealias ParameterControlReference = ObjectReference<@Contextual NamedParameterControl>
 typealias VSTPluginReference = ObjectReference<@Contextual VSTPluginFlow>
 typealias LiveBufferReference = ObjectReference<@Contextual LiveBufferObject>
 

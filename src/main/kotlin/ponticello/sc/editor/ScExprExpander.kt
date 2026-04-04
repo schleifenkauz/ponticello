@@ -331,7 +331,7 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
                 )
             }
             "slider".expand { expander ->
-                val context = expander.context[PonticelloContext]
+                val context = expander.context.getOrNull(PonticelloContext) ?: return@expand null
                 val spec = if (context is PonticelloContext.Control) {
                     context.control.spec.now as? NumericalControlSpec
                         ?: NumericalControlSpec.DEFAULT
@@ -339,7 +339,7 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
                 SliderExprEditor(spec)
             }
             "goto".expand(condition = { exp ->
-                val ctx = exp.context[PonticelloContext]
+                val ctx = exp.context.getOrNull(PonticelloContext)
                 ctx is PonticelloContext.RoutineDef || ctx is PonticelloContext.Task
             }) { _ -> GoToEditor().defaultState() }
 

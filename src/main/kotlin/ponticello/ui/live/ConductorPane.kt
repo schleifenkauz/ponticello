@@ -6,7 +6,6 @@ import fxutils.actions.makeButton
 import fxutils.actions.registerShortcuts
 import fxutils.controls.CheckBox
 import fxutils.controls.IntSpinner
-import fxutils.drag.ConfiguredDropHandler
 import fxutils.drag.setupDropArea
 import fxutils.prompt.SelectorPrompt
 import javafx.animation.AnimationTimer
@@ -146,12 +145,12 @@ class ConductorPane(
         )
         registerShortcuts(listOf(startStopAction.withContext(this)))
         scoreRepaintObserver = scorePane.onRepaint.observe { _ -> repositionConductorTimeIndicator() }
-        setupDropArea(ConfiguredDropHandler {
+        setupDropArea {
             handleSingleFile("mp4", "webm", "mkv") { _, file ->
                 conductor.options.videoInput.set(file.absolutePath)
                 true
             }
-        })
+        }
     }
 
     override fun onScheduled(startTime: Decimal) = Platform.runLater {

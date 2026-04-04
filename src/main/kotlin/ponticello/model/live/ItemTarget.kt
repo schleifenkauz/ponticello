@@ -1,5 +1,6 @@
 package ponticello.model.live
 
+import fxutils.drag.TypedDataFormat
 import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -8,6 +9,7 @@ import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.impl.zero
 import ponticello.model.flow.AudioFlows
+import ponticello.model.instr.ParameterizedObjectReference
 import ponticello.model.midi.MidiGridInstrument
 import ponticello.model.obj.*
 import ponticello.model.player.ScorePlayer
@@ -299,6 +301,37 @@ sealed class ItemTarget : AbstractContextualObject() {
         }
     }
 
+    @Serializable
+    data class Trigger(
+        val associatedObject: ParameterizedObjectReference,
+        val parameter: ParameterControlReference
+    ) : ItemTarget(), java.io.Serializable {
+        override fun copy(): ItemTarget = Trigger(associatedObject, parameter)
+
+        override val supportedModes: List<GridItem.Mode> get() = listOf(GridItem.Mode.Trigger)
+
+        override val targetObject: ScoreObject?
+            get() = associatedObject.get() as? ScoreObject
+
+        override fun initialize(context: Context) {
+            super.initialize(context)
+            val obj = associatedObject.resolve(context)
+            if (obj != null) {
+                parameter.resolve(obj.controls)
+            }
+        }
+
+        override val name: ReactiveString get() = parameter.name
+
+        override val canView: Boolean get() = true
+
+        override fun ScWriter.code() {
+            val obj = associatedObject.get() ?: return append("nil")
+            val ctrl = parameter.get() ?: return append("nil")
+            append("TriggerControlItem('${obj.name.now}', '${ctrl.name.now}')")
+        }
+    }
+
     companion object {
         fun options(context: Context): List<ItemTarget> {
             val objects = context[ScoreObjectRegistry].filter { obj -> obj.affectsPlayback }
@@ -314,5 +347,7 @@ sealed class ItemTarget : AbstractContextualObject() {
             val toggleRecording = context.project[LIVE_BUFFERS].map { buf -> ToggleRecording(buf.reference()) }
             return listOf(None()) + objectTargets + liveObjectTargets + flowTargets + scriptTargets + toggleRecording
         }
+
+        val DATA_FORMAT = TypedDataFormat<ItemTarget>("ponticello/item-target")
     }
 }

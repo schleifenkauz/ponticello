@@ -8,6 +8,7 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
+import ponticello.impl.json
 import ponticello.model.flow.LevelMeterFlow
 import ponticello.model.instr.BusObject
 import ponticello.model.server.BusRegistry
@@ -36,7 +37,7 @@ class LevelMeterFlowView(private val flow: LevelMeterFlow) : VBox() {
                 createLevelMeterCanvas(bus)
             } else Label("Select bus")
         }
-        setupDropArea {
+        setupDropArea(json) {
             handleTypedFormat(BusObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
                 ref.resolve(flow.context[BusRegistry])
                 flow.targetRef.set(ref)

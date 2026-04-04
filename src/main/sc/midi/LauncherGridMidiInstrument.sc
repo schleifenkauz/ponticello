@@ -182,3 +182,23 @@ BreakpointItem {
 
 	noteOff { |velocity, src, mode| }
 }
+
+TriggerControlItem {
+	var control;
+
+	* new { |procName, controlName|
+		var proc = SoundProcess.get(procName);
+		var control = proc.getControl(controlName);
+		^super.newCopyArgs(control);
+	}
+
+	noteOn { |velocity, src, mode|
+		if (control.respondsTo(\trigger)) {
+			control.trigger;
+		} {
+			postf("WARNING: % does not respond to .trigger\n", control);
+		}
+	}
+
+	noteOff { |velocity, src, mode| }
+}

@@ -1,10 +1,15 @@
 package ponticello.ui.controls
 
 import fxutils.actions.button
+import fxutils.drag.putSerializableContent
 import fxutils.prompt.PromptPlacement
 import javafx.scene.Node
+import javafx.scene.input.TransferMode
 import org.kordamp.ikonli.materialdesign2.MaterialDesignL
+import ponticello.impl.json
 import ponticello.model.instr.ParameterizedObject
+import ponticello.model.live.ItemTarget
+import ponticello.model.registry.reference
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.TriggerControl
@@ -28,8 +33,21 @@ object TriggerControlType : ControlType<TriggerControl>() {
         namedControl: ParameterControlList.NamedParameterControl,
         control: TriggerControl,
         view: ScoreObjectView?
-    ): Node = MaterialDesignL.LIGHTNING_BOLT.button("Trigger", "medium-icon-button") {
-        control.trigger.fire()
+    ): Node {
+        val button = MaterialDesignL.LIGHTNING_BOLT.button("Trigger", "medium-icon-button")
+        button.setOnAction { ev ->
+            control.trigger.fire()
+            ev.consume()
+        }
+        button.setOnDragDetected { ev ->
+            val dragboard = button.startDragAndDrop(TransferMode.LINK)
+            val associatedObject = namedControl.parentObject.makeReference() ?: return@setOnDragDetected
+            val trigger = ItemTarget.Trigger(associatedObject, namedControl.reference())
+            dragboard.putSerializableContent(ItemTarget.DATA_FORMAT, trigger, json)
+            dragboard.dragView = button.snapshot(null, null)
+            ev.consume()
+        }
+        return button
     }
 
     override fun toString(): String = "Trig"

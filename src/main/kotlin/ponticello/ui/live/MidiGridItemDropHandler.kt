@@ -5,6 +5,7 @@ import fxutils.prompt.PromptPlacement
 import fxutils.prompt.nextToTarget
 import javafx.scene.input.TransferMode
 import ponticello.impl.Decimal
+import ponticello.impl.json
 import ponticello.impl.zero
 import ponticello.model.code.ScriptObject
 import ponticello.model.flow.AudioFlow
@@ -29,7 +30,7 @@ import reaktive.value.reactiveVariable
 
 class MidiGridItemDropHandler(
     private val grid: MidiGridInstrument, private val item: GridItem,
-) : ConfiguredDropHandler() {
+) : ConfiguredDropHandler(json) {
     init {
         handleTypedFormat(GridItemReference.DATA_FORMAT, TransferMode.MOVE) { _, ref ->
             val droppedItem = ref.getItem(grid)
@@ -60,7 +61,7 @@ class MidiGridItemDropHandler(
         handleTypedFormat(BufferObject.DATA_FORMAT, TransferMode.LINK) { ev, ref ->
             ref.resolve(grid.context[BufferRegistry])
             val buffer = ref.get() ?: return@handleTypedFormat false
-            createPlayBufTarget(ev.nextToTarget(), buffer, item)
+            item.target = createPlayBufTarget(ev.nextToTarget(), buffer) ?: return@handleTypedFormat false
             true
         }
         handleTypedFormat(ScriptObject.DATA_FORMAT, TransferMode.LINK) { _, ref ->
@@ -73,15 +74,19 @@ class MidiGridItemDropHandler(
         }
         handleSingleFile(*SampleObject.SUPPORTED_AUDIO_FORMATS) { ev, file ->
             val buffer = grid.context[BufferRegistry].getOrAdd(file)
-            createPlayBufTarget(ev.nextToTarget(), buffer, item)
+            item.target = createPlayBufTarget(ev.nextToTarget(), buffer) ?: return@handleSingleFile false
+            true
+        }
+        handleTypedFormat(ItemTarget.DATA_FORMAT, TransferMode.LINK) { _, target ->
+            item.target = target
             true
         }
     }
 
-    private fun createPlayBufTarget(promptPlacement: PromptPlacement, buffer: BufferObject, item: GridItem) {
-        val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(promptPlacement) ?: return
-        val obj = buffer.createSoundProcess(synthDef) ?: return
+    private fun createPlayBufTarget(promptPlacement: PromptPlacement, buffer: BufferObject): ItemTarget.Object? {
+        val synthDef = grid.context.project[UI_STATE].getOrSelectInstrument(promptPlacement) ?: return null
+        val obj = buffer.createSoundProcess(synthDef) ?: return null
         grid.context[ScoreObjectRegistry].add(obj)
-        item.target = ItemTarget.Object(obj.reference(), yPosition = reactiveVariable(zero))
+        return ItemTarget.Object(obj.reference(), yPosition = reactiveVariable(zero))
     }
 }

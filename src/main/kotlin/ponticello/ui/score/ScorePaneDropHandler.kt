@@ -8,6 +8,7 @@ import hextant.serial.readJson
 import javafx.geometry.Point2D
 import javafx.scene.input.TransferMode
 import ponticello.impl.Logger
+import ponticello.impl.json
 import ponticello.model.midi.MidiUtil
 import ponticello.model.obj.project
 import ponticello.model.project.UI_STATE
@@ -21,7 +22,7 @@ import ponticello.model.server.BufferRegistry
 import ponticello.model.server.SampleObject
 import ponticello.ui.midi.MidiTrackSelectorPrompt
 
-class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHandler() {
+class ScorePaneDropHandler(private val scorePane: ScorePane) : ConfiguredDropHandler(json) {
     val context get() = scorePane.context
 
     init {

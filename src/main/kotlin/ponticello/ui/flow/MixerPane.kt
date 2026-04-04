@@ -347,7 +347,7 @@ class MixerPane(
         override fun extractText(option: ObjectReference<MixerFlow>): String = option.name.now
     }
 
-    private inner class MixerPaneDropHandler : ConfiguredDropHandler({
+    private inner class MixerPaneDropHandler : ConfiguredDropHandler(json, {
         handleTypedFormat(AudioFlow.DATA_FORMAT, TransferMode.LINK) { _, ref ->
             val flow = ref.resolve(context[AudioFlows].allFlows()) ?: return@handleTypedFormat false
             if (flow !is MixerFlow) {
