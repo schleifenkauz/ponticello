@@ -88,7 +88,6 @@ RoutineInstance {
 			} { |error|
 				error.reportError;
 			};
-			this.prFinished
 		}, SystemClock);
 	}
 

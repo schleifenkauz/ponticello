@@ -30,7 +30,7 @@ class ParameterDefSelectorPrompt(
             is NoInstrument, MidiInstrument -> throw AssertionError()
         }
         val type = fixedParameterType ?: SimpleSelectorPrompt(availableParameterTypes, "Parameter type")
-            .showPopup(content, initialOption = ParameterType.Numerical) ?: return null
+            .showDialog(placement) ?: return null
         val spec = ControlSpecPrompt.createParameter(text, parentObject, type, placement) ?: return null
         return ParameterDefObject(text, spec).withName(text)
     }

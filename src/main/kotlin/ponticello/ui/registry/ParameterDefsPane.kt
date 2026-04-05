@@ -39,8 +39,7 @@ class ParameterDefsPane(
     override fun createNewObject(
         promptPlacement: PromptPlacement,
         list: ObjectList<ParameterDefObject>
-    ): ParameterDefObject? =
-        super<SearchableToolPane>.createNewObject(promptPlacement, list)
+    ): ParameterDefObject? = super<SearchableToolPane>.createNewObject(promptPlacement, list)
 
     override fun getDroppedObjects(
         ev: DragEvent,

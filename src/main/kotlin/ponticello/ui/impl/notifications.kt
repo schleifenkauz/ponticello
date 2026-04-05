@@ -24,11 +24,11 @@ object NotificationView : Logger.View {
     override fun logged(record: Logger.Record) {
         if (record.level < level) return
         val millis = 5000L
-        val notification = Notifications.create()
-            .text(record.message).darkStyle()
-            .hideAfter(Duration.millis(millis.toDouble()))
         if (showingNotifications + 1 > maximumSimultaneousNotifications) return
         Platform.runLater {
+            val notification = Notifications.create()
+                .text(record.message).darkStyle()
+                .hideAfter(Duration.millis(millis.toDouble()))
             try {
                 when (record.level) {
                     Fine, Info -> notification.showInformation()

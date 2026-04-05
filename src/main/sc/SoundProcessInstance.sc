@@ -2,7 +2,7 @@ SoundProcessInstance : AudioNode {
 	var <def, <idx, <pos, <cutoff, extra_control_keys, <control_map,
 	control_buses, auxil_synths, <children, on_dispose,
 	<player_id, <>server_latency, start_time, placement, group,
-	running = false, <restarting = false, disposed = false,
+	running = false, <restarting = false, disposed = false, released = false,
 	sound_obj, <midi_track,
 	<>clock_time, <>parent_instance;
 
@@ -207,15 +207,21 @@ SoundProcessInstance : AudioNode {
 	}
 
 	release { |latency|
-		latency = latency ? server_latency;
-		children.do(_.release(latency));
-		if (sound_obj.isMemberOf(Synth)) {
-			Server.local.makeBundle(latency) {
-				sound_obj.release;
-			}
+		if ((released || disposed).not) {
+			latency = latency ? server_latency;
+			children.do(_.release(latency));
+			if (sound_obj.isMemberOf(Synth)) {
+				Server.local.makeBundle(latency) {
+					sound_obj.release;
+				}
+			} {
+				postf("Release %\n", sound_obj);
+				sound_obj.release(latency);
+			};
+			released = true;
 		} {
-			sound_obj.release(latency);
-		};
+			postf("WARNING: Already released %\n", this);
+		}
 	}
 
 	startChildInstance { |proc, extra_controls|
