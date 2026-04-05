@@ -13,7 +13,7 @@ import ponticello.model.project.get
 import ponticello.sc.client.SuperColliderClient
 import reaktive.value.now
 
-class AkaiMidiMix : OSCMidiListener() {
+class AkaiMidiMix : OSCMidiListener("mixer") {
     var connectedFlow: MixerFlow? = null
 
     private val faderVolumes = Array(8) { zero }

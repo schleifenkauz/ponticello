@@ -13,14 +13,14 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() {
+abstract class OSCMidiListener(private val name: String) : OSCMessageListener, AbstractContextualObject() {
     private val attached = reactiveVariable(false)
 
     val isAttached: ReactiveBoolean get() = attached
 
     private lateinit var client: SuperColliderClient
 
-    private val superColliderVar = "~midi_forward_${idCounter++}"
+    private val superColliderVar = "~midi_forward_${name}"
 
     private var sourceDevice: String? = "nil"
 
@@ -28,7 +28,7 @@ abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() 
         super.initialize(context)
         client = context[SuperColliderClient]
         client.addListener(this)
-        client.run("$superColliderVar = OSCMidiForward.new")
+        client.run("$superColliderVar = OSCMidiForward('midi_forward_$name')")
     }
 
     fun attachTo(device: MidiDeviceSpec) {

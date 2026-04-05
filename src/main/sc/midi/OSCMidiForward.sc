@@ -1,9 +1,9 @@
 OSCMidiForward : MidiInstrument {
 	var track;
 
-	attachTo { |device_name|
+	attachTo { |name, device_name|
 		if (track.isNil) {
-			track = MidiTrack.new(nil, device_name, [this]);
+			track = MidiTrack.new(name, nil, device_name, [this]);
 		} {
 			track.sourceDevice = device_name;
 		}
@@ -27,7 +27,6 @@ OSCHook : OSCdef {
 	enable {
 		super.enable;
 		if (this.key.notNil) {
-			postf("Send /osc_hook_enabled %\n", this.key);
 			Ponticello.sendMsg('/osc_hook_enabled', this.key);
 		}
 	}

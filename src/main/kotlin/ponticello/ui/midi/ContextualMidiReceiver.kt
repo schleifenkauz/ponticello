@@ -16,7 +16,7 @@ import reaktive.value.binding.equalTo
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
-class ContextualMidiReceiver : OSCMidiListener() {
+class ContextualMidiReceiver : OSCMidiListener("knobs") {
     private var activeContext: ReactiveVariable<MidiContext?> = reactiveVariable(null)
 
     private lateinit var timeWarpPopup: TimeWarpPopup

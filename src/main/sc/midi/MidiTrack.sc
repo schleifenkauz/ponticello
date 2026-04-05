@@ -1,5 +1,5 @@
 MidiTrack {
-	var <group, <sourceDevice, <>instruments, enabled, <activeNotes, <controlValues, notesInPedal, connected=false, <recorder;
+	var <>name, <group, <sourceDevice, <>instruments, <enabled, <activeNotes, <controlValues, notesInPedal, connected=false, <recorder;
 	classvar initialized=false, tracksBySource, noteOn, noteOff, cc;
 
 	* init {
@@ -83,9 +83,9 @@ MidiTrack {
 		}
 	}
 
-	* new { |group, source, instrs, enabled=true|
+	* new { |name, group, source, instrs, enabled=true|
 		var track = super.newCopyArgs(
-			group, source, instrs, enabled,
+			name, group, source, instrs, enabled,
 			Dictionary.new, Dictionary.new
 		);
 		if (enabled) {
@@ -156,7 +156,8 @@ MidiTrack {
 
 	run { |v|
 		enabled = v;
-		if (v) { this.prConnect } { this.prDisconnect }
+		if (v) { this.prConnect } { this.prDisconnect };
+		Ponticello.sendMsg('/set_track_active', name, v);
 	}
 
 	perform { |src, fn|

@@ -42,6 +42,8 @@ class MidiTrackFlow(
 
     val trackVariable get() = "~track_${name.now}"
 
+    val groupName get() = superColliderName
+
     override val isValid: ReactiveValue<Boolean>
         get() = reactiveValue(true)
 
@@ -66,6 +68,7 @@ class MidiTrackFlow(
         client.run {
             +"~track_$newName = ~track_$oldName"
             +"~track_$oldName = nil"
+            +"$trackVariable.name = '$newName'"
         }
     }
 
@@ -74,12 +77,12 @@ class MidiTrackFlow(
     }
 
     override fun writeCode(placement: NodePlacement): String = writeCode {
-        +"$superColliderName = Group.new(s, ${placement.code})"
+        +"$groupName = Group.new(s, ${placement.code})"
         for (instr in instruments) {
-            val placement = NodePlacement.tail(superColliderName)
+            val placement = NodePlacement.tail(groupName)
             instr.addToTrack(writer, this@MidiTrackFlow, placement)
         }
-        appendLine("$trackVariable = MidiTrack($superColliderName, ${sourceDevice.now.code}, [")
+        appendLine("$trackVariable = MidiTrack('${name.now}', $groupName, ${sourceDevice.now.code}, [")
         indented {
             for (instr in instruments) {
                 append(instr.superColliderName)
