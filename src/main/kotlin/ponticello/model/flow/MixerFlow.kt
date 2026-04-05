@@ -90,21 +90,21 @@ class MixerFlow(
         if (!targetBus.now.isValid) unresolvedBuses++
         sinkObserver = targetBus.observe { _, old, new ->
             replacedBus(old, new)
-            sync()
-        } and activateFilters.observe { _ -> sync() }
+            update("dest = ${new.superColliderName}")
+        } and activateFilters.observe { _, _, activate -> update("filter = $activate") }
         observeMasterControls()
     }
 
     private fun observeMasterControls() {
         masterObserver = masterVolume.observe { _, _, vol ->
             if (!masterMute.now) {
-                client.run("$superColliderName.set(\\master_volume, $vol.dbamp)")
+                update("masterVolume = $vol.dbamp")
             }
         } and masterMute.observe { _, _, mute ->
             val volume = if (mute) "0" else "${masterVolume.now}.dbamp"
-            client.run("$superColliderName.set(\\master_volume, $volume)")
+            update("masterVolume = $volume")
         } and monoMix.observe { _, _, mono ->
-            client.run("$superColliderName.set(\\mono_mix, ${if (mono) "1" else "0"})")
+            update("monoMix = ${if (mono) "1" else "0"}")
         }
     }
 
@@ -113,8 +113,29 @@ class MixerFlow(
         else "${comp.volume.now}.dbamp"
 
     override fun added(obj: MixerComponent, idx: Int) {
-        sync()
         setupComponent(obj)
+        updateSources()
+    }
+
+    override fun removed(obj: MixerComponent, idx: Int) {
+        if (obj.isSolo) soloed--
+        componentObservers.remove(obj)?.kill()
+        updateSources()
+    }
+
+    private fun updateSources() {
+        val (buses, volumes, pans) = getSources()
+        update("setSources($buses, $volumes, $pans)")
+    }
+
+    private fun getSources(): Triple<String, String, String> {
+        val resolvedComponents = components.filter { it.sourceBus.now.isResolved.now }
+        val buses = resolvedComponents.joinToString(", ", "[", "]") { comp -> comp.sourceBus.now.superColliderName }
+        val volumes = resolvedComponents.joinToString(", ", "[", "]") { comp -> getActualVolume(comp) }
+        val pans = if (targetBus.now.get()?.channels?.now == 2) {
+            resolvedComponents.joinToString(", ", "[", "]") { comp -> comp.pan.now.toString() }
+        } else "nil"
+        return Triple(buses, volumes, pans)
     }
 
     private fun setupComponent(obj: MixerComponent) {
@@ -139,14 +160,13 @@ class MixerFlow(
     private fun panChanged() {
         if (!isActive.now) return
         val pans = components.map { comp -> (comp.pan.now / 100).withPrecision(2) }
-        client.run("$superColliderName.setn(\\pans, $pans)")
+        update("pans = $pans")
     }
 
     private fun setSourceBus(old: BusReference, new: BusReference) {
         replacedBus(old, new)
         if (!isActive.now) return
-        val buses = components.map { comp -> comp.sourceBus.now.force().superColliderName }
-        client.run("$superColliderName.setn(\\sources, $buses)")
+        updateSources()
     }
 
     private fun replacedBus(old: BusReference, new: BusReference) {
@@ -159,77 +179,25 @@ class MixerFlow(
     private fun recomputeVolumes() {
         if (!isActive.now) return
         val volumes = components.map { comp -> getActualVolume(comp) }
-        client.run("$superColliderName.setn(\\volumes, $volumes)")
+        update("volumes = $volumes")
     }
 
-    override fun removed(obj: MixerComponent, idx: Int) {
-        sync()
-        if (obj.isSolo) soloed--
-        componentObservers.remove(obj)?.kill()
+    override fun writeCode(): String = writeCode {
+        val (buses, volumes, pans) = getSources()
+        val masterVolume = if (masterMute.now) "0" else "${masterVolume.now}.dbamp"
+        append(
+            "MixerFlow('", name.now, "', ", targetBus.now.superColliderName, ", ",
+            buses, ", ", volumes, ", ", pans, ", ", activateFilters.now, ", ",
+            masterVolume, ", ", monoMix.now, ")"
+        )
     }
-
-    override fun writeCode(placement: NodePlacement): String = writeCode {
-        if (components.isEmpty()) return@writeCode
-        val sink = targetBus.now.force()
-        appendBlock("$superColliderName = ", endLine = null) {
-            +"var sources, volumes, pans, filters, snd, mono_mix"
-            val sources = components.map { comp -> comp.sourceBus.now.force().superColliderName }
-            val volumes = components.map { comp -> getActualVolume(comp) }
-            +"sources = NamedControl.kr(\\sources, $sources, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-            +"volumes = NamedControl.kr(\\volumes, $volumes, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-            if (activateFilters.now) {
-                val filters = List(components.size) { "0.0" }
-                +"filters = NamedControl.kr(\\filters, $filters, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-            }
-            +"sources = In.ar(sources, ${sink.channels.now}) * volumes"
-            if (sink.channels.now == 2) {
-                val pans = components.map { comp -> (comp.pan.now / 100).withPrecision(2) }
-                +"pans = NamedControl.kr(\\pans, $pans, lags: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-                when (sources.size) {
-                    0 -> {}
-                    1 -> +"sources = Balance2.ar(sources[0], sources[1], pans)"
-                    else -> {
-                        for (i in sources.indices) {
-                            +"sources[$i] = Balance2.ar(sources[$i][0], sources[$i][1], pans[$i])"
-                        }
-                    }
-                }
-            }
-            if (activateFilters.now) {
-                for (i in sources.indices) {
-                    appendBlock(endLine = ".value;") {
-                        +"var dry, cutoff, lpf, hpf, filtered"
-                        +"dry = sources[$i]"
-                        +"lpf = BLowPass4.ar(dry, filters[$i].abs.linexp(0, 1, 20000, 60), 0.5)"
-                        +"hpf = BHiPass4.ar(dry, filters[$i].abs.linexp(0, 1, 20, 12000), 0.5)"
-                        +"filtered = SelectX.ar(filters[$i].linlin(-1, 1, 0, 1) ! 2, [lpf, hpf])"
-                        +"sources[$i] = XFade2.ar(dry, filtered, filters[$i].abs)"
-                    }
-                }
-            }
-            +"snd = In.ar(${sink.superColliderName}, ${sink.channels.now})"
-            val initialVolume = if (masterMute.now) "0" else "${masterVolume.now}.dbamp"
-            val masterVolume =
-                "\\master_volume.kr($initialVolume, lag: ${AttackReleaseControl.DEFAULT}, fixedLag: true)"
-            val mix = if (components.size > 1) "sources.sum" else "sources"
-            +"snd = (snd + $mix) * $masterVolume * Linen.kr(\\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf)"
-            if (sink.channels.now == 2) {
-                +"mono_mix = \\mono_mix.kr(${if (monoMix.now) "1" else "0"})"
-                +"snd = (snd * (1 - mono_mix)) + (snd.sum / 2 ! 2 * mono_mix)"
-            }
-            +"ReplaceOut.ar(${sink.superColliderName}, snd)"
-            +"0"
-        }
-        appendLine(".play(${placement.target}, ${sink.superColliderName}, addAction: ${placement.addAction});")
-        +"s.sync"
-        +"$superColliderName.register"
-        if (!isActive.now) {
-            +"$superColliderName.run(false)"
-        }
-    }
-
 
     override fun ScWriter.createObject() {}
+
+    override fun midiContext(): MidiContext = MixerMidiContext()
+
+    override fun usesBus(bus: BusObject): Boolean =
+        targetBus.now.get() == bus || components.any { it.sourceBus.now.get() == bus }
 
     override fun copy(): AudioFlow = MixerFlow(targetBus.copy(), MixerComponentList(components.toMutableList()))
 
@@ -280,11 +248,6 @@ class MixerFlow(
             comp.volume.adjustByMidiDelta(value, VOLUME_SPEC, context, "Adjust channel volume")
         }
     }
-
-    override fun midiContext(): MidiContext = MixerMidiContext()
-
-    override fun usesBus(bus: BusObject): Boolean =
-        targetBus.now.get() == bus || components.any { it.sourceBus.now.get() == bus }
 
     companion object {
         const val MIN_VOLUME = -60.0

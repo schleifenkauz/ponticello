@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
 import ponticello.impl.Decimal
-import ponticello.impl.Logger
 import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
@@ -22,6 +21,7 @@ import reaktive.value.ReactiveBoolean
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
 import reaktive.value.reactiveVariable
+import java.util.concurrent.CompletableFuture
 
 @Serializable
 class AudioFlowGroup(
@@ -68,18 +68,22 @@ class AudioFlowGroup(
     override fun added(obj: AudioFlow, idx: Int) {
         val placement = when {
             idx == 0 -> NodePlacement.head(groupNode)
-            else -> NodePlacement.after(flows[idx - 1].superColliderName)
+            else -> NodePlacement.after(flows[idx - 1].superColliderName + ".node")
         }
         if (obj.parentGroup != null) {
             obj.moveToGroup(this, placement)
         } else {
-            obj.addToGroup(this, placement)
+            client.run {
+                obj.run { addToGroup(this@AudioFlowGroup, placement) }
+            }
         }
     }
 
     override fun removed(obj: AudioFlow, idx: Int) {
         if (isActive.now && obj.parentGroup == this) {
-            obj.release()
+            client.run {
+                obj.run { free() }
+            }
         }
     }
 
@@ -87,12 +91,12 @@ class AudioFlowGroup(
 
     override fun moved(obj: AudioFlow, idx: Int) {
         if (!obj.isActive.now) return
-        val name = obj.superColliderName
+        val name = obj.superColliderName + ".node"
         val prev = previousActiveFlow(idx)
         if (prev == null) {
             client.run("$name.moveToHead($groupNode)")
         } else {
-            client.run("$name.moveAfter(${prev.superColliderName})")
+            client.run("$name.moveAfter(${prev.superColliderName}.node)")
         }
     }
 
@@ -104,24 +108,19 @@ class AudioFlowGroup(
         }
     }
 
-    private fun createFlows() {
-        for (flow in flows) {
-            //join enforces that the synths are added in the right order
-            val placement = NodePlacement.tail(groupNode)
-            try {
-                flow.addToGroup(this, placement).join()
-            } catch (e: Exception) {
-                Logger.error("Error adding flow ${flow.name.now} to group ${name.now}", e)
-            }
-        }
-    }
-
     fun createGroupOnServer() {
-        val scoreY = yPosition.now
-        client.eval(description = "creating group $audioNodeName") {
+        client.eval {
+            val scoreY = yPosition.now
             +"$audioNodeName = AudioNodeOrder.insertFlowGroup(score_y: $scoreY, name: '${name.now}')"
+            for (flow in flows) {
+                try {
+                    flow.run { addToGroup(this@AudioFlowGroup, NodePlacement.tail(audioNodeName)) }
+                    appendLine(";")
+                } catch (e: Exception) {
+                    throw e
+                }
+            }
         }.join()
-        createFlows()
     }
 
     override fun activate() {
@@ -133,16 +132,20 @@ class AudioFlowGroup(
         if (isActive.now) freeGroup()
     }
 
-    private fun freeGroup() {
-        client.run("$groupNode.free")
+    private fun freeGroup(): CompletableFuture<String> {
+        client.eval {
+            for (flow in flows) {
+                flow.run { free() }
+            }
+            +"$groupNode.free"
+        }
+        return client.eval("$groupNode.free") //TODO also release the individual flows before (?)
     }
 
     fun sync() {
         if (isActive.now) {
-            client.eval(description = "syncing group $audioNodeName") {
-                +"$groupNode.free"
-            }
-            createFlows()
+            freeGroup().join()
+            createGroupOnServer()
         }
     }
 

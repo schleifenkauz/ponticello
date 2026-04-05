@@ -1,33 +1,11 @@
-RoutineInstrument { //TODO common superclass with MidiEffectInstrument
-	var <>name, func, onFinished, parameterDefaults;
+RoutineInstrument : NamedObject {
+	var func, onFinished, parameterDefaults;
 	classvar dict;
 
-	* initClass {
-		dict = Dictionary.new;
-	}
+	* dict { ^dict ?? { dict = Dictionary.new } }
 
 	* new {| name, parameterDefaults, func, onFinished |
-		^if (dict.includesKey(name)) {
-			var instr = dict[name];
-			instr.update(parameterDefaults, func, onFinished)
-		} {
-			var instr = super.newCopyArgs(name, func, onFinished, parameterDefaults);
-			dict[name] = instr;
-			instr
-		}
-	}
-
-	* remove { |name| dict.removeAt(name) }
-
-	* get { |name| ^dict[name] }
-
-	* rename { |old_name, new_name|
-		var instr = dict.removeAt(old_name);
-		if (instr.isNil) {
-			Exception("RoutineInstrument % not found".format(old_name)).throw;
-		};
-		instr.name = new_name;
-		dict[new_name] = instr;
+		^super.newCopyArgs(name, parameterDefaults, func, onFinished);
 	}
 
 	update { |defaults, fn, finished|

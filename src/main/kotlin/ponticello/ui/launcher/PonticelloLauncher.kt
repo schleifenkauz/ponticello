@@ -144,6 +144,7 @@ class PonticelloLauncher {
                         val serverOptions = serverOptionsFile.readJson<ServerOptions>(json)
                         serverOptions.configureOptions(client)
                     }
+                    client.run("Ponticello.project_directory = \"${folder.absoluteFile.invariantSeparatorsPath}\"")
                     client.run("s.boot")
                 },
                 serverReady = {

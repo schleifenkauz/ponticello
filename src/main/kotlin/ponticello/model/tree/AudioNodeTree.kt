@@ -66,7 +66,11 @@ class AudioNodeTree(override val objects: MutableList<AudioNode> = mutableListOf
         val nodeID = message.getArgument<Int>(0, "nodeID") ?: return
         val newScoreY = message.getArgument<Float>(1, "score_y") ?: return
         val node = getNode(nodeID, "/moved_node") ?: return
-        val newIdx = binarySearchBy(newScoreY, selector = AudioNode::scoreY)
+        var newIdx = binarySearchBy(newScoreY, selector = AudioNode::scoreY)
+        if (newIdx < 0) newIdx = -newIdx - 1
+        val oldIdx = indexOf(node)
+        if (newIdx == oldIdx) return
+        if (newIdx > oldIdx) newIdx--
         move(node, newIdx)
         if (node is AudioNode.FlowGroup) {
             node.scoreY = newScoreY

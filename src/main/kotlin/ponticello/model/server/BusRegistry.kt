@@ -76,7 +76,7 @@ class BusRegistry(
         writer: ScWriter, bus: BusObject.AudioBus,
         placement: NodePlacement, id: Int, synthVar: String
     ) = writer.run {
-        +"$synthVar = DefaultSynthDefs.create_level_send(${bus.superColliderName}, $id, ${placement.code})"
+        +"$synthVar = LevelMeterFlow.create_level_send(${bus.superColliderName}, $id, ${placement.code})"
     }
 
     override fun onAdded(obj: BusObject, idx: Int) {

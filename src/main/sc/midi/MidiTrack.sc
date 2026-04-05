@@ -1,5 +1,5 @@
-MidiTrack {
-	var <>name, <group, <sourceDevice, <>instruments, <enabled, <activeNotes, <controlValues, notesInPedal, connected=false, <recorder;
+MidiTrack : AudioFlow {
+	var <sourceDevice, <>instruments, <activeNotes, <controlValues, notesInPedal, <recorder, connected=false;
 	classvar initialized=false, tracksBySource, noteOn, noteOff, cc;
 
 	* init {
@@ -83,24 +83,36 @@ MidiTrack {
 		}
 	}
 
-	* new { |name, group, source, instrs, enabled=true|
-		var track = super.newCopyArgs(
-			name, group, source, instrs, enabled,
-			Dictionary.new, Dictionary.new
-		);
-		if (enabled) {
-			track.prConnect;
-			^track.activate;
-		}
-		^track;
-	}
-
 	* freeAll {
 		if (initialized) {
 			tracksBySource.keysValuesDo { |src, tracks|
 				tracks.copy.do(_.release);
 			}
 		}
+	}
+
+	* new { |name, source, instrs|
+		^super.newCopyArgs(
+			name, source, instrs,
+			Dictionary.new, Dictionary.new, List[], MidiRecorder.new
+		)
+	}
+
+	createNode { |target, addAction| ^Group.new(target, addAction) }
+
+	group { ^node }
+
+	active_ { |enable, notify|
+		if (enable && active.not) {
+			this.prConnect;
+			instruments.do { |instr| instr.activate(this) };
+		} {
+			if (active) {
+				this.prDisconnect;
+				instruments.do { |instr| instr.dispose };
+			}
+		};
+		super.active_(enable, notify);
 	}
 
 	prConnect {
@@ -114,11 +126,6 @@ MidiTrack {
 			MidiTrack.disconnectSource(sourceDevice, this);
 		};
 		connected = false;
-	}
-
-	activate {
-		recorder = MidiRecorder.new;
-		instruments.do{ |instr| instr.activate(this) }
 	}
 
 	insertInstrument { |idx, instrument|
@@ -137,53 +144,46 @@ MidiTrack {
 
 	sourceDevice_ { |deviceName|
 		if (deviceName != sourceDevice) {
-			this.prDisconnect;
+			if (active) { this.prDisconnect };
 			sourceDevice = deviceName;
-			this.prConnect;
+			if (active) { this.prConnect };
 		}
 	}
 
 	release {
-		if (group != nil) {
+		if (node != nil) {
 			this.allNotesOff;
-			group.free;
-			group = nil;
-			MidiTrack.disconnectSource(sourceDevice, this);
+			node.free;
+			node = nil;
+			this.prDisconnect;
 		} {
 			postf("Already released track with source %\n", sourceDevice);
-		}
-	}
-
-	run { |v|
-		enabled = v;
-		if (v) { this.prConnect } { this.prDisconnect };
-		Ponticello.sendMsg('/set_track_active', name, v);
+		};
 	}
 
 	perform { |src, fn|
-		if (enabled) {
-			fork {
-				var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
-				//postf("Starting at index % (src instr: %)\n", idx, src.instr);
-				while { (continue == true) && (idx < instruments.size) } {
-					var instr = instruments[idx];
-					//postf("Performing on %\n", instr);
-					continue = fn.value(instr) ? true;
-					if (continue.isKindOf(Function)) {
-						fn = continue;
-						continue = true;
-					};
-					idx = idx + 1;
+		fork {
+			var idx = (instruments.indexOf(src !? (_.instr)) ? -1) + 1, continue = true;
+			//postf("Starting at index % (src instr: %)\n", idx, src.instr);
+			while { (continue == true) && (idx < instruments.size) } {
+				var instr = instruments[idx];
+				//postf("Performing on %\n", instr);
+				continue = fn.value(instr) ? true;
+				if (continue.isKindOf(Function)) {
+					fn = continue;
+					continue = true;
 				};
-				if ((continue == true) && recorder.notNil) {
-					fn.value(recorder);
-				}
+				idx = idx + 1;
+			};
+			if ((continue == true) && recorder.notNil) {
+				fn.value(recorder);
 			}
 		}
+
 	}
 
 	noteOn { |num, val, src|
-		if (enabled) {
+		if (active) {
 			src.track = this;
 			//postf("Note On %, % (src: %)\n", num, val, src);
 			activeNotes[num] = activeNotes[num].add(src);
@@ -195,7 +195,7 @@ MidiTrack {
 	}
 
 	noteOff { |num, val, src, force=false|
-		if (enabled || force) {
+		if (active || force) {
 			src.track = this;
 			//postf("Note Off %, % (src: %)\n", num, val, src);
 			if (this.isPedalDown.not) {
@@ -207,13 +207,13 @@ MidiTrack {
 					src.dispose;
 				}
 			} {
-				notesInPedal = notesInPedal.add(num);
+				notesInPedal.add(num);
 			}
 		}
 	}
 
 	control { |num, val, src|
-		if (enabled) {
+		if (active) {
 			src.track = this;
 			controlValues[num] = val;
 			if (num == 64 && val == 0) {

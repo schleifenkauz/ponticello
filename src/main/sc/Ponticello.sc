@@ -1,5 +1,5 @@
 Ponticello {
-	classvar ponticello_addr, interpreter;
+	classvar ponticello_addr, interpreter, <>project_directory;
 
 	* attempt { |id, action|
 		action.try { |error|
@@ -63,22 +63,6 @@ Ponticello {
 		}
 	}
 
-	* save_plugin_state { |id, controller_var, path|
-		var controller = currentEnvironment[controller_var.asSymbol];
-		postf("Saving %: %\n", controller_var, controller);
-		if (controller != nil) {
-			controller.writeProgram(path.asString) { |ctrl, ok|
-				if (ok) {
-					Ponticello.sendMsg('/reply', id, "ok")
-				} {
-					Ponticello.sendMsg('/error', id, "Error saving VSTPlugin state of %".format(controller_var));
-				}
-            }
-		} {
-			Ponticello.sendMsg('/error', id, "Could not find VSTPluginController %".format(controller_var));
-		};
-	}
-
 	* send_classes {
 		var i = 0, chunkSize = 100;
 		var classes = Class.allClasses.select { |cls|
@@ -108,7 +92,7 @@ Ponticello {
 
 		DefaultSynthDefs.addAll;
 
-		Ponticello.respond('/save_plugin_state', this.save_plugin_state(_, _, _));
+		Ponticello.respond('/save_plugin_state', VSTPluginFlow.savePluginState(_, _));
 		Ponticello.respond('/send_classes') { this.send_classes };
 		Ponticello.respond('/run', this.run(_));
 		Ponticello.respondId('/eval', this.eval(_, _));

@@ -5,7 +5,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.copy
-import ponticello.impl.writeCode
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.BusReference
 import ponticello.model.server.BusRegistry
@@ -44,10 +43,8 @@ class LevelMeterFlow private constructor(val targetRef: ReactiveVariable<BusRefe
     override fun ScWriter.createObject() {
     }
 
-    override fun writeCode(placement: NodePlacement): String = writeCode {
-        val target = targetRef.now.get() as? BusObject.AudioBus ?: return ""
-        context[BusRegistry].createLevelSendSynth(writer, target, placement, replyId, superColliderName)
-    }
+    override fun writeCode(): String =
+        "LevelMeterFlow('${name.now}', ${targetRef.now.superColliderName}, $replyId)"
 
     companion object {
         fun create(target: BusObject) = LevelMeterFlow(reactiveVariable(BusReference(target)))

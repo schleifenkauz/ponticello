@@ -45,7 +45,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
             addedToServer = false
             createAllFlows()
         }
-        client.addListener("/toggle_flow", "/activate_flow", "/deactivate_flow") { _, msg ->
+        client.addListener("/toggle_flow", "/activate_flow", "/deactivate_flow", "/set_flow_active") { _, msg ->
             toggleFlow(msg)
         }
         client.addListener("/grid_item_note_on", "/grid_item_note_off") { _, msg ->
@@ -93,6 +93,10 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
             "/toggle_flow" -> flow.toggleActive()
             "/activate_flow" -> flow.setActive(true)
             "/deactivate_flow" -> flow.setActive(false)
+            "/set_flow_active" -> {
+                val active = msg.getArgument<Int>(1, "Active") ?: return
+                flow.setActive(active == 1)
+            }
         }
     }
 
@@ -155,3 +159,21 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         fun createDefault(): AudioFlows = AudioFlows(mutableListOf())
     }
 }
+
+/*
+(RoutineInstrument('enable_flow', ()) {arg inst, duration;
+    inst.get('flow').postln;
+    (inst.get('flow').active.not.if({inst.get('flow').active_(true, notify: true);
+        inst.onDispose({ inst.get('flow').active_(false, notify: true)});
+      }, { "% already active\n".postf(inst.get('flow'))});
+    );
+  };
+  (RoutineInstrument('enable_flow', ()) {arg inst, duration;
+    inst.get('flow').postln;
+    (inst.get('flow').active.not.if({inst.get('flow').active_(true, notify: true);
+        inst.onDispose({ inst.get('flow').active_(false, notify: true)});
+      }, { "% already active\n".postf(inst.get('flow'))});
+    );
+  };
+)
+* */

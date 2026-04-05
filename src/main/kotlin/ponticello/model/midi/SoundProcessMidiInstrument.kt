@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.flow.MidiTrackFlow
-import ponticello.model.flow.NodePlacement
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.obj.project
 import ponticello.model.project.instruments
@@ -13,7 +12,6 @@ import ponticello.model.registry.ObjectReference
 import ponticello.model.score.SoundProcess.Companion.createSoundProcessObject
 import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.client.ScWriter
-import ponticello.sc.client.run
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
@@ -33,17 +31,13 @@ class SoundProcessMidiInstrument(
 
     override fun duration(): ReactiveValue<Decimal>? = null
 
-    override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {
-        writer.run {
-            append("$superColliderName = ")
-            createSoundProcessObject(
-                this@SoundProcessMidiInstrument,
-                className = "SoundProcessMidiInstrument",
-                extraArguments = listOf("enabled: ${isEnabled.now}")
-            )
-            appendLine(";")
-        }
-        super.addToTrack(writer, track, placement)
+    override fun ScWriter.createInstrument(track: MidiTrackFlow) {
+        createSoundProcessObject(
+            this@SoundProcessMidiInstrument,
+            className = "SoundProcessMidiInstrument",
+            extraArguments = listOf("enabled: ${isEnabled.now}")
+        )
+        super.setupSoundProcessUpdater()
     }
 
     override fun copy(): MidiInstrument = SoundProcessMidiInstrument(reference.copy(), controls.copy())

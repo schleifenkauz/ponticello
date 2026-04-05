@@ -1,6 +1,6 @@
-SoundProcess {
+SoundProcess : NamedObject {
 	classvar dict, by_instrument, conds;
-	var <>name, <instr, <duration, <controls, <control_map, instances, byPosition, instance_ctr;
+	var <instr, <controls, <duration, <control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
@@ -8,20 +8,11 @@ SoundProcess {
 		conds = Dictionary.new;
 	}
 
-	* rename { |old_name, new_name|
-		var proc = dict[old_name];
-		if (proc == nil) {
-			Error("SoundProcess % not found".format(old_name)).throw;
-		};
-		dict.removeAt(old_name);
-		proc.name = new_name;
-		dict[new_name] = proc;
-	}
+	* dict { ^dict }
 
 	* create { |name, instr, controls, duration|
-		var proc = super.new.init(name, instr, controls, duration);
-		dict[name] = proc;
-		postf("Created %\n", proc);
+		var proc = super.newCopyArgs(name, instr, controls, duration).init;
+		//postf("Created %\n", proc);
 		if (instr.notNil) {
 			if (by_instrument.includesKey(instr)) {
 				by_instrument[instr].add(proc);
@@ -31,7 +22,7 @@ SoundProcess {
 		};
 		if (conds.includesKey(name)) {
 			var cond = conds.removeAt(name);
-			postf("Signaling %\n", cond);
+			//postf("Signaling %\n", cond);
 			cond.test = true;
 			cond.signal;
 		};
@@ -47,8 +38,6 @@ SoundProcess {
 			by_instrument[proc.instr].remove(proc);
 		}
 	}
-
-	* includesKey { |name| ^dict.includesKey(name) }
 
 	* undefined { |name|
 		var cond = conds[name];
@@ -66,10 +55,10 @@ SoundProcess {
 		name = name.asSymbol;
 		if (dict.includesKey(name).not) {
 			var cond = Condition.new;
-			postf("SoundProcess % yet created!\n", name);
+			//postf("SoundProcess % yet created!\n", name);
 			conds[name] = cond;
 			Ponticello.sendMsg('/sync_sound_proc', name);
-			postf("Waiting for %\n", cond);
+			//postf("Waiting for %\n", cond);
 			cond.wait;
 		};
 		//postf("Accessing %\n", name);
@@ -80,8 +69,7 @@ SoundProcess {
 		^proc;
 	}
 
-	init { |n, i, ctrls, dur|
-		name = n; instr = i; duration = dur; controls = ctrls;
+	init {
 		instances = Dictionary.new; byPosition = Dictionary.new; control_map = Dictionary.new;
 		instance_ctr = 0;
 		controls.do { |ctrl|

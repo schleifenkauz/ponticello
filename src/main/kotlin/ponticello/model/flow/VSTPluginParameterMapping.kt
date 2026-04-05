@@ -30,17 +30,17 @@ class VSTPluginParameterMapping(
     @Transient
     private lateinit var associatedFlow: VSTPluginFlow
 
-    private val controllerVar get() = associatedFlow.controllerVar
+    private val controllerVar get() = associatedFlow.controller
 
     override fun initialize(context: Context) {
         controlBus.now.resolve(context[BusRegistry])
         super.initialize(context)
     }
 
-    fun applyTo(writer: ScWriter, flow: VSTPluginFlow) {
+    fun applyTo(writer: ScWriter, flow: VSTPluginFlow, controllerName: String = flow.controller) {
         associatedFlow = flow
         if (active.now) {
-            writer.map(controlBus.now)
+            writer.map(controlBus.now, controllerName)
         }
         observer = controlBus.observe { _, _, newBus ->
             context[SuperColliderClient].map(newBus)
@@ -61,7 +61,7 @@ class VSTPluginParameterMapping(
         context[SuperColliderClient].run("$controllerVar.set('$name', $value)")
     }
 
-    private fun SuperColliderContext.map(controlBus: BusReference) {
+    private fun SuperColliderContext.map(controlBus: BusReference, controllerName: String = controllerVar) {
         val bus = controlBus.get()
         if (bus != null) {
             run("$controllerVar.map('${name}', ${bus.superColliderName})")

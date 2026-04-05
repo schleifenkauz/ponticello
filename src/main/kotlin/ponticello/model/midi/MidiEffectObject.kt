@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 import ponticello.impl.Decimal
 import ponticello.impl.copy
 import ponticello.model.flow.MidiTrackFlow
-import ponticello.model.flow.NodePlacement
 import ponticello.model.instr.MidiEffectInstrument
 import ponticello.model.obj.MidiEffectInstrumentReference
 import ponticello.model.obj.project
@@ -38,15 +37,13 @@ class MidiEffectObject(
 
     override fun duration(): ReactiveValue<Decimal>? = null
 
-    override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {
-        writer.append("$superColliderName = ")
-        writer.createSoundProcessObject(
-            this,
+    override fun ScWriter.createInstrument(track: MidiTrackFlow) {
+        createSoundProcessObject(
+            this@MidiEffectObject,
             className = "MidiEffect",
             extraArguments = listOf("enabled: ${isEnabled.now}")
         )
-        writer.appendLine(";")
-        super.addToTrack(writer, track, placement)
+        super.setupSoundProcessUpdater()
     }
 
     override fun copy(): MidiInstrument = MidiEffectObject(reference.copy(), controls.copy())

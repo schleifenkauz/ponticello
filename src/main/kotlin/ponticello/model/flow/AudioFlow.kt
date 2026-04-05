@@ -12,13 +12,12 @@ import ponticello.model.project.flows
 import ponticello.model.score.ScoreObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
-import ponticello.sc.client.eval
+import ponticello.sc.client.run
 import ponticello.ui.midi.MidiContext
 import reaktive.Observer
 import reaktive.value.ReactiveValue
 import reaktive.value.ReactiveVariable
 import reaktive.value.now
-import java.util.concurrent.CompletableFuture
 
 @Serializable
 sealed class AudioFlow : AbstractSuperColliderObject() {
@@ -31,7 +30,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
     @Transient
     private var deactivateOnInvalid: Observer? = null
 
-    override fun superColliderName(objectName: String): String = "~flow_${objectName}"
+    override fun superColliderName(objectName: String): String = "AudioFlow.get('$objectName')"
 
     abstract val isValid: ReactiveValue<Boolean>
 
@@ -42,7 +41,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
     override val registry: AudioFlowGroup.AudioFlowList
         get() = parentGroup!!.flows
 
-    abstract fun writeCode(placement: NodePlacement): String
+    abstract fun writeCode(): String
 
     fun setActive(value: Boolean) {
         if (value && initialized) {
@@ -58,7 +57,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
         }
         active.now = value
         if (parentGroup?.isActive?.now == true) {
-            setRunning(value)
+            context[SuperColliderClient].run("$superColliderName.active_($value, notify: false)")
         }
     }
 
@@ -66,44 +65,44 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
         setActive(!isActive.now)
     }
 
-    open fun setRunning(active: Boolean) {
-        context[SuperColliderClient].run("$superColliderName.run($active)")
-    }
-
     fun setFlowGroup(group: AudioFlowGroup) {
         parentGroup = group
     }
 
-    fun addToGroup(group: AudioFlowGroup, placement: NodePlacement): CompletableFuture<String> {
+    fun ScWriter.addToGroup(group: AudioFlowGroup, placement: NodePlacement) {
         setFlowGroup(group)
-        val code = writeCode(placement)
-        return context[SuperColliderClient].eval(code, "activating flow ${name.now}")
+        append(writeCode())
+        if (isActive.now) append(".active_(true, notify: false)")
+        append(".create(${placement.code})")
     }
 
     fun moveToGroup(group: AudioFlowGroup, placement: NodePlacement) {
         parentGroup = group
-        client.run("${superColliderName}.${placement.moveMethod}(${placement.target})")
+        client.run("${superColliderName}.node.${placement.moveMethod}(${placement.target})")
     }
 
-    fun release() {
-        parentGroup = null
-        onRelease()
+    fun ScWriter.free() {
+        +"$superColliderName.free"
     }
 
-    protected open fun onRelease() {
-        context[SuperColliderClient].run("${superColliderName}.release")
+    protected fun update(message: String) {
+        client.run("$superColliderName.$message")
     }
 
-    override fun ScWriter.freeObject() {
-        context[SuperColliderClient].run("$superColliderName = nil")
-    }
+    override fun ScWriter.freeObject() {}
 
     override fun sync() {
-        if (!isActive.now || parentGroup?.isActive?.now != true) return
-        onRelease()
-        val placement = parentGroup!!.getPlacement(this)
-        val code = writeCode(placement)
-        context[SuperColliderClient].run(code)
+        val group = parentGroup
+        if (group == null) {
+            Logger.warn("Attempted to sync $this without a group", Logger.Category.Playback)
+            return
+        }
+        if (!isActive.now || !group.isActive.now) return
+        val placement = group.getPlacement(this)
+        client.run {
+            free()
+            addToGroup(group, placement)
+        }
     }
 
     open fun midiContext(): MidiContext? = null
@@ -113,7 +112,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
 
     override fun onRename(oldName: String, newName: String) {
         if (parentGroup?.isActive?.now == true) {
-            super.onRename(oldName, newName)
+            client.run("AudioFlow.rename('$oldName', '$newName')")
         }
     }
 

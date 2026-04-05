@@ -141,7 +141,7 @@ SoundProcessInstance : AudioNode {
 			control_buses.do (_.free);
 			control_buses = Dictionary.new;
 			if (group != nil) {
-				if (midi_track.isNil && parent_instance.isNil) {
+				if (midi_track.isNil && parent_instance.isNil && pos.notNil) {
 					AudioNodeOrder.remove(this);
 				};
 				group.free;
@@ -161,10 +161,12 @@ SoundProcessInstance : AudioNode {
 		server_latency = latency ? Server.local.latency;
 		player_id = playerId ? -1;
 		midi_track = midiTrack;
+		if (placement.notNil && (def.type != \midi)) {
+			group = Group.new(placement.target, placement.addAction);
+		};
 		forkIfNeeded {
 			if (placement.notNil && (def.type != \midi)) {
 				Server.local.sync;
-				group = Group.new(placement.target, placement.addAction);
 				if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
 					Ponticello.sendMsg('/started_sound_proc', this.nodeID, def.name, pos.t, pos.y);
 				};

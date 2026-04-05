@@ -17,7 +17,6 @@ import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.zero
 import ponticello.model.flow.MidiTrackFlow
-import ponticello.model.flow.NodePlacement
 import ponticello.model.live.GridItem
 import ponticello.model.live.ItemTarget
 import ponticello.model.live.MidiGridEdit
@@ -116,17 +115,19 @@ class MidiGridInstrument private constructor(
         append("[")
         for ((idx, item) in banks[currentBank].withIndex()) {
             if (idx != 0) append(", ")
+            if (idx % 4 == 0) appendLine()
             append('\\')
             append(item.mode.now.name.lowercase())
         }
         append("]")
     }
 
-    override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) = writer.run {
-        append(superColliderName, " = LauncherGridMidiInstrument(")
+    override fun ScWriter.createInstrument(track: MidiTrackFlow) {
+        append("LauncherGridMidiInstrument(")
         appendItems()
-        append(", ")
+        this.append(", ")
         appendModes()
+        appendLine()
         append(", '", name.now, "'")
         append(", enabled: ", isEnabled.now, ")")
     }

@@ -4,14 +4,11 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import ponticello.model.flow.MidiTrackFlow
-import ponticello.model.flow.NodePlacement
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.NoInstrument
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.player.SoundProcessUpdater
 import ponticello.model.registry.ObjectReference
-import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.ui.midi.MidiContext
@@ -43,9 +40,9 @@ sealed class ParameterizedMidiInstrument : MidiInstrument(), ParameterizedObject
         controls.initialize(context, this)
     }
 
-    override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {
+    protected fun setupSoundProcessUpdater() {
         isCreatedInSuperCollider = true
-        updater = SoundProcessUpdater(this@ParameterizedMidiInstrument)
+        updater = SoundProcessUpdater(this)
         updater.startListening()
     }
 

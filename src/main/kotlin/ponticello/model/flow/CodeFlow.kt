@@ -34,13 +34,11 @@ class CodeFlow(val codeEditor: EditorRoot<@Contextual CodeBlockEditor>) : AudioF
     override fun ScWriter.createObject() {
     }
 
-    override fun writeCode(placement: NodePlacement): String = writeCode {
+    override fun writeCode(): String = writeCode(group = false) {
+        append("CodeFlow('", name.now, "')")
         val code = codeEditor.editor.result.now
-        appendBlock("$superColliderName = ", endLine = ".play;") {
+        appendBlock("$superColliderName = ", endLine = null) {
             code.writeCode(writer, context)
-        }
-        if (!isActive.now) {
-            +"$superColliderName.run(false)"
         }
     }
 

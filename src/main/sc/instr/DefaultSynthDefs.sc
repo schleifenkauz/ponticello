@@ -1,10 +1,4 @@
 DefaultSynthDefs {
-	classvar available_send_level_synth_defs;
-
-	* initClass {
-		available_send_level_synth_defs = Set[];
-	}
-
 	* addAll {
 		SynthDef(\score_clock) {
 			arg start = 0, rate = 1, out;
@@ -34,39 +28,6 @@ DefaultSynthDefs {
 			amp: [0, 1, \lin, 0.01, 1],
 		))).add;
 		this.setupSynthDefQueries;
-	}
-
-	* add_level_send_synth_def { |channels|
-		var name = ("level_send_" ++ channels.asString).asSymbol;
-		SynthDef(name) {
-			arg bus, id;
-			var sig = In.ar(bus, channels), rms, peak, msgValues;
-
-			rms = Amplitude.kr(sig, 0.01, 0.3).ampdb;
-			rms = rms.lag(\lag.kr(0.05));
-
-			peak = PeakFollower.kr(sig, 0.999).ampdb;
-			peak = peak.lag(\lag.kr(0.05));
-
-			FreeSelf.kr(1 - \gate.kr(1));
-
-			msgValues = if (channels == 1) { [rms, peak] } { rms ++ peak };
-			SendReply.kr(Impulse.kr(\rate.kr(10)), '/bus_levels', msgValues, replyID: id)
-		}.add;
-		available_send_level_synth_defs.add(channels);
-	}
-
-	* create_level_send { |bus, reply_id, addAction, target, run=true, rate=10, lag=0.01|
-		var def_name = ("level_send_" ++ bus.numChannels.asString).asSymbol;
-		if (available_send_level_synth_defs.includes(bus.numChannels).not) {
-			DefaultSynthDefs.add_level_send_synth_def(bus.numChannels);
-			Server.local.sync;
-		};
-		^if (run) {
-			^Synth(def_name, [bus: bus, id: reply_id, rate: rate, lag: lag], target, addAction);
-		} {
-			Synth.newPaused(def_name, [bus: bus, id: reply_id, rate: rate, lag: lag], target, addAction);
-		}
 	}
 
 	* setupSynthDefQueries {

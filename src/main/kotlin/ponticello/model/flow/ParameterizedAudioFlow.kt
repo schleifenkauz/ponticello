@@ -58,12 +58,10 @@ sealed class ParameterizedAudioFlow : AudioFlow(), ParameterizedObject {
         super.onRename(oldName, newName)
     }
 
-    override fun writeCode(placement: NodePlacement): String = writeCode {
-        append("var proc = ")
+    override fun writeCode(): String = writeCode(group = false) {
+        append("SoundProcessFlow('", name.now, "', ")
         writer.createSoundProcessObject(this@ParameterizedAudioFlow)
-        appendLine(";")
-        +"$superColliderName = proc.createInstance"
-        +"$superColliderName.start($placement, latency: 0, playerId: -1, run: ${isActive.now})"
+        append(")")
     }
 
     override fun midiContext(): MidiContext? = ParameterControlsMidiContext(controls)

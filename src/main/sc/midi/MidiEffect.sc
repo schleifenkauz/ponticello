@@ -1,32 +1,11 @@
-MidiEffectInstrument {
+MidiEffectInstrument : NamedObject {
 	classvar dict;
-	var <>name, parameterDefaults, <start, <stop, <noteOn, <noteOff, <control;
+	var parameterDefaults, <start, <stop, <noteOn, <noteOff, <control;
 
-	* initClass { dict = Dictionary.new }
+	* dict { ^dict ?? {dict = Dictionary.new} }
 
 	* new { |name, defaults, start, stop, noteOn, noteOff, cc|
-		^if (dict.includesKey(name)) {
-			var instr = dict[name];
-			instr.update(defaults, start, stop, noteOn, noteOff, cc);
-		} {
-			var instr = super.newCopyArgs(name, defaults, start, stop, noteOn, noteOff, cc);
-			dict[name] = instr;
-			instr;
-		}
-	}
-
-	* get { |name| ^dict[name] }
-
-	* remove { |name| dict.removeAt(name) }
-
-	* rename { |old_name, new_name|
-		var instr = dict.removeAt(old_name);
-		if (instr.notNil) {
-			instr.name = new_name;
-			dict[new_name] = instr;
-		} {
-			Exception("MidiEffectInstrument % not found".format(old_name)).throw;
-		}
+		^super.newCopyArgs(name, defaults, start, stop, noteOn, noteOff, cc);
 	}
 
 	update { |defaults, strt, stp, on, off, cc|

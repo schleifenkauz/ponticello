@@ -4,10 +4,8 @@ import hextant.context.Context
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ponticello.model.flow.MidiTrackFlow
-import ponticello.model.flow.NodePlacement
 import ponticello.model.flow.VSTPluginFlow
 import ponticello.sc.client.ScWriter
-import ponticello.sc.client.run
 import reaktive.value.now
 
 @SerialName("VSTMidiInstrument")
@@ -33,18 +31,15 @@ class VSTMidiInstrument(
         flow.setActive(value)
     }
 
-    override fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {
+    override fun ScWriter.createInstrument(track: MidiTrackFlow) {
         flow.setFlowGroup(track.parentGroup!!)
-        writer.run {
-            append(flow.writeCode(placement))
-            appendLine(";")
-            +"$superColliderName = VSTMidiInstrument(${vst.controllerVar}, enabled: ${isEnabled.now})"
-        }
+        val createFlow = flow.writeCode()
+        append("VSTMidiInstrument($createFlow, enabled: ${isEnabled.now})")
     }
 
     override fun onRemoved() {
         super.onRemoved()
-        flow.release()
+        flow.onRemoved()
     }
 
     override fun copy(): MidiInstrument = VSTMidiInstrument(flow)

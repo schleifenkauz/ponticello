@@ -4,7 +4,6 @@ import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.model.flow.MidiTrackFlow
-import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.AbstractNamedObject
 import ponticello.model.obj.MidiInstrumentReference
 import ponticello.model.score.ScoreObject
@@ -39,7 +38,7 @@ sealed class MidiInstrument : AbstractNamedObject() {
 
     abstract override fun copy(): MidiInstrument
 
-    open fun addToTrack(writer: ScWriter, track: MidiTrackFlow, placement: NodePlacement) {}
+    open fun ScWriter.createInstrument(track: MidiTrackFlow) {}
 
     open fun midiContext(): MidiContext? = null
 

@@ -36,24 +36,8 @@ AudioNodeOrder {
 		};
 	}
 
-	* insertSynth { |score_y, def, args|
-		var node = SimpleAudioNode.new(score_y);
-		var placement = this.insert(node);
-		var synth = Synth(def, args, placement.target, placement.addAction);
-		node.node_(synth);
-		^synth;
-	}
-
-	* insertAdhocSynth { |score_y, out, graphFunc|
-		var node = SimpleAudioNode.new(score_y);
-		var placement = this.insert(node);
-		var synth = graphFunc.play(placement.target, out, addAction: placement.addAction);
-		node.node_(synth);
-		^synth;
-	}
-
 	* insertFlowGroup { |score_y, name|
-		var node = SimpleAudioNode.new(score_y);
+		var node = AudioFlowGroup.new(score_y);
 		var placement = this.insert(node);
 		var group = Group.new(placement.target, placement.addAction);
 		Ponticello.sendMsg('/inserted_flow_group', group.nodeID, name, score_y);

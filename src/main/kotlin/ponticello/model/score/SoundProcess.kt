@@ -358,7 +358,7 @@ class SoundProcess(
         }
         append(", server_latency: ", latency)
         append(", player_id: ", info.player.id)
-        if (midiTrack != null) append(", midiTrack: ", midiTrack.trackVariable)
+        if (midiTrack != null) append(", midiTrack: ", midiTrack.superColliderName)
         append(")")
     }
 

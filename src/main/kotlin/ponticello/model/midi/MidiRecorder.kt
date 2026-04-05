@@ -62,11 +62,11 @@ class MidiRecorder(private val context: Context) {
     fun startRecording(track: MidiTrackFlow) {
         val recordingId = recordingIdCounter++
         tracksByRecordingId[recordingId] = track
-        client.run("${track.trackVariable}.recorder.startRecording($recordingId)")
+        client.run("${track.superColliderName}.recorder.startRecording($recordingId)")
     }
 
     fun finishRecording(track: MidiTrackFlow) {
-        client.run("${track.trackVariable}.recorder.finishRecording")
+        client.run("${track.superColliderName}.recorder.finishRecording")
     }
 
     companion object : PublicProperty<MidiRecorder> by publicProperty("MidiRecorder") {
