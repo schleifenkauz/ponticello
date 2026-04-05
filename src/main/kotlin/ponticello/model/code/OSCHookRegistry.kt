@@ -24,14 +24,16 @@ class OSCHookRegistry(
     }
 
     override fun acceptMessage(ev: OSCMessageEvent) {
-        if (!ev.message.address.startsWith("/osc_hook")) return
+        val address = ev.message.address
+        if (!address.startsWith("/osc_hook")) return
         val hookName = ev.message.getArgument<String>(0, "hook_name") ?: return
         val obj = getOrNull(hookName)
         if (obj == null) {
+            if (address == "/osc_hook_disabled") return
             Logger.warn("Received OSC hook message: Hook '$hookName' not found.", Logger.Category.OSC)
             return
         }
-        when (ev.message.address) {
+        when (address) {
             "/osc_hook" -> obj.addEvent(ev)
             "/osc_hook_disabled" -> obj.updateEnabled(false)
             "/osc_hook_enabled" -> obj.updateEnabled(true)

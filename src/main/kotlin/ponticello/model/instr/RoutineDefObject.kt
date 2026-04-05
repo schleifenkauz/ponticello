@@ -51,7 +51,7 @@ class RoutineDefObject(
     override fun copy(): RoutineDefObject = RoutineDefObject(
         color.copy(),
         ParameterDefList(parameters.mapTo(mutableListOf()) { p -> p.copy().withName(p.name.now) }),
-        body.clone(context)
+        body.clone()
     )
 
     override fun ScWriter.createObject() {
