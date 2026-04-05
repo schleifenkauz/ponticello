@@ -97,12 +97,16 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
 
     override fun createNewObject(name: String, promptPlacement: PromptPlacement?): BusObject? {
         val placement = promptPlacement ?: PromptPlacement.RelativeTo(this)
-        val type = SimpleSelectorPrompt(Rate.entries, "Bus type")
+        val rate = SimpleSelectorPrompt(Rate.entries, "Bus type")
             .showDialog(placement) ?: return null
 
-        val channels = IntegerPrompt("Channels", initialValue = 2, range = 1..16)
+        val defaultChannels = when (rate) {
+            Rate.Audio -> 2
+            Rate.Control -> 1
+        }
+        val channels = IntegerPrompt("Channels", defaultChannels, range = 1..16)
             .showDialog(placement) ?: return null
-        return BusObject.create(type, name, channels)
+        return BusObject.create(rate, name, channels)
     }
 
     override fun getHeaderContent(obj: BusObject): List<Node> = buildList {
