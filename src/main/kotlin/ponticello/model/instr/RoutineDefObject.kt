@@ -15,6 +15,7 @@ import ponticello.impl.ColorSerializer
 import ponticello.impl.Logger
 import ponticello.impl.copy
 import ponticello.impl.randomColor
+import ponticello.model.ctx.KeywordVariable
 import ponticello.model.ctx.ParameterDefVariable
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
@@ -88,7 +89,10 @@ class RoutineDefObject(
             set(SelectionDistributor, SelectionDistributor.newInstance())
             set(PonticelloContext, PonticelloContext.RoutineDef(this@RoutineDefObject))
             val parent = context.getOrNull(Scope)
-            set(Scope, Scope.fromList(parameters, parent, ::ParameterDefVariable))
+            val scope = Scope.fromList(parameters, parent, ::ParameterDefVariable)
+            scope.add(KeywordVariable("inst"))
+            scope.add(KeywordVariable("duration"))
+            set(Scope, scope)
         }
         super.initialize(myContext)
         parameters.initialize(myContext)

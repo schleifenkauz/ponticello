@@ -11,6 +11,7 @@ import javafx.scene.paint.Color
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import ponticello.impl.Logger
+import ponticello.model.ctx.KeywordVariable
 import ponticello.model.ctx.ParameterDefVariable
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
@@ -49,11 +50,15 @@ class MidiEffectInstrument(
 
     override fun initialize(context: Context) {
         super.initialize(context)
+        val parent = context.getOrNull(Scope)
+        val scope = Scope.fromList(parameters, parent, ::ParameterDefVariable)
+        for (param in CALLBACK_PARAMETERS) {
+            scope.add(KeywordVariable(param))
+        }
         val subContext = context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
             set(PonticelloContext, PonticelloContext.MidiEffect(this@MidiEffectInstrument))
-            val parent = context.getOrNull(Scope)
-            set(Scope, Scope.fromList(parameters, parent, ::ParameterDefVariable))
+            set(Scope, scope)
         }
         parameters.initialize(subContext)
         for (component in listOf(start, stop, noteOn, noteOff, cc)) {
@@ -112,10 +117,14 @@ class MidiEffectInstrument(
     }
 
     private fun ScWriter.callbackParameters() {
-        +"arg pitch, velocity, track, controls, src"
+        append("arg ")
+        appendList(CALLBACK_PARAMETERS, ", ")
+        appendLine(";")
     }
 
     companion object {
+        private val CALLBACK_PARAMETERS = listOf("pitch", "velocity", "track", "controls", "src")
+
         fun newEmpty(name: String): MidiEffectInstrument = MidiEffectInstrument(
             parameters = ParameterDefList(),
             start = EditorRoot(CodeBlockEditor().defaultState()),

@@ -5,11 +5,9 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import reaktive.value.ReactiveString
 import reaktive.value.reactiveValue
 
-object InstanceVariable : BoundVariable() {
-    override val origin: Any
-        get() = 0
+data class KeywordVariable(override val origin: String) : BoundVariable() {
     override val name: ReactiveString
-        get() = reactiveValue("inst")
+        get() = reactiveValue(origin)
     override val info: ReactiveString
         get() = reactiveValue("")
 

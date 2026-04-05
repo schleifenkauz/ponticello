@@ -5,7 +5,7 @@ import hextant.serial.EditorRoot
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ponticello.model.ctx.InstanceVariable
+import ponticello.model.ctx.KeywordVariable
 import ponticello.model.ctx.MidiVariable
 import ponticello.model.ctx.Scope
 import ponticello.model.instr.ParameterizedObject
@@ -27,7 +27,7 @@ class ExprControl(override val expr: EditorRoot<@Contextual ScExprExpander>) : C
     }
 
     override fun Scope.defineBoundVariables(namedControl: NamedParameterControl) {
-        add(InstanceVariable)
+        add(KeywordVariable("inst"))
         if (namedControl.parentObject is ParameterizedMidiInstrument) {
             add(MidiVariable.PITCH)
             add(MidiVariable.VELOCITY)
