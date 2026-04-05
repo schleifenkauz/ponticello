@@ -49,7 +49,7 @@ class ObjectReference<O : NamedObject>(private var _name: String) : ScExpr, java
             if (registry is NamedObjectList) registry.getOrNull(_name)
             else registry.find { it.name.now == _name }
         isResolved = reactiveValue(obj != null)
-        if (obj == null) {
+        if (obj == null && _name != NONE) {
             val objectType = if (registry is ObjectList) registry.objectType else "Object"
             Logger.warn("$objectType '$_name' not found", Logger.Category.Registries)
         }

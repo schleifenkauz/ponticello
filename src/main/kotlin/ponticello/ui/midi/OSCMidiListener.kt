@@ -46,7 +46,7 @@ abstract class OSCMidiListener : OSCMessageListener, AbstractContextualObject() 
         val address = event.message.address
         if (address !in ACCEPTED_MESSAGES) return
         val sourceDevice = event.message.getArgument<String>(0, "sourceDevice") ?: return
-        if (sourceDevice != this.sourceDevice) return
+        if (sourceDevice != this.sourceDevice?.removeSurrounding("\"")) return
         val num = event.message.getArgument<Int>(1, "num") ?: return
         val vel = event.message.getArgument<Int>(2, "vel") ?: return
         try {

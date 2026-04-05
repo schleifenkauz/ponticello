@@ -311,6 +311,7 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
             "buf".expand { BufferSelector().defaultState() }
             "obj".expand { ScoreObjectSelector().defaultState() }
             "pattern".expand { GlobalPatternSelector().defaultState() }
+            "osc-hook".expand { _ -> OSCHookSelector().defaultState() }
             "control".expand(
                 condition = { exp -> exp.context.getOrNull(PonticelloContext) is PonticelloContext.Control },
                 create = { ParameterReferenceEditor().defaultState() }

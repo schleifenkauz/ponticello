@@ -2,7 +2,9 @@ package ponticello.ui.registry
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.controls.EditableText
 import fxutils.prompt.PromptPlacement
+import fxutils.setFixedWidth
 import fxutils.styleClass
 import hextant.serial.EditorRoot
 import javafx.application.Platform
@@ -10,6 +12,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.control.Button
+import javafx.scene.control.Label
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import javafx.scene.input.DataFormat
@@ -24,6 +27,7 @@ import ponticello.model.obj.SuperColliderObject
 import ponticello.model.project.OSC_HOOKS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
+import ponticello.model.registry.ObjectList
 import ponticello.sc.editor.ScExprEditor
 import ponticello.ui.dock.ListToolPaneState
 import ponticello.ui.dock.Side
@@ -45,15 +49,20 @@ class OSCHookRegistryPane(
     override val supportedModes: Collection<DisplayMode>
         get() = setOf(DisplayMode.Collapsable, DisplayMode.DetailsPane)
 
-    override val dataFormat: DataFormat
-        get() = OSCHookObject.DATA_FORMAT
+    override val dataFormat: DataFormat get() = OSCHookObject.DATA_FORMAT
 
     override fun detailWindowIcon(obj: OSCHookObject): Ikon = Material2AL.CODE
 
     override fun defaultState(): ToolPaneState = ListToolPaneState.docked
 
-    override fun createNewObject(name: String, promptPlacement: PromptPlacement?): OSCHookObject =
-        OSCHookObject.create(name)
+    override fun createNewObject(promptPlacement: PromptPlacement, list: ObjectList<OSCHookObject>): OSCHookObject {
+        val initialName = registry.availableName("hook")
+        return OSCHookObject.create(initialName)
+    }
+
+    override fun onCreated(obj: OSCHookObject, box: ObjectBox<OSCHookObject>) {
+        box.nameControl!!.startEdit()
+    }
 
     override fun getEditorRoot(obj: OSCHookObject): EditorRoot<out ScExprEditor<*>> = obj.function
 
@@ -62,13 +71,19 @@ class OSCHookRegistryPane(
                 SuperColliderObject.actions.withContext(box.obj) +
                 ObjectBox.removeObjectAction.withContext(box)
 
-    override fun getHeaderContent(obj: OSCHookObject): List<Node> {
-        val btn = Button() styleClass "event-count-button"
-        btn.userData = obj.eventCount.forEach { count ->
-            Platform.runLater { btn.text = count.toString() }
+    override fun getHeaderContent(obj: OSCHookObject): List<Node> = listOf(
+        Label("Path: /"),
+        PathControl(obj).setFixedWidth(120.0),
+        createEventCountButton(obj)
+    )
+
+    private fun createEventCountButton(obj: OSCHookObject): Button {
+        val eventCountButton = Button() styleClass "event-count-button"
+        eventCountButton.userData = obj.eventCount.forEach { count ->
+            Platform.runLater { eventCountButton.text = count.toString() }
         }
-        btn.isFocusTraversable = false
-        btn.setOnMouseClicked { ev ->
+        eventCountButton.isFocusTraversable = false
+        eventCountButton.setOnMouseClicked { ev ->
             when (ev.button) {
                 MouseButton.PRIMARY -> showEventTable(obj)
                 MouseButton.SECONDARY -> obj.resetEvents()
@@ -76,7 +91,7 @@ class OSCHookRegistryPane(
             }
             ev.consume()
         }
-        return listOf(btn)
+        return eventCountButton
     }
 
     private fun showEventTable(obj: OSCHookObject) {
@@ -97,6 +112,14 @@ class OSCHookRegistryPane(
         table.columns.addAll(columns)
         val window = makeSubWindow(table, "Events for /${obj.name.now}", obj.context)
         window.show()
+    }
+
+    private class PathControl(private val obj: OSCHookObject) : EditableText(obj.path) {
+        override fun isValid(text: String): Boolean = OSCHookObject.isValidOSCPath(text)
+
+        override fun updateText(value: String) {
+            obj.setPath(value)
+        }
     }
 
     companion object : Type(uid = 20, "OSC Hooks") {

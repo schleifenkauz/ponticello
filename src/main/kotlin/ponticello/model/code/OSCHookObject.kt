@@ -8,6 +8,7 @@ import hextant.context.SelectionDistributor
 import hextant.context.extend
 import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
+import javafx.application.Platform
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -24,21 +25,18 @@ import ponticello.sc.client.ScWriter
 import ponticello.sc.client.getArgument
 import ponticello.sc.client.run
 import ponticello.sc.editor.ScFunctionEditor
-import reaktive.value.ReactiveBoolean
-import reaktive.value.ReactiveInt
-import reaktive.value.ReactiveVariable
-import reaktive.value.now
-import reaktive.value.reactiveVariable
+import reaktive.value.*
 
 @Serializable
 class OSCHookObject(
+    @SerialName("address") private val _path: ReactiveVariable<String> = reactiveVariable(""),
     val function: EditorRoot<@Contextual ScFunctionEditor>,
     private val enabled: ReactiveVariable<Boolean> = reactiveVariable(true),
 ) : AbstractSuperColliderObject() {
     @SerialName("name")
     override var _name: ReactiveVariable<String>? = null
 
-    override fun superColliderName(objectName: String): String = "~osc_${objectName}"
+    override fun superColliderName(objectName: String): String = "OSCdef('$objectName')"
 
     @Transient
     private val _events = mutableListOf<Event>()
@@ -48,10 +46,16 @@ class OSCHookObject(
     private val _eventCount = reactiveVariable(0)
     val eventCount: ReactiveInt get() = _eventCount
 
+    val path: ReactiveString get() = _path
+
+    val isEnabled: ReactiveBoolean
+        get() = enabled
+
     override val registry: OSCHookRegistry
         get() = context.project[OSC_HOOKS]
 
     override fun initialize(context: Context) {
+        if (_path.now.isBlank() && _name != null) _path.set(_name!!.now)
         super.initialize(context)
         function.initialize(context.extend {
             set(SelectionDistributor, SelectionDistributor.newInstance())
@@ -60,26 +64,32 @@ class OSCHookObject(
         })
     }
 
-    val isEnabled: ReactiveBoolean
-        get() = enabled
-
     fun toggleEnabled() {
-        enabled.now = !enabled.now
         client.run {
-            if (enabled.now) +"$superColliderName.enable"
+            if (!enabled.now) +"$superColliderName.enable"
             else +"$superColliderName.disable"
         }
     }
 
+    fun updateEnabled(enabled: Boolean) {
+        Platform.runLater {
+            this.enabled.set(enabled)
+        }
+    }
+
+    override fun ScWriter.freeObject() {
+        +"$superColliderName.free"
+    }
+
     override fun ScWriter.createObject() {
-        val path = name.now
-        val func = function.editor.result.now
-        appendBlock("$superColliderName = OSCFunc(", endLine = null) {
+        appendBlock("OSCHook('${name.now}', ", endLine = null) {
+            val func = function.editor.result.now
             +"arg msg, time, addr, recvPort"
             val vars = func.parameters + func.body.variables
             if (vars.isNotEmpty()) {
                 +"var ${vars.joinToString(", ") { p -> p.text }}"
             }
+            +"var path = msg[0]"
             for ((i, p) in func.parameters.withIndex()) {
                 +"${p.text} = msg[${i + 1}]"
             }
@@ -91,14 +101,29 @@ class OSCHookObject(
                 }
             }
             +"{ |error| error.reportError }"
-            +"Ponticello.sendMsg(\\osc_hook, '$path', time, addr.ip, addr.port, *msg[1..])"
+            +"Ponticello.sendMsg(\\osc_hook, '${name.now}', time, addr.ip, addr.port, *msg[1..])"
         }
-        appendLine(", '$path').fix;")
+        appendLine(", '/${path.now}').fix;")
         if (!enabled.now) +"$superColliderName.disable"
     }
 
+    fun setPath(path: String): Boolean {
+        if (!isValidOSCPath(path)) return false
+        _path.set(path)
+        client.run {
+            +"var func = $superColliderName.func"
+            +"$superColliderName.free"
+            +"OSCHook('${name.now}', func, '/$path')"
+        }
+        return true
+    }
+
     override fun onRename(oldName: String, newName: String) {
-        sync()
+        if (path.now.isBlank()) {
+            _path.set(newName)
+        }
+        client.run("OSCHook('$oldName').free")
+        client.run { createObject() }
     }
 
     fun addEvent(ev: OSCMessageEvent) {
@@ -126,6 +151,11 @@ class OSCHookObject(
     companion object {
         val DATA_FORMAT = TypedDataFormat<OSCHookObject>("ponticello:osc_hook")
 
-        fun create(name: String) = OSCHookObject(EditorRoot(ScFunctionEditor().defaultState())).withName(name)
+        fun create(name: String) = OSCHookObject(
+            reactiveVariable(""),
+            EditorRoot(ScFunctionEditor().defaultState())
+        ).withName(name)
+
+        fun isValidOSCPath(path: String) = path.matches(Regex("^[^/]+(/[^/]+)*(/[^/]+)*$"))
     }
 }
