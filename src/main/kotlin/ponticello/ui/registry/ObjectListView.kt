@@ -117,6 +117,9 @@ class ObjectListView<O : Any>(
                         ev.acceptTransferModes(*acceptedTransferModes)
                         ev.consume()
                         val idx = getBoxIndexFromPos(dragSrc, ev.screenX, ev.screenY, boxes)
+                        if (ev.transferMode != TransferMode.COPY &&
+                            (boxes.getOrNull(idx) == dragSrc || boxes.getOrNull(idx - 1) == dragSrc)
+                        ) return@addEventHandler
                         val prevPosition = itemsLayout.children.indexOf(dropPreviewNode)
                         if (idx != prevPosition) {
                             if (prevPosition != -1) {
@@ -193,9 +196,6 @@ class ObjectListView<O : Any>(
                 .binarySearch(screenX)
         }
         if (idx < 0) idx = -idx - 1
-        if (boxes.getOrNull(idx) == dragSrc || boxes.getOrNull(idx - 1) == dragSrc) {
-            return -1
-        }
         return idx
     }
 
