@@ -480,7 +480,10 @@ data class TopLevelFunctionCall(val function: Identifier, val arguments: List<Sc
 fun ScExpr.send(message: String, vararg arguments: ScExpr) =
     MessageSend(this, Identifier(message), arguments.asList())
 
-fun lambda(parameters: List<Identifier>, expr: ScExpr) = ScFunction(parameters, CodeBlock(emptyList(), listOf(expr)))
+fun lambda(parameters: List<Identifier>, expr: ScExpr) = ScFunction(parameters, wrapInBlockIfNeeded(expr))
+
+private fun wrapInBlockIfNeeded(expr: ScExpr): CodeBlock =
+    expr as? CodeBlock ?: CodeBlock(emptyList(), listOf(expr))
 
 fun lambda(vararg parameters: String, expr: () -> ScExpr) = lambda(parameters.map(::Identifier), expr())
 

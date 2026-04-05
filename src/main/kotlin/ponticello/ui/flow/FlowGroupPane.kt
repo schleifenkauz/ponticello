@@ -288,6 +288,7 @@ class FlowGroupPane(
                         otherwise = { "Start recording MIDI" }
                     )
                 }
+                enableWhen { flow -> flow.isActive }
                 shortcut("Alt?+R")
                 executes { track -> track.toggleRecording() }
             }

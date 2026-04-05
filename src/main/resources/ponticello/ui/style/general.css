@@ -17,21 +17,6 @@
     -fx-background-color: transparent;
 }
 
-.name-control {
-    -fx-spacing: 0px;
-    -fx-alignment: center-left;
-    -fx-border-width: 0px;
-    -fx-border-radius: 0px;
-    -fx-border-color: black;
-}
-
-.name-field, .name-label {
-    -fx-background-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-width: 0;
-    -fx-padding: 0px 2px 0px 2px;
-}
-
 .split-pane-divider {
     -fx-padding: 0px;
     -fx-background-color: transparent;

@@ -182,43 +182,48 @@ MidiTrack {
 	}
 
 	noteOn { |num, val, src|
-		src.track = this;
-		//postf("Note On %, % (src: %)\n", num, val, src);
-		activeNotes[num] = activeNotes[num].add(src);
-		notesInPedal.remove(num);
-		this.perform(src) { |instr|
-			instr.noteOn(num, val, src)
+		if (enabled) {
+			src.track = this;
+			//postf("Note On %, % (src: %)\n", num, val, src);
+			activeNotes[num] = activeNotes[num].add(src);
+			notesInPedal.remove(num);
+			this.perform(src) { |instr|
+				instr.noteOn(num, val, src)
+			}
 		}
 	}
 
-	noteOff { |num, val, src|
-		src.track = this;
-		//recorder.noteOff(num, val, src);
-		//postf("Note Off %, % (src: %)\n", num, val, src);
-		if (this.isPedalDown.not) {
-			activeNotes[num].remove(src);
-			this.perform(src) { |instr|
-				instr.noteOff(num, val, src)
-			};
-			if (src.respondsTo(\dispose)) {
-				src.dispose;
+	noteOff { |num, val, src, force=false|
+		if (enabled || force) {
+			src.track = this;
+			//postf("Note Off %, % (src: %)\n", num, val, src);
+			if (this.isPedalDown.not) {
+				activeNotes[num].remove(src);
+				this.perform(src) { |instr|
+					instr.noteOff(num, val, src)
+				};
+				if (src.respondsTo(\dispose)) {
+					src.dispose;
+				}
+			} {
+				notesInPedal = notesInPedal.add(num);
 			}
-		} {
-			notesInPedal = notesInPedal.add(num);
 		}
 	}
 
 	control { |num, val, src|
-		src.track = this;
-		controlValues[num] = val;
-		if (num == 64 && val == 0) {
-			notesInPedal.do { |num|
-				this.noteOff(num, val, src);
-			}
-		};
-		this.perform(src) { |instr|
-			instr.control(num, val, src)
-		};
+		if (enabled) {
+			src.track = this;
+			controlValues[num] = val;
+			if (num == 64 && val == 0) {
+				notesInPedal.do { |num|
+					this.noteOff(num, val, src);
+				}
+			};
+			this.perform(src) { |instr|
+				instr.control(num, val, src)
+			};
+		}
 	}
 
 	isPedalDown { ^(controlValues[64] ? 0) > 0 }
@@ -245,7 +250,7 @@ MidiTrack {
 		} {
 			this.activeNotesDo { |num, src|
 				if (src.player_id == player_id) {
-					this.noteOff(num, 0, src);
+					this.noteOff(num, 0, src, force:true);
 				}
 			}
 		}

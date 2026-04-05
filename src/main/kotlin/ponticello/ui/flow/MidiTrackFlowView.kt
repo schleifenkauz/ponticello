@@ -11,6 +11,10 @@ import javafx.geometry.Orientation
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Label
+import javafx.scene.input.DataFormat
+import javafx.scene.input.DragEvent
+import javafx.scene.input.Dragboard
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
@@ -19,7 +23,10 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
 import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.midi.*
+import ponticello.model.obj.MidiInstrumentReference
+import ponticello.model.obj.resolve
 import ponticello.model.registry.ObjectList
+import ponticello.model.registry.reference
 import ponticello.ui.dock.AppLayout
 import ponticello.ui.live.GridBanksBar
 import ponticello.ui.live.MidiGridPane
@@ -37,6 +44,7 @@ import ponticello.ui.score.InstrumentSelectorPrompt
 import ponticello.ui.score.ParameterControlsPane
 import reaktive.value.binding.`if`
 import reaktive.value.binding.map
+import reaktive.value.now
 import java.util.*
 
 class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayConfig<MidiInstrument> {
@@ -54,6 +62,9 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
 
     override val supportedModes: Collection<ObjectListView.DisplayMode>
         get() = listOf(ObjectListView.DisplayMode.Collapsable)
+
+    override val canDuplicate: Boolean
+        get() = true
 
     override fun displayName(obj: MidiInstrument): Boolean = false
 
@@ -115,6 +126,25 @@ class MidiTrackFlowView(private val flow: MidiTrackFlow) : VBox(), ListDisplayCo
     override fun createNewObject(promptPlacement: PromptPlacement, list: ObjectList<MidiInstrument>): MidiInstrument? =
         NewMidiInstrumentPrompt(flow.context, "Insert instrument")
             .showPopup(promptPlacement)?.createInstrument(flow.context, promptPlacement)
+
+    override val dataFormat: DataFormat get() = MidiInstrument.DATA_FORMAT
+
+    override fun configureDragboard(obj: MidiInstrument, dragboard: Dragboard) {
+        dragboard.setContent(mapOf(dataFormat to obj.reference()))
+    }
+
+    override fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<MidiInstrument>): List<MidiInstrument> {
+        if (!ev.dragboard.hasContent(dataFormat)) return emptyList()
+        @Suppress("UNCHECKED_CAST")
+        val reference = ev.dragboard.getContent(dataFormat) as MidiInstrumentReference
+        val instr = reference.resolve(flow.context) ?: return emptyList()
+        return if (ev.acceptedTransferMode != TransferMode.COPY) listOf(instr)
+        else {
+            val copy = instr.copy()
+            copy.setEnabled(instr.isEnabled.now)
+            listOf(copy)
+        }
+    }
 
     companion object {
         private val instrumentActions = collectActions<MidiInstrument> {

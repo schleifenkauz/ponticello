@@ -1,10 +1,12 @@
 package ponticello.model.midi
 
+import fxutils.drag.TypedDataFormat
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.model.flow.MidiTrackFlow
 import ponticello.model.flow.NodePlacement
 import ponticello.model.obj.AbstractNamedObject
+import ponticello.model.obj.MidiInstrumentReference
 import ponticello.model.score.ScoreObject
 import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
@@ -45,6 +47,8 @@ sealed class MidiInstrument : AbstractNamedObject() {
 
     companion object {
         private var idCounter = 0
+
+        val DATA_FORMAT = TypedDataFormat<MidiInstrumentReference>("ponticello/midi-instrument")
     }
 
 }

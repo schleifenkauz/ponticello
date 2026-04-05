@@ -11,6 +11,7 @@ import ponticello.model.flow.VSTPluginFlow
 import ponticello.model.instr.*
 import ponticello.model.live.LiveObject
 import ponticello.model.live.LiveTaskObject
+import ponticello.model.midi.MidiInstrument
 import ponticello.model.player.ClockObject
 import ponticello.model.project.flows
 import ponticello.model.record.LiveBufferObject
@@ -19,12 +20,12 @@ import ponticello.model.score.MeterObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.server.BufferObject
-import reaktive.value.now
 
 typealias InstrumentReference = ObjectReference<@Contextual InstrumentObject>
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
 typealias ProcessDefReference = ObjectReference<@Contextual RoutineDefObject>
 typealias MidiEffectInstrumentReference = ObjectReference<@Contextual MidiEffectInstrument>
+typealias MidiInstrumentReference = ObjectReference<@Contextual MidiInstrument>
 typealias MidiTrackReference = ObjectReference<@Contextual MidiTrackFlow>
 typealias BusReference = ObjectReference<@Contextual BusObject>
 typealias BufferReference = ObjectReference<@Contextual BufferObject>
@@ -44,11 +45,10 @@ typealias LiveBufferReference = ObjectReference<@Contextual LiveBufferObject>
 
 fun FlowReference.resolve(context: Context): AudioFlow? {
     val allFlows = context.project.flows.allFlows()
-    val referenced = allFlows.find { f -> f.name.now == this.getName() }
-    if (referenced != null) {
-        return resolve(allFlows)
-    } else {
-        setUnresolved()
-        return null
-    }
+    return resolve(allFlows)
+}
+
+fun MidiInstrumentReference.resolve(context: Context): MidiInstrument? {
+    val allMidiInstruments = context.project.flows.allMidiTracks().flatMap(MidiTrackFlow::instruments)
+    return resolve(allMidiInstruments)
 }
