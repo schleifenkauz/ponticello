@@ -28,9 +28,13 @@ abstract class AbstractRenamableObject : RenamableObject, AbstractNamedObject() 
 
     override fun rename(newName: String) {
         if (newName == name.now) return
+        val oldName = name.now
         context[UndoManager].record(RenameEdit(this, name.now, newName))
         _name!!.now = newName
+        onRename(oldName, newName)
     }
+
+    protected open fun onRename(oldName: String, newName: String) {}
 
     override fun copy(): RenamableObject = throw UnsupportedOperationException("Cannot copy $this")
 

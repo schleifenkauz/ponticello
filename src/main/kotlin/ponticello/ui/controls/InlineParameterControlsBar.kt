@@ -12,9 +12,9 @@ import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.binding.map

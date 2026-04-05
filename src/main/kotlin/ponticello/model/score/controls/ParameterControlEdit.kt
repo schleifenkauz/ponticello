@@ -3,10 +3,10 @@ package ponticello.model.score.controls
 import fxutils.undo.AbstractEdit
 import ponticello.sc.ControlSpec
 
-abstract class ParameterControlEdit(protected val control: ParameterControlList.NamedParameterControl) :
+abstract class ParameterControlEdit(protected val control: NamedParameterControl) :
     AbstractEdit() {
     class ReassignControl(
-        control: ParameterControlList.NamedParameterControl,
+        control: NamedParameterControl,
         private val oldControl: ParameterControl,
         private val newControl: ParameterControl,
     ) : ParameterControlEdit(control) {
@@ -23,7 +23,7 @@ abstract class ParameterControlEdit(protected val control: ParameterControlList.
     }
 
     class EditCustomSpec(
-        control: ParameterControlList.NamedParameterControl,
+        control: NamedParameterControl,
         private val extraSpecBefore: ControlSpec?,
         private val extraSpecAfter: ControlSpec?,
     ) : ParameterControlEdit(control) {

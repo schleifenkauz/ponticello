@@ -1,14 +1,13 @@
 package ponticello.ui.score
 
-import fxutils.centerChildren
+import fxutils.shortcut
 import fxutils.styleClass
 import fxutils.textArea
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.value.ObservableValue
-import javafx.scene.input.KeyCode
+import javafx.scene.Cursor
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.HBox
 import javafx.scene.text.Font
 import javafx.scene.text.Text
 import ponticello.model.project.InlineControlsDisplay
@@ -21,8 +20,7 @@ import reaktive.value.forEach
 import reaktive.value.now
 
 class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : ScoreObjectView(inst) {
-    private val edit = textArea(obj.memoText) styleClass "memo-area"
-    private val display = textArea(obj.memoText) styleClass "memo-area"
+    private val textArea = textArea(obj.memoText) styleClass "memo-area"
     private val computeSize = Text()
 
     private val autosize: Observer
@@ -30,23 +28,23 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
     private var isEditing = false
 
     init {
-        children.setAll(HBox(display).centerChildren())
+        children.setAll(textArea)
         addEventFilter(MouseEvent.MOUSE_CLICKED) { ev ->
             if (isEditing) return@addEventFilter
             if (ev.clickCount >= 2) enterEdit() else selectView(addToSelection = ev.isShiftDown)
             ev.consume()
         }
         addEventFilter(KeyEvent.KEY_PRESSED) { ev ->
-            if (ev.code == KeyCode.ESCAPE) {
+            if ("ESCAPE".shortcut.matches(ev)) {
                 exitEdit()
                 ev.consume()
             }
         }
-        edit.focusedProperty().addListener { _, _, focused ->
+        textArea.focusedProperty().addListener { _, _, focused ->
             if (!focused) exitEdit()
         }
-        edit.prefWidthProperty().bind(prefWidthProperty())
-        edit.prefHeightProperty().bind(prefHeightProperty())
+        textArea.prefWidthProperty().bind(prefWidthProperty())
+        textArea.prefHeightProperty().bind(prefHeightProperty())
 
         autosize = obj.memoText.forEach { text ->
             computeSize.text = text
@@ -56,17 +54,17 @@ class MemoObjectView(override val obj: MemoObject, inst: ScoreObjectInstance) : 
     }
 
     fun enterEdit() {
-        if (isEditing) return
-        children.setAll(HBox(edit).centerChildren())
-        edit.selectAll()
-        edit.requestFocus()
-        isEditing = true
+        if (textArea.isEditable) return
+        textArea.isEditable = true
+        textArea.cursor = Cursor.DEFAULT
+        textArea.selectAll()
+        textArea.requestFocus()
     }
 
     private fun exitEdit() {
-        if (!isEditing) return
-        children.setAll(HBox(display).centerChildren())
-        isEditing = false
+        if (!textArea.isEditable) return
+        textArea.isEditable = false
+        textArea.cursor = Cursor.TEXT
         if (obj.memoText.now.isBlank()) {
             instance.score!!.removeObject(instance, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
         }

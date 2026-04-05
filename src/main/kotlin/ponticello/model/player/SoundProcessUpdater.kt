@@ -2,7 +2,6 @@ package ponticello.model.player
 
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.*
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp
@@ -121,6 +120,10 @@ class SoundProcessUpdater<O>(
         val code = newControl.writeCode(paramName, spec, obj)
         updateSoundProcess("replaceControl($code)")
         observeControl(parameter, newControl)
+    }
+
+    override fun renamedControl(parameter: NamedParameterControl, oldName: String, newName: String) {
+        updateSoundProcess("renameControl('$oldName', '$newName')")
     }
 
     override fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {

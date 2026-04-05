@@ -3,9 +3,9 @@ package ponticello.ui.score
 import javafx.scene.layout.Pane
 import ponticello.model.score.Envelope
 import ponticello.model.score.controls.EnvelopeControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import reaktive.Observer

@@ -21,7 +21,7 @@ import reaktive.value.reactiveVariable
 data class BufferControl(
     val sample: ReactiveVariable<BufferReference>
 ) : ParameterControl() {
-    override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
+    override fun initialize(context: Context, namedControl: NamedParameterControl) {
         super.initialize(context, namedControl)
         sample.now.resolve(context[BufferRegistry])
     }

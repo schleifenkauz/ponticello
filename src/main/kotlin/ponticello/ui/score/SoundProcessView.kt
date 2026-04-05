@@ -22,7 +22,6 @@ import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.score.*
 import ponticello.model.score.controls.*
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.server.BufferRegistry
 import ponticello.model.server.BusRegistry
 import ponticello.model.server.SampleObject

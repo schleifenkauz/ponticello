@@ -5,7 +5,7 @@ import fxutils.prompt.PromptPlacement
 import ponticello.impl.Logger
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.NamedParameterControl
 
 class ParameterControlSelector : ObjectSelector<NamedParameterControl>() {
     private lateinit var associatedObject: ParameterizedObject

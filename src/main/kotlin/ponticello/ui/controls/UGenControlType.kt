@@ -17,8 +17,8 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignS
 import ponticello.impl.Logger
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.ObjectPosition
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.getCode
 import ponticello.sc.ControlSpec

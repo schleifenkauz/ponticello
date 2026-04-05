@@ -1,7 +1,6 @@
 package ponticello.ui.misc
 
 import ponticello.model.score.controls.*
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
 import reaktive.Observer
 import reaktive.and

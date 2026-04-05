@@ -6,7 +6,6 @@ import hextant.context.Context
 import javafx.scene.Node
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.*
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView

@@ -20,7 +20,7 @@ class BusValueControl(
     val bus: ReactiveVariable<BusReference>,
     val offset: ReactiveVariable<Int> = reactiveVariable(0)
 ) : ParameterControl() {
-    override fun initialize(context: Context, namedControl: ParameterControlList.NamedParameterControl) {
+    override fun initialize(context: Context, namedControl: NamedParameterControl) {
         super.initialize(context, namedControl)
         bus.now.resolve(context[BusRegistry])
     }

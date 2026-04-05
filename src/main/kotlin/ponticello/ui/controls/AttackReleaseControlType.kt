@@ -12,8 +12,8 @@ import ponticello.impl.toDecimal
 import ponticello.impl.zero
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.AttackReleaseControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.AttackReleaseControlSpec
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
@@ -30,7 +30,7 @@ data object AttackReleaseControlType : ControlType<AttackReleaseControl>() {
         spec is NumericalControlSpec || spec is AttackReleaseControlSpec
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: AttackReleaseControl,
         view: ScoreObjectView?,
     ): Node {

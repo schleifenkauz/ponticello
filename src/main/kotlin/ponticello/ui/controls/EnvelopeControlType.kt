@@ -13,8 +13,8 @@ import ponticello.impl.asTime
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.EnvelopeControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
@@ -29,7 +29,7 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
         obj is ScoreObject && spec is NumericalControlSpec
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl, control: EnvelopeControl, view: ScoreObjectView?,
+        namedControl: NamedParameterControl, control: EnvelopeControl, view: ScoreObjectView?,
     ): Node {
         if (namedControl.spec.now !is NumericalControlSpec) return missingSpecOptionsBar(namedControl)
         val colorPicker = colorPicker(control.displayColor)
@@ -54,7 +54,7 @@ data object EnvelopeControlType : ControlType<EnvelopeControl>() {
     }
 
     override fun actions(
-        namedControl: ParameterControlList.NamedParameterControl, control: EnvelopeControl, view: ScoreObjectView?,
+        namedControl: NamedParameterControl, control: EnvelopeControl, view: ScoreObjectView?,
     ): List<ContextualizedAction> = actions.withContext(control)
 
     override fun toString(): String = "Env"

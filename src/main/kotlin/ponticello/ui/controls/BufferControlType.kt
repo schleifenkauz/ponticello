@@ -16,8 +16,8 @@ import ponticello.model.obj.BufferReference
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.BufferControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.server.AllocatedBufferObject
 import ponticello.model.server.BufferRegistry
 import ponticello.model.server.SampleObject
@@ -35,13 +35,13 @@ data object BufferControlType : ControlType<BufferControl>() {
     override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = spec is BufferControlSpec
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: BufferControl,
         view: ScoreObjectView?,
     ): Node = createSimpleInput(namedControl, control)
 
     override fun createSimpleInput(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: BufferControl,
     ): Node {
         val spec = namedControl.spec.now as? BufferControlSpec
@@ -97,7 +97,7 @@ data object BufferControlType : ControlType<BufferControl>() {
     }
 
     override fun actions(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: BufferControl,
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = actions.withContext(control)

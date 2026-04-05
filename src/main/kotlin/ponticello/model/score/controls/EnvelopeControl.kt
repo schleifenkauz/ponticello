@@ -8,7 +8,6 @@ import kotlinx.serialization.Transient
 import ponticello.impl.ColorSerializer
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.Envelope
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.Warp

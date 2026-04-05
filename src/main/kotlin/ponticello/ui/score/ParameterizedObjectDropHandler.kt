@@ -18,7 +18,7 @@ import ponticello.model.instr.ParameterizedObject
 import ponticello.model.score.controls.BufferControl
 import ponticello.model.score.controls.BusControl
 import ponticello.model.score.controls.ExprControl
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry
 import ponticello.model.server.BusRegistry

@@ -14,8 +14,8 @@ import ponticello.model.midi.MidiEffectObject
 import ponticello.model.midi.MidiInstrument
 import ponticello.model.score.ScoreObject
 import ponticello.model.score.controls.ExprControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.model.score.controls.getCode
 import ponticello.sc.AttackReleaseControlSpec
 import ponticello.sc.ControlSpec

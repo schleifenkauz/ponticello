@@ -25,7 +25,6 @@ import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.*
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.defaultControlType

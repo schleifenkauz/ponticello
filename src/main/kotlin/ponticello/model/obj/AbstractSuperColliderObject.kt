@@ -28,13 +28,7 @@ abstract class AbstractSuperColliderObject : AbstractRenamableObject(), SuperCol
         client.run { freeObject() }
     }
 
-    override fun rename(newName: String) {
-        val oldName = name.now
-        super.rename(newName)
-        onRename(oldName, newName)
-    }
-
-    protected open fun onRename(oldName: String, newName: String) {
+    override fun onRename(oldName: String, newName: String) {
         val oldVariableName = superColliderName(oldName)
         client.run {
             +"$superColliderName = $oldVariableName"

@@ -10,8 +10,8 @@ import ponticello.impl.json
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.live.ItemTarget
 import ponticello.model.registry.reference
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.TriggerControl
 import ponticello.sc.ControlSpec
 import ponticello.sc.NumericalControlSpec
@@ -30,7 +30,7 @@ object TriggerControlType : ControlType<TriggerControl>() {
     ): TriggerControl = TriggerControl()
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: TriggerControl,
         view: ScoreObjectView?
     ): Node {

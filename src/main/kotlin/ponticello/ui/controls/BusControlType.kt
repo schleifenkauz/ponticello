@@ -11,8 +11,8 @@ import ponticello.impl.Logger
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.registry.reference
 import ponticello.model.score.controls.BusControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList
 import ponticello.model.score.controls.getBus
 import ponticello.model.server.BusRegistry
 import ponticello.sc.BusControlSpec
@@ -28,13 +28,13 @@ data object BusControlType : ControlType<BusControl>() {
     override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean = spec is BusControlSpec
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: BusControl,
         view: ScoreObjectView?,
     ): Node = busSelectorWithOffsetSpinner(control.bus, control.offset, namedControl.spec.now, namedControl.context)
 
     override fun createSimpleInput(
-        namedControl: ParameterControlList.NamedParameterControl, control: BusControl,
+        namedControl: NamedParameterControl, control: BusControl,
     ): Node = createDetailInput(namedControl, control, null)
 
     override fun createInitialControl(
@@ -85,7 +85,7 @@ data object BusControlType : ControlType<BusControl>() {
     }
 
     override fun actions(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: BusControl,
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = listOf(ServerActions.scopeBus.withContext(control.bus))

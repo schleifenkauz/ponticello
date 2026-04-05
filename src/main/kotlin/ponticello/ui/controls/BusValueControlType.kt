@@ -39,13 +39,13 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         spec is NumericalControlSpec
 
     override fun createDetailInput(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: BusValueControl,
         view: ScoreObjectView?,
     ): Node = busSelectorWithOffsetSpinner(control.bus, control.offset, namedControl.spec.now, namedControl.context)
 
     override fun createSimpleInput(
-        namedControl: ParameterControlList.NamedParameterControl, control: BusValueControl,
+        namedControl: NamedParameterControl, control: BusValueControl,
     ): Node = createDetailInput(namedControl, control, null)
 
     override fun createInitialControl(
@@ -92,7 +92,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
     override fun toString(): String = "Bus"
 
     override fun actions(
-        namedControl: ParameterControlList.NamedParameterControl,
+        namedControl: NamedParameterControl,
         control: BusValueControl,
         view: ScoreObjectView?,
     ): List<ContextualizedAction> = listOf(
@@ -100,7 +100,7 @@ data object BusValueControlType : ControlType<BusValueControl>() {
         automateWithProcess.withContext(namedControl)
     )
 
-    private val automateWithProcess = action<ParameterControlList.NamedParameterControl>("Automate with Process") {
+    private val automateWithProcess = action<NamedParameterControl>("Automate with Process") {
         icon(MaterialDesignS.SINE_WAVE)
         applicableIf { ctrl -> ctrl.parentObject is ScoreObject }
         executes { ctrl, ev ->

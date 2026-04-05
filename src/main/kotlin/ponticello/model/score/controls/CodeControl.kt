@@ -12,7 +12,6 @@ import ponticello.model.ctx.PonticelloContext
 import ponticello.model.ctx.Scope
 import ponticello.model.instr.ParameterizedObject
 import ponticello.model.midi.ParameterizedMidiInstrument
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.*
 import ponticello.sc.editor.ScExprExpander
 import reaktive.event.unitEvent

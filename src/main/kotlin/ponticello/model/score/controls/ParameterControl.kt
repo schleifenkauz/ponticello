@@ -8,7 +8,6 @@ import ponticello.model.instr.SynthDefObject
 import ponticello.model.obj.AbstractContextualObject
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectReference
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.sc.ControlSpec
 import reaktive.value.now
 

@@ -26,7 +26,7 @@ class ExprControl(override val expr: EditorRoot<@Contextual ScExprExpander>) : C
         return "ExprControl('$parameter') { |inst, t| ${expr.code(context)} }"
     }
 
-    override fun Scope.defineBoundVariables(namedControl: ParameterControlList.NamedParameterControl) {
+    override fun Scope.defineBoundVariables(namedControl: NamedParameterControl) {
         add(InstanceVariable)
         if (namedControl.parentObject is ParameterizedMidiInstrument) {
             add(MidiVariable.PITCH)

@@ -3,9 +3,9 @@ package ponticello.ui.score
 import fxutils.styleClass
 import javafx.scene.shape.Polygon
 import ponticello.model.score.controls.AttackReleaseControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ParameterControlList
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import reaktive.Observer
 import reaktive.dependencies
 import reaktive.value.now

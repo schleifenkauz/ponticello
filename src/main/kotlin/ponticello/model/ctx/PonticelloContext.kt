@@ -10,7 +10,7 @@ import ponticello.model.instr.CustomizableSynthDefObject
 import ponticello.model.instr.MidiEffectInstrument
 import ponticello.model.instr.RoutineDefObject
 import ponticello.model.score.TaskObject
-import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.NamedParameterControl
 
 sealed class PonticelloContext {
     sealed class InstrumentDef : PonticelloContext() {
@@ -23,7 +23,7 @@ sealed class PonticelloContext {
 
     data class MidiEffect(override val def: MidiEffectInstrument) : InstrumentDef()
 
-    data class Control(val control: ParameterControlList.NamedParameterControl) : PonticelloContext()
+    data class Control(val control: NamedParameterControl) : PonticelloContext()
 
     data class GlobalPattern(val pattern: GlobalPatternObject) : PonticelloContext()
 

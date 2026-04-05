@@ -195,6 +195,17 @@ SoundProcess {
 		}
 	}
 
+	renameControl { |old_name, new_name|
+		var ctrl = control_map[old_name];
+		if (ctrl.isNil) {
+			postf("WARNING: #%.renameControl('%', '%'). Control not found.", name, old_name, new_name);
+		} {
+			ctrl.name = new_name;
+			control_map.removeAt(old_name);
+			control_map[new_name] = ctrl;
+		}
+	}
+
 	createInstance { |pos, cutoff = 0, extra_controls|
 		var inst = SoundProcessInstance.new(this, instance_ctr, pos, cutoff ? 0, extra_controls ? []);
 		instances.put(instance_ctr, inst);

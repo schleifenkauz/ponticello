@@ -17,7 +17,7 @@ import ponticello.model.record.LiveBufferObject
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.MeterObject
 import ponticello.model.score.ScoreObject
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.server.BufferObject
 import reaktive.value.now
 

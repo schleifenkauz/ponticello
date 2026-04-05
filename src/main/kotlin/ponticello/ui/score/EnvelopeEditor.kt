@@ -23,7 +23,7 @@ import ponticello.model.score.Envelope
 import ponticello.model.score.Envelope.EnvelopePoint
 import ponticello.model.score.ObjectPosition
 import ponticello.model.score.controls.EnvelopeControl
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
 import ponticello.sc.mapOnto

@@ -10,8 +10,8 @@ import fxutils.selectorButton
 import fxutils.styleClass
 import javafx.scene.Node
 import javafx.scene.layout.HBox
+import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
-import ponticello.model.score.controls.ParameterControlList.NamedParameterControl
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.now

@@ -1,42 +1,29 @@
 package ponticello.model.score.controls
 
-import fxutils.drag.TypedDataFormat
-import fxutils.undo.UndoManager
 import hextant.context.Context
 import hextant.context.compoundEdit
-import hextant.context.withoutUndo
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ponticello.impl.Logger
-import ponticello.impl.asTime
-import ponticello.impl.toDecimal
-import ponticello.impl.zero
-import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.ParameterDefObject
 import ponticello.model.instr.ParameterizedObject
-import ponticello.model.obj.AbstractRenamableObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.NamedObjectList
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.score.ScoreObject
-import ponticello.sc.BufferPositionControlSpec
 import ponticello.sc.ControlSpec
-import ponticello.sc.NumericalControlSpec
-import ponticello.sc.Warp
 import reaktive.Observer
 import reaktive.and
-import reaktive.value.*
-import reaktive.value.binding.binding
+import reaktive.value.ReactiveValue
 import reaktive.value.binding.equalTo
-import reaktive.value.binding.flatMap
-import reaktive.value.binding.map
+import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 @Serializable(with = ParameterControlList.Serializer::class)
 class ParameterControlList(
     override val objects: MutableList<NamedParameterControl> = mutableListOf(),
-) : NamedObjectList<ParameterControlList.NamedParameterControl>(), ObjectList.Listener<ParameterDefObject> {
+) : NamedObjectList<NamedParameterControl>(), ObjectList.Listener<ParameterDefObject> {
     override val objectType: String
         get() = "Parameter control"
 
@@ -52,138 +39,15 @@ class ParameterControlList(
     @Transient
     private lateinit var validationObserver: Observer
 
-    private val def: InstrumentObject get() = associatedObject.getInstrument()
-
     private val parameterObservers = mutableMapOf<ParameterDefObject, Observer>()
 
     val controlMap: Map<String, ParameterControl> get() = associate { c -> c.name.now to c.now }
 
-    @Serializable
-    class NamedParameterControl(
-        private val value: ReactiveVariable<ParameterControl>,
-        private var customSpec: ControlSpec? = null,
-    ) : AbstractRenamableObject(), java.io.Serializable {
-        @SerialName("name")
-        override var _name: ReactiveVariable<String>? = null
-
-        constructor(value: ParameterControl, customSpec: ControlSpec? = null) : this(
-            reactiveVariable(value), customSpec
-        )
-
-        @Transient
-        private var _spec: ReactiveVariable<ControlSpec?> = reactiveVariable(null)
-
-        @Transient
-        private var specBinder: Observer? = null
-
-        val spec: ReactiveValue<ControlSpec?> get() = _spec
-
-        @Transient
-        lateinit var controls: ParameterControlList
-            private set
-
-        @Transient
-        lateinit var isValid: ReactiveBoolean
-            private set
-
-        val parentObject get() = controls.associatedObject
-
-        fun value(): ReactiveValue<ParameterControl> = value
-
-        val now get() = value.now
-
-        fun copy(value: ParameterControl = now.copy()): NamedParameterControl =
-            NamedParameterControl(value, customSpec).withName(name.now)
-
-        override fun copy(): NamedParameterControl = copy(now.copy())
-
-        fun initialize(controls: ParameterControlList) {
-            this.controls = controls
-            updateSpec(customSpec ?: parentObject.getInstrument().getSpec(name.now)?.now)
-            value.now.initialize(context, this)
-            isValid = binding(_spec, value) { spec, ctrl -> spec != null && ctrl.validate(spec, parentObject) }
-        }
-
-        private fun updateSpec(spec: ControlSpec?) {
-            specBinder?.tryKill()
-            specBinder = resolveControlSpec(spec).forEach { s ->
-                val oldSpec = _spec.now
-                _spec.now = s
-                controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, s) }
-            }
-        }
-
-        private fun resolveControlSpec(spec: ControlSpec?): ReactiveValue<ControlSpec?> = when (spec) {
-            null -> reactiveValue(null)
-            is BufferPositionControlSpec -> {
-                val buf = controls.controlMap.values.filterIsInstance<BufferControl>().firstOrNull()
-                val duration = buf?.sample?.flatMap { s -> s.get()?.duration() ?: reactiveValue(zero) }
-                duration?.map { dur ->
-                    NumericalControlSpec(
-                        default = zero, min = zero, max = dur,
-                        step = 0.01.toDecimal(), warp = Warp.Linear, lag = 0.01.asTime
-                    ).also { it.origin = spec }
-                } ?: reactiveValue(null)
-            }
-
-            else -> reactiveValue(spec)
-        }
-
-        fun setCustomSpec(custom: ControlSpec?) {
-            val before = customSpec
-            customSpec = custom
-            if (initialized) {
-                context[UndoManager.Companion].record(ParameterControlEdit.EditCustomSpec(this, before, custom))
-                val defaultSpec = controls.getDefaultSpec(this)
-                val newSpec = custom ?: defaultSpec
-                updateSpec(newSpec)
-            }
-        }
-
-        fun useSpecFromDefinition(): Boolean {
-            check(spec.now == null) { "useSpecFromDefinition can only be used if current spec is null" }
-            val spec = controls.def.getSpec(name.now) ?: return false
-            specBinder?.kill()
-            updateSpec(spec.now)
-
-            return true
-        }
-
-        fun customSpec() = customSpec
-
-        fun parameterNameChanged(newName: String) {
-            context.withoutUndo {
-                rename(newName)
-            }
-        }
-
-        fun parameterSpecChanged(newSpec: ControlSpec) {
-            if (customSpec == null) {
-                val oldSpec = spec.now
-                _spec.now = newSpec
-                controls.notifyListeners<Listener> { changedSpec(this@NamedParameterControl, oldSpec, spec.now) }
-            }
-        }
-
-        fun reassign(newControl: ParameterControl) {
-            val oldControl = now
-            newControl.initialize(context, this)
-            value.now = newControl
-            context[UndoManager.Companion].record(ParameterControlEdit.ReassignControl(this, oldControl, newControl))
-            controls.notifyListeners<Listener> { reassignedControl(this@NamedParameterControl, oldControl, newControl) }
-        }
-
-        override fun canRenameTo(newName: String): Boolean = !controls.has(newName)
-
-        companion object {
-            val DATA_FORMAT = TypedDataFormat<NamedParameterControl>("ponticello:named-parameter-control")
-        }
-    }
-
     fun initialize(context: Context, associatedObject: ParameterizedObject) {
         super.initialize(context)
         this.associatedObject = associatedObject
-        for (ctrl in this.toList()) ctrl.initialize(this)
+        for (ctrl in this.toList()) ctrl.initialize(this, listeners)
+        val def = associatedObject.getInstrument()
         val parameters = def.parameters
         if (parameters is ObjectList) {
             parameters.addListener(this)
@@ -200,8 +64,6 @@ class ParameterControlList(
             }
         }
     }
-
-    private fun getDefaultSpec(ctrl: NamedParameterControl) = def.getSpec(ctrl.name.now)?.now
 
     override fun added(obj: ParameterDefObject, idx: Int) {
         parameterObservers[obj] = obj.name.observe { _, oldName, newName ->
@@ -284,7 +146,7 @@ class ParameterControlList(
     }
 
     override fun onAdded(obj: NamedParameterControl, idx: Int) {
-        obj.initialize(this)
+        obj.initialize(this, listeners)
     }
 
     fun transformControls(f: (NamedParameterControl) -> ParameterControl) =
@@ -323,6 +185,8 @@ class ParameterControlList(
         )
 
         fun changedSpec(parameter: NamedParameterControl, oldSpec: ControlSpec?, newSpec: ControlSpec?) {}
+
+        fun renamedControl(parameter: NamedParameterControl, oldName: String, newName: String) {}
     }
 
     object Serializer : ObjectListSerializer<NamedParameterControl, ParameterControlList>(
