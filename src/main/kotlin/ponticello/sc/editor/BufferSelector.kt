@@ -26,6 +26,8 @@ class BufferSelector : ObjectSelector<BufferObject>() {
     override fun filter(obj: BufferObject): Boolean =
         expectedChannels.now == null || obj.channels() == expectedChannels.now
 
+    override val canCreateItem: Boolean get() = true
+
     override fun createNewObject(name: String, promptPlacement: PromptPlacement): BufferObject? =
         context[AppLayout].get<BufferRegistryPane>().createNewObject(name, promptPlacement)
 

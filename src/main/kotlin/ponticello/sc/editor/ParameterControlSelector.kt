@@ -1,7 +1,6 @@
 package ponticello.sc.editor
 
 import bundles.getOrNull
-import fxutils.prompt.PromptPlacement
 import ponticello.impl.Logger
 import ponticello.model.ctx.PonticelloContext
 import ponticello.model.instr.ParameterizedObject
@@ -21,6 +20,4 @@ class ParameterControlSelector : ObjectSelector<NamedParameterControl>() {
     }
 
     override fun getOptions(): List<NamedParameterControl> = associatedObject.controls
-
-    override fun createNewObject(name: String, promptPlacement: PromptPlacement): NamedParameterControl? = null
 }

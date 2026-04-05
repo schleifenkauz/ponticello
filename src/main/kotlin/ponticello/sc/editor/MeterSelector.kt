@@ -8,6 +8,8 @@ import ponticello.ui.registry.MeterSelectorPrompt
 class MeterSelector : ObjectSelector<MeterObject>() {
     override fun getOptions(): List<MeterObject> = context[MeterRegistry]
 
+    override val canCreateItem: Boolean get() = true
+
     override fun createNewObject(name: String, promptPlacement: PromptPlacement): MeterObject? =
         MeterSelectorPrompt.MeterConfigDialog(MeterObject.createDefault(), name).showDialog(promptPlacement)
 }

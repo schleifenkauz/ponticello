@@ -89,7 +89,7 @@ class ObjectSelectorControl<O : NamedObject>(
     private inner class SimpleRegistrySelectorPrompt(
         registry: NamedObjectList<O>
     ) : RegistrySelectorPrompt<O>(registry, "Select ${registry.objectType}") {
-        override val canCreateItem: Boolean get() = true
+        override val canCreateItem: Boolean get() = selector.canCreateItem
 
         override fun createObject(name: String): O? =
             selector.createNewObject(name, PromptPlacement.RelativeTo(this@ObjectSelectorControl))

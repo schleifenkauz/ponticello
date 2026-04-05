@@ -24,6 +24,8 @@ import ponticello.ui.registry.GlobalPatternRegistryPane
 class GlobalPatternSelector : ObjectSelector<GlobalPatternObject>() {
     override fun getOptions(): List<GlobalPatternObject> = context[GlobalPatternRegistry]
 
+    override val canCreateItem: Boolean get() = true
+
     override fun createNewObject(name: String, promptPlacement: PromptPlacement): GlobalPatternObject? =
         NewGlobalPatternPrompt(name, context).showDialog(promptPlacement)
 

@@ -29,6 +29,10 @@ abstract class ObjectSelector<O : NamedObject> :
 
     open fun filter(obj: O): Boolean = true
 
+    open val canCreateItem: Boolean get() = false
+
+    open fun createNewObject(name: String, promptPlacement: PromptPlacement): O? = null
+
     open val canViewSelected: Boolean get() = false
 
     protected open fun viewObject(obj: O) {
@@ -60,8 +64,6 @@ abstract class ObjectSelector<O : NamedObject> :
 
     override fun choices(): List<ObjectReference<O>> =
         (getOptions() - excluded().toSet()).filter(::filter).map { obj -> obj.reference() }
-
-    abstract fun createNewObject(name: String, promptPlacement: PromptPlacement): O?
 
     override fun toString(choice: ObjectReference<O>): ReactiveString = choice.isResolved.flatMap { resolved ->
         when {

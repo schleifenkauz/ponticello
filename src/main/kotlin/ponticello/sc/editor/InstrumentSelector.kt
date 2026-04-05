@@ -10,6 +10,8 @@ import ponticello.ui.registry.InstrumentRegistryPane
 class InstrumentSelector : ObjectSelector<InstrumentObject>() {
     override fun getOptions(): List<InstrumentObject> = context[InstrumentRegistry]
 
+    override val canCreateItem: Boolean get() = true
+
     override fun createNewObject(name: String, promptPlacement: PromptPlacement): InstrumentObject? =
         context[AppLayout].get<InstrumentRegistryPane>().createNewObject(name, null)
 
