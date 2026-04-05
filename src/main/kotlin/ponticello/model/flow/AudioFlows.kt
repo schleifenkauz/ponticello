@@ -72,10 +72,17 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
     }
 
     private fun toggleFlow(msg: OSCMessage) {
-        val flowId = msg.getArgument<Int>(0, "Flow ID") ?: return
-        val flow = ids.getById(flowId)
+        val flowRef = msg.arguments.getOrNull(0) ?: return
+        val flow = when (flowRef) {
+            is Int -> ids.getById(flowRef)
+            is String -> getFlow(flowRef)
+            else -> {
+                Logger.warn("Received /toggle_flow with invalid flow reference: $flowRef", Logger.Category.OSC)
+                return
+            }
+        }
         if (flow == null) {
-            Logger.warn("Received /toggle_flow for unknown flow ID: $flowId", Logger.Category.OSC)
+            Logger.warn("Received /toggle_flow for unknown flow reference $flowRef", Logger.Category.OSC)
             return
         }
         val group = flow.parentGroup ?: return

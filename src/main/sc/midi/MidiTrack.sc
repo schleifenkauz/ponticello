@@ -10,15 +10,15 @@ MidiTrack {
 			tracksBySource = Dictionary.new;
 			noteOn = MIDIFunc.noteOn { |val, num, chan, uid|
 			    var src = (player_id: -1, server_latency: 0, chan: chan);
-				MidiTrack.dispatchEvent(uid) { |track| track.noteOn(num, val, src) }
+				MidiTrack.dispatchEvent(uid) { |track| track.noteOn(num, val, src.copy) }
 			}.permanent_(true);
 			noteOff = MIDIFunc.noteOff { |val, num, chan, uid|
                 var src = (player_id: -1, server_latency: 0, chan: chan);
-				MidiTrack.dispatchEvent(uid) { |track| track.noteOff(num, val, src) }
+				MidiTrack.dispatchEvent(uid) { |track| track.noteOff(num, val, src.copy) }
 			}.permanent_(true);
 			cc = MIDIFunc.cc { |val, num, chan, uid|
                 var src = (player_id: -1, server_latency: 0, chan: chan);
-				MidiTrack.dispatchEvent(uid) { |track| track.control(num, val, src) }
+				MidiTrack.dispatchEvent(uid) { |track| track.control(num, val, src.copy) }
 			}.permanent_(true);
 			initialized = true;
 		}
