@@ -27,11 +27,11 @@ ext {
 }
 
 kotlin {
-    jvmToolchain(19)
+    jvmToolchain(Integer.parseInt(findProperty("jdk_version") as String))
 }
 
 javafx {
-    version = '19.0.2.1'
+    version = property('javafx_version')
     modules = ['javafx.controls', 'javafx.web']
 }
 
