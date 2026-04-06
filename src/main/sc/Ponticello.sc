@@ -77,32 +77,34 @@ Ponticello {
 	}
 
 	* doOnStartUp {
-		ServerTree.add {
-			AudioNodeOrder.clear;
-			MidiTrack.freeAll;
-			Ponticello.sendMsg('/cleared');
-		};
-		ServerBoot.add {
-			PonticelloPlayback.init;
-			fork {
-				1.wait;
-				VSTPlugin.search(verbose: false, action: { Ponticello.sendMsg('/booted') });
+		if (Server.local.hasBooted.not) {
+			ServerTree.add {
+				AudioNodeOrder.clear;
+				MidiTrack.freeAll;
+				Ponticello.sendMsg('/cleared');
 			};
-		};
+			ServerBoot.add {
+				PonticelloPlayback.init;
+				fork {
+					1.wait;
+					VSTPlugin.search(verbose: false, action: { Ponticello.sendMsg('/booted') });
+				};
+			};
 
-		DefaultSynthDefs.addAll;
+			DefaultSynthDefs.addAll;
 
-		Ponticello.respond('/save_plugin_state', VSTPluginFlow.savePluginState(_, _));
-		Ponticello.respond('/send_classes') { this.send_classes };
-		Ponticello.respond('/run', this.run(_));
-		Ponticello.respondId('/eval', this.eval(_, _));
-		Ponticello.respondId('/schedule', PonticelloPlayback.schedule(_, _, _, _, _, _));
-		Ponticello.respond('/set_time_warp', PonticelloPlayback.set_time_warp(_, _));
-		Ponticello.respond('/start_play', PonticelloPlayback.start_play(_, _, _));
-		Ponticello.respond('/pause_play', PonticelloPlayback.pause_play(_));
+			Ponticello.respond('/save_plugin_state', VSTPluginFlow.savePluginState(_, _));
+			Ponticello.respond('/send_classes') { this.send_classes };
+			Ponticello.respond('/run', this.run(_));
+			Ponticello.respondId('/eval', this.eval(_, _));
+			Ponticello.respondId('/schedule', PonticelloPlayback.schedule(_, _, _, _, _, _));
+			Ponticello.respond('/set_time_warp', PonticelloPlayback.set_time_warp(_, _));
+			Ponticello.respond('/start_play', PonticelloPlayback.start_play(_, _, _));
+			Ponticello.respond('/pause_play', PonticelloPlayback.pause_play(_));
 
-		postf("Successfully setup OSC handling. Replying to % \n", ponticello_addr);
-		Ponticello.sendMsg('/ready');
+			postf("Successfully setup OSC handling. Replying to % \n", ponticello_addr);
+			Ponticello.sendMsg('/ready');
+		}
 	}
 
 	* initClass {

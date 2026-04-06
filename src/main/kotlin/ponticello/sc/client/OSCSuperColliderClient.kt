@@ -213,8 +213,9 @@ class OSCSuperColliderClient(
         private const val PONTICELLO_PORT = 7775
 
         fun create(context: Context, scPort: Int): OSCSuperColliderClient {
-            val sclang = ProcessBuilder(mutableListOf("sclang", "-u", "$scPort"))
-                .redirectInput(ProcessBuilder.Redirect.PIPE)
+            val sclang = ProcessBuilder(
+                "sclang", "-u", "$scPort", "-i", "ponticello"
+            ).redirectInput(ProcessBuilder.Redirect.PIPE)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
             val local = InetSocketAddress(PONTICELLO_PORT)
