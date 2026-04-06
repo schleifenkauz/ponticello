@@ -1,6 +1,6 @@
 SoundProcess : NamedObject {
 	classvar dict, by_instrument, conds;
-	var <instr, <controls, <duration, <control_map, instances, byPosition, instance_ctr;
+	var <instr, <duration, <control_map, instances, byPosition, instance_ctr;
 
 	* initClass {
 		dict = Dictionary.new;
@@ -11,7 +11,12 @@ SoundProcess : NamedObject {
 	* dict { ^dict }
 
 	* create { |name, instr, controls, duration|
-		var proc = super.newCopyArgs(name, instr, controls, duration).init;
+		var control_map = Dictionary.new;
+		var proc = super.newCopyArgs(name, instr, duration, control_map).init;
+		controls.do { |ctrl|
+			ctrl.sound_proc = proc;
+			proc.control_map[ctrl.name] = ctrl;
+		};
 		//postf("Created %\n", proc);
 		if (instr.notNil) {
 			if (by_instrument.includesKey(instr)) {
@@ -72,10 +77,7 @@ SoundProcess : NamedObject {
 	init {
 		instances = Dictionary.new; byPosition = Dictionary.new; control_map = Dictionary.new;
 		instance_ctr = 0;
-		controls.do { |ctrl|
-			ctrl.sound_proc = this;
-			control_map[ctrl.name] = ctrl;
-		};
+
 	}
 
 	* stopAllProcesses { |player_id|
@@ -130,9 +132,8 @@ SoundProcess : NamedObject {
 		?? { instr.getDefaultValue(parameter) !? {| default | ValueControl.new(default) } }
 	}
 
-	addControl { |ctrl, idx|
+	addControl { |ctrl|
 		ctrl.sound_proc = this;
-		controls = controls.insert(idx, ctrl);
 		control_map[ctrl.name] = ctrl;
 		this.updateInstances(ctrl) { |inst|
 			ctrl.prepare(inst);
@@ -142,31 +143,21 @@ SoundProcess : NamedObject {
 
 	removeControl { |parameter|
 		var ctrl = control_map.removeAt(parameter);
-		controls.remove(ctrl);
 		this.updateInstances(ctrl) { |inst|
 			inst.setDefaultValue(parameter);
 		};
 		ctrl.dispose;
 	}
 
-	moveControl { |parameter, idx|
-		var ctrl = control_map[parameter];
-		var old_idx = controls.indexOf(ctrl);
-		controls.removeAt(old_idx);
-		controls = controls.insert(idx, ctrl);
-	}
-
 	replaceControl { |new_ctrl|
 		var parameter = new_ctrl.name;
 		var old_ctrl = control_map[parameter];
-		var idx = controls.indexOf(old_ctrl);
 		if (old_ctrl.isNil) {
 			postf("WARNING: .replaceControl(%, %). Control not found. Adding instead. \n", parameter, new_ctrl);
-			this.addControl(new_ctrl, idx: controls.size);
+			this.addControl(new_ctrl);
 		} {
 			new_ctrl.sound_proc = this;
 			control_map[parameter] = new_ctrl;
-			controls[idx] = new_ctrl;
 
 			if (old_ctrl.allocatesBus && new_ctrl.allocatesBus.not) {
 				this.updateInstances(old_ctrl) { |inst|

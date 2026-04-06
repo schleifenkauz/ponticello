@@ -41,7 +41,7 @@ class SoundProcessUpdater<O>(
     override fun added(obj: NamedParameterControl, idx: Int) {
         observeControl(obj, obj.now)
         val code = obj.now.writeCode(obj.name.now, obj.spec.now, this.obj)
-        updateSoundProcess("addControl($code, $idx)")
+        updateSoundProcess("addControl($code)")
     }
 
     override fun removed(obj: NamedParameterControl, idx: Int) {
@@ -102,10 +102,6 @@ class SoundProcessUpdater<O>(
                 updateControl(parameter, "trigger")
             }
         }
-    }
-
-    override fun moved(obj: NamedParameterControl, idx: Int) {
-        updateSoundProcess("moveControl('${obj.name.now}', $idx)")
     }
 
     override fun reassignedControl(
