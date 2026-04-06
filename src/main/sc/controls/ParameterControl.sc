@@ -9,7 +9,7 @@ ParameterControl {
 
 	getBus { |inst| ^if (this.allocatesBus) { inst.getControlBus(this.name) } { nil } }
 
-	updateInstances { |func| sound_proc.updateInstances(func) }
+	updateInstances { |func| sound_proc.updateInstances(this, func) }
 
 	getValue { |inst| ^nil }
 

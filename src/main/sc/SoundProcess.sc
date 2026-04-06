@@ -134,17 +134,17 @@ SoundProcess : NamedObject {
 		ctrl.sound_proc = this;
 		controls = controls.insert(idx, ctrl);
 		control_map[ctrl.name] = ctrl;
-		this.updateInstances { |inst|
+		this.updateInstances(ctrl) { |inst|
 			ctrl.prepare(inst);
 			ctrl.apply(inst);
 		}
 	}
 
-	removeControl { |parameter, defaultValue|
+	removeControl { |parameter|
 		var ctrl = control_map.removeAt(parameter);
 		controls.remove(ctrl);
-		this.updateInstances { |inst|
-			inst.set(parameter, defaultValue);
+		this.updateInstances(ctrl) { |inst|
+			inst.setDefaultValue(parameter);
 		};
 		ctrl.dispose;
 	}
@@ -162,22 +162,22 @@ SoundProcess : NamedObject {
 		var idx = controls.indexOf(old_ctrl);
 		if (old_ctrl.isNil) {
 			postf("WARNING: .replaceControl(%, %). Control not found. Adding instead. \n", parameter, new_ctrl);
-			addControl(new_ctrl, idx: controls.size);
+			this.addControl(new_ctrl, idx: controls.size);
 		} {
 			new_ctrl.sound_proc = this;
 			control_map[parameter] = new_ctrl;
 			controls[idx] = new_ctrl;
 
 			if (old_ctrl.allocatesBus && new_ctrl.allocatesBus.not) {
-				this.updateInstances { |inst|
+				this.updateInstances(old_ctrl) { |inst|
 					inst.freeControlBus(parameter);
 				};
 			};
-			this.updateInstances { |inst|
+			this.updateInstances(new_ctrl) { |inst|
 				new_ctrl.prepare(inst);
 			};
 			old_ctrl.dispose;
-			this.updateInstances { |inst|
+			this.updateInstances(new_ctrl) { |inst|
 				new_ctrl.apply(inst);
 			}
 		}
@@ -212,7 +212,7 @@ SoundProcess : NamedObject {
 		} {
 			placement = AudioNodeOrder.insert(inst);
 		};
-		postf("Placement for %: %\n", name, placement);
+		//postf("Placement for %: %\n", name, placement);
 		try {
 			inst.start(placement, server_latency, player_id, midiTrack);
 		} { |err|
@@ -224,8 +224,15 @@ SoundProcess : NamedObject {
 		^inst.idx;
 	}
 
-	updateInstances { |func|
-		instances.do(func);
+	updateInstances { |arg1, arg2|
+		if (arg2.isNil) { instances.do(arg1) } {
+			var ctrl = arg1, func = arg2;
+			instances.do { |inst|
+				if (inst.extra_control(ctrl.name).isNil) {
+					func.value(inst);
+				};
+			}
+		};
 	}
 
 	removeInstance { |idx|

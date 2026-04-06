@@ -25,10 +25,10 @@ SynthInstrument {
 		var duration, asr, args, synth;
 		duration = inst.def.duration !? {| dur | dur - inst.cutoff};
 		args = List[duration: duration ? inf];
-		inst.control_map.keysValuesDo { |name, ctrl|
+		inst.controls_do { |ctrl|
 		    var argument = ctrl.getSynthArgument(inst);
 		    if (argument != nil) {
-		        args = args.addAll([name, argument]);
+		        args = args.addAll([ctrl.name, argument]);
 		    };
 		};
 		//postf("Creating synth % with args %\n", synthDefName, args);

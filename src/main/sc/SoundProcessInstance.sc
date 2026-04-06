@@ -1,25 +1,19 @@
 SoundProcessInstance : AudioNode {
-	var <def, <idx, <pos, <cutoff, extra_control_keys, <control_map,
+	var <def, <idx, <pos, <cutoff, extra_control_map,
 	control_buses, auxil_synths, <children, on_dispose,
 	<player_id, <>server_latency, start_time, placement, group,
-	running = false, <restarting = false, disposed = false, released = false,
+	running = false, <restarting = false, disposed = false,
 	sound_obj, <midi_track,
 	<>clock_time, <>parent_instance;
 
 	* new {| def, idx, pos, cutoff = 0, extra_controls |
-		var control_map = def.control_map.copy;
-		var extra_control_keys = Set[];
-		extra_controls.do { |ctrl|
-			control_map[ctrl.name] = ctrl;
-			extra_control_keys.add(ctrl.name);
-		};
+		var extra_control_map = Dictionary.new;
+		extra_controls.do { |ctrl| extra_control_map[ctrl.name] = ctrl };
 		^super.newCopyArgs(
-			def, idx, pos, cutoff, extra_control_keys, control_map,
+			def, idx, pos, cutoff, extra_control_map,
 			Dictionary.new, Dictionary.new, List[], List[]
 		);
 	}
-
-	controls { ^control_map.values }
 
 	type { ^def.type }
 
@@ -34,6 +28,33 @@ SoundProcessInstance : AudioNode {
 	    ^running && (this.current_time < def.duration)
 	}
 
+	control_map { ^def.control_map ++ extra_control_map }
+
+	extra_control { |name| ^extra_control_map[name] }
+
+	controls_do { |func|
+		def.control_map.keysValuesDo { |name, ctrl|
+			if (extra_control_map.includesKey(name).not) {
+				func.value(ctrl);
+			}
+		};
+		extra_control_map.do(func);
+	}
+
+	getControl { |name|	^extra_control_map[name] ?? { def.control_map[name] } }
+
+	getControlValue { |name|
+		^this.getControl(name) !? (_.getValue(this)) ? def.instr.getDefaultValue(name);
+	}
+
+	get { |name| ^this.getControlValue(name) }
+
+	getControlUGen { |name|
+		^this.getControl(name) !? (_.getUGen(this)) ? def.instr.getDefaultValue(name);
+	}
+
+	getControlBus { |name| ^control_buses[name] }
+
 	createControlBus { |name, initial_value|
 		^if (control_buses.includesKey(name).not) {
 			var bus = Bus.control(Server.local, 1);
@@ -46,10 +67,6 @@ SoundProcessInstance : AudioNode {
 			bus
 		}
 	}
-
-	getControl { |name|	^control_map[name] }
-
-	getControlBus { |name| ^control_buses[name] }
 
 	freeControlBus { |name|
 		var bus = control_buses.removeAt(name);
@@ -76,44 +93,29 @@ SoundProcessInstance : AudioNode {
 		s.free;
 	}
 
-	mapParameter { |name, bus|
-		if (extra_control_keys.includes(name).not) {
-			if (sound_obj == nil) {Error ("Cannot map parameter because sound_obj = nil.").throw};
-			if (sound_obj.respondsTo (\map) ) {
-				sound_obj.map (name, bus);
-			}
+	mapParameter { |name, bus, src_control|
+		if (sound_obj == nil) {Error ("Cannot map parameter because sound_obj = nil.").throw};
+		if (sound_obj.respondsTo (\map) ) {
+			sound_obj.map (name, bus);
 		}
 	}
 
-	set { |name, value|
-		if (extra_control_keys.includes(name).not) {
-			if (sound_obj.respondsTo(\set)) {
-				sound_obj.set(name, value);
-			}
+	set { |name, value, src_control|
+		if (sound_obj.respondsTo(\set)) {
+			sound_obj.set(name, value);
 		}
 	}
 
 	addControl { |ctrl|
-		extra_control_keys.add(ctrl.name);
-		control_map[ctrl.name] = ctrl;
+		extra_control_map[ctrl.name] = ctrl;
 		ctrl.sound_proc = def;
 	}
 
 	setDefaultValue { |parameter|
-		if (extra_control_keys.includes(parameter).not && sound_obj.respondsTo(\set)) {
+		if (extra_control_map.includesKey(parameter).not && sound_obj.respondsTo(\set)) {
 			var default = def.instr.getDefaultValue(parameter);
 			sound_obj.set(parameter)
 		}
-	}
-
-	getControlValue { |name|
-		^this.getControl(name) !? (_.getValue(this)) ? def.instr.getDefaultValue(name);
-	}
-
-	get { |name| ^this.getControlValue(name) }
-
-	getControlUGen { |name|
-		^this.getControl(name) !? (_.getUGen(this)) ? def.instr.getDefaultValue(name);
 	}
 
 	updateDuration { |dur|
@@ -147,6 +149,7 @@ SoundProcessInstance : AudioNode {
 				group.free;
 				group = nil;
 			};
+			sound_obj = nil;
 			on_dispose.do(_.value);
             Ponticello.sendMsg ('/stopped', -1, def.name, idx);
             def.removeInstance(idx);
@@ -170,19 +173,14 @@ SoundProcessInstance : AudioNode {
 				if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
 					Ponticello.sendMsg('/started_sound_proc', this.nodeID, def.name, pos.t, pos.y);
 				};
-				//group.register(assumePlaying: true);
 			};
-			control_map.copy.keysValuesDo { |name, ctrl|
-				ctrl.prepare(this);
-			};
+			this.controls_do(_.prepare(this));
 			this.prStart(run);
 		}
 	}
 
 	prStart { |run|
-		control_map.keysValuesDo { |name, ctrl|
-			ctrl.apply(this);
-		};
+		this.controls_do(_.apply(this));
 		sound_obj = def.instr.create(this);
         if (run) {
             Server.local.sync;
@@ -209,7 +207,7 @@ SoundProcessInstance : AudioNode {
 	}
 
 	release { |latency|
-		if ((released || disposed).not) {
+		if (sound_obj.notNil) {
 			latency = latency ? server_latency;
 			children.do(_.release(latency));
 			if (sound_obj.isMemberOf(Synth)) {
@@ -220,7 +218,6 @@ SoundProcessInstance : AudioNode {
 				postf("Release %\n", sound_obj);
 				sound_obj.release(latency);
 			};
-			released = true;
 		} {
 			postf("WARNING: Already released %\n", this);
 		}

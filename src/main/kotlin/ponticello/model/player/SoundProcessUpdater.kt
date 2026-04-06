@@ -47,8 +47,7 @@ class SoundProcessUpdater<O>(
     override fun removed(obj: NamedParameterControl, idx: Int) {
         controlObservers.remove(obj.now)?.kill()
         val parameter = obj.name.now
-        val default = obj.spec.now?.defaultValueExpr ?: "nil"
-        updateSoundProcess("removeControl('$parameter', $default)")
+        updateSoundProcess("removeControl('$parameter')")
     }
 
     private fun observeControl(parameter: NamedParameterControl, control: ParameterControl) {
