@@ -132,14 +132,11 @@ class AudioFlowGroup(
         if (isActive.now) freeGroup()
     }
 
-    private fun freeGroup(): CompletableFuture<String> {
-        client.eval {
-            for (flow in flows) {
-                flow.run { free() }
-            }
-            +"$groupNode.free"
+    private fun freeGroup(): CompletableFuture<String> = client.eval {
+        for (flow in flows) {
+            flow.run { free() }
         }
-        return client.eval("$groupNode.free") //TODO also release the individual flows before (?)
+        +"$groupNode.free"
     }
 
     fun sync() {

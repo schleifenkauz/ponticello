@@ -37,7 +37,9 @@ MixerFlow : AudioFlow {
 					}
 				};
 				dest = \dest.kr(0);
-				snd = In.ar(dest, channels) + if (channels == 1) { sources } { sources.sum };
+				snd = In.ar(dest, channels);
+				if (buses == 1) { snd = snd + sources};
+				if (buses > 1) { snd = snd + sources.sum };
 				snd = snd * \master_volume.kr(0, lag: 0.02, fixedLag: true);
 				snd = snd * Linen.kr(\gate.kr(1), 0.02, 1, 0.02, Done.freeSelf);
 				if (channels == 2) {

@@ -159,21 +159,3 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         fun createDefault(): AudioFlows = AudioFlows(mutableListOf())
     }
 }
-
-/*
-(RoutineInstrument('enable_flow', ()) {arg inst, duration;
-    inst.get('flow').postln;
-    (inst.get('flow').active.not.if({inst.get('flow').active_(true, notify: true);
-        inst.onDispose({ inst.get('flow').active_(false, notify: true)});
-      }, { "% already active\n".postf(inst.get('flow'))});
-    );
-  };
-  (RoutineInstrument('enable_flow', ()) {arg inst, duration;
-    inst.get('flow').postln;
-    (inst.get('flow').active.not.if({inst.get('flow').active_(true, notify: true);
-        inst.onDispose({ inst.get('flow').active_(false, notify: true)});
-      }, { "% already active\n".postf(inst.get('flow'))});
-    );
-  };
-)
-* */

@@ -1,17 +1,16 @@
 RoutineInstrument : NamedObject {
-	var func, onFinished, parameterDefaults;
 	classvar dict;
+	var parameterDefaults, func;
 
 	* dict { ^dict ?? { dict = Dictionary.new } }
 
-	* new {| name, parameterDefaults, func, onFinished |
-		^super.newCopyArgs(name, parameterDefaults, func, onFinished);
+	* new {| name, parameterDefaults, func |
+		^super.newCopyArgs(name, parameterDefaults, func);
 	}
 
-	update { |defaults, fn, finished|
+	update { |defaults, fn|
 		parameterDefaults = defaults;
 		func = fn;
-		onFinished = finished;
 	}
 
 	type { ^\routine }
@@ -20,7 +19,7 @@ RoutineInstrument : NamedObject {
 
 	getDefaultValue {| param | ^parameterDefaults[param]}
 
-	create {| inst | ^RoutineInstance(inst, func, onFinished) }
+	create {| inst | ^RoutineInstance(inst, func) }
 
 	generateScore { |inst|
 		var delta, env = EnvironmentRedirect(currentEnvironment), score;
@@ -39,46 +38,27 @@ RoutineInstrument : NamedObject {
 			score = inst.children.collect { |child|
 				[child.pos.t, child.def.name/*TODO: extra_controls*/]
 			};
-			env.use { onFinished.value(inst) };
 			inst.clock_time = nil;
 			Ponticello.sendMsg('/generated_score', inst.def.name, *score.flatten.postln);
 		}
 	}
-
-	asString { ^"Routine %".format(name) }
 }
 
 RoutineInstance {
-    var func, instance, onFinished, env, task;
+    var func, instance, task;
 
-    * new { |instance, func, onFinished|
+    * new { |instance, func|
 		//TODO this means it can't put new variables in the global namespace...
 		var env = EnvironmentRedirect(currentEnvironment);
-         ^super.newCopyArgs(func, instance, onFinished, env).prCreateTask;
-    }
-
-	prCreateTask {
-		task = Task({
+        var task = Task({
 			try {
-				env.use {
-					func.value(instance, instance.def.duration ? inf)
-				}
+				func.value(instance, instance.def.duration ? inf)
 			} { |error|
 				error.reportError;
 			};
 		}, SystemClock);
-	}
-
-	prFinished {
-		protect {
-			env.use {
-				//postf("Running on finished %\n", onFinished);
-				onFinished.value(instance);
-			};
-		} {
-			instance.dispose;
-		}
-	}
+		^super.newCopyArgs(func, instance, task);
+    }
 
     run { | active |
 	    if (active) { task.play } { task.pause }
@@ -88,7 +68,7 @@ RoutineInstance {
 		SystemClock.sched(latency) {
 			postf("Stopping %, %\n", instance, task);
 			task.stop;
-			this.prFinished;
+			instance.dispose;
 		}
     }
 }

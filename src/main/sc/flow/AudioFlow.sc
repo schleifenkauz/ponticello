@@ -13,7 +13,13 @@ AudioFlow : NamedObject {
 
 	create { |target, addAction|
 		node = this.createNode(target, addAction);
-		node.onFree { node = nil };
+		node.onFree {
+			if (recreating) {
+				recreating = false;
+			} {
+				node = nil;
+			}
+		};
 	}
 
 	recreate {
@@ -22,7 +28,7 @@ AudioFlow : NamedObject {
 			if (node.notNil) {
 				this.create(node, \addReplace);
 			} {
-				postf("WARNING: Cannot recreate this")
+				postf("WARNING: Cannot recreate %. Node already freed.\n", this);
 			}
 		} {
 			recreating = false;

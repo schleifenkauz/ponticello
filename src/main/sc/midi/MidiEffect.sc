@@ -18,17 +18,17 @@ MidiEffectInstrument : NamedObject {
 
 	getDefaultValue { |param| ^parameterDefaults[param] }
 
-	asString { ^"MidiEffect: %".format(name) }
+	asString { ^"MidiEffect %".format(name) }
 }
 
 MidiEffect : MidiInstrument {
-	var procName, instr, controls, env, <enabled = true, task, track;
+	var procName, instr, <instance, env, <enabled = true, task, track;
 
 	* create { |name, instr, controls, enabled|
 		var env = EnvironmentRedirect(currentEnvironment);
 		var proc = SoundProcess.create(name, instr, controls);
-		controls = SoundProcessInstance.new(proc, 0, nil, 0, ());
-		^super.newCopyArgs(name, instr, controls, env, enabled);
+		var instance = SoundProcessInstance.new(proc, 0, nil, 0, ());
+		^super.newCopyArgs(name, instr, instance, env, enabled);
 	}
 
 	noteOn { |num, val, src|
@@ -36,10 +36,10 @@ MidiEffect : MidiInstrument {
 			try {
 				var mySrc = src.copy.instr_(this);
 				//postf("Note On %, %. Track: %, src: %", num, val, track, mySrc);
-				controls.postln;
-				env.use { instr.noteOn.value(num, val, track, controls, mySrc) };
+				//instanc.postln;
+				env.use { instr.noteOn.value(num, val, track, instance, mySrc) };
 			} { |error|
-				//postf("Error during noteOn handling of MidiEffect % (%, %)\n", instr.name, num, val);
+				postf("Error during noteOn handling of MidiEffect % (%, %)\n", instr.name, num, val);
 				error.reportError;
 				false;
 			}
@@ -50,9 +50,9 @@ MidiEffect : MidiInstrument {
 		^if (enabled) {
 			try {
                 var mySrc = src.copy.instr_(this);
-				env.use { instr.noteOff.value(num, val, track, controls, mySrc) };
+				env.use { instr.noteOff.value(num, val, track, instance, mySrc) };
 			} { |error|
-				//postf("Error during noteOff handling of MidiEffect % (%, %)\n", instr.name, num, val);
+				postf("Error during noteOff handling of MidiEffect % (%, %)\n", instr.name, num, val);
 				error.reportError;
 				true;
 			}
@@ -63,9 +63,9 @@ MidiEffect : MidiInstrument {
 		^if (enabled) {
 			try {
 				var mySrc = src.copy.instr_(this);
-				^env.use { instr.control.value(num, val, track, controls, mySrc) };
+				^env.use { instr.control.value(num, val, track, instance, mySrc) };
 			} { |error|
-				//postf("Error during cc handling of MidiEffect % (%, %)\n", instr.name, num, val);
+				postf("Error during cc handling of MidiEffect % (%, %)\n", instr.name, num, val);
 				error.reportError;
 				false;
 			}
@@ -75,7 +75,7 @@ MidiEffect : MidiInstrument {
 	prCreateTask {
 		task = Task {
 			env.use {
-				instr.start.value(track, controls)
+				instr.start.value(track, instance)
 			};
 			this.prCreateTask;
 		};
@@ -91,7 +91,7 @@ MidiEffect : MidiInstrument {
 
 	pause {
 		task.pause;
-		env.use { instr.stop.value(track, controls) };
+		env.use { instr.stop.value(track, instance) };
 		track.stopEffect(this);
 	}
 

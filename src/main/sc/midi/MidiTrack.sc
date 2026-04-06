@@ -1,5 +1,7 @@
 MidiTrack : AudioFlow {
-	var <sourceDevice, <>instruments, <activeNotes, <controlValues, notesInPedal, <recorder, connected=false;
+	var <sourceDevice, <>instruments,
+	<activeNotes, <controlValues, notesInPedal, <recorder,
+	<group, connected=false;
 	classvar initialized=false, tracksBySource, noteOn, noteOff, cc;
 
 	* init {
@@ -98,20 +100,15 @@ MidiTrack : AudioFlow {
 		)
 	}
 
-	createNode { |target, addAction| ^Group.new(target, addAction) }
-
-	group { ^node }
+	createNode { |target, addAction|
+		group = Group.new(target, addAction);
+		instruments.do(_.activate(this));
+		^group;
+	}
 
 	active_ { |enable, notify|
-		if (enable && active.not) {
-			this.prConnect;
-			instruments.do { |instr| instr.activate(this) };
-		} {
-			if (active) {
-				this.prDisconnect;
-				instruments.do { |instr| instr.dispose };
-			}
-		};
+		if (enable && active.not) { this.prConnect };
+		if (enable.not && active) { this.prDisconnect };
 		super.active_(enable, notify);
 	}
 
@@ -153,6 +150,7 @@ MidiTrack : AudioFlow {
 	release {
 		if (node != nil) {
 			this.allNotesOff;
+			instruments.do(_.dispose);
 			node.free;
 			node = nil;
 			this.prDisconnect;
@@ -194,21 +192,20 @@ MidiTrack : AudioFlow {
 		}
 	}
 
-	noteOff { |num, val, src, force=false|
-		if (active || force) {
-			src.track = this;
-			//postf("Note Off %, % (src: %)\n", num, val, src);
-			if (this.isPedalDown.not) {
-				activeNotes[num].remove(src);
-				this.perform(src) { |instr|
-					instr.noteOff(num, val, src)
-				};
-				if (src.respondsTo(\dispose)) {
-					src.dispose;
-				}
-			} {
-				notesInPedal.add(num);
+	noteOff { |num, val, src|
+		src.track = this;
+		//postf("Note Off %, % (src: %)\n", num, val, src);
+		if (this.isPedalDown.not) {
+			activeNotes[num].remove(src);
+			this.perform(src) { |instr|
+				instr.noteOff(num, val, src)
+			};
+			if (src.respondsTo(\dispose)) {
+				src.dispose;
 			}
+		} {
+			recorder.noteOff(num, val, src);
+			notesInPedal.add(num);
 		}
 	}
 
@@ -251,7 +248,7 @@ MidiTrack : AudioFlow {
 		} {
 			this.activeNotesDo { |num, src|
 				if (src.player_id == player_id) {
-					this.noteOff(num, 0, src, force:true);
+					this.noteOff(num, 0, src);
 				}
 			}
 		}
