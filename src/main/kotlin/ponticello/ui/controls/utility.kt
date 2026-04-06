@@ -1,13 +1,10 @@
 package ponticello.ui.controls
 
-import fxutils.SubWindow
+import fxutils.*
 import fxutils.actions.ContextualizedAction
-import fxutils.button
-import fxutils.centerChildren
 import fxutils.controls.IntSpinner
 import fxutils.prompt.InfoPrompt
 import fxutils.prompt.nextToTarget
-import fxutils.styleClass
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import javafx.geometry.Pos
@@ -50,14 +47,14 @@ fun busSelectorWithOffsetSpinner(
     spec: ControlSpec?, context: Context,
 ): HBox {
     val selector = busSelector(reference, spec, context)
-    val spinner = IntSpinner(offset, 0, (reference.now.get()?.channels?.now ?: 1) - 1)
+    val spinner = IntSpinner(offset, 0, (reference.now.get()?.channels?.now ?: 1) - 1).setFixedWidth(40.0)
     val channels = reference.flatMap { ref -> ref.get()?.channels ?: reactiveValue(1) }
     spinner.userData = channels.observe { _, _, channels ->
         spinner.setMax(channels - 1)
     }
     return HBox(
-        5.0,
         selector,
+        hspace(5.0),
         Label("+").styleClass("keyword"),
         spinner
     ).centerChildren()

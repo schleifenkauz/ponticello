@@ -45,7 +45,6 @@ class MessageSendEditorControl (
             }
             if (!arguments[MULTILINE] || !hasArguments.now) {
                 styleClass("compound-expr", "message-send")
-                space()
                 viewHorizontal(editor.arguments).root.centerChildren().styleClass("compound-expr", "arguments")
             }
         }
