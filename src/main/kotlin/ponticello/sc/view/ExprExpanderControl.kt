@@ -66,6 +66,7 @@ class ExprExpanderControl(
         addCompleter(GlobalPatternReferenceCompleter)
         addCompleter(BusReferenceCompleter)
         addCompleter(ScoreObjectReferenceCompleter)
+        addCompleter(AudioFlowReferenceCompleter)
         addCompleter(ScExprExpander.config.completer(CompletionStrategy.simple))
     }) {
         override suspend fun collectCompletions(

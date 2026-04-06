@@ -3,6 +3,7 @@ package ponticello.sc.view
 import bundles.Bundle
 import bundles.createBundle
 import fxutils.actions.action
+import fxutils.centerChildren
 import fxutils.drag.DropHandler
 import fxutils.drag.setupDropArea
 import fxutils.prompt.PromptPlacement
@@ -10,8 +11,11 @@ import fxutils.prompt.SimpleSelectorPrompt
 import hextant.context.compoundEdit
 import hextant.core.view.SimpleChoiceEditorControl
 import javafx.application.Platform
+import javafx.scene.control.Label
 import javafx.scene.control.Tooltip
 import javafx.scene.input.*
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Region
 import org.kordamp.ikonli.materialdesign2.MaterialDesignE
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.NamedObjectList
@@ -31,19 +35,26 @@ class ObjectSelectorControl<O : NamedObject>(
     init {
         root.setupDropArea(this)
         selectorButton.setOnDragDetected(::dragDetected)
-        selectorButton.tooltip = Tooltip(buildString {
-            append(selector.objectType)
-            if (selector.canViewSelected) {
-                appendLine()
-                append("Right click to view selected object.")
-            }
-        })
+        selectorButton.tooltip = Tooltip(
+            if (selector.canViewSelected) "Right click to view selected ${selector.objectType}."
+            else selector.objectType
+        )
         selectorButton.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
             if (ev.button == MouseButton.SECONDARY) {
                 selector.viewSelected()
                 ev.consume()
             }
         }
+    }
+
+    override fun createDefaultRoot(): Region {
+        if (!displayType) return super.createDefaultRoot()
+        val label = Label("#")
+        label.setOnMouseClicked { ev ->
+            receiveFocus()
+            ev.consume()
+        }
+        return HBox(2.0, label, selectorButton).centerChildren()
     }
 
     @Suppress("unused")

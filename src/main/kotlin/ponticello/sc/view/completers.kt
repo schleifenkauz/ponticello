@@ -14,6 +14,8 @@ import ponticello.model.code.GlobalPatternObject
 import ponticello.model.code.GlobalPatternRegistry
 import ponticello.model.ctx.BoundVariable
 import ponticello.model.ctx.Scope
+import ponticello.model.flow.AudioFlow
+import ponticello.model.flow.AudioFlows
 import ponticello.model.instr.BusObject
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.NamedObjectList
@@ -36,11 +38,8 @@ object BoundVariableCompleter : ConfiguredCompleter<Expander<*, *>, BoundVariabl
     }
 }
 
-abstract class RegistryCompleter<O : NamedObject>(
-    private val registryProperty: PublicProperty<out NamedObjectList<O>>
-) : ConfiguredCompleter<Expander<*, *>, O>(CompletionStrategy.simple) {
-    override fun completionPool(context: Expander<*, *>): Collection<O> = context.context[registryProperty]
-
+abstract class NamedObjectListCompleter<O : NamedObject>
+    : ConfiguredCompleter<Expander<*, *>, O>(CompletionStrategy.simple) {
     override fun extractText(context: Expander<*, *>, item: O): String = item.name.now
 
     protected abstract fun infoText(item: O): String
@@ -51,6 +50,12 @@ abstract class RegistryCompleter<O : NamedObject>(
         infoText = infoText(completion)
         icon = icon(completion)
     }
+}
+
+abstract class RegistryCompleter<O : NamedObject>(
+    private val registryProperty: PublicProperty<out NamedObjectList<O>>
+) : NamedObjectListCompleter<O>() {
+    override fun completionPool(context: Expander<*, *>): Collection<O> = context.context[registryProperty]
 }
 
 object BusReferenceCompleter : RegistryCompleter<BusObject>(BusRegistry) {
@@ -77,3 +82,8 @@ object GlobalPatternReferenceCompleter : RegistryCompleter<GlobalPatternObject>(
     override fun icon(item: GlobalPatternObject): Ikon = MaterialDesignL.LARAVEL
 }
 
+object AudioFlowReferenceCompleter : NamedObjectListCompleter<AudioFlow>() {
+    override fun infoText(item: AudioFlow): String = "flow"
+
+    override fun completionPool(context: Expander<*, *>): Collection<AudioFlow> = context.context[AudioFlows].allFlows()
+}

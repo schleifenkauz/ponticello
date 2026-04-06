@@ -11,6 +11,7 @@ import hextant.serial.parentChain
 import kotlinx.serialization.json.*
 import ponticello.model.code.GlobalPatternObject
 import ponticello.model.ctx.PonticelloContext
+import ponticello.model.flow.AudioFlow
 import ponticello.model.instr.BusObject
 import ponticello.model.score.ScoreObject
 import ponticello.model.server.BufferObject
@@ -305,18 +306,14 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
             "tuple".expand { _ -> TupleExprEditor().defaultState() }
             "named".expand { NamedExprEditor().defaultState() }
             "block".expand(Expander<*, *>::isStatementInBlock) { CodeBlockEditor().defaultState() }
-            "lambda".expand { _ -> ScFunctionEditor().defaultState() }
+            "func".expand { _ -> ScFunctionEditor().defaultState() }
             "bus".expand { BusSelector().defaultState() }
+            "flow".expand { AudioFlowSelector().defaultState() }
             "meter".expand { MeterSelector().defaultState() }
             "buf".expand { BufferSelector().defaultState() }
             "obj".expand { ScoreObjectSelector().defaultState() }
             "pattern".expand { GlobalPatternSelector().defaultState() }
             "osc-hook".expand { _ -> OSCHookSelector().defaultState() }
-            "midi-track".expand { _ -> MidiTrackSelector().defaultState() }
-            "control".expand(
-                condition = { exp -> exp.context.getOrNull(PonticelloContext) is PonticelloContext.Control },
-                create = { ParameterReferenceEditor().defaultState() }
-            )
             "adhoc-synth".expand { AdhocSynthEditor().defaultState() }
             "def".expand(Expander<*, *>::isStatementInBlock) { _ -> FunctionDefEditor().defaultState() }
             "in".expand { InExprEditor().defaultState() }
@@ -369,6 +366,7 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
             registerInterceptor { item: ScoreObject, _ -> ScoreObjectSelector().selectInitial(item) }
             registerInterceptor { item: BufferObject, _ -> BufferSelector().selectInitial(item) }
             registerInterceptor { item: GlobalPatternObject, _ -> GlobalPatternSelector().selectInitial(item) }
+            registerInterceptor { item: AudioFlow, _ -> AudioFlowSelector().selectInitial(item) }
         }
     }
 }
