@@ -21,6 +21,10 @@ SoundProcessFlow : AudioFlow {
 		instance.release(latency: 0);
 	}
 
+	dispose {
+	    instance = nil;
+	}
+
 	free {
 		proc.free;
 		super.free;

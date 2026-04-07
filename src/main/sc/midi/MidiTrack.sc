@@ -85,14 +85,6 @@ MidiTrack : AudioFlow {
 		}
 	}
 
-	* freeAll {
-		if (initialized) {
-			tracksBySource.keysValuesDo { |src, tracks|
-				tracks.copy.do(_.release);
-			}
-		}
-	}
-
 	* new { |name, source, instrs|
 		^super.newCopyArgs(
 			name, source, instrs,
@@ -149,14 +141,16 @@ MidiTrack : AudioFlow {
 
 	release {
 		if (node != nil) {
-			this.allNotesOff;
-			instruments.do(_.dispose);
 			node.free;
-			node = nil;
 			this.prDisconnect;
 		} {
 			postf("Already released track with source %\n", sourceDevice);
 		};
+	}
+
+	dispose {
+		this.allNotesOff;
+		instruments.do(_.dispose);
 	}
 
 	perform { |src, fn|

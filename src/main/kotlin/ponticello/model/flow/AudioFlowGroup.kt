@@ -13,6 +13,7 @@ import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
 import ponticello.model.registry.ObjectListSerializer
 import ponticello.model.registry.SuperColliderObjectRegistry
+import ponticello.sc.client.ScWriter
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.eval
 import ponticello.sc.client.run
@@ -34,7 +35,7 @@ class AudioFlowGroup(
     override var _name: ReactiveVariable<String>? = null
 
     private val audioNodeName get() = "~flows_${name.now}"
-    private val groupNode get() = "${audioNodeName}.node"
+    private val groupName get() = "${audioNodeName}.node"
 
     val isActive: ReactiveBoolean get() = active
 
@@ -67,7 +68,7 @@ class AudioFlowGroup(
 
     override fun added(obj: AudioFlow, idx: Int) {
         val placement = when {
-            idx == 0 -> NodePlacement.head(groupNode)
+            idx == 0 -> NodePlacement.head(groupName)
             else -> NodePlacement.after(flows[idx - 1].superColliderName + ".node")
         }
         if (obj.parentGroup != null) {
@@ -94,7 +95,7 @@ class AudioFlowGroup(
         val name = obj.superColliderName + ".node"
         val prev = previousActiveFlow(idx)
         if (prev == null) {
-            client.run("$name.moveToHead($groupNode)")
+            client.run("$name.moveToHead($groupName)")
         } else {
             client.run("$name.moveAfter(${prev.superColliderName}.node)")
         }
@@ -103,15 +104,19 @@ class AudioFlowGroup(
     fun getPlacement(flow: AudioFlow): NodePlacement {
         val idx = flows.indexOf(flow)
         return when (val prev = previousActiveFlow(idx)) {
-            null -> NodePlacement.head(groupNode)
+            null -> NodePlacement.head(groupName)
             else -> NodePlacement.after(prev.superColliderName)
         }
     }
 
+    private fun ScWriter.insertFlowGroup() {
+        val scoreY = yPosition.now
+        +"$audioNodeName = AudioNodeOrder.insertFlowGroup(score_y: $scoreY, name: '${name.now}')"
+    }
+
     fun createGroupOnServer() {
         client.eval {
-            val scoreY = yPosition.now
-            +"$audioNodeName = AudioNodeOrder.insertFlowGroup(score_y: $scoreY, name: '${name.now}')"
+            insertFlowGroup()
             for (flow in flows) {
                 try {
                     flow.run { addToGroup(this@AudioFlowGroup, NodePlacement.tail(audioNodeName)) }
@@ -119,6 +124,16 @@ class AudioFlowGroup(
                 } catch (e: Exception) {
                     throw e
                 }
+            }
+        }.join()
+    }
+
+    fun recreateFlows() {
+        client.eval {
+            insertFlowGroup()
+            for (flow in flows) {
+                +"${flow.superColliderName}.create(target: $groupName, addAction: \\addToTail)"
+                +"s.sync"
             }
         }.join()
     }
@@ -136,7 +151,7 @@ class AudioFlowGroup(
         for (flow in flows) {
             flow.run { free() }
         }
-        +"$groupNode.free"
+        +"$groupName.free"
     }
 
     fun sync() {

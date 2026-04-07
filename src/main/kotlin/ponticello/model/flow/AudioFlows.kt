@@ -5,7 +5,6 @@ import bundles.publicProperty
 import bundles.set
 import com.illposed.osc.OSCMessage
 import hextant.context.Context
-import kotlinx.serialization.Transient
 import ponticello.impl.Logger
 import ponticello.model.midi.MidiGridInstrument
 import ponticello.model.midi.VSTMidiInstrument
@@ -20,9 +19,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegistry<AudioFlowGroup>() {
-    @Transient
-    private var addedToServer = false
-
     val ids = IdProvider<AudioFlow>()
 
     override val objectType: String
@@ -41,10 +37,7 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         }
         super.initialize(context)
         val client = context[SuperColliderClient]
-        client.onTreeCleared {
-            addedToServer = false
-            createAllFlows()
-        }
+        client.onTreeCleared { recreateAllFlows() }
         client.addListener("/toggle_flow", "/activate_flow", "/deactivate_flow", "/set_flow_active") { _, msg ->
             toggleFlow(msg)
         }
@@ -100,13 +93,11 @@ class AudioFlows(override val objects: MutableList<AudioFlowGroup>) : ObjectRegi
         }
     }
 
-    private fun createAllFlows() {
-        if (addedToServer) return
+    private fun recreateAllFlows() {
         for (group in this) {
             if (!group.isActive.now) continue
-            group.createGroupOnServer()
+            group.recreateFlows()
         }
-        addedToServer = true
     }
 
     fun allFlows(): List<AudioFlow> = objects.flatMap { grp -> grp.flows } + midiVSTFlows()

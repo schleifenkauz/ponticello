@@ -18,6 +18,7 @@ AudioFlow : NamedObject {
 				recreating = false;
 			} {
 				node = nil;
+				this.dispose;
 			}
 		};
 	}
@@ -38,7 +39,7 @@ AudioFlow : NamedObject {
 	active_ { |enable, notify|
 		if (active != enable) {
 			active = enable;
-			postf("Set active % = % (%)\n", this, enable, node);
+			//postf("Set active % = % (%)\n", this, enable, node);
 			if (node.isKindOf(Synth)) {
 				node.run(enable);
 			};
@@ -57,6 +58,8 @@ AudioFlow : NamedObject {
 			node.release;
 		}
 	}
+
+	dispose {}
 
 	free {
 		this.release;

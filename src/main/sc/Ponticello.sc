@@ -80,7 +80,6 @@ Ponticello {
 		if (Server.local.hasBooted.not) {
 			ServerTree.add {
 				AudioNodeOrder.clear;
-				MidiTrack.freeAll;
 				Ponticello.sendMsg('/cleared');
 			};
 			ServerBoot.add {

@@ -166,17 +166,13 @@ SoundProcessInstance : AudioNode {
 		midi_track = midiTrack;
 		if (placement.notNil && (def.type != \midi)) {
 			group = Group.new(placement.target, placement.addAction);
-		};
-		forkIfNeeded {
-			if (placement.notNil && (def.type != \midi)) {
-				Server.local.sync;
-				if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
-					Ponticello.sendMsg('/started_sound_proc', this.nodeID, def.name, pos.t, pos.y);
-				};
+			//Server.local.sync;
+			if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
+				Ponticello.sendMsg('/started_sound_proc', this.nodeID, def.name, pos.t, pos.y);
 			};
-			this.controls_do(_.prepare(this));
-			this.prStart(run);
-		}
+		};
+		this.controls_do(_.prepare(this));
+		this.prStart(run);
 	}
 
 	prStart { |run|

@@ -228,7 +228,11 @@ SoundProcess : NamedObject {
 
 	removeInstance { |idx|
 		var inst = instances.removeAt(idx);
-		byPosition.removeAt(inst.pos);
+		if (inst.notNil) {
+			byPosition.removeAt(inst.pos);
+		} {
+			postf("WARNING: Instance #% of % not found\n", idx, this);
+		}
 	}
 
 	clearAll {}

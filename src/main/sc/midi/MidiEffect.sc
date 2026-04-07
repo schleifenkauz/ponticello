@@ -106,7 +106,9 @@ MidiEffect : MidiInstrument {
 
 
 	dispose {
-		this.pause;
+		if (enabled) {
+			this.pause;
+		}
 	}
 
 	allNotesOff {} //TODO
