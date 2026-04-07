@@ -1,9 +1,11 @@
 OSCMidiForward : MidiInstrument {
-	var track;
+	var name, track;
 
-	attachTo { |name, device_name|
+	* new { |name| ^super.newCopyArgs(name) }
+
+	attachTo { |device_name|
 		if (track.isNil) {
-			track = MidiTrack.new(name, nil, device_name, [this]);
+			track = MidiTrack.new(name, device_name, [this]).active_(true);
 		} {
 			track.sourceDevice = device_name;
 		}
@@ -11,15 +13,15 @@ OSCMidiForward : MidiInstrument {
 	}
 
 	noteOn { |num, val, src|
-		Ponticello.sendMsg('/forward_note_on', track.sourceDevice, num, val);
+		Ponticello.sendMsg('/forward_note_on', name, num, val);
 	}
 
 	noteOff { |num, val, src|
-		Ponticello.sendMsg('/forward_note_off', track.sourceDevice, num, val);
+		Ponticello.sendMsg('/forward_note_off', name, num, val);
 	}
 
 	control { |num, val, src|
-		Ponticello.sendMsg('/forward_cc', track.sourceDevice, num, val);
+		Ponticello.sendMsg('/forward_cc', name, num, val);
 	}
 }
 

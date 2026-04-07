@@ -206,8 +206,8 @@ class SoundProcess(
 
     override fun finishResize(recordEdit: Boolean) {
         super.finishResize(recordEdit)
-        if (isCreatedInSuperCollider) {
-            client.run("$superColliderName.duration = $duration")
+        if (isCreatedInSuperCollider && resizeSide!!.isHorizontal) {
+            client.run("$superColliderName.duration_($duration, updateInstances: ${resizeSide == Side.LEFT})")
         }
     }
 
@@ -253,7 +253,7 @@ class SoundProcess(
 
     override fun onRename(oldName: String, newName: String) {
         if (isCreatedInSuperCollider) {
-            client.run("SoundProcess.rename('${soundProcessName(oldName)}', '${soundProcessName(newName)}')")
+            client.run("SoundProcess.get('${soundProcessName(oldName)}').rename('${soundProcessName(newName)}')")
         }
     }
 

@@ -129,10 +129,7 @@ fun String.parseDecimal(): Decimal? {
     return toDoubleOrNull()?.withPrecision(precision)
 }
 
-fun Double.toDecimal() = toString().parseDecimal()!!
-fun Float.toDecimal() = toString().parseDecimal()!!
-fun Int.toDecimal() = toString().parseDecimal()!!
-fun Long.toDecimal() = toString().parseDecimal()!!
+fun Number.toDecimal() = toString().parseDecimal()!!
 
 fun Double.snap(grid: Decimal): Decimal {
     if (grid == zero || grid.isNaN()) error("Invalid grid value: $grid")

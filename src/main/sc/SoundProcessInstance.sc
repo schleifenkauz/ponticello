@@ -140,6 +140,7 @@ SoundProcessInstance : AudioNode {
 			};
 		}
 		{ true } {
+			Ponticello.sendMsg ('/stopped', -1, def.name, idx);
 			control_buses.do (_.free);
 			control_buses = Dictionary.new;
 			if (group != nil) {
@@ -151,7 +152,6 @@ SoundProcessInstance : AudioNode {
 			};
 			sound_obj = nil;
 			on_dispose.do(_.value);
-            Ponticello.sendMsg ('/stopped', -1, def.name, idx);
             def.removeInstance(idx);
             disposed = true;
 		}
@@ -166,7 +166,7 @@ SoundProcessInstance : AudioNode {
 		midi_track = midiTrack;
 		if (placement.notNil && (def.type != \midi)) {
 			group = Group.new(placement.target, placement.addAction);
-			//Server.local.sync;
+			Server.local.sync;
 			if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
 				Ponticello.sendMsg('/started_sound_proc', this.nodeID, def.name, pos.t, pos.y);
 			};

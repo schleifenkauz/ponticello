@@ -105,6 +105,7 @@ class OSCHookObject(
         }
         appendLine(", '/${path.now}').fix;")
         if (!enabled.now) +"$superColliderName.disable"
+        else +"$superColliderName.enable"
     }
 
     fun setPath(path: String): Boolean {

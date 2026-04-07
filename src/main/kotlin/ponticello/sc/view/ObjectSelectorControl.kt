@@ -39,10 +39,12 @@ class ObjectSelectorControl<O : NamedObject>(
             if (selector.canViewSelected) "Right click to view selected ${selector.objectType}."
             else selector.objectType
         )
-        selectorButton.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
-            if (ev.button == MouseButton.SECONDARY) {
-                selector.viewSelected()
-                ev.consume()
+        if (selector.canViewSelected) {
+            selectorButton.addEventHandler(MouseEvent.MOUSE_CLICKED) { ev ->
+                if (ev.button == MouseButton.SECONDARY) {
+                    selector.viewSelected()
+                    ev.consume()
+                }
             }
         }
     }

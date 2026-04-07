@@ -20,6 +20,7 @@ EnvelopeControl : ParameterControl {
 			var sig = IEnvGen.kr(env, index: cutoff + PonticelloPlayback.sweep);
 			Out.kr(out, sig);
 		}.add;
+		Server.local.sync;
 	}
 
 	getValue { |inst| ^env.at(inst.current_time) }

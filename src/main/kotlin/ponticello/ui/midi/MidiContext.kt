@@ -52,7 +52,7 @@ interface MidiContext {
                 if (rightClick || !receiver.isAttached.now) {
                     val placement = ev?.nextToTarget() ?: ctx.context.defaultPlacement
                     val device = MidiDeviceSelectorPrompt(MidiDeviceSpec.Type.SOURCE, ctx.context)
-                        .showPopup(placement) ?: return@executes
+                        .showPopup(placement, initialOption = receiver.sourceDevice) ?: return@executes
                     ctx.context.project[PLAYBACK_SETTINGS].selectKnobDevice(device)
                 } else {
                     ctx.toggleActive()

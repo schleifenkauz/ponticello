@@ -22,7 +22,8 @@ abstract class OSCMidiListener(private val name: String) : OSCMessageListener, A
 
     private val superColliderVar = "~midi_forward_${name}"
 
-    private var sourceDevice: String? = "nil"
+    var sourceDevice: MidiDeviceSpec = MidiDeviceSpec.None
+        private set
 
     override fun initialize(context: Context) {
         super.initialize(context)
@@ -32,9 +33,9 @@ abstract class OSCMidiListener(private val name: String) : OSCMessageListener, A
     }
 
     fun attachTo(device: MidiDeviceSpec) {
-        sourceDevice = device.code
+        sourceDevice = device
         attached.now = try {
-            client.eval("$superColliderVar.attachTo($sourceDevice)")
+            client.eval("$superColliderVar.attachTo(${sourceDevice.code})")
                 .get().toBooleanStrictOrNull() ?: false
         } catch (e: Exception) {
             Logger.error("Failed to attach to MIDI device $device", e, Logger.Category.Midi)
@@ -45,8 +46,8 @@ abstract class OSCMidiListener(private val name: String) : OSCMessageListener, A
     override fun acceptMessage(event: OSCMessageEvent) {
         val address = event.message.address
         if (address !in ACCEPTED_MESSAGES) return
-        val sourceDevice = event.message.getArgument<String>(0, "sourceDevice") ?: return
-        if (sourceDevice != this.sourceDevice?.removeSurrounding("\"")) return
+        val forwardName = event.message.getArgument<String>(0, "forward name") ?: return
+        if (forwardName != "midi_forward_$name") return
         val num = event.message.getArgument<Int>(1, "num") ?: return
         val vel = event.message.getArgument<Int>(2, "vel") ?: return
         try {
@@ -67,7 +68,6 @@ abstract class OSCMidiListener(private val name: String) : OSCMessageListener, A
     protected open fun controlChange(index: Int, value: Int) {}
 
     companion object {
-        private var idCounter = 0
         private val ACCEPTED_MESSAGES = setOf("/forward_note_on", "/forward_note_off", "/forward_cc")
     }
 }

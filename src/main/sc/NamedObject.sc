@@ -37,19 +37,16 @@ NamedObject {
 	}
 
 	* rename { |old_name, new_name|
-		var obj = this.dict.removeAt(old_name);
-		if (obj.isNil) {
-			Exception("% % not found".format(this.name, old_name)).throw;
-		};
-		obj.name = new_name;
-		obj.reference.prRenamed(new_name);
-		this.dict[new_name] = obj;
+		^get(old_name).rename(new_name);
 	}
 
 	* includesKey { |name| ^this.dict.includesKey(name) }
 
 	rename { |new_name|
-		this.class.rename(name, new_name);
+		this.class.dict.removeAt(name);
+		name = new_name;
+		reference.prRenamed(new_name);
+		this.class.dict[new_name] = this;
 	}
 
 	free {

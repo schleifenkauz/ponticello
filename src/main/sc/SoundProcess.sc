@@ -111,9 +111,11 @@ SoundProcess : NamedObject {
 		}
 	}
 
-	duration_ { |dur|
+	duration_ { |dur, updateInstances=true|
 		duration = dur;
-		this.updateInstances { |inst| inst.updateDuration(dur) };
+		if (updateInstances) {
+			this.updateInstances { |inst| inst.updateDuration(dur) };
+		}
 	}
 
 	getInstance { |idx| ^instances[idx] }

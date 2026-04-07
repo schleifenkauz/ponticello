@@ -88,24 +88,20 @@ class AudioFlowGroup(
         }
     }
 
-    private fun previousActiveFlow(idx: Int) = flows.take(idx).findLast { it.isActive.now }
-
     override fun moved(obj: AudioFlow, idx: Int) {
         if (!obj.isActive.now) return
         val name = obj.superColliderName + ".node"
-        val prev = previousActiveFlow(idx)
-        if (prev == null) {
-            client.run("$name.moveToHead($groupName)")
-        } else {
-            client.run("$name.moveAfter(${prev.superColliderName}.node)")
+        when (val prev = flows.getOrNull(idx - 1)) {
+            null -> client.run("$name.moveToHead($groupName)")
+            else -> client.run("$name.moveAfter(${prev.superColliderName}.node)")
         }
     }
 
     fun getPlacement(flow: AudioFlow): NodePlacement {
         val idx = flows.indexOf(flow)
-        return when (val prev = previousActiveFlow(idx)) {
+        return when (val prev = flows.getOrNull(idx - 1)) {
             null -> NodePlacement.head(groupName)
-            else -> NodePlacement.after(prev.superColliderName)
+            else -> NodePlacement.after(prev.superColliderName + ".node")
         }
     }
 
@@ -119,7 +115,7 @@ class AudioFlowGroup(
             insertFlowGroup()
             for (flow in flows) {
                 try {
-                    flow.run { addToGroup(this@AudioFlowGroup, NodePlacement.tail(audioNodeName)) }
+                    flow.run { addToGroup(this@AudioFlowGroup, NodePlacement.tail(groupName)) }
                     appendLine(";")
                 } catch (e: Exception) {
                     throw e

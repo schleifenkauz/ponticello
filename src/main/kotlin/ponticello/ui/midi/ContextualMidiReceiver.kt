@@ -50,9 +50,6 @@ class ContextualMidiReceiver : OSCMidiListener("knobs") {
         }
     }
 
-    private fun cc(ctx: MidiContext?, index: Int, midiDelta: Int) {
-    }
-
     companion object : PublicProperty<ContextualMidiReceiver> by publicProperty("Midi receiver") {
         private const val CC_INDEX_OFFSET = 20
     }

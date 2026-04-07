@@ -100,8 +100,8 @@ class AudioNodeTree(override val objects: MutableList<AudioNode> = mutableListOf
             )
             return
         }
-        val scoreTime = message.getArgument<Float>(2, "score time") ?: return
-        val scoreY = message.getArgument<Float>(3, "score y") ?: return
+        val scoreTime = message.getArgument<Number>(2, "score time") ?: return
+        val scoreY = message.getArgument<Number>(3, "score y") ?: return
         val position = ObjectPosition(scoreTime.toDecimal(), scoreY.toDecimal())
         val node = AudioNode.SoundProcessInstance(nodeID, process, position)
         insert(node)
