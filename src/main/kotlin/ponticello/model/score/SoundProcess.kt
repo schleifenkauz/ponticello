@@ -206,8 +206,9 @@ class SoundProcess(
 
     override fun finishResize(recordEdit: Boolean) {
         super.finishResize(recordEdit)
-        if (isCreatedInSuperCollider && resizeSide!!.isHorizontal) {
-            client.run("$superColliderName.duration_($duration, updateInstances: ${resizeSide == Side.LEFT})")
+        if (isCreatedInSuperCollider && resizeSide!!.isVertical) {
+            val updateLive = resizeSide == Side.RIGHT
+            client.run("$superColliderName.duration_($duration, updateInstances: $updateLive)")
         }
     }
 

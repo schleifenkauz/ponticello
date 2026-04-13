@@ -7,13 +7,11 @@ import hextant.completion.CompletionStrategy
 import hextant.completion.CompoundCompleter
 import hextant.core.Editor
 import hextant.core.editor.Expander
-import hextant.core.view.CompoundEditorControl
 import hextant.core.view.EditorControl
 import hextant.core.view.ExpanderControl
 import ponticello.model.obj.NamedObject
 import ponticello.model.registry.ObjectReference
 import ponticello.sc.editor.AbstractScExprExpander
-import ponticello.sc.editor.BusExprEditor
 import ponticello.sc.editor.ScExprExpander
 import reaktive.value.now
 
@@ -41,11 +39,11 @@ class ExprExpanderControl(
             if (control is ObjectSelectorControl<*> && control.editor.result.now == ObjectReference.none<NamedObject>()) {
                 control.showChoicePopup()
             }
-            if (editor is BusExprEditor && control is CompoundEditorControl) {
-                val selectorCtrl =
-                    control.getSubControl(editor.busSelector) as? ObjectSelectorControl<*> ?: return@runAfterLayout
-                selectorCtrl.showChoicePopup()
-            }
+//            if (editor is BusExprEditor && control is CompoundEditorControl) {
+//                val selectorCtrl =
+//                    control.getSubControl(editor.busSelector) as? ObjectSelectorControl<*> ?: return@runAfterLayout
+//                selectorCtrl.showChoicePopup()
+//            }
             val expander = target as? AbstractScExprExpander
             if (expander?.associatedDefinition != null) {
                 control.receiveFocus()

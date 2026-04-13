@@ -28,11 +28,15 @@ sealed interface ScElement {
     fun code(writer: ScWriter, context: Context)
 }
 
-fun ScElement.code(context: Context): String {
+fun ScElement.code(context: Context, avoidParentheses: Boolean = false): String {
     if (!isValid) return "nil /*invalid expr*/"
     val writer = StringWriter()
     val scWriter = ScWriter(writer)
-    code(scWriter, context)
+    if (this is CodeBlock && avoidParentheses) {
+        writeCode(scWriter, context)
+    } else {
+        code(scWriter, context)
+    }
     return writer.toString()
 }
 

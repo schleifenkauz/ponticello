@@ -58,6 +58,7 @@ class MidiObjectView(
     override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
         pane.addItem("Color:", this.colorPicker)
         val transposeButton = button("Transpose") { showTransposeDialog() }
+        transposeButton.isFocusTraversable = false
         pane.addItem(
             "Pitch range: ", HBox(
                 lowestPitchLabel, Label(" - "), highestPitchLabel,

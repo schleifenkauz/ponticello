@@ -48,14 +48,15 @@ VSTPluginFlow : AudioFlow {
 
 	* savePluginState { |reply_id, flow_name|
 		var flow = AudioFlow.get(flow_name);
-		if (flow.isNil || {flow.controller.isNil}) {
+		if (flow.isNil || {flow.controller.isNil} || {Server.local.serverRunning.not}) {
 			Ponticello.sendMsg('/error', reply_id, "Could not find VSTPluginController for flow %".format(flow_name));
-		};
-		flow.controller.writeProgram(flow.pluginStateFile) { |ctrl, ok|
-			if (ok) {
-				Ponticello.sendMsg('/reply', reply_id, "ok");
-			} {
-				Ponticello.sendMsg('/error', reply_id, "Error saving VST plugin state of flow %".format(flow_name));
+		} {
+			flow.controller.writeProgram(flow.pluginStateFile) { |ctrl, ok|
+				if (ok) {
+					Ponticello.sendMsg('/reply', reply_id, "ok");
+				} {
+					Ponticello.sendMsg('/error', reply_id, "Error saving VST plugin state of flow %".format(flow_name));
+				}
 			}
 		}
 	}

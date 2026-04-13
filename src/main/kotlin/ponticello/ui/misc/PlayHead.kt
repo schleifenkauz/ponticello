@@ -52,7 +52,11 @@ class PlayHead {
     }
 
     fun movePlayHead(pos: Decimal, scTime: Float? = null) {
-        if (player.isScheduled.now && !(player.isPlaying.now)) return
+        if (_player == null) {
+            currentTime = pos
+            return
+        }
+        if (player.isScheduled.now && !(isPlaying.now)) return
         val wasPlaying = player.isPlaying.now
         if (wasPlaying) player.pause()
         currentTime = pos
