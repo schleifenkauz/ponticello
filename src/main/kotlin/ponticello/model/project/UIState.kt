@@ -43,9 +43,8 @@ class UIState private constructor(
     }
 
     fun getOrSelectInstrument(promptPlacement: PromptPlacement): InstrumentObject? =
-        selectedInstrument.get()?.get().takeIf { !ModifierKeyTracker.isShiftDown.now } ?: selectInstrument(
-            promptPlacement
-        )
+        selectedInstrument.get()?.get().takeIf { !ModifierKeyTracker.isShiftDown.now }
+            ?: selectInstrument(promptPlacement)
 
     fun selectInstrument(promptPlacement: PromptPlacement): InstrumentObject? {
         val instrument = SimpleRegistrySelectorPrompt(context[InstrumentRegistry], "Select instrument")

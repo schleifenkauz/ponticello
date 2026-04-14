@@ -343,6 +343,8 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
                 ctx is PonticelloContext.RoutineDef || ctx is PonticelloContext.Task
             }) { _ -> GoToEditor().defaultState() }
 
+            "refresh".expand { RefreshPatternEditor().defaultState() }
+
             "var".expand(condition = { exp -> exp.getParent<CodeBlockEditor>() != null }) { exp ->
                 val enclosingBlock = exp.getParent<CodeBlockEditor>() ?: return@expand null
                 val variable = IdentifierEditor().defaultState()

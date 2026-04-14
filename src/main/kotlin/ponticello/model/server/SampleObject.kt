@@ -23,6 +23,8 @@ import reaktive.value.*
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 @Serializable
 @SerialName("SoundFile")
@@ -98,7 +100,11 @@ class SampleObject(
     override fun duration(): ReactiveValue<Decimal> = duration
 
     override fun waitForInfos() {
-        infoUpdateJob?.join()
+        try {
+            infoUpdateJob?.get(1, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            Logger.error("Timeout while waiting for infos for sample '${name.now}'", e, Logger.Category.Buffers)
+        }
     }
 
     fun updateInfos(duration: Decimal, nChannels: Int, sampleRate: Double) {
@@ -184,6 +190,7 @@ class SampleObject(
 
     fun loadFile(file: File) {
         referencedFile.now = relativizePath(PonticelloFiles.userHome, file)
+        resolveAudioFile()
         sync()
     }
 
@@ -198,7 +205,7 @@ class SampleObject(
     }
 
     override fun ScWriter.createObject() {
-        infoUpdateJob?.join()
+        waitForInfos()
         infoUpdateJob = CompletableFuture<Unit>()
         val path = audioFile.superColliderPath
         if (_channelMapping.isEmpty()) {
@@ -214,14 +221,14 @@ class SampleObject(
     }
 
     override fun sync() {
-        updateSpectrogram()
-        copyReferencedFileToSamplesDir()
+        if (registry.copyAudioFiles.now) copyReferencedFileToSamplesDir()
+        updateSpectrogram(force = true)
         super.sync()
     }
 
-    private fun updateSpectrogram() {
+    private fun updateSpectrogram(force: Boolean = false) {
         if (!audioFile.isFile) return
-        if (!spectrogramFile.isFile || spectrogramFile.lastModified() < audioFile.lastModified()) {
+        if (force || !spectrogramFile.isFile || spectrogramFile.lastModified() < audioFile.lastModified()) {
             val soxCommand = System.getenv().getOrDefault("sox_path", "sox")
             val command =
                 if (_channelMapping.isEmpty()) arrayOf(
