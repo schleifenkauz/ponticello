@@ -44,10 +44,10 @@ class PlaybackMessageListener(
             }
 
             "/play" -> {
-                val name = event.message.getArgument<String>(1, "name") ?: return@execute
-                val timestamp = event.message.getArgument<Float>(2, "timestamp") ?: return@execute
-                val absoluteY = event.message.getArgument<Float>(3, "absoluteY") ?: return@execute
-                val playerId = event.message.getArgument<Int>(4, "playerId") ?: return@execute
+                val name = event.message.getArgument<String>(0, "name") ?: return@execute
+                val timestamp = event.message.getArgument<Float>(1, "timestamp") ?: return@execute
+                val absoluteY = event.message.getArgument<Float>(2, "absoluteY") ?: return@execute
+                val playerId = event.message.getArgument<Int>(3, "playerId") ?: return@execute
                 val player = ScorePlayer.getById(playerId)
                 playObject(name, timestamp.toDouble().asTime, absoluteY.toDecimal(), player)
             }

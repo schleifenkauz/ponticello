@@ -54,6 +54,7 @@ fun colorPicker(controlledVar: ReactiveVariable<Color>): ColorPicker {
     val picker = ColorPicker(controlledVar.now)
     picker.styleClass.add("button")
     picker.userData = controlledVar.observe { _, _, newColor -> picker.value = newColor }
+    picker.isFocusTraversable = false
     picker.valueProperty().addListener { _, _, newColor -> controlledVar.set(newColor) }
     return picker
 }

@@ -9,6 +9,7 @@ import fxutils.prompt.DetailPane
 import javafx.scene.Parent
 import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
+import javafx.scene.control.TextArea
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -40,6 +41,7 @@ import reaktive.Observer
 import reaktive.value.ReactiveVariable
 import reaktive.value.binding.impl.notNull
 import reaktive.value.binding.map
+import reaktive.value.forEach
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 import java.util.*
@@ -129,7 +131,9 @@ class ScoreObjectDetailPane : ToolPane() {
             detailPane.addItem("Duration", durationLabel)
         }
         view.setupDetailPane(detailPane, midiContext)
-        val memoTextArea = textArea(obj.memoText) styleClass "memo-area"
+        val memoTextArea = TextArea() styleClass "memo-area"
+        memoTextArea.userData = obj.memoText.forEach { text -> memoTextArea.text = text }
+        memoTextArea.textProperty().addListener { _, _, text -> obj.memoText.now = text }
         memoTextArea.border = solidBorder(Color.BLACK)
         setVgrow(memoTextArea, Priority.ALWAYS)
         detailPane.children.addAll(

@@ -168,8 +168,9 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
     }
 
     override fun serialize(): JsonElement {
-        return when (val element = super.serialize()) {
-            is JsonObject -> JsonObject(element + ("disabled" to JsonPrimitive(isDisabled.now)))
+        val element = super.serialize()
+        return when {
+            element is JsonObject && isDisabled.now -> JsonObject(element + ("disabled" to JsonPrimitive(true)))
 
             else -> element
         }

@@ -101,7 +101,7 @@ class ObjectListView<O : Any>(
 
     private fun setupDropArea(target: Pane) {
         target.addEventHandler(DragEvent.ANY) { ev ->
-            val dragSrc = ev.gestureSource
+            val dragSrc = ev.gestureSource ?: return@addEventHandler
             when (ev.eventType) {
                 DragEvent.DRAG_ENTERED -> {
                     when {

@@ -2,6 +2,7 @@ package ponticello.ui.score
 
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
+import fxutils.actions.isTargetTextInput
 import fxutils.actions.registerActions
 import fxutils.neverSquishVertically
 import fxutils.prompt.PromptPlacement
@@ -226,7 +227,8 @@ class ParameterControlsPane(
             addAction("Decrease value") {
                 //enableWhen { box -> box.obj.value().map { ctrl -> ctrl is ValueControl } and box.obj.spec }
                 shortcut("MINUS")
-                executes { box ->
+                executes { box, ev ->
+                    if (ev.isTargetTextInput) return@executes
                     val ctrl = box.obj.now as? ValueControl ?: return@executes
                     val spec = box.obj.spec.now as? NumericalControlSpec ?: return@executes
                     ctrl.value.now = (ctrl.value.now - spec.step.get()).coerceIn(spec.range)

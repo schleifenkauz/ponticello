@@ -79,6 +79,8 @@ class OSCHookObject(
 
     override fun ScWriter.freeObject() {
         +"$superColliderName.free"
+        _events.clear()
+        _eventCount.set(0)
     }
 
     override fun ScWriter.createObject() {
