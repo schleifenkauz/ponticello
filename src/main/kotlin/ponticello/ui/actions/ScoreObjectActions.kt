@@ -1,10 +1,7 @@
 package ponticello.ui.actions
 
 import fxutils.actions.*
-import fxutils.prompt.IntegerPrompt
-import fxutils.prompt.PromptPlacement
-import fxutils.prompt.atMouseCoords
-import fxutils.prompt.nextToTarget
+import fxutils.prompt.*
 import hextant.context.Context
 import hextant.context.compoundEdit
 import hextant.context.withoutUndo
@@ -23,11 +20,13 @@ import ponticello.model.instr.ParameterizedObject
 import ponticello.model.instr.RoutineDefObject
 import ponticello.model.live.LiveObjectRegistry
 import ponticello.model.obj.InstrumentReference
+import ponticello.model.obj.withName
 import ponticello.model.project.InlineControlsDisplay
 import ponticello.model.project.UIState
 import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
 import ponticello.model.score.*
+import ponticello.model.score.controls.ParameterControlList
 import ponticello.ui.controls.DecimalPrompt
 import ponticello.ui.controls.MultiObjectControlPopup
 import ponticello.ui.controls.RenamePrompt
@@ -36,11 +35,8 @@ import ponticello.ui.impl.defaultPlacement
 import ponticello.ui.registry.InstrumentRegistryPane
 import ponticello.ui.registry.SimpleRegistrySelectorPrompt
 import ponticello.ui.score.*
-import reaktive.value.ReactiveBoolean
+import reaktive.value.*
 import reaktive.value.binding.*
-import reaktive.value.now
-import reaktive.value.reactiveValue
-import reaktive.value.toggle
 
 object ScoreObjectActions {
     val multiObjectActions: Action.Collector<ObjectActionContext> = collectActions {
@@ -169,7 +165,48 @@ object ScoreObjectActions {
                 }
             }
         }
-
+        addAction("Join objects") {
+            shortcut("Alt?+J")
+            executes { ctx, ev ->
+                if (ev.isTargetTextInput && !ev.isAltDown()) return@executes
+                val instances = ctx.selectedInstances
+                if (instances.size < 2) return@executes
+                if (instances.any { it.obj !is MidiObject }) return@executes
+                val objects = instances.map { it.obj as MidiObject }.distinct()
+                val tracks = objects.map { it.track.now }.distinct()
+                val track = tracks.singleOrNull() ?: SimpleSelectorPrompt(tracks, "Select track for joined clip")
+                    .showDialog(ev.atMouseCoords()) ?: return@executes
+                val parentScore = instances.mapTo(mutableSetOf(), ScoreObjectInstance::score)
+                    .singleOrNull() ?: return@executes
+                val minT = instances.minOf { inst -> inst.start }
+                val maxT = instances.maxOf { inst -> inst.end }
+                val minY = instances.minOf { inst -> inst.position.y }
+                val maxY = instances.maxOf { inst -> inst.y + inst.height }
+                val notes = mutableListOf<ScoreObjectInstance>()
+                for (group in instances) {
+                    val obj = group.obj as MidiObject
+                    for (note in obj.score.objectInstances) {
+                        val t = note.start - minT + group.start
+                        notes.add(ScoreObjectInstance(note.obj, t, note.y, muted = note.muted.copy()))
+                    }
+                }
+                val lowestPitch = objects.minOf { obj -> obj.lowestPitch }
+                val highestPitch = objects.maxOf { obj -> obj.highestPitch }
+                val score = Score(notes)
+                val name = ctx.context[ScoreObjectRegistry].availableName("midi")
+                val joined = MidiObject(
+                    reactiveVariable(track), lowestPitch, highestPitch, score,
+                    ParameterControlList()
+                ).withName(name)
+                joined.setInitialSize(maxT - minT, maxY - minY)
+                ctx.context.compoundEdit("Join MIDI objects") {
+                    parentScore.addObject(joined, minT, minY, autoSelect = true)
+                    for (inst in instances) {
+                        parentScore.removeObject(inst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
+                    }
+                }
+            }
+        }
     }
 
     val localObjectActions: Action.Collector<ScoreObject> = collectActions {

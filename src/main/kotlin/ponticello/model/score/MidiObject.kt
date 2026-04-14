@@ -31,7 +31,7 @@ class MidiObject(
     @SerialName("lowestPitch") private var _lowestPitch: Int,
     @SerialName("highestPitch") private var _highestPitch: Int,
     override val score: Score,
-    override val controls: ParameterControlList,
+    override val controls: ParameterControlList = ParameterControlList(),
     val extraMessages: MutableList<MidiEvent> = mutableListOf(),
     override val associatedColor: ReactiveVariable<
             @Serializable(with = ColorSerializer::class) Color
