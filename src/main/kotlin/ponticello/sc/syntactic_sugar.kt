@@ -3,9 +3,11 @@ package ponticello.sc
 import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.context.Context
+import ponticello.model.obj.GlobalPatternReference
 import ponticello.model.registry.ObjectReference
 import ponticello.model.score.ScoreBreakpointObject
 import ponticello.sc.client.ScWriter
+import ponticello.sc.editor.GlobalPatternSelector
 import ponticello.sc.editor.ScoreBreakpointSelector
 import reaktive.value.now
 
@@ -69,4 +71,14 @@ data class GoTo(
     }
 
     override fun toString(): String = "GoTo(${breakpoint.name.now})"
+}
+
+@Compound(nodeType = ScExpr::class)
+data class RefreshPattern(
+    @Component(GlobalPatternSelector::class) val pattern: GlobalPatternReference
+) : ScExpr {
+    override fun code(writer: ScWriter, context: Context) {
+        val pat = pattern.get() ?: return writer.append("nil /*unknown pattern ${pattern.getName()}*/")
+        writer.append("Ponticello.sendMsg('/refresh_pattern', '${pat.name.now}')")
+    }
 }

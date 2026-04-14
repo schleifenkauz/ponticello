@@ -204,6 +204,34 @@ internal fun PluginBuilder.registerControlFactories() {
         }
     }
 
+    registerControlFactory { editor: GoToEditor, bundle ->
+        CompoundEditorControl(editor, bundle) {
+            horizontal {
+                val keyword = keyword("goto ")
+                val selector = view(editor.breakpoint)
+                keyword.setOnMouseClicked { ev ->
+                    ev.consume()
+                    selector.focus()
+                }
+                root.centerChildren()
+            }
+        }
+    }
+
+    registerControlFactory { editor: RefreshPatternEditor, bundle ->
+        CompoundEditorControl(editor, bundle) {
+            horizontal {
+                val keyword = keyword("refresh ")
+                val selector = view(editor.pattern)
+                keyword.setOnMouseClicked { ev ->
+                    ev.consume()
+                    selector.focus()
+                }
+                root.centerChildren()
+            }
+        }
+    }
+
     registerControlFactory { editor: OperatorEditor, arguments: Bundle ->
         TokenEditorControl(editor, arguments, completer = NoCompleter, styleClass = "operator")
     }

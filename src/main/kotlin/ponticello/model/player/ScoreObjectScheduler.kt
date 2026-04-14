@@ -88,7 +88,10 @@ class ScoreObjectScheduler(val context: Context) {
     }
 
     private fun ScWriter.releaseObject(obj: ScoreObject, pos: ObjectPosition, serverLatency: Decimal) {
-        +"${obj.superColliderName}.getInstanceAt($pos).release($serverLatency)"
+        if (obj is SoundProcess) {
+            +"${obj.superColliderName}.getInstanceAt($pos).release($serverLatency)"
+        }
+        //TODO what about midi notes?
     }
 
     //Only inside ScorePlayer.execute

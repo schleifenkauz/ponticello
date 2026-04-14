@@ -3,14 +3,18 @@ package ponticello.model.code
 import bundles.PublicProperty
 import bundles.publicProperty
 import bundles.set
+import com.illposed.osc.OSCMessage
 import hextant.context.Context
 import hextant.serial.EditorRoot
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import ponticello.impl.Logger
 import ponticello.model.obj.SuperColliderObject
 import ponticello.model.obj.withName
 import ponticello.model.registry.CustomNamedObjectListSerializer
 import ponticello.model.registry.SuperColliderObjectRegistry
+import ponticello.sc.client.SuperColliderClient
+import ponticello.sc.client.getArgument
 import ponticello.sc.editor.ScExprExpander
 
 @Serializable(with = GlobalPatternRegistry.Serializer::class)
@@ -26,6 +30,17 @@ class GlobalPatternRegistry(
     override fun initialize(context: Context) {
         context[GlobalPatternRegistry] = this
         super.initialize(context)
+        context[SuperColliderClient].addListener("/refresh_pattern") { _, msg -> refreshPattern(msg) }
+    }
+
+    private fun refreshPattern(msg: OSCMessage) {
+        val name = msg.getArgument<String>(0, "Pattern Name") ?: return
+        val pattern = getOrNull(name)
+        if (pattern == null) {
+            Logger.warn("Received /refresh_pattern for unknown pattern: $name", Logger.Category.OSC)
+            return
+        }
+        pattern.sync()
     }
 
     @Suppress("UNCHECKED_CAST")
