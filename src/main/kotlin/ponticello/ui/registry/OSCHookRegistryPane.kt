@@ -3,9 +3,13 @@ package ponticello.ui.registry
 import fxutils.actions.ContextualizedAction
 import fxutils.actions.collectActions
 import fxutils.controls.EditableText
+import fxutils.drag.getSerializableContent
+import fxutils.prompt.PredicateTextPrompt
 import fxutils.prompt.PromptPlacement
+import fxutils.prompt.atMouseCoords
 import fxutils.setFixedWidth
 import fxutils.styleClass
+import hextant.core.editor.defaultState
 import hextant.serial.EditorRoot
 import javafx.application.Platform
 import javafx.beans.property.SimpleObjectProperty
@@ -15,20 +19,24 @@ import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
-import javafx.scene.input.DataFormat
-import javafx.scene.input.MouseButton
+import javafx.scene.input.*
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2AL
 import org.kordamp.ikonli.materialdesign2.MaterialDesignA
 import org.kordamp.ikonli.materialdesign2.MaterialDesignR
+import ponticello.impl.json
 import ponticello.model.code.OSCHookObject
 import ponticello.model.code.OSCHookRegistry
+import ponticello.model.obj.ParameterControlReference
 import ponticello.model.obj.SuperColliderObject
+import ponticello.model.obj.withName
 import ponticello.model.project.OSC_HOOKS
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.get
 import ponticello.model.registry.ObjectList
-import ponticello.sc.editor.ScExprEditor
+import ponticello.model.score.ScoreObject
+import ponticello.model.score.controls.TriggerControl
+import ponticello.sc.editor.*
 import ponticello.ui.dock.ListToolPaneState
 import ponticello.ui.dock.Side
 import ponticello.ui.dock.ToolPane
@@ -38,6 +46,7 @@ import ponticello.ui.registry.ObjectListView.DisplayMode
 import reaktive.value.binding.`if`
 import reaktive.value.forEach
 import reaktive.value.now
+import reaktive.value.reactiveVariable
 
 class OSCHookRegistryPane(
     registry: OSCHookRegistry
@@ -112,6 +121,60 @@ class OSCHookRegistryPane(
         table.columns.addAll(columns)
         val window = makeSubWindow(table, "Events for /${obj.name.now}", obj.context)
         window.show()
+    }
+
+    override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
+        dragboard.hasContent(TriggerControl.DATA_FORMAT) -> arrayOf(TransferMode.LINK)
+        else -> super.acceptedTransferModes(dragboard)
+    }
+
+    override fun getDroppedObjects(ev: DragEvent, targetView: ObjectListView<OSCHookObject>): List<OSCHookObject> {
+        return when {
+            ev.dragboard.hasContent(TriggerControl.DATA_FORMAT) -> {
+                val trigger = ev.dragboard.getSerializableContent(TriggerControl.DATA_FORMAT, json)
+                    ?: return emptyList()
+                val initialText = trigger.parameter.name.now
+                val name = PredicateTextPrompt("Name for OSC Hook", initialText, OSCHookObject::isValidOSCPath)
+                    .showDialog(ev.atMouseCoords()) ?: return emptyList()
+                val associatedObject = trigger.associatedObject.get() as? ScoreObject ?: return emptyList()
+                val obj = createTriggerOSCHook(name, associatedObject, trigger.parameter)
+                listOf(obj)
+            }
+
+            else -> super.getDroppedObjects(ev, targetView)
+        }
+    }
+
+    private fun createTriggerOSCHook(
+        name: String, associatedObject: ScoreObject, parameter: ParameterControlReference
+    ): OSCHookObject {
+        val code = ScFunctionEditor(
+            IdentifierListEditor().defaultState(),
+            CodeBlockEditor(
+                IdentifierListEditor().defaultState(),
+                statements = ScExprListEditor(
+                    ScExprExpander(
+                        MessageSendEditor(
+                            receiver = ScExprExpander(
+                                MessageSendEditor(
+                                    ScExprExpander("SoundProcess"),
+                                    IdentifierEditor("get"),
+                                    ScExprListEditor(
+                                        ScExprExpander(ScoreObjectSelector().selectInitial(associatedObject))
+                                    )
+                                )
+                            ),
+                            method = IdentifierEditor("trigger"),
+                            arguments = ScExprListEditor(
+                                ScExprExpander(SymbolLiteralEditor(parameter.name.now))
+                            )
+                        )
+                    )
+                )
+            ),
+        )
+        val obj = OSCHookObject(reactiveVariable(name), EditorRoot(code)).withName(name)
+        return obj
     }
 
     private class PathControl(private val obj: OSCHookObject) : EditableText(obj.path) {

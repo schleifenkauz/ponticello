@@ -44,6 +44,7 @@ object TriggerControlType : ControlType<TriggerControl>() {
             val associatedObject = namedControl.parentObject.makeReference() ?: return@setOnDragDetected
             val trigger = ItemTarget.Trigger(associatedObject, namedControl.reference())
             dragboard.putSerializableContent(ItemTarget.DATA_FORMAT, trigger, json)
+            dragboard.putSerializableContent(TriggerControl.DATA_FORMAT, trigger, json)
             dragboard.dragView = button.snapshot(null, null)
             ev.consume()
         }

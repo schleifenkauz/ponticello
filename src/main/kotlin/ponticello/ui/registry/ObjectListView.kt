@@ -101,7 +101,7 @@ class ObjectListView<O : Any>(
 
     private fun setupDropArea(target: Pane) {
         target.addEventHandler(DragEvent.ANY) { ev ->
-            val dragSrc = ev.gestureSource ?: return@addEventHandler
+            val dragSrc: Any? = ev.gestureSource
             when (ev.eventType) {
                 DragEvent.DRAG_ENTERED -> {
                     when {
@@ -116,7 +116,7 @@ class ObjectListView<O : Any>(
                     if (acceptedTransferModes.isNotEmpty()) {
                         ev.acceptTransferModes(*acceptedTransferModes)
                         ev.consume()
-                        val idx = getBoxIndexFromPos(dragSrc, ev.screenX, ev.screenY, boxes)
+                        val idx = getBoxIndexFromPos(ev.screenX, ev.screenY, boxes)
                         if (ev.transferMode != TransferMode.COPY &&
                             (boxes.getOrNull(idx) == dragSrc || boxes.getOrNull(idx - 1) == dragSrc)
                         ) return@addEventHandler
@@ -142,7 +142,7 @@ class ObjectListView<O : Any>(
                     val objects = config.getDroppedObjects(ev, this)
                     if (objects.isNotEmpty()) {
                         val idx = getBoxIndexFromPos(
-                            ev.gestureSource, ev.screenX, ev.screenY,
+                            ev.screenX, ev.screenY,
                             boxes.filter { b -> b.obj !in objects })
                         val single = objects.singleOrNull()
                         if (single != null && single in source) {
@@ -185,7 +185,7 @@ class ObjectListView<O : Any>(
             }
         }
 
-    private fun getBoxIndexFromPos(dragSrc: Any, screenX: Double, screenY: Double, boxes: List<ObjectBox<O>>): Int {
+    private fun getBoxIndexFromPos(screenX: Double, screenY: Double, boxes: List<ObjectBox<O>>): Int {
         var idx = when (orientation) {
             Orientation.VERTICAL -> boxes
                 .map { it.localToScreen(it.boundsInLocal).middleY }
