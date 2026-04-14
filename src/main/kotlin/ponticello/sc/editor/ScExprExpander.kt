@@ -44,7 +44,7 @@ class ScExprExpander() : AbstractScExprExpander<ScExpr>() {
 
     override fun autoExpand(text: String): Boolean {
         val editor = when {
-            text in Operator.map -> OperatorExprEditor(
+            text in Operator.map && text != "-" -> OperatorExprEditor(
                 operator = OperatorEditor(text),
                 left = ScExprExpander().defaultState(),
                 right = ScExprExpander().defaultState()

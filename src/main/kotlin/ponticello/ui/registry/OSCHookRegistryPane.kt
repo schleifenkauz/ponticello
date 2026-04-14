@@ -136,6 +136,7 @@ class OSCHookRegistryPane(
                 val initialText = trigger.parameter.name.now
                 val name = PredicateTextPrompt("Name for OSC Hook", initialText, OSCHookObject::isValidOSCPath)
                     .showDialog(ev.atMouseCoords()) ?: return emptyList()
+                trigger.associatedObject.resolve(context)
                 val associatedObject = trigger.associatedObject.get() as? ScoreObject ?: return emptyList()
                 val obj = createTriggerOSCHook(name, associatedObject, trigger.parameter)
                 listOf(obj)

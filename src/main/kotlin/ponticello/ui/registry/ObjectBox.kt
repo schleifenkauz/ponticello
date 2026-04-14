@@ -1,10 +1,7 @@
 package ponticello.ui.registry
 
 import fxutils.*
-import fxutils.actions.Action
-import fxutils.actions.ActionBar
-import fxutils.actions.action
-import fxutils.actions.collectActions
+import fxutils.actions.*
 import hextant.context.compoundEdit
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -123,6 +120,9 @@ class ObjectBox<O : Any>(val parent: ObjectListView<O>, val obj: O) : Control() 
                 toggleExpanded()
             }
             ev.consume()
+        }
+        registerShortcuts {
+            registerActions(config.getActions(this@ObjectBox))
         }
         styleClass(*config.boxStyle)
     }

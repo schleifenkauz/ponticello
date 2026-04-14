@@ -200,10 +200,10 @@ object ScoreObjectActions {
                 ).withName(name)
                 joined.setInitialSize(maxT - minT, maxY - minY)
                 ctx.context.compoundEdit("Join MIDI objects") {
-                    parentScore.addObject(joined, minT, minY, autoSelect = true)
                     for (inst in instances) {
                         parentScore.removeObject(inst, Score.RegistryOption.REMOVE_WITHOUT_ASKING)
                     }
+                    parentScore.addObject(joined, minT, minY, autoSelect = true)
                 }
             }
         }
