@@ -13,10 +13,7 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 @SerialName("Value")
-data class ValueControl(
-    val value: ReactiveVariable<Decimal>,
-    val allocateBus: ReactiveVariable<Boolean> = reactiveVariable(false),
-) : ParameterControl() {
+data class ValueControl(val value: ReactiveVariable<Decimal>) : ParameterControl() {
     override fun copy(): ParameterControl = ValueControl(value.copy())
 
     override fun validate(spec: ControlSpec, obj: ParameterizedObject): Boolean {
@@ -32,7 +29,7 @@ data class ValueControl(
         val cutoffMultiplier = cutoffMultiplier(obj, spec)
             append("ValueControl('$parameter', ")
         append(value.now.toString())
-        if (allocateBus.now) append(", allocate_bus: true")
+            if (spec is NumericalControlSpec && spec.allocateBus) append(", allocate_bus: true")
         if (cutoffMultiplier != zero) append(", cutoff_multiplier: $cutoffMultiplier")
         append(")")
     }

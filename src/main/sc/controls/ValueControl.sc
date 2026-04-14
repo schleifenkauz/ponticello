@@ -11,6 +11,7 @@ ValueControl : ParameterControl {
 		cutoff_multiplier = multiplier;
 		if (allocateBus && (cutoff_multiplier == 0)) {
 			bus = Bus.control;
+			bus.set(value);
 		}
 	}
 
@@ -34,6 +35,7 @@ ValueControl : ParameterControl {
 			if (allocate) {
 				if (cutoff_multiplier == 0) {
 					bus = Bus.control;
+					bus.set(value);
 					this.updateInstances { |inst|
 						inst.mapParameter(this.name, bus);
 					}
@@ -59,7 +61,7 @@ ValueControl : ParameterControl {
 	}
 
 	getSynthArgument { |inst|
-	    ^if (this.allocatesBus) {
+	    ^if (allocateBus) {
 	        (bus ? inst.getControlBus(this.name)).asMap
         } { this.getValue(inst) }
     }

@@ -37,30 +37,21 @@ LFOControl : ParameterControl {
 	apply { |inst|
 		var bus = inst.getControlBus(this.name);
 		if (inst.restarting.not) {
-			this.prCreateSynth(inst, bus, replace: false);
+			this.prCreateSynth(inst, bus, \createAuxilSynth);
 		};
 	}
 
-	prCreateSynth { |inst, bus, replace|
-		var args = [out: bus, cutoff: inst.current_time];
-		var synth = if (replace) {
-			inst.replaceAuxilSynth(this.name, synth_def, args);
-		} {
-			inst.createAuxilSynth(this.name, synth_def, args);
-		};
+	prCreateSynth { |inst, bus, method|
+		var args = List[out: bus, cutoff: inst.current_time];
 		references.do { |ref|
 			var ctrl = inst.getControl(ref);
 			if (ctrl.notNil) {
-				var b = ctrl !? {ctrl.getBus (inst)};
-				if (b.notNil) {
-					synth.map (ref, b);
-				} {
-					synth.set (ref, ctrl.getValue (inst) );
-				}
+				args.addAll([ref, ctrl.getSynthArgument(inst)]);
 			} {
-				postf("Could not resolve control % on SoundProcess %\n", ref, inst.def.name);
+				postf("WARNING: Could not resolve control % on SoundProcess %\n", ref, inst.def.name);
 			}
-		}
+		};
+		inst.perform(method, this.name, synth_def, args);
 	}
 
 	update { |refs, func|
@@ -69,7 +60,7 @@ LFOControl : ParameterControl {
 		this.defineSynth;
 		this.updateInstances { |inst|
 			var bus = inst.getControlBus(this.name);
-			this.prCreateSynth(inst, bus, replace: true);
+			this.prCreateSynth(inst, bus, \replaceAuxilSynth);
 		}
 	}
 
@@ -79,5 +70,5 @@ LFOControl : ParameterControl {
 		}
 	}
 
-	asString { ^"%: UGen".format(name) } //TODO print compiled string
+	asString { ^"%: LFO".format(name) } //TODO print compiled string
 }
