@@ -26,6 +26,7 @@ import ponticello.model.score.controls.EnvelopeControl
 import ponticello.model.score.controls.NamedParameterControl
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
+import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.mapOnto
 import ponticello.ui.controls.ControlSpecPrompt
 import ponticello.ui.controls.DecimalPrompt
@@ -172,8 +173,10 @@ class EnvelopeEditor(
         val v1 = envelope.points[idx - 1].value
         val v2 = envelope.points[idx].value
         if ((v1 - v2).absoluteValue < 0.1.pow(spec.precision)) {
-            val v = DecimalPrompt("Value for envelope segment", spec.precision, v1, spec.range)
-                .showDialog(pane.scene.window, Point2D(ev.screenX, ev.screenY))
+            val v = DecimalPrompt(
+                "Value for envelope segment", v1, spec.precision,
+                client = objectView.context[SuperColliderClient]
+            ).showDialog(pane.scene.window, Point2D(ev.screenX, ev.screenY))
                 ?.checkRange(anchor = Point2D(ev.screenX, ev.screenY)) ?: return
             envelope.beginSegmentEdit(idx - 1)
             envelope.editSegment(v)
@@ -423,8 +426,10 @@ class EnvelopeEditor(
     }
 
     private fun showValuePrompt(point: EnvelopePoint, anchor: Point2D): Decimal? =
-        DecimalPrompt("Value for $parameterName", point.value, spec.precision)
-            .showDialog(pane.scene.window, anchor)
+        DecimalPrompt(
+            "Value for $parameterName", point.value, spec.precision,
+            client = objectView.context[SuperColliderClient]
+        ).showDialog(pane.scene.window, anchor)
             ?.checkRange(anchor)
 
     private fun removePoint(idx: Int) {

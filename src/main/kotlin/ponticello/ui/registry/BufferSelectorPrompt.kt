@@ -8,6 +8,7 @@ import ponticello.model.score.ObjectPosition
 import ponticello.model.server.AllocatedBufferObject
 import ponticello.model.server.BufferObject
 import ponticello.model.server.BufferRegistry
+import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.controls.DecimalPrompt
 import reaktive.value.now
 
@@ -25,8 +26,11 @@ class BufferSelectorPrompt(
 
     override fun createObject(name: String): BufferObject? {
         val duration = DecimalPrompt(
-            "Buffer duration", precision = ObjectPosition.TIME_PRECISION,
-            initialValue = one, range = zero..Decimal.INF
+            "Buffer duration",
+            initialValue = one,
+            precision = ObjectPosition.TIME_PRECISION,
+            range = zero..Decimal.INF,
+            client = registry.context[SuperColliderClient]
         ).showDialog(parentPrompt = this) ?: return null
         return AllocatedBufferObject.create(name, channels, duration)
     }

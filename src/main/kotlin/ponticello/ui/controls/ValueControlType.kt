@@ -21,6 +21,7 @@ import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.ValueControl
 import ponticello.model.score.controls.getNumericalValue
 import ponticello.sc.*
+import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.score.ScoreObjectView
 import reaktive.value.forEach
@@ -62,8 +63,10 @@ data object ValueControlType : ControlType<ValueControl>() {
             if (ev.clickCount == 2 && ev.button == MouseButton.PRIMARY) {
                 val spec = namedControl.spec.now as? NumericalControlSpec ?: return@setOnMouseClicked
                 val oldValue = control.value.now
-                val newValue = DecimalPrompt(namedControl.name.now, oldValue, spec.precision, spec.range)
-                    .showDialog(anchorNode = valueLabel) ?: return@setOnMouseClicked
+                val newValue = DecimalPrompt(
+                    namedControl.name.now, oldValue, spec.precision, spec.range,
+                    client = namedControl.context[SuperColliderClient]
+                ).showDialog(anchorNode = valueLabel) ?: return@setOnMouseClicked
                 val actionDescription = "Update ${namedControl.name.now}"
                 VariableEdit.updateVariable(control.value, newValue, control.context[UndoManager], actionDescription)
             }
@@ -89,8 +92,10 @@ data object ValueControlType : ControlType<ValueControl>() {
         }
         val precision = numericalSpecs.maxOf { spec -> spec.precision }
         val initialValue = controls.map { c -> c.value.now }.distinct().singleOrNull()
-        val newValue = DecimalPrompt(parameterName, precision, initialValue, DecimalRange(min, max))
-            .showDialog(context[primaryStage]) ?: return false
+        val newValue = DecimalPrompt(
+            parameterName, initialValue, precision, DecimalRange(min, max),
+            client = context[SuperColliderClient]
+        ).showDialog(context[primaryStage]) ?: return false
         context.compoundEdit("Update $parameterName") {
             for (ctrl in controls) {
                 VariableEdit.updateVariable(ctrl.value, newValue, context[UndoManager], "Update $parameterName")

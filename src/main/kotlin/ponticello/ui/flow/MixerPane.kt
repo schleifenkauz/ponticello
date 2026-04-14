@@ -38,6 +38,7 @@ import ponticello.model.project.flows
 import ponticello.model.registry.ObjectReference
 import ponticello.model.registry.reference
 import ponticello.model.server.BusRegistry
+import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.actions.undoable
 import ponticello.ui.controls.DecimalPrompt
@@ -317,8 +318,10 @@ class MixerPane(
         volumeBox.setOnMouseClicked { _ ->
             val title = "Volume of ${bus.get().name.now}"
             val placement = PromptPlacement.RelativeTo(volumeBox)
-            volume.now = DecimalPrompt(title, volume.now, VOLUME_SPEC.precision, VOLUME_SPEC.range)
-                .showDialog(placement) ?: return@setOnMouseClicked
+            volume.now = DecimalPrompt(
+                title, volume.now, VOLUME_SPEC.precision, VOLUME_SPEC.range,
+                client = context[SuperColliderClient]
+            ).showDialog(placement) ?: return@setOnMouseClicked
         }
         setMargin(volumeBox, Insets(0.0, 3.0, 0.0, 3.0))
         return volumeBox
