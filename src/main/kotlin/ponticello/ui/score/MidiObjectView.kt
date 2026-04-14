@@ -7,6 +7,7 @@ import fxutils.controls.OptionSpinner
 import fxutils.drag.setupDropArea
 import fxutils.hspace
 import fxutils.prompt.*
+import fxutils.undo.UndoManager
 import hextant.context.Context
 import javafx.scene.control.Label
 import javafx.scene.control.TextField
@@ -22,6 +23,7 @@ import ponticello.model.score.controls.ParameterControlList
 import ponticello.sc.Identifier
 import ponticello.ui.impl.showDialog
 import ponticello.ui.midi.MidiContext
+import ponticello.ui.midi.MidiTrackSelectorPrompt
 import reaktive.value.now
 import reaktive.value.reactiveVariable
 
@@ -55,17 +57,21 @@ class MidiObjectView(
         scorePane.repaint()
     }
 
-    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?) {
-        pane.addItem("Color:", this.colorPicker)
+    override fun setupDetailPane(pane: DetailPane, midiContext: MidiContext?): Unit = with(pane) {
+        addItem("Color:", colorPicker)
+        val trackSelector = MidiTrackSelectorPrompt(context).selectorButton(
+            obj.track, undoManager = context[UndoManager], actionDescription = "Select MIDI track"
+        )
+        addItem("Track: ", trackSelector)
         val transposeButton = button("Transpose") { showTransposeDialog() }
         transposeButton.isFocusTraversable = false
-        pane.addItem(
+        addItem(
             "Pitch range: ", HBox(
                 lowestPitchLabel, Label(" - "), highestPitchLabel,
                 hspace(50.0), transposeButton
             ).centerChildren()
         )
-        pane.children.add(ParameterControlsPane(obj, this, midiContext))
+        children.add(ParameterControlsPane(obj, this@MidiObjectView, midiContext))
     }
 
     private fun showTransposeDialog() {
