@@ -81,7 +81,7 @@ class PlayHead {
         for ((pane, timeCodeView, playHead) in attached) {
             if (!pane.children.contains(playHead)) pane.children.add(playHead)
             playHead.layoutX = pane.getX(currentTime)
-            if (!isPlaying.now) {
+            if (isPlaying.now) {
                 timeCodeView.displayTime(currentTime)
             }
         }

@@ -101,8 +101,11 @@ class SingleObjectScorePane(
         gridCanvas.height = TempoGrid.GRID_HEIGHT
         gridCanvas.setOnMouseClicked { ev ->
             val (t, _) = snapToGrid(ev.x, ev.y)
-            if (!playHead.player.isScheduled.now || ev.button == MouseButton.SECONDARY) {
+            if (!playHead.isPlaying.now || ev.button == MouseButton.SECONDARY) {
                 playHead.movePlayHead(t)
+                if (ev.button == MouseButton.SECONDARY) {
+                    playHead.player.play()
+                }
             }
             ev.consume()
         }

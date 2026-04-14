@@ -1,14 +1,12 @@
 package ponticello.ui.score
 
+import fxutils.*
 import fxutils.actions.collectActions
 import fxutils.actions.registerActions
 import fxutils.actions.registerShortcuts
-import fxutils.centerChildren
-import fxutils.hspace
 import fxutils.prompt.PromptPlacement
 import fxutils.prompt.nextToTarget
-import fxutils.registerShortcuts
-import fxutils.styleClass
+import javafx.scene.input.MouseButton
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import org.kordamp.ikonli.materialdesign2.MaterialDesignG
@@ -51,9 +49,16 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) : ScoreObj
     private fun setupActionHandlers() {
         val objectView = scorePane.getSingleObjectView()
         objectView?.setOnMouseClicked { ev ->
-            objectView.selectView(false)
+            if (ev.modifiers.isNotEmpty()) return@setOnMouseClicked
+            objectView.selectView()
             val (time, _) = scorePane.snapToGrid(ev.x, ev.y)
-            playHead.movePlayHead(time)
+            if (!playHead.isPlaying.now || ev.button == MouseButton.SECONDARY) {
+                playHead.movePlayHead(time)
+                if (ev.button == MouseButton.SECONDARY) {
+                    playHead.player.play()
+                }
+            }
+            ev.consume()
         }
         scorePane.setOnMouseClicked {
             borderPane.requestFocus()
