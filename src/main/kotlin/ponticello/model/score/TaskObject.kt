@@ -51,16 +51,12 @@ class TaskObject(
     }
 
     override fun createInSuperCollider(writer: ScWriter) {
-        writer.appendBlock("$name = Task", endLine = null) {
-            val block = code.editor.result.now
-            block.writeCode(writer.writer, context)
-            +"$name = nil"
-        }
     }
 
-    override fun ScWriter.startNewInstance(
-        info: ObjectPlaybackInfo
-    ) {
-        +"$superColliderName.play"
+    override fun ScWriter.startNewInstance(info: ObjectPlaybackInfo) {
+        appendBlock("fork", endLine = null) {
+            val block = code.editor.result.now
+            block.writeCode(writer.writer, context)
+        }
     }
 }

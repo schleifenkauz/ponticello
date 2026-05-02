@@ -93,10 +93,12 @@ class ScoreObjectPlayerPane private constructor(val obj: ScoreObject) : ScoreObj
                 executesFirst { pane, _ -> setupLiveScoreObject(pane) }
             }
             add(LiveObjectRegistryPane.toggleLoopingAction.map { p -> p.liveScoreObject }) {
+                shortcut("Alt+L")
                 applicableIf { pane -> pane.obj.affectsPlayback }
                 executesFirst { pane, _ -> setupLiveScoreObject(pane) }
             }
             addAction("Toggle grid") {
+                shortcut("Alt+G")
                 icon(MaterialDesignG.GRID)
                 toggles(ScoreObjectPlayerPane::paintGrid)
             }

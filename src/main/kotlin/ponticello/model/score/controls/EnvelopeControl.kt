@@ -44,6 +44,11 @@ class EnvelopeControl(
         return "EnvelopeControl('$parameter', ${points.code(warp)})"
     }
 
+    override fun dispose() {
+        super.dispose()
+        points.removeView(this)
+    }
+
     override fun editedEnvelope() {
         update.fire()
     }

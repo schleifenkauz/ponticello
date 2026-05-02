@@ -37,7 +37,7 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
     }
 
     override fun remove(obj: O) {
-        removeByName(obj.name.now)
+        super.remove(obj)
         try {
             obj.onRemoved()
         } catch (e: Exception) {
@@ -52,7 +52,7 @@ abstract class NamedObjectList<O : NamedObject> : ObjectList<O>() {
 
     fun removeByName(name: String) {
         val control = getOrNull(name) ?: error("$objectType with name '$name' not found in $this")
-        super.remove(control)
+        remove(control)
     }
 
     fun availableName(prefix: String): String {

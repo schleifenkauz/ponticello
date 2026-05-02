@@ -135,6 +135,7 @@ SoundProcessInstance : AudioNode {
 		{ disposed } { postf("Warning: % already disposed", this) }
 		{ restarting } {
 			fork {
+			    cutoff = this.current_time;
 				this.prStart(running);
 				restarting = false;
 			};
@@ -165,6 +166,7 @@ SoundProcessInstance : AudioNode {
 		player_id = playerId ? -1;
 		midi_track = midiTrack;
 		if (placement.notNil && (def.type != \midi)) {
+			Server.local.sync;
 			group = Group.new(placement.target, placement.addAction);
 			Server.local.sync;
 			if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
