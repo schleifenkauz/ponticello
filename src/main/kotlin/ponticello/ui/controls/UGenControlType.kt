@@ -76,7 +76,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         }
     }
 
-    override fun toString(): String = "UGen"
+    override fun toString(): String = "LFO"
 
     private val actions = collectActions<Pair<NamedParameterControl, ScoreObjectView?>> {
         addAction("Update") {

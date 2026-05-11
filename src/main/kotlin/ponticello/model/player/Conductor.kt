@@ -93,7 +93,7 @@ abstract class Conductor(
         receiver.startListening()
         receiver.dispatcher.addListener(OSCSuperColliderClient.ALL_MESSAGES, this)
 
-        val rubatoDir = player.context[PonticelloFiles].resolve("lib/rubato")
+        val rubatoDir = PonticelloFiles.userHome.resolve("dev/rubato")
         val pythonExe = rubatoDir.resolve(".venv/bin/python").absolutePath
         val startAt = System.currentTimeMillis() / 1000 + options.countdownTime.now
         analysisProcess = startVideoAnalysis(pythonExe, rubatoDir, startAt)

@@ -9,13 +9,8 @@
 - ability to copy and paste whole time ranges
 - what to do when user selects a new `SynthDef` for a synth object
     - re-sync parameter controls in some way...
-- asr parameter type?
-  - with curve parameter
-- find another shortcut for creating breakpoints
 
 ## New Functionality
-
-### highlight unresolved variables!
 
 ### Stretching time regions
 
@@ -24,10 +19,9 @@
 
 ### UI niceties
 
-- don't squish the item cell list in detail pane mode
 - special layout for lambdas as function arguments
 
-### Support for patterns
+### Extend Support for patterns
 
 - as synth arguments
     - either delta patterns -> `Pmono` for all the delta pattern arguments
@@ -60,15 +54,3 @@
 ### Different curvatures for envelopes
 
 ### Is vertical scroll/zoom needed?
-
-## Was unterscheidet Ponticello von anderen DAWs?
-
-- Möglichkeit beliebig komplexe SynthDefs zu bauen.
-- Unterstützung des Pattern-Systems von SuperCollider (bald)
-- Möglichkeit Programmschnipsel in die Partitur einzubinden.
-- geschachteltes Objektsystem
-
-### Namen überlegen
-
-- vielleicht: Ponticello (wegen Brücke)
-- oder: multiphonix
