@@ -35,10 +35,11 @@ reading from and writing to global buses.
 SynthDefs define a set of parameters that expose the controllable aspects of the signal processing.
 Each score object maintains a set of controls that are assigned to the parameters of its associated SynthDef.
 Controls can take several forms:
-• constant values,
-• control or audio buses,
-• automation curves defined over score-time.
-• SuperCollider expressions evaluated at runtime.
+
+- constant values,
+- control or audio buses,
+- automation curves defined over score-time.
+- SuperCollider expressions evaluated at runtime.
 When an expression evaluates to a UGen, it is used to modulate the corresponding parameter.
 
 #### Synchronization in mixed acoustic-electronic music
@@ -49,8 +50,6 @@ Ponticello supports mixed acoustic-electronic music performances
 in which electronic playback follows a human conductor.
 Instead of synchronizing electronics using fixed digital click tracks,
 the system allows the computer to adapt its timing to the conductor's flexible pulse.
-
-![Conductor synchronization diagram](https://schleifenkauz.de/img/skizze_reduziert.png)
 
 During performance, the conductor is captured by a video camera,
 and the inferred tempo is used to continuously control the playback speed of the electronic score.
@@ -66,3 +65,9 @@ It can be downloaded [here](https://supercollider.github.io/downloads.html).
 
 To install Ponticello, execute the SuperCollider script [setup_ponticello.scd](setup_ponticello.scd),
 which will walk through the setup. 
+
+So far, I developed and tested the system on Linux.
+However, all of Ponticello's components are in principle cross-platform.
+So, setting it up on Windows or macOS should be quite straightforward.
+If you have problems installing the Ponticello on your system,
+don't hesitate to contact me by [creating an issue](https://github.com/schleifenkauz/ponticello/issues/new/choose).
