@@ -111,7 +111,7 @@ class AudioFlowGroup(
     }
 
     fun createGroupOnServer() {
-        client.eval {
+        client.eval(description = "Create flow group ${name.now}") {
             insertFlowGroup()
             for (flow in flows) {
                 try {

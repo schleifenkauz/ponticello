@@ -20,13 +20,13 @@ AudioNodeOrder {
 		nodes = List[];
 	}
 
-	* insert { |node, done|
-		var idx = AudioNodeOrder.binarySearch(node.score_y);
-		var prev = idx - 1;
-		//postf("Inserting node (score_y = %) at index %\n", node.score_y, idx);
-		nodes = nodes.insert(idx, node);
+	* insertionIndex { |node|
+		^AudioNodeOrder.binarySearch(node.score_y)
+	}
+
+	* nodePlacement { |insert_idx|
+		var prev = insert_idx - 1;
 		while { (nodes[prev] != nil) && { (nodes[prev].node == nil) || { nodes[prev].isActive.not } } } {
-            nodes.removeAt(prev);
 		    prev = prev - 1;
 		};
 		^if (prev < 0) {
@@ -36,12 +36,19 @@ AudioNodeOrder {
 		};
 	}
 
+	* insert { |node, idx|
+		//postf("Inserting node (score_y = %) at index %\n", node.score_y, idx);
+		nodes = nodes.insert(idx, node);
+	}
+
 	* insertFlowGroup { |score_y, name|
 		var node = AudioFlowGroup.new(score_y);
-		var placement = this.insert(node);
+		var insert_idx = this.insertionIndex(node);
+		var placement = this.nodePlacement(insert_idx);
 		var group = Group.new(placement.target, placement.addAction);
-		Ponticello.sendMsg('/inserted_flow_group', group.nodeID, name, score_y);
 		node.node = group;
+		this.insert(node, insert_idx);
+		Ponticello.sendMsg('/inserted_flow_group', group.nodeID, name, score_y);
 		^node
 	}
 
@@ -66,6 +73,7 @@ AudioNodeOrder {
 		var idx = nodes.indexOf(node);
 		if (idx != nil) {
 			nodes.removeAt(idx);
+			//postf("Removing % at index %\n", node, idx);
 			Ponticello.sendMsg('/removed_node', node.nodeID);
 		} {
 			Exception("% (ID: %) not found in AudioNodeOrder\n".format(node, node.nodeID)).reportError;
@@ -74,6 +82,6 @@ AudioNodeOrder {
 
 	* clear {
 		Ponticello.sendMsg('/cleared_node_tree');
-		nodes = [];
+		nodes = List[];
 	}
 }
