@@ -9,7 +9,7 @@
 + Bus {
     scan { |offset, channels|
         offset = offset ? 0;
-        channels = channels ? this.numChannels;
+        channels = channels ? (this.numChannels - offset);
         ^this.rate.switch
             {\audio} { In.ar(this.index + offset, channels) }
             {\control} { In.kr(this.index + offset, channels) };
