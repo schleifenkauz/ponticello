@@ -56,7 +56,14 @@ class RoutineDefObject(
 
     override fun ScWriter.createObject() {
         val parameterMap = parameters.associate { p ->
-            p.name.now to { Identifier("inst").send("get", SymbolLiteral(p.name.now)) }
+            p.name.now to {
+                var expr = Identifier("inst").send("get", SymbolLiteral(p.name.now))
+                val spec = p.spec.now
+                if (spec is NumericalControlSpec && spec.clipToRange) {
+                    expr = expr.send("clip", spec.min, spec.max)
+                }
+                expr
+            }
         }
         val extraMap = mapOf(
             "time" to { Identifier("inst").send("current_time") }

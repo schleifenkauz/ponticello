@@ -23,7 +23,7 @@ import ponticello.model.server.BufferObject
 
 typealias InstrumentReference = ObjectReference<@Contextual InstrumentObject>
 typealias SynthDefReference = ObjectReference<@Contextual SynthDefObject>
-typealias ProcessDefReference = ObjectReference<@Contextual RoutineDefObject>
+typealias RoutineDefReference = ObjectReference<@Contextual RoutineDefObject>
 typealias MidiEffectInstrumentReference = ObjectReference<@Contextual MidiEffectInstrument>
 typealias MidiInstrumentReference = ObjectReference<@Contextual MidiInstrument>
 typealias MidiTrackReference = ObjectReference<@Contextual MidiTrackFlow>

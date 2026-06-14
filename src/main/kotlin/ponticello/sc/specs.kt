@@ -5,6 +5,7 @@ import hextant.codegen.Choice
 import hextant.codegen.Component
 import hextant.codegen.Compound
 import hextant.codegen.UseEditor
+import hextant.serial.EditorRoot
 import javafx.scene.paint.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,7 +20,7 @@ import reaktive.value.reactiveVariable
 
 @Serializable
 enum class ParameterType {
-    Bus, Buffer, Numerical, Expr, BufferPosition, Trig, AttackRelease;
+    Bus, Buffer, Numerical, Expr, BufferPosition, ScoreObject, Trig, AttackRelease;
 
     override fun toString(): String = when (this) {
         Bus -> "bus"
@@ -27,6 +28,7 @@ enum class ParameterType {
         Numerical -> "num"
         Expr -> "expr"
         BufferPosition -> "buf-pos"
+        ScoreObject -> "obj"
         Trig -> "trig"
         AttackRelease -> "attack-release"
     }
@@ -44,6 +46,7 @@ fun ParameterType.defaultControlSpec(): ControlSpec = when (this) {
     ParameterType.Trig -> NumericalControlSpec.TRIGGER
     ParameterType.BufferPosition -> BufferPositionControlSpec()
     ParameterType.AttackRelease -> AttackReleaseControlSpec()
+    ParameterType.ScoreObject -> ScoreObjectControlSpec
 }
 
 @Serializable
@@ -64,6 +67,7 @@ fun ControlSpec.defaultControl() = when (this) {
     is NumericalControlSpec -> ValueControl(reactiveVariable(defaultValue.get()))
     is ExprControlSpec -> ExprControl.create()
     is BufferPositionControlSpec -> ValueControl(reactiveVariable(zero))
+    is ScoreObjectControlSpec -> ExprControl(EditorRoot(ScExprExpander(ScoreObjectSelector())))
     is AttackReleaseControlSpec -> AttackReleaseControl.createDefault()
 }
 
@@ -73,6 +77,7 @@ fun ControlSpec.defaultControlType() = when (this) {
     is BufferPositionControlSpec -> ValueControlType
     is BusControlSpec -> BusControlType
     is ExprControlSpec -> ExprControlType
+    is ScoreObjectControlSpec -> ExprControlType
     is NumericalControlSpec -> ValueControlType
 }
 
@@ -94,6 +99,11 @@ fun ControlSpec.setDefaultExpr(expander: ScExprExpander) {
         is ExprControlSpec -> expander.setInitialText("")
         is BufferPositionControlSpec -> expander.setInitialText("0")
         is AttackReleaseControlSpec -> expander.setInitialText("0")
+        is ScoreObjectControlSpec -> {
+            val selector = ScoreObjectSelector()
+            selector.selectInitial(ObjectReference.none())
+            expander.setInitialContent(selector)
+        }
     }
 }
 
@@ -112,7 +122,8 @@ data class NumericalControlSpec(
     @Component(SimpleBooleanEditor::class) override val inlineDisplay: Boolean = false,
     @Component(SimpleBooleanEditor::class) val attackRelease: Boolean = false,
     @Component(SimpleBooleanEditor::class) val allocateBus: Boolean = false,
-    @Component(SimpleBooleanEditor::class) val isStretch: Boolean = false
+    @Component(SimpleBooleanEditor::class) val isStretch: Boolean = false,
+    @Component(SimpleBooleanEditor::class) val clipToRange: Boolean = false
 ) : ControlSpec {
     val precision get() = step.get().precision
 
@@ -143,7 +154,11 @@ data class NumericalControlSpec(
         get() = ParameterType.Numerical
 
     override val code: String
-        get() = "kr(${defaultValue.text}, lag: ${lag.text}, spec: [${min.text}, ${max.text}, ${warp.code}, ${step.text}])"
+        get() = buildString {
+            append("kr(${defaultValue.text}, lag: ${lag.text}")
+            append(", spec: [${min.text}, ${max.text}, ${warp.code}, ${step.text}])")
+            if (clipToRange) append(".clip(${min.text}, ${max.text})")
+        }
 
     override val defaultValueExpr: String
         get() = defaultValue.text
@@ -269,6 +284,18 @@ data class BufferPositionControlSpec(
 
     override val code: String
         get() = "kr(0)"
+}
+
+@Serializable
+@SerialName("ScoreObject")
+@Compound
+data object ScoreObjectControlSpec : ControlSpec {
+    override val type: ParameterType
+        get() = ParameterType.ScoreObject
+    override val code: String
+        get() = throw UnsupportedOperationException("ObjectControlSpec cannot be used in SynthDefs.")
+
+    operator fun invoke() = ScoreObjectControlSpec
 }
 
 @Serializable
