@@ -7,7 +7,7 @@ VSTPluginFlow : AudioFlow {
 
 	createNode { |target, addAction|
 		var synth, dry;
-		dry = (VSTPlugin.plugins[pluginName].inputs != nil).asInteger;
+		dry = (VSTPlugin.plugins[pluginName].inputs == nil).asInteger;
 		synth = this.prCreateSynth(\vst_plugin, [bus: bus, dry: dry], target, addAction);
 		Server.local.sync;
 		controller = VSTPluginController(synth);
