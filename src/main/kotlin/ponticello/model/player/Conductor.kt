@@ -9,6 +9,7 @@ import ponticello.model.score.MeterObject
 import ponticello.model.score.TempoGridObject
 import ponticello.model.score.TimeUnit
 import ponticello.sc.client.OSCSuperColliderClient
+import ponticello.sc.client.SuperColliderClient
 import ponticello.ui.launcher.PonticelloFiles
 import reaktive.value.ReactiveBoolean
 import reaktive.value.now
@@ -17,11 +18,12 @@ import java.io.File
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 abstract class Conductor(
     protected val player: ScorePlayer,
     val options: ConductorOptions
-) : OSCMessageListener {
+) : OSCMessageListener, RemotePlaybackControl.Listener {
     private val views = ListenerManager.createWeakListenerManager<View>()
     protected var conductorTime = 0.0.asTime
     private var currentMeasure = 0
@@ -46,6 +48,8 @@ abstract class Conductor(
     private val tempoList = mutableListOf<Decimal>()
     private var startAt = zero
 
+    val remoteControl = RemotePlaybackControl(this)
+
     private val playerStopObserver = player.isPlaying.observe { _, before, now ->
         if (before && !now) {
             stop()
@@ -59,8 +63,6 @@ abstract class Conductor(
     protected fun setTimeWarp(warp: Decimal) {
         tempoList.add(warp.withPrecision(3))
         clock.timeWarp.now = warp.coerceIn(options.minWarp.now, options.maxWarp.now)
-        val timePlaying = (System.currentTimeMillis() / 1000.0).withPrecision(3) - startAt
-        val delta = (tempoList.size / 15.0).withPrecision(3) - timePlaying
     }
 
     protected fun keepTimeWarp() {
@@ -69,7 +71,7 @@ abstract class Conductor(
 
     protected abstract fun startVideoAnalysis(pythonExe: String, rubatoDir: File, startAt: Long): Process
 
-    fun start(): Boolean {
+    override fun start(): Boolean {
         val startTime = player.currentTime
         val gridInst = player.score.activeInstances(startTime..startTime + one)
             .sortedByDescending { inst -> inst.start }
@@ -84,10 +86,11 @@ abstract class Conductor(
 
         scheduled.set(true)
         views.notifyListeners { onScheduled(startTime) }
+        remoteControl.notifyStarted()
         nBeats = -meter.beatsPerBar.now
         val offset = startTime - gridInst.start
         val measureOffset = (offset / meter.getDuration(TimeUnit.Bars)).roundToInt()
-        currentMeasure = grid.firstBar.now + measureOffset
+        currentMeasure = grid.firstBar.now + measureOffset - 1
 
         val receiver = OSCPortIn(options.port.now)
         receiver.startListening()
@@ -104,18 +107,19 @@ abstract class Conductor(
         return true
     }
 
-    fun stop() {
+    override fun stop() {
         analysisProcess?.destroy()
+        doStop()
     }
 
     private fun doStop() {
         if (!active.now) return
+        scheduled.set(false)
+        active.set(false)
         beatTimes.clear()
         nBeats = 0
         currentMeasure = 0
         conductorTime = 0.0.asTime
-        scheduled.set(false)
-        active.set(false)
         playing = false
         analysisProcess = null
         receiver?.stopListening()
@@ -137,6 +141,7 @@ abstract class Conductor(
             }
         }
         views.notifyListeners { onStopped() }
+        remoteControl.notifyStopped()
     }
 
     override fun acceptMessage(event: OSCMessageEvent) {
@@ -167,7 +172,7 @@ abstract class Conductor(
                 conductorTime += meter.getDuration(TimeUnit.Beats)
             } else {
                 playing = true
-                currentMeasure = 1
+                currentMeasure += 1
             }
         }
         if (nBeats == -1 && !player.isScheduled.now) {
@@ -176,10 +181,12 @@ abstract class Conductor(
             val delay = ((beatDur - player.lookAhead) * 1000).toLong()
             clock.timeWarp.now = conductorTempo / startingMeter!!.beatsPerMinute.now
             println("INITIAL TEMPO $conductorTempo")
-            scheduler.schedule(player::play, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+            scheduler.schedule({
+                player.play()
+                remoteControl.notifyPlaying()
+            }, delay, MILLISECONDS)
         }
-        val barPosition = if (beatsPerBar != 0) nBeats.mod(beatsPerBar) + 1 else 0
-        views.notifyListeners { onBeat(currentMeasure, barPosition, conductorTime) }
+        notifyBeatPosition()
 
         beatTimes.addLast(timestamp)
         while (beatTimes.size > beatsPerBar) beatTimes.removeFirst()
@@ -189,6 +196,37 @@ abstract class Conductor(
             nBeats = 0
             currentMeasure += 1
         }
+    }
+
+    private fun notifyBeatPosition() {
+        val barPosition = if (beatsPerBar != 0) nBeats.mod(beatsPerBar) + 1 else 0
+        views.notifyListeners { onBeat(currentMeasure, barPosition, conductorTime) }
+        remoteControl.sendBeat(currentMeasure, barPosition, beatsPerBar)
+    }
+
+    override fun forward() {
+        val meter = activeMeter ?: return
+        conductorTime += meter.getDuration(TimeUnit.Beats)
+        nBeats += 1
+        if (nBeats == beatsPerBar) {
+            nBeats = 0
+            currentMeasure += 1
+        }
+        notifyBeatPosition()
+    }
+
+    override fun backward() {
+        val meter = activeMeter ?: return
+        conductorTime -= meter.getDuration(TimeUnit.Beats)
+        if (nBeats == 0) {
+            nBeats = beatsPerBar - 1
+            currentMeasure -= 1
+        } else nBeats -= 1
+        notifyBeatPosition()
+    }
+
+    override fun setVolume(value: Double) {
+        player.context[SuperColliderClient].run("s.volume.volume = $value.linlin(0, 100, s.volume.min, s.volume.max)")
     }
 
     interface View {

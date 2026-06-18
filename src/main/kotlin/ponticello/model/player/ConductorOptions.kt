@@ -19,7 +19,8 @@ data class ConductorOptions(
     val visualFeedback: ReactiveVariable<Boolean> = reactiveVariable(false),
     val saveTempoCurve: ReactiveVariable<Boolean> = reactiveVariable(false),
     val modelName: ReactiveVariable<String> = reactiveVariable("<none>"),
-    val videoInput: ReactiveVariable<String> = reactiveVariable("/dev/video0")
+    val videoInput: ReactiveVariable<String> = reactiveVariable("/dev/video0"),
+    val remoteUrl: ReactiveVariable<String> = reactiveVariable("ws://localhost:8080"),
 ) {
     companion object {
         fun createDefault() = ConductorOptions()

@@ -90,7 +90,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
                     initialSpec, "Maximum attack/release"
                 )
 
-                is BufferPositionControlSpec, is ExprControlSpec -> null
+                is BufferPositionControlSpec, is ExprControlSpec, is ScoreObjectControlSpec -> null
             }
         }
 
@@ -114,6 +114,7 @@ abstract class ControlSpecPrompt<S : ControlSpec, N : Node>(
 
             ParameterType.BufferPosition -> BufferPositionControlSpec()
             ParameterType.Expr -> ExprControlSpec()
+            ParameterType.ScoreObject -> ScoreObjectControlSpec()
             ParameterType.Trig -> NumericalControlSpec.TRIGGER
         }
     }

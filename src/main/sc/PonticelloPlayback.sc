@@ -1,5 +1,5 @@
 PonticelloPlayback {
-	classvar play_start, score_time_counter, score_time_bus, time_warp_bus, time_warp;
+	classvar play_start, score_time_counter, score_time_bus, <time_warp_bus, <time_warp;
 
 	* init {
 		play_start = Dictionary.new;
@@ -25,8 +25,9 @@ PonticelloPlayback {
 	}
 
 	* set_time_warp { |tempo, score_time|
-		tempo = tempo.asFloat; score_time = score_time.asFloat;
+		tempo = tempo.asFloat;
 		if (score_time.notNil) {
+		    score_time = score_time.asFloat;
 			if (score_time > 1) {
 				var diff = score_time - score_time_bus.getSynchronous;
 				//postf("exp(tanh(% - %)) = %\n", score_time, ~score_time_bus.getSynchronous, diff.tanh.exp);
@@ -64,6 +65,7 @@ PonticelloPlayback {
 				} {
 					postf("Rejecting % scheduled for % because % != %\n",
 						info, abs_time, my_play_start, play_start[player_id]);
+                    Ponticello.sendMsg('/reply', id, 'rejected');
 				};
 				nil;
 			}

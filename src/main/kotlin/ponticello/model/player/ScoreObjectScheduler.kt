@@ -97,7 +97,7 @@ class ScoreObjectScheduler(val context: Context) {
     //Only inside ScorePlayer.execute
     fun scheduleObject(
         obj: ScoreObject, info: ObjectPlaybackInfo, scLangLatency: Decimal = this.sclangLatency,
-    ): CompletableFuture<Int?>? {
+    ): CompletableFuture<String>? {
         val time = info.pos.time + info.cutoff + info.player.timeOffset
         val scheduledTime = (time + scLangLatency - extraLatency)
         return scheduleObject(obj, info, scheduledTime, absolute = false)
@@ -106,7 +106,7 @@ class ScoreObjectScheduler(val context: Context) {
     fun scheduleObject(
         obj: ScoreObject, info: ObjectPlaybackInfo,
         scheduledTime: Decimal, absolute: Boolean,
-    ): CompletableFuture<Int?>? {
+    ): CompletableFuture<String>? {
         try {
             if (!obj.validate()) return null
         } catch (e: Exception) {
@@ -128,7 +128,6 @@ class ScoreObjectScheduler(val context: Context) {
         try {
             val description = "start ${obj.name.now}"
             return client.schedule(description, scheduledTime, absolute, info.player, code)
-                .thenApply(String::toIntOrNull)
         } catch (e: Exception) {
             Logger.error("Failed to schedule $obj", e, Logger.Category.Playback)
             return null

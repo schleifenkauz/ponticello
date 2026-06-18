@@ -109,6 +109,7 @@ open class ParameterListConfig : ListDisplayConfig<ParameterDefObject> {
                             detailsPane.addItem("Inline display", editor.context.createControl(editor.inlineDisplay))
                             detailsPane.addItem("Attack-release", editor.context.createControl(editor.attackRelease))
                             detailsPane.addItem("Allocate bus", editor.context.createControl(editor.allocateBus))
+                            detailsPane.addItem("Clip to range", editor.context.createControl(editor.clipToRange))
                             detailsPane.addItem("Use as stretch factor", editor.context.createControl(editor.isStretch))
                         }
 

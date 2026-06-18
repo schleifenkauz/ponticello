@@ -51,6 +51,7 @@ class ParameterInfoPane(
                                 prefWidth = 100.0
                             }
                         }
+                        is ScoreObjectControlSpec -> add(Label("score-object"))
                     }
                 }
         }

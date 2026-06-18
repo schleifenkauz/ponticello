@@ -24,6 +24,7 @@ import javafx.util.Duration
 import org.kordamp.ikonli.Ikon
 import org.kordamp.ikonli.material2.Material2MZ
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF
+import org.kordamp.ikonli.materialdesign2.MaterialDesignL
 import ponticello.impl.*
 import ponticello.model.player.Conductor
 import ponticello.model.player.GRUConductor
@@ -90,7 +91,8 @@ class ConductorPane(
 
     private val videoInputField = textField(conductor.options.videoInput.now) styleClass "sleek-text-field"
 
-    private val configControls = listOf(portSpinner, countdownTimeSpinner, extraOptionsField, modelSelector, videoInputField)
+    private val remoteUrlField = textField(conductor.options.remoteUrl.now) styleClass "sleek-text-field"
+    private val remoteConnectButton = connectAction.withContext(this).makeButton("medium-icon-button")
 
     private val toggleButton = startStopAction.withContext(this).makeButton("large-icon-button")
     private val countdownIndicator = ProgressBar() styleClass "conductor-countdown"
@@ -103,6 +105,12 @@ class ConductorPane(
 
     private val videoInputProperty = conductor.options.videoInput.asProperty()
     private val extraOptionsProperty = conductor.options.extraArguments.asProperty()
+    private val remoteUrlProperty = conductor.options.remoteUrl.asProperty()
+
+    private val configControls = listOf(
+        portSpinner, countdownTimeSpinner, extraOptionsField,
+        modelSelector, videoInputField, remoteConnectButton
+    )
 
     override val content: VBox
 
@@ -135,9 +143,17 @@ class ConductorPane(
             HBox(5.0, Label("Input:           "), videoInputField.alwaysHGrow()).centerChildren(),
             Label("Command line options:      "),
             extraOptionsField,
+            HBox(5.0, Label("Remote control: "), remoteUrlField.alwaysHGrow(), remoteConnectButton),
             centerPane,
             HBox(10.0, currentMeasureLabel, barPositionLabel).center()
         ).pad(5.0)
+        remoteUrlProperty.bindBidirectional(remoteUrlField.textProperty())
+        remoteUrlField.disableProperty().bind(conductor.remoteControl.isConnected.asObservableValue())
+//        remoteConnectButton.textProperty().bind(conductor.remoteControl.isConnected.map { connected ->
+//            if (connected) "Disconnect" else "Connect"
+//        }.asObservableValue())
+//        remoteConnectButton.prefWidth = 100.0
+
         toggleButton.disableProperty().bind(
             conductor.options.modelName.equalTo("<none>")
                 .or(conductor.options.videoInput.map(String::isBlank))
@@ -238,6 +254,29 @@ class ConductorPane(
             val conductor = GRUConductor.get(project.context)
             val scorePane = project.context[PonticelloMainActivity].mainScoreView
             return ConductorPane(conductor, scorePane)
+        }
+
+        private val connectAction = action<ConductorPane>("Connect/disconnect") {
+            description { v ->
+                `if`(
+                    v.conductor.remoteControl.isConnected,
+                    then = { "Disconnect" },
+                    otherwise = { "Connect" }
+                )
+            }
+            icon { v ->
+                `if`(
+                    v.conductor.remoteControl.isConnected,
+                    then = { MaterialDesignL.LINK },
+                    otherwise = { MaterialDesignL.LINK_OFF }
+                )
+            }
+            toggleState { v -> v.conductor.remoteControl.isConnected }
+            executes { v ->
+                val ctrl = v.conductor.remoteControl
+                if (ctrl.isConnected.now) ctrl.disconnect()
+                else ctrl.connect(v.conductor.options.remoteUrl.now)
+            }
         }
 
         private val startStopAction = action<ConductorPane>("Start/stop") {

@@ -63,7 +63,7 @@ class ClockObject(
 
     override fun initialize(context: Context) {
         super.initialize(context)
-        timeWarpObserver = timeWarp.observe { warp ->
+        timeWarpObserver = timeWarp.observe { _, _, warp ->
             val scoreTime = activePlayers.firstOrNull()?.player?.currentTime
             val args =
                 if (scoreTime != null) listOf(warp.toString(), scoreTime.toString())

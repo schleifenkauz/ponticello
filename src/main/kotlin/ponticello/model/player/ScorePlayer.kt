@@ -104,6 +104,8 @@ class ScorePlayer private constructor(
             val extraRange = zero..(scoreTime + delta - maxTime)
             events.collectEvents(score, extraRange, withCutoff = false, timeOffset = maxTime)
         }
+        events.sortBy { ev -> ev.absolutePosition.y }
+        events.sortBy { ev -> ev.absolutePosition.time }
 
         scheduler.scheduleEvents(events, this)
     }
@@ -210,7 +212,7 @@ class ScorePlayer private constructor(
     }
 
     //Only inside ScorePlayer.execute
-    fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition): CompletableFuture<Int?>? {
+    fun scheduleInstantly(inst: ScoreObjectInstance, position: ObjectPosition): CompletableFuture<String>? {
         val obj = inst.obj
         val delta = position.time - playHead.currentTime
         val cutoff = (-delta).coerceAtLeast(zero)
