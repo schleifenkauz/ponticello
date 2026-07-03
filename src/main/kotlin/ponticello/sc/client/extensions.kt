@@ -8,6 +8,7 @@ import ponticello.model.player.ScorePlayer
 import ponticello.ui.launcher.PonticelloLauncher.Companion.currentProject
 import reaktive.value.now
 import java.util.concurrent.CompletableFuture
+import kotlin.reflect.full.isSubclassOf
 
 inline fun <reified T : Any> OSCMessage.getArgument(index: Int, name: String): T? {
     if (index !in arguments.indices) {
@@ -15,8 +16,19 @@ inline fun <reified T : Any> OSCMessage.getArgument(index: Int, name: String): T
         return null
     }
     val argument = arguments[index]
+    if (T::class.isSubclassOf(Number::class) && argument is Number) {
+        when (T::class) {
+            Double::class -> return argument.toDouble() as T
+            Int::class -> return argument.toInt() as T
+            Float::class -> return argument.toFloat() as T
+            Long::class -> return argument.toLong() as T
+        }
+    }
     if (argument !is T) {
-        Logger.warn("Argument '$name' is not of type ${T::class.java.canonicalName}", Logger.Category.SuperCollider)
+        Logger.warn(
+            "Argument '$name' ($argument) is not of type ${T::class.java.canonicalName}",
+            Logger.Category.SuperCollider
+        )
         return null
     }
     return argument

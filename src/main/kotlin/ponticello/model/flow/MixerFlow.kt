@@ -86,7 +86,9 @@ class MixerFlow(
         components.initialize(context)
         targetBus.now.resolve(context[BusRegistry])
         components.addListener(this, initialize = false)
-        for (comp in components) setupComponent(comp)
+        for (comp in components) {
+            setupComponent(comp)
+        }
         if (!targetBus.now.isValid) unresolvedBuses++
         sinkObserver = targetBus.observe { _, old, new ->
             replacedBus(old, new)

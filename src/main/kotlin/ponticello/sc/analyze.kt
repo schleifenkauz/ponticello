@@ -1,5 +1,6 @@
 package ponticello.sc
 
+import reaktive.value.now
 import java.util.*
 
 inline fun <reified R> ScElement.allChildren(): List<R> = buildList {
@@ -43,6 +44,7 @@ inline fun <reified E : ScExpr> ScExpr.transform(crossinline f: (E) -> ScExpr) =
 fun ScExpr.substitute(map: Map<String, () -> ScExpr>): ScExpr = transform { e ->
     when {
         e is Identifier && e.text in map -> map.getValue(e.text).invoke()
+        e is ParameterReference && e.parameter.name.now in map -> map.getValue(e.parameter.name.now).invoke()
         e is CodeBlock -> {
             val shadowedVariables = e.variables.mapTo(mutableSetOf()) { v -> v.text }
             val shadowedMap = map - shadowedVariables

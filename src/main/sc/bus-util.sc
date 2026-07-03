@@ -38,3 +38,13 @@
         ^this.replace(sig, mix)
     }
 }
+
++ DUGen {
+	kr { |dur, reset=0, doneAction=0| ^Duty.kr(dur, reset, this, doneAction) }
+
+	ar { |dur, reset=0, doneAction=0| ^Duty.ar(dur, reset, this, doneAction) }
+
+	krTrig { |trig, reset=0, doneAction=0| ^Demand.kr(trig, reset, this) }
+
+	arTrig { |trig, reset=0, doneAction=0| ^Demand.ar(trig, reset, this) }
+}

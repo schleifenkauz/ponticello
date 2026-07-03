@@ -48,25 +48,28 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
         }
     }
 
-    class MoveObject(
-        private val obj: ScoreObjectInstance,
-        private val before: ObjectPosition,
-        private val after: ObjectPosition,
+    class MoveObjects(
+        private val objects: Set<ScoreObjectInstance>,
+        private val deltaT: Decimal, private val deltaY: Decimal
     ) : AbstractEdit() {
         override val actionDescription: String
             get() = "Move object"
 
         override fun doRedo() {
-            obj.moveTo(after.time, after.y, simpleMove = true)
+            for (obj in objects) {
+                obj.moveTo(obj.start + deltaT, obj.y + deltaY, simpleMove = true)
+            }
         }
 
         override fun doUndo() {
-            obj.moveTo(before.time, before.y, simpleMove = true)
+            for (obj in objects) {
+                obj.moveTo(obj.start - deltaT, obj.y - deltaY, simpleMove = true)
+            }
         }
 
         override fun mergeWith(other: Edit): Edit? {
-            if (other is MoveObject && other.obj == this.obj) {
-                return MoveObject(obj, this.before, other.after)
+            if (other is MoveObjects && other.objects == this.objects) {
+                return MoveObjects(objects, deltaT, deltaY)
             }
             return null
         }

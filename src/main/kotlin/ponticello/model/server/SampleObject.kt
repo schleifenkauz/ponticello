@@ -216,7 +216,7 @@ class SampleObject(
         }
         appendBlock("SoundFile.use($path)") {
             +"arg f"
-            +"Ponticello.sendMsg('/buffer_info', '${name.now}', f.duration, f.numChannels, f.sampleRate)"
+            +"Ponticello.sendMsg('/buffer_info', '${name.now}', f.duration, f.numChannels, f.sampleRate.asInteger)"
         }
     }
 

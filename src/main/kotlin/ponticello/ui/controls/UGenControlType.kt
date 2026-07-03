@@ -21,12 +21,10 @@ import ponticello.model.score.controls.NamedParameterControl
 import ponticello.model.score.controls.ParameterControl
 import ponticello.model.score.controls.UGenControl
 import ponticello.model.score.controls.getCode
-import ponticello.sc.ControlSpec
-import ponticello.sc.NumericalControlSpec
+import ponticello.sc.*
 import ponticello.sc.client.SuperColliderClient
 import ponticello.sc.client.run
 import ponticello.sc.editor.ScExprExpander
-import ponticello.sc.setDefaultExpr
 import ponticello.ui.impl.DEFAULT_SCENE_FILL
 import ponticello.ui.score.ParameterControlsPane
 import ponticello.ui.score.ScoreObjectView
@@ -36,7 +34,7 @@ import reaktive.value.now
 
 data object UGenControlType : ControlType<UGenControl>() {
     override fun applicableOn(obj: ParameterizedObject, spec: ControlSpec): Boolean =
-        spec is NumericalControlSpec
+        spec is NumericalControlSpec || spec is BufferControlSpec || spec is BusControlSpec
 
     override fun createDetailInput(
         namedControl: NamedParameterControl,

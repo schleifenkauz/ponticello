@@ -86,7 +86,9 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
     }
 
     protected fun update(message: String) {
-        client.run("$superColliderName.$message")
+        if (parentGroup != null) {
+            client.run("$superColliderName.$message")
+        }
     }
 
     override fun ScWriter.freeObject() {}

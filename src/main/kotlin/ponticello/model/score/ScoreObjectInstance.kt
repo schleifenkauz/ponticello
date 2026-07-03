@@ -114,7 +114,11 @@ class ScoreObjectInstance(
     fun finishMove(notifyScore: Boolean = true, recordEdit: Boolean = true) {
         if (position == positionBeforeMove) return
         if (notifyScore) score?.movedObject(this, positionBeforeMove)
-        if (recordEdit) context[UndoManager].record(ScoreEdit.MoveObject(this, positionBeforeMove, position))
+        if (recordEdit) {
+            val deltaT = position.time - positionBeforeMove.time
+            val deltaY = position.y - positionBeforeMove.y
+            context[UndoManager].record(ScoreEdit.MoveObjects(setOf(this), deltaT, deltaY))
+        }
         positionBeforeMove = ObjectPosition.ZERO
     }
 
