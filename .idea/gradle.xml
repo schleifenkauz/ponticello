@@ -38,6 +38,11 @@
                   <project path="$PROJECT_DIR$/../krobot" />
                 </projects>
               </build>
+              <build path="$PROJECT_DIR$/../ReaKtive" name="reaktive">
+                <projects>
+                  <project path="$PROJECT_DIR$/../ReaKtive" />
+                </projects>
+              </build>
             </builds>
           </compositeBuild>
         </compositeConfiguration>
@@ -57,6 +62,7 @@
             <option value="$PROJECT_DIR$/../Hextant/hextant-plugins/hextant-common" />
             <option value="$PROJECT_DIR$/../Hextant/hextant-plugins/server" />
             <option value="$PROJECT_DIR$/../Hextant/hextant-test" />
+            <option value="$PROJECT_DIR$/../ReaKtive" />
             <option value="$PROJECT_DIR$/../fx-utils" />
             <option value="$PROJECT_DIR$/../kollektion" />
             <option value="$PROJECT_DIR$/../krobot" />
