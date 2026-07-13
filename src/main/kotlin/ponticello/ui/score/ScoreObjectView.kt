@@ -190,7 +190,7 @@ abstract class ScoreObjectView(
                     MouseEvent.DRAG_DETECTED -> {
                         ev.consume()
                         if (ev.modifiers == setOf(Shift, Ctrl)) {
-                            val db = startDragAndDrop(TransferMode.LINK)
+                            val db = startDragAndDrop(TransferMode.LINK, TransferMode.COPY)
                             db.setContent(
                                 mapOf(
                                     ScoreObject.DATA_FORMAT to obj.reference(),

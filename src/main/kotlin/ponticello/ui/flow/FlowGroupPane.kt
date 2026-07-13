@@ -19,15 +19,23 @@ import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.kordamp.ikonli.codicons.Codicons
 import org.kordamp.ikonli.materialdesign2.*
+import ponticello.impl.Logger
 import ponticello.model.flow.*
 import ponticello.model.instr.InstrumentObject
 import ponticello.model.instr.InstrumentRegistry
+import ponticello.model.instr.SynthDefObject
 import ponticello.model.midi.MidiDeviceSpec
 import ponticello.model.obj.FlowReference
 import ponticello.model.obj.resolve
 import ponticello.model.obj.withName
 import ponticello.model.registry.ObjectList
+import ponticello.model.registry.ScoreObjectRegistry
 import ponticello.model.registry.reference
+import ponticello.model.score.ScoreObject
+import ponticello.model.score.SoundProcess
+import ponticello.model.score.controls.EnvelopeControl
+import ponticello.model.score.controls.ParameterControlList
+import ponticello.model.score.controls.ValueControl
 import ponticello.ui.actions.ServerActions
 import ponticello.ui.controls.NameControl
 import ponticello.ui.dock.AppLayout
@@ -45,6 +53,7 @@ import ponticello.ui.registry.ObjectBox.Companion.removeObjectAction
 import ponticello.ui.registry.ObjectListView
 import ponticello.ui.registry.ObjectListView.DisplayMode
 import ponticello.ui.score.ParameterControlsPane
+import ponticello.ui.score.RectangleSelection
 import ponticello.ui.score.SoundProcessView
 import reaktive.value.binding.binding
 import reaktive.value.binding.flatMap
@@ -108,6 +117,7 @@ class FlowGroupPane(
 
     override fun acceptedTransferModes(dragboard: Dragboard): Array<TransferMode> = when {
         dragboard.hasContent(InstrumentObject.DATA_FORMAT) -> arrayOf(TransferMode.LINK)
+        dragboard.hasContent(ScoreObject.DATA_FORMAT) -> arrayOf(TransferMode.COPY)
         else -> super.acceptedTransferModes(dragboard)
     }
 
@@ -137,6 +147,26 @@ class FlowGroupPane(
                     def, context, defaultBus = null, ev.atMouseCoords()
                 ) ?: return emptyList()
                 listOf(InstrumentFlow.create(def, controls))
+            }
+
+            ev.dragboard.hasContent(ScoreObject.DATA_FORMAT) -> {
+                val obj = ev.dragboard.getFrom(
+                    context[ScoreObjectRegistry], ScoreObject.DATA_FORMAT
+                ) ?: return emptyList()
+                if (obj !is SoundProcess || obj.getInstrument() !is SynthDefObject) return emptyList()
+                val controls = obj.controls.mapTo(mutableListOf()) { param ->
+                    val ctrl = param.now
+                    param.name.now to if (ctrl is EnvelopeControl) {
+                        val initialValue = ctrl.points.points.first().value
+                        ValueControl.create(initialValue)
+                    } else ctrl
+                }
+                listOf(
+                    InstrumentFlow.create(
+                        obj.getInstrument(),
+                        ParameterControlList.create(*controls.toTypedArray())
+                    ).withName(obj.name.now)
+                )
             }
 
             else -> emptyList()
@@ -297,10 +327,27 @@ class FlowGroupPane(
                 executes { track -> track.allNotesOff(-1) }
             }
         }
+
         private val flowActions = collectActions<AudioFlow> {
             addAction("Show VST editor") {
                 icon(MaterialDesignE.EYE)
                 executesOn<VSTPluginFlow> { flow -> flow.showEditor() }
+            }
+            addAction("Instantiate Score Object") {
+                icon(MaterialDesignC.CONTENT_COPY)
+                executesOn { flow: InstrumentFlow ->
+                    val selection = RectangleSelection.get()
+                    if (selection == null) {
+                        Logger.warn("Select a region of the score", Logger.Category.Score)
+                        return@executesOn
+                    }
+                    val name = flow.context[ScoreObjectRegistry].availableName(flow.name.now)
+                    val controls = flow.controls.copy()
+                    val obj = SoundProcess.create(name, flow.getInstrument().reference(), controls)
+                    val inst = selection.createInstance(obj)
+                    RectangleSelection.clear()
+                    selection.pane.score.addObject(inst, autoSelect = true)
+                }
             }
             addAction("View Instrument") {
                 icon(Codicons.CODE)

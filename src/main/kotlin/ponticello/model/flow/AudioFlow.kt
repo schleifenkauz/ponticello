@@ -83,6 +83,7 @@ sealed class AudioFlow : AbstractSuperColliderObject() {
 
     fun ScWriter.free() {
         +"$superColliderName.free"
+        parentGroup = null
     }
 
     protected fun update(message: String) {
