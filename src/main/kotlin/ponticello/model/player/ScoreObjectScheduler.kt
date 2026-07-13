@@ -97,16 +97,16 @@ class ScoreObjectScheduler(val context: Context) {
     //Only inside ScorePlayer.execute
     fun scheduleObject(
         obj: ScoreObject, info: ObjectPlaybackInfo, scLangLatency: Decimal = this.sclangLatency,
-    ): CompletableFuture<String>? {
+    ) {
         val time = info.pos.time + info.cutoff + info.player.timeOffset
         val scheduledTime = (time + scLangLatency - extraLatency)
-        return scheduleObject(obj, info, scheduledTime, absolute = false)
+        scheduleObject(obj, info, scheduledTime, absolute = false)
     }
 
     fun scheduleObject(
         obj: ScoreObject, info: ObjectPlaybackInfo,
         scheduledTime: Decimal, absolute: Boolean,
-    ): CompletableFuture<String>? {
+    ): CompletableFuture<String>? { //TODO the return value seems to never be used
         try {
             if (!obj.validate()) return null
         } catch (e: Exception) {
