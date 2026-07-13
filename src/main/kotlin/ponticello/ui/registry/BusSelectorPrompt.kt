@@ -4,6 +4,7 @@ import ponticello.model.instr.BusObject
 import ponticello.model.obj.project
 import ponticello.model.project.SERVER_OPTIONS
 import ponticello.model.project.get
+import ponticello.model.registry.chooseTargetMixer
 import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import reaktive.value.now
@@ -27,6 +28,6 @@ class BusSelectorPrompt(
     override fun createObject(name: String): BusObject {
         val rate = rate ?: Rate.Audio
         val channels = channels ?: if (rate == Rate.Audio) registry.context.project[SERVER_OPTIONS].numOutputChannels else 1
-        return BusObject.create(rate, name, channels)
+        return BusObject.create(rate, name, channels).chooseTargetMixer(registry.context.project, this.placement)
     }
 }

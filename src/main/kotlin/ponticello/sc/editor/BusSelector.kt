@@ -3,6 +3,8 @@ package ponticello.sc.editor
 import fxutils.prompt.PromptPlacement
 import javafx.scene.input.DataFormat
 import ponticello.model.instr.BusObject
+import ponticello.model.obj.project
+import ponticello.model.registry.chooseTargetMixer
 import ponticello.model.server.BusRegistry
 import ponticello.sc.Rate
 import reaktive.value.ReactiveValue
@@ -36,7 +38,7 @@ class BusSelector : ObjectSelector<BusObject>() {
     override fun createNewObject(name: String, promptPlacement: PromptPlacement): BusObject {
         val rate = expectedRate.now ?: Rate.Audio
         val channels = expectedChannels.now ?: if (rate == Rate.Audio) 2 else 1
-        return BusObject.create(rate, name, channels)
+        return BusObject.create(rate, name, channels).chooseTargetMixer(context.project, promptPlacement)
     }
 
     override fun dataFormat(): DataFormat = BusObject.DATA_FORMAT

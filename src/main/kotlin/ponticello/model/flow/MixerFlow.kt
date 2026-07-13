@@ -114,6 +114,10 @@ class MixerFlow(
         if (comp.isMuted || (soloed != 0 && !comp.isSolo)) "0"
         else "${comp.volume.now}.dbamp"
 
+    fun addSource(bus: BusObject) {
+        components.add(MixerComponent.create(bus))
+    }
+
     override fun added(obj: MixerComponent, idx: Int) {
         setupComponent(obj)
         updateSources()

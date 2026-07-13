@@ -25,9 +25,11 @@ import org.kordamp.ikonli.materialdesign2.MaterialDesignP
 import org.kordamp.ikonli.materialdesign2.MaterialDesignT
 import ponticello.impl.toDecimal
 import ponticello.model.instr.BusObject
+import ponticello.model.obj.project
 import ponticello.model.project.BUSSES
 import ponticello.model.project.PonticelloProject
 import ponticello.model.project.busses
+import ponticello.model.registry.chooseTargetMixer
 import ponticello.model.server.BusRegistry
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
@@ -106,7 +108,7 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
         }
         val channels = IntegerPrompt("Channels", defaultChannels, range = 1..16)
             .showDialog(placement) ?: return null
-        return BusObject.create(rate, name, channels)
+        return BusObject.create(rate, name, channels).chooseTargetMixer(context.project, placement)
     }
 
     override fun getHeaderContent(obj: BusObject): List<Node> = buildList {

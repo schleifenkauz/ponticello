@@ -90,7 +90,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         _points.add(idx, point)
         viewManager.notifyListeners {
             addedPoint(idx, point)
-            if (undoable) editedEnvelope()
+            editedEnvelope()
         }
         if (undoable) context[UndoManager].record(AddPoint(point, idx, this))
     }
@@ -164,7 +164,7 @@ class Envelope(private val _points: MutableList<EnvelopePoint>) {
         val p = _points.removeAt(idx)
         viewManager.notifyListeners {
             removedPoint(idx, p)
-            if (undoable) editedEnvelope()
+            editedEnvelope()
         }
         if (undoable) context[UndoManager].record(RemovePoint(p, idx, this))
     }
