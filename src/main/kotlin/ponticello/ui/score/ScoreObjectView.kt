@@ -209,21 +209,29 @@ abstract class ScoreObjectView(
                     MouseEvent.MOUSE_DRAGGED -> {
                         val start = dragStart
                         if (start != null && oldBounds != null) {
+                            ev.consume()
                             val deltaX = ev.screenX - start.x
                             val deltaY = ev.screenY - start.y
                             val x = oldBounds.minX + deltaX
                             val y = oldBounds.minY + deltaY
                             dragTo(x, y, ev)
-                            ev.consume()
                         }
                     }
 
                     MouseEvent.MOUSE_RELEASED -> {
                         if (dragStart != null) {
-                            dragTarget.cursor = Cursors.OPEN_HAND
-                            instance.finishMove()
-                            dragStart = null
                             ev.consume()
+                            dragTarget.cursor = Cursors.OPEN_HAND
+                            dragStart = null
+                            val deltaT = instance.position.time - instance.positionBeforeMove.time
+                            val deltaY = instance.position.y - instance.positionBeforeMove.y
+                            val movedObjects = context[ScoreObjectSelectionManager].selectedInstances + this.instance
+                            for (obj in movedObjects) {
+                                obj.finishMove(recordEdit = false)
+                            }
+                            if (deltaT == zero && deltaY == zero) return@addEventHandler
+                            val edit = ScoreEdit.MoveObjects(movedObjects, deltaT, deltaY)
+                            context[UndoManager].record(edit)
                         }
                     }
                 }

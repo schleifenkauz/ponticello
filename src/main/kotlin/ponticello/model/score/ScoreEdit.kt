@@ -69,7 +69,7 @@ abstract class ScoreEdit(val score: Score) : AbstractEdit() {
 
         override fun mergeWith(other: Edit): Edit? {
             if (other is MoveObjects && other.objects == this.objects) {
-                return MoveObjects(objects, deltaT, deltaY)
+                return MoveObjects(objects, deltaT + other.deltaT, deltaY + other.deltaY)
             }
             return null
         }
