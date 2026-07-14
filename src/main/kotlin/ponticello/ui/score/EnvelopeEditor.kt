@@ -259,7 +259,7 @@ class EnvelopeEditor(
         mouseInfo.relocate(infoX, y)
     }
 
-    override fun repaint() {
+    override fun repaint() { 
         pane.children.removeAll(handles)
         pane.children.removeAll(innerCircles)
         handles.clear()
