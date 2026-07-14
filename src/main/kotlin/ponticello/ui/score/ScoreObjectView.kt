@@ -495,7 +495,7 @@ abstract class ScoreObjectView(
     }
 
     open fun rescale() {
-        updateInlineControlsVisibility()
+        //updateInlineControlsVisibility()
     }
 
     fun updateInlineControlsVisibility() {

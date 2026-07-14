@@ -275,6 +275,17 @@ class EnvelopeEditor(
         }
     }
 
+    fun rescale() {
+        for ((idx, p) in envelope.points.withIndex()) {
+            val x = objectView.getWidth(p.time)
+            val y = yTransform.map(p.value.toDouble())
+            line.points[idx * 2] = x
+            line.points[idx * 2 + 1] = y
+            handles[idx].centerX = x
+            handles[idx].centerY = y
+        }
+    }
+
     private fun removeChildren() {
         pane.children.removeAll(handles)
         pane.children.removeAll(innerCircles)
