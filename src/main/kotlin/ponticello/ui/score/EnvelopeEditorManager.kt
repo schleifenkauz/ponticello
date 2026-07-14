@@ -25,7 +25,7 @@ class EnvelopeEditorManager(
         for (e in envelopeEditors) {
             val validSpec = e.namedControl.spec.now is NumericalControlSpec
             if (validSpec) {
-                e.repaint()
+                e.rescale()
             }
         }
     }

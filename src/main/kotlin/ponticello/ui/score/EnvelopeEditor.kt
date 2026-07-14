@@ -259,7 +259,7 @@ class EnvelopeEditor(
         mouseInfo.relocate(infoX, y)
     }
 
-    override fun repaint() {
+    override fun repaint() { 
         pane.children.removeAll(handles)
         pane.children.removeAll(innerCircles)
         handles.clear()
@@ -272,6 +272,17 @@ class EnvelopeEditor(
             val y = yTransform.map(p.value.toDouble())
             line.points.addAll(x, y)
             addHandle(idx, x, y)
+        }
+    }
+
+    fun rescale() {
+        for ((idx, p) in envelope.points.withIndex()) {
+            val x = objectView.getWidth(p.time)
+            val y = yTransform.map(p.value.toDouble())
+            line.points[idx * 2] = x
+            line.points[idx * 2 + 1] = y
+            handles[idx].centerX = x
+            handles[idx].centerY = y
         }
     }
 

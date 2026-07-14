@@ -112,7 +112,7 @@ data object UGenControlType : ControlType<UGenControl>() {
         context[SuperColliderClient].run {
             append("var inst = ")
             if (absolutePosition != null) appendLine("SoundProcess.get('$processName').getInstanceAt($absolutePosition);")
-            else appendLine("SoundProcess.get($processName).getSingleInstance;") //TODO
+            else appendLine("SoundProcess.get('$processName').getSingleInstance;")
             appendBlock("if (inst != nil)", endLine = null) {
                 appendBlock("AppClock.sched(0)") {
                     +"var index = inst.getControlBus('$parameter').index"

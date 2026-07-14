@@ -167,6 +167,10 @@ abstract class RootScorePane(
         return relevantGrids.minByOrNull { g -> g.yPosition }
     }
 
+    /*TODO this is a bottle-neck and should be optimized somehow
+      The problem is that it is not trivial how to cache grids.
+      Because SoundProcessViews can acquire/lose grids when their associated sample changes.
+     */
     private fun getAllGrids(): List<TempoGrid> = allViews.mapNotNull { view -> view.tempoGrid }
 
     override fun snapToGrid(position: ObjectPosition): ObjectPosition {
