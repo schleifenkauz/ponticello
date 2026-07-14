@@ -159,7 +159,7 @@ class FlowGroupPane(
                     param.name.now to if (ctrl is EnvelopeControl) {
                         val initialValue = ctrl.points.points.first().value
                         ValueControl.create(initialValue)
-                    } else ctrl
+                    } else ctrl.copy()
                 }
                 listOf(
                     InstrumentFlow.create(

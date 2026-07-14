@@ -25,7 +25,7 @@ SynthDef(\sine) { arg bus = 0, freq = 440, amp = 0.1;
 (
 s.waitForBoot {
 	~inst = ~proc.createInstance(pos: nil, cutoff: 0, extra_controls: (amp: 0.02))
-	.start((addAction: \addToTail, target: s.defaultGroup), s.latency, 0)
+	.start(Group.new, s.latency, 0)
 }
 )
 
@@ -50,7 +50,7 @@ s.waitForBoot {
 (
 s.waitForBoot {
 	~inst = ~proc.createInstance(pos: nil, cutoff: 0, extra_controls: (amp: 0.005))
-	.start((addAction: \addToTail, target: s.defaultGroup), s.latency, 0, run: false)
+	.start(Group.new, s.latency, 0, run: false)
 	3.wait;
 	~inst.run(true)
 }
@@ -59,7 +59,7 @@ s.waitForBoot {
 (
 s.waitForBoot {
 	~beat_inst = ~beat_proc.createInstance(pos: nil, cutoff: 0)
-	.start((addAction: \addToTail, target: s.defaultGroup), s.latency, 0)
+	.start(Group.new), s.latency, 0)
 }
 )
 

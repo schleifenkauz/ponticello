@@ -12,12 +12,12 @@ SoundProcessMidiInstrument : MidiInstrument {
 			var midi_controls = [\pitch -> num, \velocity -> val];
 			var inst = proc.createInstance(pos: nil, cutoff: 0, extra_controls: src.controls ++ midi_controls);
 			var note = (src: src, instance: inst);
-			var placement = (addAction: \addToTail, target: src.track.group);
+			var group = Group.new(target: src.track.group, addAction: \addToTail);
 			activeNotes[num] = activeNotes[num].add(note);
 			inst.onDispose {
 				activeNotes[num].remove(note)
 			};
-            inst.start(placement, src.server_latency, src.player_id, midiTrack: src.track);
+            inst.start(group, src.server_latency, src.player_id, midiTrack: src.track);
 		}
 		^true
 	}

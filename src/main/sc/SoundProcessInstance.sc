@@ -230,9 +230,9 @@ SoundProcessInstance : AudioNode {
 		children.add(inst);
 		inst.onDispose { children.remove(inst) };
 		if (clock_time.isNil) {
-			var placement = (addAction: \addToTail, target: group);
+			var placement = Group.new(target: group, addAction: \addToTail);
 			//postf("Starting child % at %\n", inst, placement);
-			inst.start(placement, server_latency, player_id);
+			inst.start(group, server_latency, player_id);
 		};
 		^inst
 	}

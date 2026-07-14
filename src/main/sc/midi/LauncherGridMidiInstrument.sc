@@ -67,10 +67,10 @@ SoundProcessGridItem {
 		if (inst.isNil || (mode != \toggle)) {
 			var midi_controls = [\velocity -> velocity];
 			var extra_controls = src.controls ++ midi_controls;
-			var placement = (addAction: \addToTail, target: src.track.group);
+			var group = Group.new(target: src.track.group, addAction: \addToTail);
 			inst = proc.createInstance(nil, 0, extra_controls);
 			inst.onDispose { inst = nil };
-			inst.start(placement, src.server_latency, src.player_id, midiTrack: src.track);
+			inst.start(group, src.server_latency, src.player_id, midiTrack: src.track);
 			if ((mode != \toggle) && proc.instr.isAutoRelease.not) {
 				TempoClock.sched(proc.duration) {
 					inst.release(src.server_latency);

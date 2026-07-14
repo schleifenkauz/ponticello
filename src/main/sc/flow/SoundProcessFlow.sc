@@ -4,9 +4,9 @@ SoundProcessFlow : AudioFlow {
 	* new { |name, proc| ^super.newCopyArgs(name, proc) }
 
 	createNode { |target, addAction|
-		var placement = (target: target, addAction: addAction);
+		var group = Group.new(target, addAction);
 		instance = proc.createInstance(pos: nil);
-		instance.start(placement, latency: 0, playerId: -1, run: active);
+		instance.start(group, latency: 0, playerId: -1, run: active);
 		^instance.node
 	}
 
