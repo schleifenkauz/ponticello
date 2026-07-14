@@ -1,5 +1,5 @@
 AudioNodeOrder {
-	classvar nodes, idCounter = 0;
+	classvar <nodes, idCounter = 0;
 
 	* binarySearch { |score_y|
 		var low = 0, high = nodes.size, mid;
@@ -20,34 +20,24 @@ AudioNodeOrder {
 		nodes = List[];
 	}
 
-	* insertionIndex { |node|
-		^AudioNodeOrder.binarySearch(node.score_y)
-	}
-
-	* nodePlacement { |insert_idx|
-		var prev = insert_idx - 1;
-		while { (nodes[prev] != nil) && { (nodes[prev].node == nil) || { nodes[prev].isActive.not } } } {
-		    prev = prev - 1;
-		};
-		^if (prev < 0) {
-			(target: Server.local.defaultGroup, addAction: \addToHead);
-		} {
-			(target: nodes[prev].node, addAction: \addAfter);
-		};
-	}
-
-	* insert { |node, idx|
-		//postf("Inserting node (score_y = %) at index %\n", node.score_y, idx);
+	* insert { |node|
+		var idx, prev;
+		Server.local.sync;
+		idx = AudioNodeOrder.binarySearch(node.score_y);
+		//postf("Inserting % into % at index %\n", node.score_y, nodes.collect(_.score_y), idx);
 		nodes = nodes.insert(idx, node);
+		prev = idx - 1;
+		^if (prev < 0) {
+			Group.new(target: Server.local.defaultGroup, addAction: \addToHead);
+		} {
+			Group.new(target: nodes[prev].node, addAction: \addAfter);
+		};
 	}
 
 	* insertFlowGroup { |score_y, name|
 		var node = AudioFlowGroup.new(score_y);
-		var insert_idx = this.insertionIndex(node);
-		var placement = this.nodePlacement(insert_idx);
-		var group = Group.new(placement.target, placement.addAction);
+		var group = this.insert(node);
 		node.node = group;
-		this.insert(node, insert_idx);
 		Ponticello.sendMsg('/inserted_flow_group', group.nodeID, name, score_y);
 		^node
 	}

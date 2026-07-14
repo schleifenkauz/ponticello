@@ -199,18 +199,13 @@ SoundProcess : NamedObject {
 
 	startNewInstance { |pos, cutoff=0, extra_controls, server_latency, player_id, midiTrack=nil|
 		var inst = this.createInstance(pos ? (t: 0, y: 0), cutoff, extra_controls);
-		var placement, insert_idx;
+		var group;
 		if (midiTrack.notNil) {
-			placement = (addAction: \addToTail, target: midiTrack.group);
+			group = Group.new(target: midiTrack.group, addAction: \addToTail);
 		} {
-			insert_idx = AudioNodeOrder.insertionIndex(inst);
-			placement = AudioNodeOrder.nodePlacement(insert_idx);
+			group = AudioNodeOrder.insert(inst);
 		};
-		//postf("Placement for %: %\n", name, placement);
-		inst.start(placement, server_latency, player_id, midiTrack);
-		if (midiTrack.isNil) {
-			AudioNodeOrder.insert(inst, insert_idx);
-		}
+		inst.start(group, server_latency, player_id, midiTrack);
 		^inst.idx;
 	}
 

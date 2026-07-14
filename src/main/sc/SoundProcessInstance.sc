@@ -1,7 +1,7 @@
 SoundProcessInstance : AudioNode {
 	var <def, <idx, <pos, <cutoff, extra_control_map,
 	control_buses, auxil_synths, <children, on_dispose,
-	<player_id, <>server_latency, start_time, placement, group,
+	<player_id, <>server_latency, start_time, group,
 	running = false, <restarting = false, disposed = false,
 	sound_obj, <midi_track,
 	<>clock_time, <>parent_instance;
@@ -158,17 +158,14 @@ SoundProcessInstance : AudioNode {
 		}
 	}
 
-	start { |plcmnt, latency, playerId, midiTrack=nil, run = true|
+	start { |grp, latency, playerId, midiTrack=nil, run = true|
 		var duration = def.duration !? { |dur| dur - cutoff };
-		placement = plcmnt;
 		start_time = TempoClock.beats;
 		server_latency = latency ? Server.local.latency;
 		player_id = playerId ? -1;
 		midi_track = midiTrack;
-		if (placement.notNil && (def.type != \midi)) {
-			Server.local.sync;
-			group = Group.new(placement.target, placement.addAction);
-			Server.local.sync;
+		group = grp;
+		if (group.notNil && (def.type != \midi)) {
 			if (midiTrack.isNil && pos.notNil && parent_instance.isNil) {
 				Ponticello.sendMsg('/started_sound_proc', this.nodeID, def.name, pos.t, pos.y);
 			};
