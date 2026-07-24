@@ -21,6 +21,17 @@ data class DecimalRange(
 
 operator fun Decimal.rangeTo(other: Decimal) = DecimalRange(this, other)
 
+fun Sequence<Decimal>.range(): DecimalRange {
+    if (none()) return zero..zero
+    var min = Decimal.INF
+    var max = Decimal.NINF
+    for (d in this) {
+        min = minOf(min, d)
+        max = maxOf(max, d)
+    }
+    return min..max
+}
+
 infix fun DecimalRange.step(step: Double) = sequence {
     var value = start
     while (value <= endInclusive) {

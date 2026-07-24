@@ -14,6 +14,8 @@ LevelMeterFlow : AudioFlow {
 				arg bus, id;
 				var sig = In.ar(bus, channels), rms, peak, msgValues;
 
+				//TODO check if SendPeakRMS is useful here
+
 				rms = Amplitude.kr(sig, 0.01, 0.3).ampdb;
 				rms = rms.lag(\lag.kr(0.05));
 

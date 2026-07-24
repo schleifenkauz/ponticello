@@ -22,7 +22,7 @@ object SelectionRelatedActions {
         on("ESCAPE", consume = false) { ev ->
             ev.consume()
             context[ScoreObjectDuplicator].exitDuplicateMode()
-            if (!ev.isAltDown) return@on
+//            if (!ev.isAltDown) return@on
             context[ScoreObjectSelectionManager].deselectAll()
         }
         on("Ctrl+A") { ev ->

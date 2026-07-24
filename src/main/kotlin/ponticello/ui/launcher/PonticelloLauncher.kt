@@ -45,6 +45,7 @@ import ponticello.ui.dock.AppLayout
 import ponticello.ui.impl.showDialog
 import ponticello.ui.launcher.PonticelloApp.Companion.primaryStage
 import ponticello.ui.midi.ContextualMidiReceiver
+import ponticello.ui.scope.LiveGraphs
 import ponticello.ui.score.ScoreObjectDuplicator
 import ponticello.ui.vc.JavaFXGitUserInteraction
 import reaktive.Observer
@@ -186,6 +187,7 @@ class PonticelloLauncher {
         val player = ScorePlayer.create(
             project.mainScore, loopingActivated = reactiveValue(false), quantization = null
         )
+        project.context[LiveGraphs] = LiveGraphs(project.context)
         project.context[ScorePlayer.MAIN] = player
         rootContext[currentProject] = project
         recentProjects.push(project.projectDirectory)

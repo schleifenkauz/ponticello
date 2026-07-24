@@ -20,7 +20,7 @@ import ponticello.impl.unaryMinus
 import ponticello.model.score.controls.NamedParameterControl
 import ponticello.sc.DecimalLiteral
 import ponticello.sc.NumericalControlSpec
-import ponticello.sc.SpecTransformation
+import ponticello.sc.WarpTransformation
 import ponticello.ui.impl.showDialog
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
@@ -40,7 +40,7 @@ class ControlSlider(
     private var updating = false
     private val textInput = TextField().styleClass("control-input-text")
     private lateinit var valueObserver: Observer
-    private val transform = SpecTransformation(spec, 0.0..1.0)
+    private val transform = WarpTransformation(spec, 0.0..1.0)
 
     override fun requestFocus() {
         textInput.requestFocus()

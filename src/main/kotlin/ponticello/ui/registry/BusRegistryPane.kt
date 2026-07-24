@@ -43,6 +43,7 @@ import ponticello.ui.dock.ToolPaneState
 import ponticello.ui.flow.LevelMeter
 import ponticello.ui.midi.ControlBusesMidiContext
 import ponticello.ui.midi.MidiContext
+import ponticello.ui.scope.LiveGraphs
 import reaktive.ObserverMap
 import reaktive.and
 import reaktive.value.binding.impl.notNull
@@ -199,7 +200,15 @@ class BusRegistryPane(busses: BusRegistry) : ObjectRegistryPane<BusObject>(busse
             addAction("Monitor bus") {
                 icon(MaterialDesignP.PULSE)
                 executes { bus ->
-                    bus.context[SuperColliderClient].run("{ ${bus.superColliderName}.scope }.defer;")
+                    when (bus) {
+                        is BusObject.AudioBus -> {
+                            bus.context[SuperColliderClient].run("{ ${bus.superColliderName}.scope }.defer;")
+                        }
+
+                        is BusObject.ControlBus -> {
+                            bus.context[LiveGraphs].showGraphPane(bus)
+                        }
+                    }
                 }
             }
             addAction("Show level meter") {

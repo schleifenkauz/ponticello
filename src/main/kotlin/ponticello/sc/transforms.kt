@@ -125,15 +125,18 @@ data class LinearTransformation(
     override fun unmap(value: Double): Double = (value / factor + summand).value
 }
 
-data class SpecTransformation(val spec: NumericalControlSpec, override val targetRange: DoubleRange) : Transformation {
-    override val sourceRange: DecimalRange
-        get() = spec.min.get()..spec.max.get()
+data class WarpTransformation(
+    override val sourceRange: DecimalRange,
+    val warp: Warp,
+    override val targetRange: DoubleRange
+) : Transformation {
+    constructor(spec: NumericalControlSpec, targetRange: DoubleRange) : this(spec.range, spec.warp, targetRange)
 
     private val tdiff = targetRange.endInclusive - targetRange.start
-    private val wmap = spec.warp.map
-    private val wunmap = spec.warp.unmap
-    private val fmin = wmap(spec.min.get().toDouble())
-    private val fmax = wmap(spec.max.get().toDouble())
+    private val wmap = warp.map
+    private val wunmap = warp.unmap
+    private val fmin = wmap(sourceRange.start.toDouble())
+    private val fmax = wmap(sourceRange.endInclusive.toDouble())
     private val fdiff = fmax - fmin
 
     override fun map(value: Double): Double = targetRange.start + (wmap(value) - fmin) * tdiff / fdiff

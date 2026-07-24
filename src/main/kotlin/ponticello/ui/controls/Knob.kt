@@ -20,7 +20,7 @@ import javafx.scene.shape.Circle
 import javafx.scene.shape.Line
 import ponticello.impl.*
 import ponticello.sc.NumericalControlSpec
-import ponticello.sc.SpecTransformation
+import ponticello.sc.WarpTransformation
 import ponticello.sc.mapOnto
 import reaktive.Observer
 import reaktive.value.ReactiveVariable
@@ -43,11 +43,11 @@ class Knob(
     private val valueLabel = Label() styleClass "knob-value"
 
     @Suppress("EmptyRange")
-    private val angleTransform = SpecTransformation(spec, MIN_ANGLE..MAX_ANGLE)
+    private val angleTransform = WarpTransformation(spec, MIN_ANGLE..MAX_ANGLE)
 
     private val transform = when (inputMethod) {
         InputMethod.Angle -> angleTransform
-        InputMethod.Horizontal, InputMethod.Vertical -> SpecTransformation(spec, -DRAG_RANGE..DRAG_RANGE)
+        InputMethod.Horizontal, InputMethod.Vertical -> WarpTransformation(spec, -DRAG_RANGE..DRAG_RANGE)
     }
     private val root = Pane(indicator, valueLabel)
 

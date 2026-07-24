@@ -177,7 +177,7 @@ data class NumericalControlSpec(
         private val unit: String,
         private val updateRange: (min: Decimal, max: Decimal) -> Boolean
     ) : SliderBar.Converter<Decimal> {
-        private val defaultTransformation = SpecTransformation(spec, 0.0..1.0)
+        private val defaultTransformation = WarpTransformation(spec, 0.0..1.0)
 
         private val precision = spec.precision
 
@@ -308,7 +308,9 @@ class AttackReleaseControlSpec : ControlSpec {
         get() = "<attack-release>"
 }
 
-fun NumericalControlSpec.mapOnto(min: Double, max: Double) = SpecTransformation(this, min..max)
+fun NumericalControlSpec.mapOnto(min: Double, max: Double) = WarpTransformation(this, min..max)
+
+fun NumericalControlSpec.mapOnto(targetRange: DoubleRange) = WarpTransformation(this, targetRange)
 
 @Choice(initialValue = "Rate.Audio")
 enum class Rate {
