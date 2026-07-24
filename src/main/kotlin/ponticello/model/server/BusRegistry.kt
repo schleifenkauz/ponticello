@@ -38,9 +38,6 @@ class BusRegistry(
     @Transient
     private val levelEvents = mutableMapOf<Int, Event<BusLevel>>()
 
-    @Transient
-    private val availableLevelSendSynthDefs = mutableSetOf<Int>()
-
     override fun initialize(context: Context) {
         context[BusRegistry] = this
         super.initialize(context)

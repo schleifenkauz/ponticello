@@ -3,7 +3,7 @@ SoundProcessInstance : AudioNode {
 	control_buses, auxil_synths, <children, on_dispose,
 	<player_id, <>server_latency, start_time, group,
 	running = false, <restarting = false, disposed = false,
-	sound_obj, <midi_track,
+	<sound_obj, <midi_track,
 	<>clock_time, <>parent_instance;
 
 	* new {| def, idx, pos, cutoff = 0, extra_controls |

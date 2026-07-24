@@ -32,7 +32,7 @@ LauncherGridMidiInstrument : MidiInstrument {
 		var mode;
 		num = num - 36;
 		mode = modes[num];
-		postf("Note On %: %, %\n", num, items[num], mode);
+		//postf("Note On %: %, %\n", num, items[num], mode);
 		if (items[num].notNil) {
 			src.track = track;
 			items[num].noteOn(velocity, src, mode);

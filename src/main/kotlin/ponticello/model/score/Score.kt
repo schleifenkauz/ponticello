@@ -107,6 +107,15 @@ open class Score(
 
     fun clone() = Score(instances.mapTo(mutableListOf()) { inst -> inst.duplicate() })
 
+    private fun parentChain(): Sequence<ScoreObject> = sequence {
+        var obj: ScoreObject? = parentObject
+        while (obj is ScoreObjectGroup) {
+            yield(obj)
+            if (obj.score.parentObject == obj) break
+            obj = obj.score.parentObject
+        }
+    }
+
     fun addObject(inst: ScoreObjectInstance, autoSelect: Boolean) {
         if (inst.obj.duration <= zero &&
             (inst.obj !is MemoObject && inst.obj !is TaskObject && inst.obj !is ScoreBreakpointObject)
@@ -114,7 +123,7 @@ open class Score(
             Logger.error("Attempt to add zero-duration object $inst to the score")
             return
         }
-        if (inst.obj == parentObject) {
+        if (inst.obj in parentChain()) {
             Logger.error("Cannot add ${inst.obj} as a child to itself", Logger.Category.Score)
         }
         inst.initialize(context)
